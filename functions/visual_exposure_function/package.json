@@ -1,0 +1,10 @@
+{
+	"name": "visual_exposure_function",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "karthickbalai.ug22.cs@scadengineering.ac.in",
+	"dependencies": {
+		"@zcatalyst/auth": "latest",
+		"@zcatalyst/cache": "latest"
+	}
+}

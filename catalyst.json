@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "targets": [
+      "visual_exposure_function"
+    ],
+    "ignore": [],
+    "source": "functions"
+  },
+  "client": {
+    "source": "react-app",
+    "plugin": "zcatalyst-cli-plugin-react"
+  }
+}

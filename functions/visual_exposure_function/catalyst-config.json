@@ -1,0 +1,11 @@
+{
+	"deployment": {
+		"name": "visual_exposure_function",
+		"stack": "node22",
+		"type": "advancedio",
+		"env_variables": {}
+	},
+	"execution": {
+		"main": "index.js"
+	}
+}

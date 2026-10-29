@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+build/
+dist/
+coverage/
+.cache/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+*.secret.*
+
+# Zoho Creator export (contains plaintext credentials and business logic; keep out of the repo)
+Creator file/
+*.ds
+
+# Catalyst local/generated state
+.catalystrc
+.catalyst/
+catalyst-debug/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Data migration exports and staging
+export/
+migration-data/
+*.csv.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
