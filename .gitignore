@@ -46,3 +46,6 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# Local tooling notes (not for upload)
+MCP/
