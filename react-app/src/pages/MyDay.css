@@ -1,0 +1,26 @@
+.myday-cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));align-items:start}
+.myday-group{margin-top:22px}
+.myday-group>h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.myday-group>h2 .count{font-size:12px;font-weight:700;background:var(--brand-soft);color:var(--brand-strong);border-radius:99px;padding:1px 9px}
+.myday-group.late>h2{color:var(--danger)}
+.mtask{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:var(--radius);padding:14px 16px;display:grid;gap:12px}
+.mtask.late{border-left-color:var(--danger)}
+.mtask-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.mtask-top h3{font-size:16px;margin:0}
+.mtask-top a{color:var(--ink-2);font-size:13px;text-decoration:none}
+.mtask-top a:hover{text-decoration:underline}
+.mtask-meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--ink-2);font-size:13px}
+.mtask-meta span{display:inline-flex;gap:5px;align-items:center}
+.mtask-note{margin:0;padding:8px 10px;border-radius:var(--radius);font-size:13px;background:#fdecec;color:#8a1a1a}
+.mtask-note.warn{background:#fff4e0;color:var(--warn-ink)}
+.substeps{display:flex;gap:6px;flex-wrap:wrap}
+.substeps span{flex:1;min-width:96px;text-align:center;font-size:12.5px;font-weight:600;padding:7px 6px;border-radius:var(--radius);background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.substeps span.done{background:var(--brand-soft);color:var(--brand-strong);border-color:transparent}
+.substeps span.next{border-style:dashed;color:var(--ink)}
+.mtask-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mtask-actions .btn{min-height:44px;flex:1 1 150px}
+.hours-form{display:flex;gap:8px;align-items:center}
+.hours-form input{width:90px;min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.hours-form .btn{min-height:44px}
+.hours-form small{margin-left:auto}
+.myday-empty{padding:18px;border:1px dashed var(--line);border-radius:var(--radius);color:var(--muted);text-align:center}
