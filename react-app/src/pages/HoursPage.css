@@ -1,0 +1,14 @@
+.hp-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.hp-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.hp-tools select{height:38px;padding:0 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.clock{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 18px;margin-bottom:16px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:var(--radius)}
+.clock.break{border-left-color:#f2a33a}
+.clock .stack{flex:1;min-width:200px}
+.clock strong{font-size:17px}
+.clock .btn{min-height:44px}
+.clock input{height:44px;padding:0 10px;border:1px solid var(--line);border-radius:var(--radius);min-width:180px}
+.pay-preview{display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px;background:var(--brand-soft);border-radius:var(--radius);font-size:13px}
+.pay-preview b{font-size:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+tfoot td{font-weight:700;border-top:2px solid var(--line)}
+@media (max-width:560px){.form-row{grid-template-columns:1fr}}

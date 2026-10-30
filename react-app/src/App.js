@@ -8,6 +8,7 @@ import Job360 from './pages/Job360';
 import FabDashboard from './pages/FabDashboard';
 import InstallDashboard from './pages/InstallDashboard';
 import { SwmsList, SwmsDetail } from './pages/SwmsPage';
+import HoursPage from './pages/HoursPage';
 import RoleHome from './pages/RoleHome';
 import { NAV } from './navConfig';
 import './App.css';
@@ -29,8 +30,9 @@ export default function App() {
             <Route path="fabrication" element={<FabDashboard variant="manager" />} />
             <Route path="installation" element={<InstallDashboard />} />
             <Route path="swms" element={<SwmsList />} />
+            <Route path="hours" element={<HoursPage />} />
             <Route path="swms/:swmsId" element={<SwmsDetail />} />
-            {NAV.filter((n) => n.path !== '/' && n.path !== '/jobs' && n.path !== '/fabrication' && n.path !== '/installation' && n.path !== '/swms').map((n) => (
+            {NAV.filter((n) => n.path !== '/' && n.path !== '/jobs' && n.path !== '/fabrication' && n.path !== '/installation' && n.path !== '/swms' && n.path !== '/hours').map((n) => (
               <Route key={n.path} path={n.path} element={<PlaceholderPage title={n.label} blurb={n.blurb} replaces={n.replaces} />} />
             ))}
             <Route path="*" element={<PlaceholderPage title="Page not found" />} />

@@ -1,8 +1,15 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { ROLES, designTasks, fabTasks, installTasks, seedJobs, seedSwms } from '../data/mockData';
 import { TRANSITIONS } from '../lib/workflow';
+import { seedHoursLog, seedTimesheets } from '../data/hoursSeed';
+import { ZERO_PAY, calcPay } from '../lib/payRules';
+import { shortName } from '../lib/people';
+import { toKey, today } from '../lib/dates';
 
 const stamp = () => new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+const pad = (n) => String(n).padStart(2, '0');
+const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 
 const Ctx = createContext(null);
 export const useDemo = () => useContext(Ctx);
@@ -28,6 +35,8 @@ export function DemoProvider({ children }) {
   const [jobs, setJobs] = useState(seedJobs);
   const [swms, setSwms] = useState(seedSwms);
   const [tasks, setTasks] = useState(seedTasks);
+  const [hoursLog, setHoursLog] = useState(seedHoursLog);
+  const [timesheets, setTimesheets] = useState(seedTimesheets);
   const [toast, setToast] = useState(null);
 
   const notify = useCallback((msg) => setToast({ id: Date.now(), msg }), []);
@@ -82,6 +91,7 @@ export function DemoProvider({ children }) {
     setTasks((prev) => prev.map((t) => (t.id === id
       ? { ...t, booked: add(t.booked), history: [{ at: stamp(), who, text: `Booked ${hours}h` }, ...(t.history || [])] } : t)));
     setJobs((prev) => prev.map((j) => (j.id === task.jobId ? { ...j, booked: add(j.booked) } : j)));
+    setHoursLog((prev) => [{ id: `H${Date.now()}`, date: toKey(today()), worker: shortName(ROLES[roleId].name), kind: task.kind === 'install' ? 'install' : 'fab', jobId: task.jobId, hours, unbilled: 0 }, ...prev]);
     notify(`${hours}h booked`);
   }, [tasks, roleId, notify]);
 
@@ -149,9 +159,42 @@ export function DemoProvider({ children }) {
     notify(`${name} signed the declaration`);
   }, [notify]);
 
+  // ---- Staff timesheet: check in, break, check out. Hours are split by the pay rules in lib/payRules.js ----
+  const checkIn = useCallback(() => {
+    const worker = shortName(ROLES[roleId].name);
+    setTimesheets((prev) => (prev.some((t) => t.worker === worker && t.status !== 'Checked-out') ? prev
+      : [{ id: `T${Date.now()}`, worker, date: toKey(today()), start: nowHM(), end: '', breakMins: 0, breakStartedAt: null, status: 'Checked-in', notes: '', ...ZERO_PAY }, ...prev]));
+    notify('Checked in');
+  }, [roleId, notify]);
+  const startBreak = useCallback((id) => {
+    setTimesheets((prev) => prev.map((t) => (t.id === id && t.status === 'Checked-in' ? { ...t, status: 'On Break', breakStartedAt: Date.now() } : t)));
+    notify('Break started');
+  }, [notify]);
+  const endBreak = useCallback((id) => {
+    setTimesheets((prev) => prev.map((t) => (t.id === id && t.status === 'On Break'
+      ? { ...t, status: 'Checked-in', breakMins: t.breakMins + Math.max(1, Math.round((Date.now() - t.breakStartedAt) / 60000)), breakStartedAt: null } : t)));
+    notify('Break ended');
+  }, [notify]);
+  const checkOut = useCallback((id, notes = '') => {
+    setTimesheets((prev) => prev.map((t) => {
+      if (t.id !== id || t.status === 'Checked-out') return t;
+      const end = nowHM();
+      const extra = t.status === 'On Break' ? Math.max(1, Math.round((Date.now() - t.breakStartedAt) / 60000)) : 0;
+      const breakMins = t.breakMins + extra;
+      const pay = calcPay({ date: t.date, start: t.start, end, breakMins }) || ZERO_PAY;
+      return { ...t, end, breakMins, breakStartedAt: null, status: 'Checked-out', notes, ...pay };
+    }));
+    notify('Checked out');
+  }, [notify]);
+  const addTimesheet = useCallback((entry) => {
+    const pay = calcPay(entry) || ZERO_PAY;
+    setTimesheets((prev) => [{ id: `T${Date.now()}`, worker: shortName(ROLES[roleId].name), breakStartedAt: null, status: 'Checked-out', ...entry, ...pay }, ...prev]);
+    notify('Shift added');
+  }, [roleId, notify]);
+
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, notify, toast, dismissToast,
-  }), [roleId, changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, notify, toast, dismissToast,
+  }), [roleId, changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
