@@ -14,7 +14,7 @@ function Ring({ value }) {
   const c = 2 * Math.PI * r;
   return (
     <svg className="ring" viewBox="0 0 88 88" role="img" aria-label={`${value}% complete`}>
-      <circle cx="44" cy="44" r={r} fill="none" stroke="#e8ecea" strokeWidth="9" />
+      <circle cx="44" cy="44" r={r} fill="none" stroke="var(--track)" strokeWidth="9" />
       <circle cx="44" cy="44" r={r} fill="none" stroke="var(--brand)" strokeWidth="9" strokeLinecap="round"
         strokeDasharray={`${(value / 100) * c} ${c}`} transform="rotate(-90 44 44)" />
       <text x="44" y="50" textAnchor="middle" className="ring-text">{value}%</text>

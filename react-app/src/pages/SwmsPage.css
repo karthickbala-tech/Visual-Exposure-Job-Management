@@ -11,7 +11,7 @@
 .hz-list input{margin-top:3px}
 .tasks-table{width:100%;border-collapse:collapse}
 .tasks-table th,.tasks-table td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top;white-space:normal}
-.tasks-table input,.tasks-table textarea{width:100%;padding:6px 8px;border:1px solid #cdd1cc;border-radius:2px;font:inherit}
+.tasks-table input,.tasks-table textarea{width:100%;padding:6px 8px;border:1px solid var(--line-3);border-radius:2px;font:inherit}
 .sw-actions{display:flex;gap:8px;flex-wrap:wrap}
 .crew-list{display:grid;gap:6px;margin:0 0 10px}
 .crew-list li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius)}
