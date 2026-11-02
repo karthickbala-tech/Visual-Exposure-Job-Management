@@ -44,3 +44,49 @@ export const num = (v: string | number | undefined | null): number => {
 	const n = Number(v);
 	return Number.isFinite(n) ? n : 0;
 };
+
+export interface Assignee {
+	linkId: string;
+	personId: string;
+	role: string;
+	name: string | null;
+}
+
+export interface TaskDetailResponse {
+	task: Task & { description?: string; notes?: string; booked_hours?: string | number };
+	assignees: Assignee[];
+	nextStages: string[];
+}
+
+export interface Question {
+	key: string;
+	label: string;
+	type: 'yesno' | 'text' | 'number' | 'choice' | 'photo';
+	required?: boolean;
+	options?: string[];
+	showIf?: { key: string; equals: string };
+}
+
+export interface ChecklistView {
+	checklist: {
+		id: string;
+		taskId: string;
+		phase: 'pre' | 'post';
+		status: string;
+		role: string;
+		hours?: number | string | null;
+	};
+	definition: { sections: { key: string; title?: string; questions: Question[] }[] };
+	answers: Record<string, string | number>;
+	progress: { total: number; answered: number; percent: number; missing: string[]; issues: string[]; canComplete: boolean };
+	next: Question | null;
+}
+
+export interface ChecklistListItem {
+	id: string;
+	phase: 'pre' | 'post';
+	status: string;
+	assigneeId: string | null;
+	role: string;
+	hours?: number | string | null;
+}

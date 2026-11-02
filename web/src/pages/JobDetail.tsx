@@ -109,7 +109,9 @@ export function JobDetail() {
 								<tbody>
 									{g.rows.map((t) => (
 										<tr key={t.ROWID}>
-											<td data-label="Task">{t.name}</td>
+											<td data-label="Task">
+												<Link to={'/tasks/' + t.ROWID}>{t.name}</Link>
+											</td>
 											<td data-label="Stage">
 												<Chip status={t.stage} />
 											</td>

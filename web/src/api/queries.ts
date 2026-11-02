@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { Job, JobDetailResponse } from './types';
+import type { ChecklistListItem, ChecklistView, Job, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -57,6 +57,56 @@ export const useTransitionTask = (jobId: string) => {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['job', jobId] });
 			qc.invalidateQueries({ queryKey: ['jobs'] });
+		},
+	});
+};
+
+export const useTask = (id: string | undefined) =>
+	useQuery({ queryKey: ['task', id], queryFn: () => api<TaskDetailResponse>('/tasks/' + id), enabled: !!id, staleTime: 15_000 });
+
+export const useTaskChecklists = (taskId: string | undefined) =>
+	useQuery({
+		queryKey: ['task-checklists', taskId],
+		queryFn: () => api<{ items: ChecklistListItem[] }>('/tasks/' + taskId + '/checklists'),
+		enabled: !!taskId,
+	});
+
+export const useChecklist = (id: string | undefined) =>
+	useQuery({ queryKey: ['checklist', id], queryFn: () => api<ChecklistView>('/checklists/' + id), enabled: !!id });
+
+export const useStartChecklist = (taskId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (phase: 'pre' | 'post') => api<ChecklistView>('/tasks/' + taskId + '/checklists', json('POST', { phase })),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['task-checklists', taskId] }),
+	});
+};
+
+export const useSaveAnswers = (id: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (answers: Record<string, string | number | null>) =>
+			api<ChecklistView>('/checklists/' + id + '/answers', json('PATCH', { answers })),
+		onSuccess: (data) => qc.setQueryData(['checklist', id], data),
+	});
+};
+
+export interface ShiftInput {
+	work_date: string;
+	start: string;
+	end: string;
+	break_minutes: number;
+	unbilled_hours: number;
+}
+
+export const useCompleteChecklist = (id: string, taskId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (shift: ShiftInput | Record<string, never>) => api<ChecklistView>('/checklists/' + id + '/complete', json('POST', shift)),
+		onSuccess: (data) => {
+			qc.setQueryData(['checklist', id], data);
+			qc.invalidateQueries({ queryKey: ['task-checklists', taskId] });
+			qc.invalidateQueries({ queryKey: ['task', taskId] });
 		},
 	});
 };
