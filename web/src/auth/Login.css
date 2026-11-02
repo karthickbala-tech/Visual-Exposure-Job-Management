@@ -1,9 +1,36 @@
-.login { min-height: 100vh; background: var(--paper-alt); }
-.login__band {
-	background: var(--slate); color: #fff; display: flex; align-items: center; gap: var(--space-3);
-	padding: var(--space-3) var(--space-4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.1;
+/* Split-screen sign-in: brand panel on the left, Catalyst's form on the right. Stacks on phones. */
+.login { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: var(--paper-alt); }
+
+.login__brand {
+	background: var(--slate-deep); color: #fff; padding: var(--space-5);
+	display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-5);
 }
-.login__logo { height: 44px; width: auto; }
-.login__card { max-width: 440px; margin: var(--space-6) auto; padding: var(--space-5) var(--space-4); background: var(--paper); border-top: 6px solid var(--accent); }
-.login__form { margin-top: var(--space-4); min-height: 420px; }
+.login__logo { height: 44px; width: auto; align-self: flex-start; }
+.login__eyebrow { margin: 0 0 var(--space-2); font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #3f7a2b; }
+.login__eyebrow--light { color: var(--accent); }
+.login__headline { margin: 0 0 var(--space-4); font-size: clamp(32px, 4vw, 52px); line-height: 1.05; font-weight: 800; text-transform: uppercase; color: #fff; }
+.login__points { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.login__points li { position: relative; padding-left: var(--space-4); font-weight: 500; }
+.login__points li::before {
+	content: ''; position: absolute; left: 0; top: 0.35em; width: 10px; height: 10px; background: var(--accent); border-radius: 2px;
+}
+.login__legal { margin: 0; font-size: 13px; color: var(--grey-band); }
+
+.login__main { display: flex; align-items: center; justify-content: center; padding: var(--space-5) var(--space-4); min-width: 0; }
+.login__card { width: 100%; max-width: 440px; }
+.login__title { margin: 0 0 var(--space-2); }
+.login__sub { margin: 0 0 var(--space-4); color: var(--ink-muted); }
+/* Catalyst puts its form in an iframe that fills this box, so the box needs a real height. */
+.login__form { height: 540px; }
+.login__form iframe { border: 0; }
 .login__error { margin-top: var(--space-4); color: #9b1c20; }
+
+@media (max-width: 800px) {
+	.login { grid-template-columns: minmax(0, 1fr); }
+	.login__brand { padding: var(--space-4); gap: var(--space-4); }
+	.login__pitch { display: grid; gap: var(--space-2); }
+	.login__headline { margin-bottom: var(--space-3); font-size: 30px; }
+	.login__points { display: none; }
+	.login__legal { display: none; }
+	.login__main { padding: var(--space-4); align-items: flex-start; }
+}

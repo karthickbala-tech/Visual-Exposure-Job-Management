@@ -23,9 +23,13 @@ function loadScript(src: string): Promise<void> {
 	});
 }
 
+const POINTS = ['Design, fabrication and install in one place', 'SWMS signed before crews go on site', 'Hours and timesheets without the paperwork'];
+
 /**
- * Catalyst embedded login. The SDK and /__catalyst/sdk/init.js only exist when the page is
- * served by Catalyst (deployed, or `catalyst serve`), so plain `vite` shows the failure message.
+ * Sign-in page: a branded split screen around Catalyst's embedded login form. The form itself (and the
+ * real authentication behind it) is Catalyst's; this page only provides the look. The SDK and
+ * /__catalyst/sdk/init.js only exist when the page is served by Catalyst (deployed, or `catalyst serve`),
+ * so plain `vite` shows the failure message.
  */
 export function Login() {
 	const [failed, setFailed] = useState(false);
@@ -47,18 +51,37 @@ export function Login() {
 
 	return (
 		<div className="login">
-			<header className="login__band">
+			<aside className="login__brand">
 				<img className="login__logo" src={logo} alt="Visual Exposure" />
-			</header>
-			<main className="login__card">
-				<h1 className="page-title">Sign in</h1>
-				<div id="loginDivElementId" className="login__form" />
-				{failed && (
-					<p role="alert" className="login__error">
-						The sign-in form could not load. Open the app through Catalyst (the deployed address or{' '}
-						<code>catalyst serve</code>), not plain <code>vite</code>.
-					</p>
-				)}
+				<div className="login__pitch">
+					<p className="login__eyebrow login__eyebrow--light">Projects</p>
+					<h2 className="login__headline">
+						Signage.
+						<br />
+						Done properly.
+					</h2>
+					<ul className="login__points">
+						{POINTS.map((p) => (
+							<li key={p}>{p}</li>
+						))}
+					</ul>
+				</div>
+				<p className="login__legal">&copy; {new Date().getFullYear()} Visual Exposure Pty Ltd</p>
+			</aside>
+
+			<main className="login__main">
+				<div className="login__card">
+					<p className="login__eyebrow">Welcome back</p>
+					<h1 className="page-title login__title">Sign in</h1>
+					<p className="login__sub">Use your Visual Exposure account to open the project dashboard.</p>
+					<div id="loginDivElementId" className="login__form" />
+					{failed && (
+						<p role="alert" className="login__error">
+							The sign-in form could not load. Open the app through Catalyst (the deployed address or{' '}
+							<code>catalyst serve</code>), not plain <code>vite</code>.
+						</p>
+					)}
+				</div>
 			</main>
 		</div>
 	);
