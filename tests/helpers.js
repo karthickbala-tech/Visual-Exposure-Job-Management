@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -34,6 +34,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		tasks: {
 			findById: async (id) => clone(db.tasks.find((t) => String(t.ROWID) === String(id))),
+			findBySwms: async (swmsId) => clone(db.tasks.find((t) => String(t.swms_id) === String(swmsId))),
 			listByJob: async (jobId) => db.tasks.filter((t) => String(t.job_id) === String(jobId)).map(clone),
 			list: async ({ jobId, type, stage, ids } = {}) =>
 				byIds(db.tasks, ids)
@@ -76,6 +77,15 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				rows.forEach((c) => (c.checklist_status = 'In Progress'));
 				return rows.length;
 			},
+		},
+		swms: {
+			findById: async (id) => clone(db.swms.find((s) => String(s.ROWID) === String(id))),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.swms.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.swms, row),
 		},
 		issues: {
 			findById: async (id) => clone(db.issues.find((i) => String(i.ROWID) === String(id))),
@@ -158,4 +168,13 @@ async function rejects(promise, status, code) {
 	require('node:assert/strict').fail(`expected a ${status} error, but nothing was thrown`);
 }
 
-module.exports = { makeWorld, rejects };
+/** Get a task's SWMS signed by the project manager and then its team leader (as the rules require). */
+async function signSwmsFor(w, task, leadCtx) {
+	const swms = require('../lib/services/swms');
+	const id = String(w.db.tasks.find((t) => String(t.ROWID) === String(task.ROWID)).swms_id);
+	await swms.signSwms(w.as(['project_manager'], '105747000000900002'), id, { as: 'pm' });
+	await swms.signSwms(leadCtx, id, { as: 'tl' });
+	return id;
+}
+
+module.exports = { makeWorld, rejects, signSwmsFor };

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { makeWorld, rejects } = require('./helpers');
+const { makeWorld, rejects, signSwmsFor } = require('./helpers');
 const jobs = require('../lib/services/jobs');
 const tasks = require('../lib/services/tasks');
 const issues = require('../lib/services/issues');
@@ -69,6 +69,7 @@ test('a checklist answer that flags a problem raises one issue, even if complete
 	const crew = w.as(['contractor'], CREW);
 	const { checklist } = await checklists.startChecklist(crew, task.ROWID, { phase: 'pre' });
 	await checklists.saveAnswers(crew, checklist.id, { answers: { site_safe: 'no' } });
+	await signSwmsFor(w, task, crew);
 	const done = await checklists.completeChecklist(crew, checklist.id, {});
 
 	assert.equal(done.raisedIssues.length, 1);

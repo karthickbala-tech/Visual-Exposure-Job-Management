@@ -3,6 +3,7 @@ import { useMe, useStartChecklist, useTask, useTaskChecklists, useTransitionTask
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip } from '../components/Chip';
+import { SwmsPanel } from './SwmsPanel';
 import './Table.css';
 import './Checklist.css';
 
@@ -62,6 +63,8 @@ export function TaskDetail() {
 				</div>
 			)}
 			{move.isError && <p role="alert">{move.error.message}</p>}
+
+			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
 
 			<h2 className="group__title">Checklists</h2>
 			{iAmAssigned && (

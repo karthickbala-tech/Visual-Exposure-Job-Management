@@ -26,6 +26,7 @@ export interface Task {
 	scheduled_date?: string;
 	required_finish?: string;
 	nextStages?: string[];
+	swms_id?: string;
 }
 
 export interface Progress {
@@ -102,4 +103,16 @@ export interface Issue {
 	task_id?: string;
 	CREATEDTIME?: string;
 	nextStatuses?: string[];
+}
+
+export interface SwmsView {
+	id: string;
+	jobId: string;
+	status: 'Created' | 'PM Signed' | 'TL Signed' | 'Not Required';
+	pcbu: Record<string, string>;
+	siteAddress: string;
+	ppe: string[];
+	tasks: { task: string; responsible?: string }[];
+	declarations: { personId: string; name: string | null; at: string }[];
+	signoff: { pm?: { name: string | null; at: string }; tl?: { name: string | null; at: string } };
 }

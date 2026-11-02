@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { ChecklistListItem, ChecklistView, Issue, Job, JobDetailResponse, TaskDetailResponse } from './types';
+import type { ChecklistListItem, ChecklistView, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -131,5 +131,18 @@ export const useMoveIssue = () => {
 	return useMutation({
 		mutationFn: (v: { id: string; issue_status: string }) => api('/issues/' + v.id, json('PATCH', { issue_status: v.issue_status })),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['issues'] }),
+	});
+};
+
+export const useSwms = (id: string | undefined) =>
+	useQuery({ queryKey: ['swms', id], queryFn: () => api<{ swms: SwmsView }>('/swms/' + id), enabled: !!id });
+
+/** Sign, declare or edit a SWMS. Every action returns the fresh statement, which replaces the cached one. */
+export const useSwmsAction = (id: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { path: '' | '/sign' | '/declare'; method: 'PATCH' | 'POST'; body?: unknown }) =>
+			api<{ swms: SwmsView }>('/swms/' + id + v.path, json(v.method, v.body)),
+		onSuccess: (data) => qc.setQueryData(['swms', id], data),
 	});
 };

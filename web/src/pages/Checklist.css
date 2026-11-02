@@ -16,3 +16,10 @@
 .shift { margin-top: var(--space-5); }
 .shift__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: var(--space-3); max-width: 720px; margin-bottom: var(--space-4); }
 .plain-list { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+.swms { margin-top: var(--space-5); max-width: 720px; }
+.swms__facts { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: var(--space-2) var(--space-3); margin: var(--space-3) 0; }
+.swms__facts dt { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.swms__facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.swms__facts ol { margin: 0; padding-left: var(--space-4); }
+textarea { width: 100%; box-sizing: border-box; padding: var(--space-2) var(--space-3); font: 500 15px var(--font); border: 2px solid var(--grey-band); border-radius: var(--radius); background: var(--paper); color: var(--ink); }
+@media (max-width: 480px) { .swms__facts { grid-template-columns: 1fr; } }

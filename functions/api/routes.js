@@ -9,6 +9,7 @@ const tasks = require('./lib/services/tasks');
 const checklists = require('./lib/services/checklists');
 const admin = require('./lib/services/admin');
 const issues = require('./lib/services/issues');
+const swms = require('./lib/services/swms');
 
 const router = createRouter();
 
@@ -66,6 +67,12 @@ router.add('GET', '/issues', withCtx(async (ctx, { url }) => ok(await issues.lis
 router.add('POST', '/issues', withCtx(async (ctx, { req }) => created(await issues.createIssue(ctx, await readJson(req)))));
 router.add('GET', '/issues/:id', withCtx(async (ctx, { params }) => ok(await issues.getIssue(ctx, params.id))));
 router.add('PATCH', '/issues/:id', withCtx(async (ctx, { req, params }) => ok(await issues.updateIssue(ctx, params.id, await readJson(req)))));
+
+// SWMS
+router.add('GET', '/swms/:id', withCtx(async (ctx, { params }) => ok(await swms.getSwms(ctx, params.id))));
+router.add('PATCH', '/swms/:id', withCtx(async (ctx, { req, params }) => ok(await swms.updateSwms(ctx, params.id, await readJson(req)))));
+router.add('POST', '/swms/:id/sign', withCtx(async (ctx, { req, params }) => ok(await swms.signSwms(ctx, params.id, await readJson(req)))));
+router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { params }) => created(await swms.declare(ctx, params.id))));
 
 // Admin
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));

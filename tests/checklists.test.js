@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { makeWorld, rejects } = require('./helpers');
+const { makeWorld, rejects, signSwmsFor } = require('./helpers');
 const jobs = require('../lib/services/jobs');
 const tasks = require('../lib/services/tasks');
 const checklists = require('../lib/services/checklists');
@@ -81,6 +81,7 @@ test('completing a pre-job checklist needs no hours and publishes an event', asy
 	const { task, crew, w } = await setup();
 	const { checklist } = await checklists.startChecklist(crew, task.ROWID, { phase: 'pre' });
 	await checklists.saveAnswers(crew, checklist.id, { answers: { site_safe: 'yes' } });
+	await signSwmsFor(w, task, crew);
 	const done = await checklists.completeChecklist(crew, checklist.id, {});
 	assert.equal(done.checklist.status, 'Completed');
 	assert.equal(done.timeEntry, null);
