@@ -1,0 +1,10 @@
+.fab-types{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.fab-types button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:6px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);font-weight:600;font-size:13px}
+.fab-types button:hover{border-color:var(--brand-strong);background:var(--brand-soft)}
+.fab-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 10px}
+.fab-filters .segmented{flex-wrap:wrap}
+.fab-filters .segmented em{font-style:normal;opacity:.7;margin-left:5px}
+.type-tag{display:inline-flex;align-items:center;gap:6px}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.form-row{grid-template-columns:1fr}.fab-types button{flex:1 1 44%}}
