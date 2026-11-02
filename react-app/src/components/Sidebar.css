@@ -1,0 +1,17 @@
+/* Sign-out button. The sidebar is dark in both light and dark themes,
+   so these colours are fixed and do not use the theme variables. */
+.side-signout {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+.side-signout:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.5); color: #ff9c94; }
+.side-signout:focus-visible { outline: 2px solid var(--brand, #7ed321); outline-offset: 2px; }

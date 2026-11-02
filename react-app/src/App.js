@@ -3,6 +3,11 @@ import AppShell from './components/AppShell';
 import Guard from './components/Guard';
 import { DemoProvider, useDemo } from './context/DemoContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, RoleSync } from './context/AuthContext';
+import { PublicOnly, RequireAuth } from './components/RequireAuth';
+import SignInPage from './pages/auth/SignInPage';
+import SignUpPage from './pages/auth/SignUpPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import PmDashboard from './pages/PmDashboard';
 import JobsPage from './pages/JobsPage';
@@ -26,9 +31,17 @@ function Home() {
 export default function App() {
   return (
     <ThemeProvider>
+    <AuthProvider>
     <DemoProvider>
+      <RoleSync />
       <HashRouter>
         <Routes>
+          <Route element={<PublicOnly />}>
+            <Route path="login" element={<SignInPage />} />
+            <Route path="signup" element={<SignUpPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          </Route>
+          <Route element={<RequireAuth />}>
           <Route element={<AppShell />}>
           <Route element={<Guard />}>
             <Route index element={<Home />} />
@@ -50,9 +63,11 @@ export default function App() {
             <Route path="*" element={<PlaceholderPage title="Page not found" />} />
             </Route>
           </Route>
+          </Route>
         </Routes>
       </HashRouter>
     </DemoProvider>
+    </AuthProvider>
     </ThemeProvider>
   );
 }

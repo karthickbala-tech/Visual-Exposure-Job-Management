@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { AlertTriangle, Briefcase, Clock, Hammer, LayoutDashboard, PenTool, Settings, ShieldCheck, Truck, Users, X } from 'lucide-react';
+import { AlertTriangle, Briefcase, Clock, Hammer, LayoutDashboard, LogOut, PenTool, ShieldCheck, Truck, Users, X } from 'lucide-react';
 import { NAV } from '../navConfig';
 import { useDemo } from '../context/DemoContext';
+import { useAuth } from '../context/AuthContext';
 import { canAccess } from '../lib/access';
+import './Sidebar.css';
 
 const ICONS = {
   home: LayoutDashboard, jobs: Briefcase, design: PenTool, fab: Hammer, install: Truck,
@@ -11,6 +13,9 @@ const ICONS = {
 
 export default function Sidebar({ open, onClose }) {
   const { role, roleId } = useDemo();
+  const { user, signOut } = useAuth();
+  const displayName = user ? user.name : role.name;
+  const displayInitials = user ? user.initials : role.initials;
   const homeLabel = `${roleId === 'pm' ? 'PM' : role.label} Dashboard`;
 
   return (
@@ -33,12 +38,12 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       <div className="side-user">
-        <span className="avatar">{role.initials}</span>
+        <span className="avatar">{displayInitials}</span>
         <div>
-          <strong>{role.name}</strong>
+          <strong>{displayName}</strong>
           <span>{role.label}</span>
         </div>
-        <button type="button" className="icon-btn side-gear" aria-label="Settings"><Settings size={16} /></button>
+        <button type="button" className="side-signout" aria-label="Sign out" title="Sign out" onClick={signOut}><LogOut size={17} aria-hidden="true" /></button>
       </div>
     </aside>
   );

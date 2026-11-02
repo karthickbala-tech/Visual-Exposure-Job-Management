@@ -1,7 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders the shell and the PM dashboard', () => {
+beforeEach(() => {
+  window.location.hash = '';
+  localStorage.clear();
+  sessionStorage.clear();
+});
+
+test('signed-out visitors land on the sign in page', () => {
   render(<App />);
-  expect(screen.getByText('My open jobs')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
 });
