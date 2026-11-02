@@ -209,3 +209,11 @@ Kalyani's prototype (`react-app/`) is the reference for layout and interaction; 
 | **Screens** | Dashboard, Jobs (with filter and search), Job (progress ring), Task, Checklist, SWMS, Files, Issues, Compliance and People all rebuilt on those components. The Calendar is now a month and week grid with an agenda list on phones, coloured dots by task type and "+N more" |
 | **Kept ours** | Colours, Raleway, real Catalyst sign-in, real role-based access. Not copied: her demo sign-in, the "Viewing as" role switcher and the notification bell (they need a backend we do not have) |
 | **Accessibility** | Dark text on the green buttons (white on this green fails contrast), visible focus rings, labelled controls, status always shown as text as well as colour |
+
+### Phase 7 status (2026-11-02, preparation only)
+
+| Part | State |
+|---|---|
+| **Security review** | Done on the whole branch. One finding (a read-only viewer could attach files to any issue), fixed and covered by a test. Everything else checked held up |
+| **Go-live plan** | `docs/GO_LIVE.md`: what is needed from you, how the AU project is built, environment variables, schedules, connections, the migration rules and reconciliation report, UAT by role, cut-over and rollback, the assumed business rules, and the known gaps |
+| **Not started** | The migration script itself (needs the Creator data export), the AU project (needs you to create it), schedules, real Zoho connections (need the rotated OAuth client) |
