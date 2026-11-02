@@ -48,8 +48,19 @@ What we build in code, in what order, and when each piece is done. Sources: `FSD
 | **F1 frontend** | Dashboard (jobs by stage), jobs list with stage filter, job detail with progress and tasks grouped by type. Tables turn into labelled cards on phones |
 | **Checked locally** | `catalyst serve` with client and API: the unsigned visitor gets the sign-in page with Catalyst's real form; all protected endpoints return 401 |
 | **Checked live** | Hosted app returns 200; `/health` 200; `/jobs` and `/tasks` return 401 without a session |
-| **Not yet checked** | Signed-in screens in a browser: needs the first user to be invited (a login only the account owner can do) |
-| **Deferred to a later slice** | Caching the person lookup (needs measurements on real traffic), task action buttons in the UI, create-job and add-task forms, SWMS creation for install tasks (B3) |
+| **Checked signed in** | Dashboard, jobs list, job detail and the create and stage controls, in a real signed-in browser against Development data |
+| **Deferred to a later slice** | Caching the person lookup (needs measurements on real traffic), SWMS creation for install tasks (B3) |
+
+### Phase 2 status (2026-11-02)
+
+| Part | State |
+|---|---|
+| **Rules (pure, tested)** | `domain/payRules.js` (weekday, Saturday, Sunday, public holiday, breaks off double first), `domain/labourCost.js` (cost, effective hours, variance), `domain/checklistProgress.js` (template shape, conditional questions, completion, issue flags) |
+| **B2 backend** | `services/checklists.js`: start (idempotent, picks the template for the task type, phase and leader or member role), save answers (validated, hidden answers dropped), complete. A post-job completion books one time entry (pay split, labour cost) and recalculates the task's booked hours, cost and variance. Approving a task approves its hours. Reject or reopen reopens the post-job checklist and puts hours back in review. Redoing it updates the same time entry |
+| **Templates** | 12 seed templates (design, fabrication, install; pre and post; leader and member) with **placeholder wording**. `POST /admin/seed-templates` (admin) inserts missing ones, so a new project is set up in one call |
+| **F3 frontend** | Task page (facts, team, stage buttons, checklist start or continue) and checklist page (big yes/no buttons, progress, hours form for post-job). Checked on a phone-sized screen against Development |
+| **Assumptions** | Public holiday pays x2; labour cost is hours x rate with no overtime loading; a shift over 16 h is refused |
+| **Not done** | Real checklist wording; photo answers (P3); raising issues from answers (P3); hours form clicked in the browser (verified through the API) |
 
 ## 3. Backend slices
 
