@@ -1,0 +1,35 @@
+/* Brand tokens measured from visualexposure.com.au. See docs/DESIGN_REFERENCE.md. */
+:root {
+	--ink: #1b1b1e;
+	--ink-muted: #545456;
+	--slate: #42484d;
+	--slate-deep: #33383c;
+	--grey-band: #c6c6c7;
+	--grey-mid: #8d8d8f;
+	--paper-alt: #fafafa;
+	--paper: #ffffff;
+	--accent: #68b04d;
+	--accent-hover: #5a9a41;
+	--accent-ink: #ffffff;
+	--link: #4e5ac3;
+
+	--status-progress: #3d9be9;
+	--status-hold: #ffcb05;
+	--status-bad: #ed1c24;
+	--status-done: #68b04d;
+	--status-prep: #8d8d8f;
+
+	--font: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+	--radius: 3px;
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 16px;
+	--space-4: 24px;
+	--space-5: 40px;
+	--space-6: 64px;
+
+	--sidebar-w: 248px;
+	--topbar-h: 64px;
+	--touch: 44px;
+}
