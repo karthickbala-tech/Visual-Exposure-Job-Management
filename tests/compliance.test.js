@@ -177,7 +177,8 @@ test('reminders: a renewed or expired item just moves its date on without emaili
 	const r = await runComplianceDue(ctx);
 	assert.equal(r.sent, 0);
 	assert.equal(sent.length, 0);
-	assert.equal(w.db.citems[0].next_reminder_at, '2026-09-01 00:00:00', 'no further reminder is possible, date unchanged in effect');
+	assert.equal(w.db.citems[0].next_reminder_at, null, 'an expired item leaves the daily check');
+	assert.equal((await runComplianceDue(ctx)).checked, 0, 'and is not looked at again');
 });
 
 test('the job runner calls the compliance job with injected parts', async () => {

@@ -175,3 +175,14 @@ No behaviour changes are made to the existing endpoints from this review; the ca
 | **F2 and F4 frontend** | Role-aware dashboard and a weekly calendar grouped by day, both phone-first. Checked against Development data |
 | **Measured** | Dashboard call about 0.8 to 1.0 s through the local proxy, including sign-in checks. The "under 500 ms" target is **not yet verified** on the deployed app with realistic data; the likely cost is the per-request user and person lookups, not the figures |
 | **Not done** | Seven separate role dashboards (one shared, role-aware dashboard instead; split further once the real needs are known), kanban board, matrix editing screen, fabrication and install calendars as separate views |
+
+### Phase 5 status (2026-11-02)
+
+| Part | State |
+|---|---|
+| **People (B5)** | `GET/POST /people`, `GET/PATCH /people/:id`. Managers list people; pay rates and private profile fields are never sent to non-admins; only admins create or edit (email unique and lower-cased; roles validated against the 11 roles). People screen |
+| **Compliance (B5)** | `domain/reminders.js` (status Valid, Expiring, Expired, No expiry; offsets fire once each, most urgent only after missed days; renewing restarts them). `services/compliance.js`: list, create, renew; crew see only their own items. 6 placeholder types seeded by `POST /admin/seed-compliance-types`. Compliance screen with add form, soonest expiry first, status colours |
+| **Reminder job** | `compliance-due` in the `jobs` function: emails the person (unless they opted out) and the project managers; records an offset as sent only after the email went out, so with no sender configured nothing is lost; a failing item does not stop the rest; expired items leave the daily check. **Checked live**: ran through Catalyst's scheduler in the deployed function, finished SUCCESS in 613 ms, left every item still due (no sender) |
+| **Frontend** | Navigation wraps on phones instead of hiding items |
+| **Not done** | Creating the recurring schedule (a daily 07:00 Melbourne cron; the job is ready and tested), company and site screens, equipment and chemical registers, weekly reports, editing a person in the UI, per-person compliance view, attaching ticket photos |
+| **Assumptions** | Default reminder offsets 30, 14, 7 and 0 days (placeholder types use their own); "do not contact" counts as opted out of email when it holds any text other than false or empty; reminders go to the person and every project manager |
