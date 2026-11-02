@@ -1,0 +1,59 @@
+/* Visual Exposure look for Catalyst's embedded sign-in form.
+   Appended AFTER Catalyst's own stylesheet (Catalyst's instructions: never edit their lines, add after them).
+   The page around the form (brand panel, headings) is ours; this only styles what is inside the frame. */
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap');
+
+html, body { background: transparent !important; font-family: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif !important; color: var(--f-ink) !important; }
+body, input, button, select, textarea { font-family: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif !important; }
+
+/* Our page supplies the title, so drop Catalyst's own heading, product name and backdrop. */
+.bg_one, .titlename, #headtitle, #trytitle, .service_name, .portal_logo { display: none !important; }
+.signin_container { position: static !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; min-height: 0 !important; }
+.signin_box { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+.signin_head, .alt_signin_head { margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
+
+/* Labelled fields, as in the prototype */
+.textbox_div { position: relative; margin: 0 0 16px !important; }
+#getusername::before { content: 'Email'; display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; color: var(--f-ink-2); }
+#password_container .textbox_div::before { content: 'Password'; display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; color: var(--f-ink-2); }
+.textbox_label { display: none !important; }
+.textbox, input.textbox, #login_id, #password {
+	width: 100% !important; height: 40px !important; padding: 0 12px !important; box-sizing: border-box !important;
+	border: 1px solid var(--f-line) !important; border-radius: 2px !important; background: var(--f-input-bg) !important;
+	color: var(--f-ink) !important; font-size: 13.5px !important; font-weight: 500 !important; box-shadow: none !important; outline: 0 !important;
+}
+#password { padding-right: 40px !important; }
+.textbox::placeholder { color: var(--f-muted) !important; opacity: 1; }
+.textbox:focus, #login_id:focus, #password:focus { border-color: var(--f-brand-strong) !important; box-shadow: 0 0 0 2px var(--f-brand-soft) !important; }
+.errorborder, .textbox.errorborder { border-color: var(--f-danger) !important; }
+.fielderror, .errorlabel, .error_message { color: var(--f-danger) !important; font-size: 12px !important; font-weight: 600 !important; }
+.show_hide_password { color: var(--f-muted) !important; }
+
+/* Primary button: full width, brand green, dark text, capitals */
+.btn, .blue, #nextbtn, button.blue {
+	display: block !important; width: 100% !important; height: 40px !important; min-height: 40px !important; margin: 4px 0 0 !important; padding: 0 18px !important;
+	border: 1px solid transparent !important; border-radius: 2px !important; background: var(--f-brand) !important; color: var(--f-on-brand) !important;
+	font-size: 12.5px !important; font-weight: 600 !important; letter-spacing: 0.04em !important; text-transform: uppercase !important; box-shadow: none !important; cursor: pointer;
+}
+.btn:hover, .blue:hover, #nextbtn:hover { background: var(--f-brand-hover) !important; }
+.btn:focus-visible { outline: 2px solid var(--f-brand-strong) !important; outline-offset: 2px; }
+.grey, .btn.grey { background: transparent !important; color: var(--f-ink-2) !important; border-color: var(--f-line) !important; }
+
+/* Links: green, bold, small, on the right as in the prototype */
+.bluetext, .bluetext_action, .Notyou, .blue_text_action, #forgotpassword, #blueforgotpassword { color: var(--f-brand-strong) !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; }
+.textbox_actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px !important; }
+#blueforgotpassword, .bluetext_action_right { margin-left: auto; }
+.hellouser { display: flex; align-items: center; gap: 8px; margin: 0 0 12px !important; font-size: 13px; color: var(--f-ink); }
+.username { font-weight: 700; color: var(--f-ink); }
+.fed_div, .fed_div * { font-family: inherit !important; }
+.Alert, .Errormsg { border-radius: 2px !important; font-size: 12.5px !important; }
+
+/* "Forgot Password?" under the button: small, green, bold, on the right (the prototype's link style) */
+#forgotpassword, #forgotpassword a, .text16 { font-size: 12px !important; font-weight: 700 !important; color: var(--f-brand-strong) !important; text-decoration: none !important; }
+#forgotpassword { display: block !important; margin: 12px 0 0 !important; text-align: right !important; }
+#forgotpassword a:hover, .bluetext_action:hover { text-decoration: underline !important; }
+
+/* Fit the frame: no inner scrollbar, no leftover fixed heights from Catalyst's default layout */
+html, body { overflow: hidden !important; height: auto !important; min-height: 0 !important; margin: 0 !important; }
+.signin_box, .signin_container, #signin_flow, #signin_div, .fieldcontainer, .mod_container { min-height: 0 !important; height: auto !important; }
+.zeroheight { height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }

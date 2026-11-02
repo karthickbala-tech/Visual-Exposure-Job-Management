@@ -1,36 +1,35 @@
-/* Split-screen sign-in: brand panel on the left, Catalyst's form on the right. Stacks on phones. */
-.login { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: var(--paper-alt); }
+/* Sign-in: brand panel on the left, Catalyst's form on the right. Layout follows the approved prototype;
+   colours and the Raleway font are ours, and the theme variables make light and dark both work. */
+.login { display: grid; grid-template-columns: minmax(340px, 5fr) minmax(0, 7fr); min-height: 100vh; background: var(--bg); }
 
-.login__brand {
-	background: var(--slate-deep); color: #fff; padding: var(--space-5);
-	display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-5);
-}
-.login__logo { height: 44px; width: auto; align-self: flex-start; }
-.login__eyebrow { margin: 0 0 var(--space-2); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-strong); }
-.login__eyebrow--light { color: var(--accent); }
-.login__headline { margin: 0 0 var(--space-4); font-size: clamp(26px, 3vw, 38px); line-height: 1.05; font-weight: 700; text-transform: uppercase; color: #fff; }
-.login__points { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.login__points li { position: relative; padding-left: var(--space-4); font-size: 14px; font-weight: 500; }
-.login__points li::before {
-	content: ''; position: absolute; left: 0; top: 0.35em; width: 10px; height: 10px; background: var(--accent); border-radius: 2px;
-}
+.login__brand { display: flex; flex-direction: column; justify-content: space-between; gap: 32px; padding: 36px 44px; background: var(--side); color: #fff; }
+.login__logo { display: block; width: 180px; height: auto; align-self: flex-start; }
+.login__eyebrow { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-strong); }
+.login__eyebrow--light { color: var(--brand); }
+.login__headline { margin: 0 0 24px; font-size: clamp(26px, 3vw, 38px); line-height: 1.05; font-weight: 700; text-transform: uppercase; color: #fff; }
+.login__points { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.login__points li { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: #d3d4d5; }
+.login__points svg { flex: none; color: var(--brand); }
 .login__legal { margin: 0; font-size: 12px; color: #b6b8ba; }
 
-.login__main { display: flex; align-items: center; justify-content: center; padding: var(--space-5) var(--space-4); min-width: 0; }
-.login__card { width: 100%; max-width: 440px; }
-.login__title { margin: 0 0 var(--space-2); }
-.login__sub { margin: 0 0 var(--space-4); color: var(--ink-muted); font-size: 13.5px; }
-/* Catalyst puts its form in an iframe that fills this box, so the box needs a real height. */
-.login__form { height: 540px; border-radius: 3px; overflow: hidden; }
-.login__form iframe { border: 0; }
-.login__error { margin-top: var(--space-4); color: #9b1c20; }
+.login__main { position: relative; display: grid; place-items: center; min-width: 0; padding: 56px clamp(20px, 5vw, 64px); }
+.login__theme { position: absolute; top: 16px; right: 16px; }
+.login__card { width: min(440px, 100%); }
+.login__title { margin: 0; font-size: clamp(24px, 2.6vw, 30px); line-height: 1.1; font-weight: 700; text-transform: uppercase; }
+.login__sub { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
 
-@media (max-width: 800px) {
+/* Catalyst draws its form in an iframe that fills this box, so the box needs a real height. */
+.login__form { height: 232px; margin-top: 22px; }
+.login__form iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.login__error { margin-top: 16px; }
+.login__foot { margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
 	.login { grid-template-columns: minmax(0, 1fr); }
-	.login__brand { padding: var(--space-4); gap: var(--space-4); }
-	.login__pitch { display: grid; gap: var(--space-2); }
-	.login__headline { margin-bottom: var(--space-3); font-size: 24px; }
-	.login__points { display: none; }
-	.login__legal { display: none; }
-	.login__main { padding: var(--space-4); align-items: flex-start; }
+	.login__brand { flex-direction: row; align-items: center; padding: 14px 20px; }
+	.login__pitch, .login__legal { display: none; }
+	.login__logo { width: 150px; }
+	.login__main { place-items: start center; padding: 28px 20px 40px; }
+	.login__theme { top: -50px; right: 12px; color: #fff; }
+	.login__theme:hover { background: var(--side-hover); }
 }
