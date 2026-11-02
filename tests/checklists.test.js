@@ -132,3 +132,23 @@ test('another crew member cannot read or change my checklist (404)', async () =>
 	assert.ok(await checklists.getChecklist(w.as(['project_manager'], '105747000000900002'), checklist.id));
 	await rejects(checklists.saveAnswers(w.as(['project_manager'], '105747000000900002'), checklist.id, { answers: { site_safe: 'yes' } }), 404);
 });
+
+test('a rejected task goes back to the crew; redoing it updates the hours instead of duplicating them', async () => {
+	const { task, crew, w } = await setup();
+	const { checklist } = await checklists.startChecklist(crew, task.ROWID, { phase: 'post' });
+	await checklists.saveAnswers(crew, checklist.id, { answers: { tidy: 'yes' } });
+	const shift = (end) => ({ work_date: '2026-11-02', start: '07:00', end, break_minutes: 0 });
+	await checklists.completeChecklist(crew, checklist.id, shift('15:00'));
+
+	const pm = w.as(['project_manager'], '105747000000900002');
+	await tasks.transitionTask(crew, task.ROWID, { to: 'In Progress' });
+	await tasks.transitionTask(crew, task.ROWID, { to: 'Manager Review' });
+	await tasks.transitionTask(pm, task.ROWID, { to: 'Rejected', comment: 'Missed a letter' });
+	assert.equal(w.db.checklists[0].checklist_status, 'In Progress', 'checklist is open again');
+
+	await checklists.completeChecklist(crew, checklist.id, shift('16:00'));
+	assert.equal(w.db.time.length, 1, 'still one time entry');
+	assert.equal(w.db.time[0].hours_single, 8);
+	assert.equal(w.db.time[0].hours_x1_5, 1);
+	assert.equal(w.db.tasks[0].booked_hours, 9);
+});

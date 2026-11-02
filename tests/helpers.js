@@ -71,9 +71,19 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return clone(r);
 			},
 			update: async (row) => patch(db.checklists, row),
+			reopenPostForTask: async (taskId) => {
+				const rows = db.checklists.filter((c) => String(c.task_id) === String(taskId) && c.phase === 'post' && c.checklist_status === 'Completed');
+				rows.forEach((c) => (c.checklist_status = 'In Progress'));
+				return rows.length;
+			},
 		},
 		templates: {
 			findByKey: async (key) => clone(db.templates.find((t) => t.template_key === key)),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.templates.push(r);
+				return clone(r);
+			},
 			findLatest: async ({ taskType, phase, role }) =>
 				clone(
 					db.templates
@@ -86,6 +96,13 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				const r = { ROWID: nextId(), ...row };
 				db.time.push(r);
 				return clone(r);
+			},
+			update: async (row) => patch(db.time, row),
+			findByChecklist: async (id) => clone(db.time.find((e) => String(e.checklist_id) === String(id))),
+			unapproveForTask: async (taskId) => {
+				const rows = db.time.filter((e) => String(e.task_id) === String(taskId) && e.approved === 'true');
+				rows.forEach((e) => (e.approved = 'false'));
+				return rows.length;
 			},
 			listByTask: async (taskId) => db.time.filter((e) => String(e.task_id) === String(taskId)).map(clone),
 			approveForTask: async (taskId) => {
