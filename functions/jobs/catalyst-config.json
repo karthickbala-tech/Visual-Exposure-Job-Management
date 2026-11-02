@@ -1,8 +1,8 @@
 {
 	"deployment": {
-		"name": "visual_exposure_function",
+		"name": "jobs",
 		"stack": "node22",
-		"type": "advancedio",
+		"type": "job",
 		"env_variables": {}
 	},
 	"execution": {

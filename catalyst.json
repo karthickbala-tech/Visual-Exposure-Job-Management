@@ -1,7 +1,9 @@
 {
   "functions": {
     "targets": [
-      "visual_exposure_function"
+      "api",
+      "events",
+      "jobs"
     ],
     "ignore": [],
     "source": "functions"
