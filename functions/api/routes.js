@@ -11,6 +11,8 @@ const admin = require('./lib/services/admin');
 const issues = require('./lib/services/issues');
 const swms = require('./lib/services/swms');
 const files = require('./lib/services/files');
+const dashboard = require('./lib/services/dashboard');
+const settings = require('./lib/services/settings');
 
 const router = createRouter();
 
@@ -36,7 +38,7 @@ router.add('GET', '/me', async ({ actor }) => {
 			lastName: actor.user.last_name,
 		},
 		roles: actor.roles,
-		permissions: permissionsFor(actor.roles),
+		permissions: permissionsFor(actor.roles, actor.matrix),
 		person,
 	});
 });
@@ -81,7 +83,13 @@ router.add('POST', '/files/upload-url', withCtx(async (ctx, { req }) => created(
 router.add('POST', '/files/:id/confirm', withCtx(async (ctx, { params }) => ok(await files.confirmUpload(ctx, params.id))));
 router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => ok(await files.downloadUrl(ctx, params.id))));
 
+// Dashboard and calendar
+router.add('GET', '/dashboard', withCtx(async (ctx) => ok(await dashboard.getDashboard(ctx))));
+router.add('GET', '/calendar', withCtx(async (ctx, { url }) => ok(await dashboard.getCalendar(ctx, parseQuery(url)))));
+
 // Admin
+router.add('GET', '/admin/authz', withCtx(async (ctx) => ok(await settings.getAuthz(ctx))));
+router.add('PUT', '/admin/authz', withCtx(async (ctx, { req }) => ok(await settings.setAuthz(ctx, await readJson(req)))));
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));
 
 module.exports = { router };

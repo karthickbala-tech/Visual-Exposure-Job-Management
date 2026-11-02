@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -23,6 +23,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const repos = {
 		jobs: {
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
+			countByStage: async () => db.jobs.reduce((m, j) => ({ ...m, [j.stage]: (m[j.stage] || 0) + 1 }), {}),
 			list: async ({ stage, ids } = {}) =>
 				byIds(db.jobs, ids).filter((j) => !stage || j.stage === stage).map(clone),
 			insert: async (row) => {
@@ -34,11 +35,22 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		tasks: {
 			findById: async (id) => clone(db.tasks.find((t) => String(t.ROWID) === String(id))),
+			countOverdue: async (today, terminal) =>
+				db.tasks.filter((t) => t.required_finish && t.required_finish < today && !terminal.includes(t.stage)).length,
 			findBySwms: async (swmsId) => clone(db.tasks.find((t) => String(t.swms_id) === String(swmsId))),
 			listByJob: async (jobId) => db.tasks.filter((t) => String(t.job_id) === String(jobId)).map(clone),
-			list: async ({ jobId, type, stage, ids } = {}) =>
+			list: async ({ jobId, type, stage, ids, excludeStages, from, to } = {}) =>
 				byIds(db.tasks, ids)
-					.filter((t) => (!jobId || String(t.job_id) === String(jobId)) && (!type || t.task_type === type) && (!stage || t.stage === stage))
+					.filter(
+						(t) =>
+							(!jobId || String(t.job_id) === String(jobId)) &&
+							(!type || t.task_type === type) &&
+							(!stage || t.stage === stage) &&
+							(!excludeStages || !excludeStages.includes(t.stage)) &&
+							(!from || (t.scheduled_date && t.scheduled_date >= from)) &&
+							(!to || (t.scheduled_date && t.scheduled_date <= to))
+					)
+					.sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')))
 					.map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
@@ -81,6 +93,15 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return rows.length;
 			},
 		},
+		settings: {
+			findByKey: async (key) => clone(db.settings.find((s) => s.setting_key === key)),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.settings.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.settings, row),
+		},
 		files: {
 			findById: async (id) => clone(db.files.find((f) => String(f.ROWID) === String(id))),
 			listForEntity: async (type, id) => db.files.filter((f) => f.entity_type === type && String(f.entity_id) === String(id)).map(clone),
@@ -99,6 +120,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return clone(r);
 			},
 			update: async (row) => patch(db.swms, row),
+			countAwaiting: async () => db.swms.filter((s) => ['Created', 'PM Signed'].includes(s.swms_status)).length,
 		},
 		issues: {
 			findById: async (id) => clone(db.issues.find((i) => String(i.ROWID) === String(id))),
@@ -106,6 +128,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.issues
 					.filter((i) => (!status || i.issue_status === status) && (!taskId || String(i.task_id) === String(taskId)) && (!reportedBy || String(i.reported_by_id) === String(reportedBy)))
 					.map(clone),
+			countByStatus: async () => db.issues.reduce((m, i) => ({ ...m, [i.issue_status]: (m[i.issue_status] || 0) + 1 }), {}),
 			findOpenBySubject: async (taskId, subject) =>
 				clone(db.issues.find((i) => String(i.task_id) === String(taskId) && i.subject === subject.slice(0, 255) && i.source_kind === 'checklist' && ['Open', 'In Progress'].includes(i.issue_status))),
 			insert: async (row) => {

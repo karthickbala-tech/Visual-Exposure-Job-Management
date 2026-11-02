@@ -6,6 +6,9 @@ const { resolveActor } = require('./lib/identity');
 const { AppError } = require('./lib/errors');
 const { createLogger } = require('./lib/logger');
 const { router } = require('./routes');
+const { createRepos } = require('./lib/repos');
+const { createCache } = require('./lib/cache');
+const { loadMatrix } = require('./lib/services/settings');
 
 /**
  * Advanced I/O entry point (HTTP). Thin adapter:
@@ -30,6 +33,7 @@ module.exports = async (req, res) => {
 		}
 
 		const actor = matched.opts.public ? null : await resolveActor(req);
+		if (actor) actor.matrix = await loadMatrix({ repos: createRepos(actor.db), cache: createCache(actor.app, 'config') });
 		const out = await matched.handler({ req, url: req.url, params: matched.params, actor, log });
 		ok(res, out.status, out.body);
 		log.info('request', {
