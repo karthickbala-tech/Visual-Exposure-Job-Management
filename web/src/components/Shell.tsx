@@ -18,6 +18,8 @@ const NAV: NavItem[] = [
 	{ to: '/jobs', label: 'Jobs' },
 	{ to: '/calendar', label: 'Calendar' },
 	{ to: '/issues', label: 'Issues' },
+	{ to: '/compliance', label: 'Compliance' },
+	{ to: '/people', label: 'People', roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic'] },
 ];
 
 const ROLE_LABEL = (r: string) => r.replace(/_/g, ' ');

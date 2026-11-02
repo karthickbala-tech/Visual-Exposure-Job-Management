@@ -30,7 +30,7 @@
 @media (max-width: 800px) {
 	.shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
 	.shell__side { padding: var(--space-3) 0; }
-	.shell__side nav { display: flex; overflow-x: auto; }
+	.shell__side nav { display: flex; flex-wrap: wrap; }
 	.shell__link { border-left: 0; border-bottom: 4px solid transparent; white-space: nowrap; }
 	.shell__link.active { border-bottom-color: var(--accent); }
 	.shell__main { padding: var(--space-4) var(--space-3) var(--space-5); }

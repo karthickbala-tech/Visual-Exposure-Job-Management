@@ -137,6 +137,38 @@ export interface CalendarItem {
 	scheduled_date: string;
 }
 
+export interface Person {
+	ROWID: string;
+	first_name: string;
+	last_name?: string;
+	email?: string;
+	phone?: string;
+	roles?: string;
+	is_active?: boolean;
+	hourly_rate?: string | number;
+}
+
+export interface ComplianceType {
+	id: string;
+	kind: string;
+	name: string;
+	requiresExpiry: boolean;
+	mandatory: boolean;
+	offsets: number[];
+}
+
+export interface ComplianceItem {
+	id: string;
+	kind: string;
+	typeName: string | null;
+	personId: string | null;
+	personName: string | null;
+	referenceNo: string;
+	expiryDate: string | null;
+	daysLeft: number | null;
+	status: 'Valid' | 'Expiring' | 'Expired' | 'No expiry';
+}
+
 export interface FileItem {
 	id: string;
 	name: string;

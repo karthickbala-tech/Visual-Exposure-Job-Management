@@ -52,7 +52,9 @@ h1, h2, h3 { font-weight: 700; text-transform: uppercase; line-height: 1.12; mar
 }
 .chip[data-status='In Progress'] { background: var(--status-progress); color: #fff; }
 .chip[data-status='On Hold'] { background: var(--status-hold); }
-.chip[data-status='Cancelled'], .chip[data-status='Rejected'] { background: var(--status-bad); color: #fff; }
+.chip[data-status='Cancelled'], .chip[data-status='Rejected'], .chip[data-status='Expired'], .chip[data-status='Inactive'] { background: var(--status-bad); color: #fff; }
+.chip[data-status='Expiring'] { background: var(--status-hold); }
+.chip[data-status='Valid'], .chip[data-status='Active'], .chip[data-status='TL Signed'], .chip[data-status='Resolved'] { background: #3f7a2b; color: #fff; }
 .chip[data-status='Completed'], .chip[data-status='Completed - Closed'] { background: #3f7a2b; color: #fff; }
 .chip[data-status='Preparation'] { background: var(--status-prep); color: #fff; }
 

@@ -9,6 +9,8 @@ import { TaskDetail } from './pages/TaskDetail';
 import { ChecklistPage } from './pages/ChecklistPage';
 import { Issues } from './pages/Issues';
 import { Calendar } from './pages/Calendar';
+import { People } from './pages/People';
+import { Compliance } from './pages/Compliance';
 import { Placeholder } from './pages/Placeholder';
 import './pages/Home.css';
 
@@ -32,6 +34,8 @@ export default function App() {
 							<Route path="jobs/:id" element={<JobDetail />} />
 							<Route path="issues" element={<Issues />} />
 							<Route path="calendar" element={<Calendar />} />
+							<Route path="people" element={<People />} />
+							<Route path="compliance" element={<Compliance />} />
 							<Route path="tasks/:id" element={<TaskDetail />} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />

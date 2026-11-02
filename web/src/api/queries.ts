@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { CalendarItem, ChecklistListItem, ChecklistView, DashboardData, FileItem, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { CalendarItem, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -184,3 +184,24 @@ export const useCalendar = (from: string, to: string) =>
 		queryFn: () => api<{ items: CalendarItem[] }>('/calendar?from=' + from + '&to=' + to),
 		staleTime: 30_000,
 	});
+
+export const usePeople = (enabled: boolean) =>
+	useQuery({ queryKey: ['people'], queryFn: () => api<{ items: Person[] }>('/people?limit=300'), enabled, staleTime: 60_000 });
+
+export const useComplianceTypes = () =>
+	useQuery({ queryKey: ['compliance-types'], queryFn: () => api<{ items: ComplianceType[] }>('/compliance/types'), staleTime: 5 * 60_000 });
+
+export const useComplianceItems = (status?: string) =>
+	useQuery({
+		queryKey: ['compliance', status ?? 'all'],
+		queryFn: () => api<{ items: ComplianceItem[] }>('/compliance' + (status ? '?status=' + encodeURIComponent(status) : '')),
+		staleTime: 30_000,
+	});
+
+export const useCreateCompliance = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (input: { person_id: string; type_id: string; reference_no?: string; expiry_date?: string }) => api('/compliance', json('POST', input)),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance'] }),
+	});
+};
