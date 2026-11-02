@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useDashboard, useMe } from '../api/queries';
 import { Chip } from '../components/Chip';
-import './Table.css';
+import { Card, Kpi, PageHeader } from '../components/ui';
 
 const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed'];
+
+const longDate = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /** Role-aware dashboard. Managers see company figures; everyone sees their own upcoming work. */
 export function Home() {
@@ -13,51 +15,38 @@ export function Home() {
 
 	return (
 		<>
-			<h1 className="page-title">{first ? `Hello, ${first}` : 'Dashboard'}</h1>
+			<PageHeader eyebrow={q.data ? longDate(q.data.today) : 'Dashboard'} title={first ? `Hello, ${first}` : 'Dashboard'} />
 
 			{q.isPending && <p role="status">Loading your dashboard...</p>}
 			{q.isError && <p role="alert">Could not load the dashboard.</p>}
 
 			{q.isSuccess && q.data.scope === 'all' && (
 				<>
-					<section aria-label="Jobs by stage" className="tiles">
-						{STAGES.map((s) => (
-							<Link key={s} to="/jobs" className="tile tile--link">
-								<span className="tile__label">
-									<Chip status={s} />
-								</span>
-								<span className="tile__value num">{q.data.jobsByStage?.[s] ?? 0}</span>
-							</Link>
-						))}
+					<section className="kpis" aria-label="Needs attention">
+						<Kpi label="Overdue tasks" value={q.data.overdueTasks ?? 0} to="/calendar" tone={q.data.overdueTasks ? 'danger' : 'ok'} note={q.data.overdueTasks ? 'past their required finish' : 'nothing overdue'} />
+						<Kpi label="Open issues" value={q.data.openIssues ?? 0} to="/issues" tone={q.data.openIssues ? 'danger' : 'ok'} note={q.data.openIssues ? 'waiting for someone' : 'all clear'} />
+						<Kpi label="SWMS awaiting signature" value={q.data.swmsAwaiting ?? 0} tone={q.data.swmsAwaiting ? 'danger' : 'ok'} note="before crews go on site" />
 					</section>
-					<section aria-label="Needs attention" className="tiles">
-						<Link to="/calendar" className="tile tile--link">
-							<span className="tile__label">Overdue tasks</span>
-							<span className="tile__value num" data-ok={q.data.overdueTasks === 0}>
-								{q.data.overdueTasks ?? 0}
-							</span>
-						</Link>
-						<Link to="/issues" className="tile tile--link">
-							<span className="tile__label">Open issues</span>
-							<span className="tile__value num" data-ok={q.data.openIssues === 0}>
-								{q.data.openIssues ?? 0}
-							</span>
-						</Link>
-						<div className="tile">
-							<span className="tile__label">SWMS awaiting signature</span>
-							<span className="tile__value num" data-ok={q.data.swmsAwaiting === 0}>
-								{q.data.swmsAwaiting ?? 0}
-							</span>
+
+					<Card title="Jobs by stage" action={<Link className="view-all" to="/jobs">View all</Link>}>
+						<div className="kpis">
+							{STAGES.map((s) => (
+								<Link key={s} to="/jobs" className="kpi">
+									<span className="kpi-label">
+										<Chip status={s} />
+									</span>
+									<span className="kpi-value num">{q.data.jobsByStage?.[s] ?? 0}</span>
+								</Link>
+							))}
 						</div>
-					</section>
+					</Card>
 				</>
 			)}
 
 			{q.isSuccess && (
-				<section aria-label="My upcoming work" className="group">
-					<h2 className="group__title">My upcoming work</h2>
+				<Card title="My upcoming work" flush>
 					{q.data.myTasks.length === 0 ? (
-						<p>Nothing is assigned to you right now.</p>
+						<p className="table-empty">Nothing is assigned to you right now.</p>
 					) : (
 						<div className="table-wrap">
 							<table className="table">
@@ -72,7 +61,7 @@ export function Home() {
 								<tbody>
 									{q.data.myTasks.map((t) => (
 										<tr key={t.ROWID}>
-											<td data-label="Task">
+											<td data-label="Task" className="cell-primary">
 												<Link to={'/tasks/' + t.ROWID}>{t.name}</Link>
 											</td>
 											<td data-label="Stage">
@@ -85,7 +74,7 @@ export function Home() {
 							</table>
 						</div>
 					)}
-				</section>
+				</Card>
 			)}
 		</>
 	);

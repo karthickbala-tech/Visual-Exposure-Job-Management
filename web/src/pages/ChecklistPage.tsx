@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useChecklist, useCompleteChecklist, useSaveAnswers } from '../api/queries';
 import type { ShiftInput } from '../api/queries';
 import { ApiError } from '../api/client';
 import type { ChecklistView, Question } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
-import './Table.css';
-import './Checklist.css';
+import { useToast } from '../components/toast';
+import { Card, PageHeader } from '../components/ui';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -80,13 +81,11 @@ function ShiftForm({ taskBusy, onSubmit, error }: { taskBusy: boolean; onSubmit:
 
 	return (
 		<form
-			className="shift"
 			onSubmit={(e) => {
 				e.preventDefault();
 				onSubmit(s);
 			}}
 		>
-			<h2 className="group__title">Your hours</h2>
 			<div className="shift__grid">
 				<label>
 					<span className="toolbar__label">Date</span>
@@ -121,6 +120,8 @@ function Body({ data }: { data: ChecklistView }) {
 	const { checklist, definition, answers, progress } = data;
 	const save = useSaveAnswers(checklist.id);
 	const done = useCompleteChecklist(checklist.id, checklist.taskId);
+	const { notify } = useToast();
+	const complete = (body: ShiftInput | Record<string, never>) => done.mutate(body, { onSuccess: () => notify('Checklist completed') });
 	const locked = checklist.status === 'Completed';
 	const isPost = checklist.phase === 'post';
 
@@ -131,39 +132,42 @@ function Body({ data }: { data: ChecklistView }) {
 
 	return (
 		<>
-			<p>
-				<Link to={'/tasks/' + checklist.taskId}>&larr; Back to task</Link>
-			</p>
-			<h1 className="page-title">{isPost ? 'Post-job checklist' : 'Pre-job checklist'}</h1>
-			<p>
+			<Link className="back-link" to={'/tasks/' + checklist.taskId}>
+				<ArrowLeft size={16} aria-hidden="true" /> Back to task
+			</Link>
+			<PageHeader eyebrow="Checklist" title={isPost ? 'Post-job checklist' : 'Pre-job checklist'}>
 				<Chip status={checklist.status} />
-			</p>
-			<div className="panel">
-				<Progress label="Answered" value={progress.percent} />
-			</div>
+			</PageHeader>
+
+			<Card title="Answered">
+				<div style={{ maxWidth: 480 }}>
+					<Progress label="Answered" value={progress.percent} />
+				</div>
+			</Card>
 
 			{definition.sections.map((s) => (
-				<section key={s.key} className="group">
-					{s.title && <h2 className="group__title">{s.title}</h2>}
+				<Card key={s.key} title={s.title ?? 'Questions'}>
 					{s.questions.filter(visible).map((q) => (
 						<Field key={q.key} q={q} value={answers[q.key]} disabled={locked || save.isPending} onChange={(v) => save.mutate({ [q.key]: v })} />
 					))}
-				</section>
+				</Card>
 			))}
 
-			{progress.issues.length > 0 && <p className="q__hint">Some answers will be raised as issues for the manager once issues are switched on.</p>}
+			{progress.issues.length > 0 && <p className="q__hint">Answers like these raise an issue for the manager when you complete the checklist.</p>}
 			{save.isError && <p role="alert">{failMsg(save.error)}</p>}
 
 			{!locked && isPost && (
-				<ShiftForm taskBusy={done.isPending || !progress.canComplete} onSubmit={(shift) => done.mutate(shift)} error={failMsg(done.error)} />
+				<Card title="Your hours">
+					<ShiftForm taskBusy={done.isPending || !progress.canComplete} onSubmit={(shift) => complete(shift)} error={failMsg(done.error)} />
+				</Card>
 			)}
 			{!locked && !isPost && (
-				<>
+				<div>
 					{done.isError && <p role="alert">{failMsg(done.error)}</p>}
-					<button className="btn btn-primary" disabled={!progress.canComplete || done.isPending} onClick={() => done.mutate({})}>
+					<button className="btn" disabled={!progress.canComplete || done.isPending} onClick={() => complete({})}>
 						Complete checklist
 					</button>
-				</>
+				</div>
 			)}
 			{!locked && !progress.canComplete && <p className="q__hint">Answer every question marked * to complete.</p>}
 			{locked && isPost && <p>Hours booked: {String(checklist.hours ?? 0)}</p>}

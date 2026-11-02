@@ -23,6 +23,7 @@ function loadScript(src: string): Promise<void> {
 	});
 }
 
+const YEAR = new Date().getFullYear();
 const POINTS = ['Design, fabrication and install in one place', 'SWMS signed before crews go on site', 'Hours and timesheets without the paperwork'];
 
 /**
@@ -66,7 +67,7 @@ export function Login() {
 						))}
 					</ul>
 				</div>
-				<p className="login__legal">&copy; {new Date().getFullYear()} Visual Exposure Pty Ltd</p>
+				<p className="login__legal">&copy; {YEAR} Visual Exposure Pty Ltd</p>
 			</aside>
 
 			<main className="login__main">

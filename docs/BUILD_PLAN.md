@@ -197,3 +197,15 @@ No behaviour changes are made to the existing endpoints from this review; the ca
 | **Blocked: needs you** | The real Zoho clients (CRM updates and reads, WorkDrive folders, MDM sync) need the **rotated** OAuth client, its AU region details and a Catalyst Connection. The queue, retries, handlers table and tests are ready, so adding a client is one function per integration. Also needed: choose the webhook secret and configure the CRM webhook (URL, `x-webhook-token` header, field names) |
 | **Assumptions** | CRM webhook field names (`deal_id`, `deal_name`, `owner_email`, `description`, `quote_ref`, `expected_finish`) and the CRM field `Job_Stage`; shared-secret header rather than a signature (CRM native webhooks can add a header, signing needs custom Deluge); retry delays above |
 | **Not done** | Real Zoho calls (see Blocked), cost fields pushed to the CRM deal, sign edits to the CRM Assets module, WorkDrive folders per task, MDM sync, an outbox admin screen, the recurring schedule for `drain-outbox` |
+
+### UI refresh (2026-11-02): the prototype's layout and UX on our brand
+
+Kalyani's prototype (`react-app/`) is the reference for layout and interaction; the brand colours and the Raleway font stay ours. What was adopted in `web/`:
+
+| Area | What changed |
+|---|---|
+| **Shell** | Charcoal sidebar with icons, the signed-in user and sign out at the bottom; top bar with search (Ctrl K) and a light and dark theme toggle (remembered, follows the device by default); the sidebar becomes a drawer on phones |
+| **Design system** | One stylesheet with light and dark tokens; page header with a green eyebrow; bordered cards; KPI tiles with coloured top edge and numbers that turn red when something needs attention; square tone-based status chips; tables that become stacked cards on phones; toast messages after actions |
+| **Screens** | Dashboard, Jobs (with filter and search), Job (progress ring), Task, Checklist, SWMS, Files, Issues, Compliance and People all rebuilt on those components. The Calendar is now a month and week grid with an agenda list on phones, coloured dots by task type and "+N more" |
+| **Kept ours** | Colours, Raleway, real Catalyst sign-in, real role-based access. Not copied: her demo sign-in, the "Viewing as" role switcher and the notification bell (they need a backend we do not have) |
+| **Accessibility** | Dark text on the green buttons (white on this green fails contrast), visible focus rings, labelled controls, status always shown as text as well as colour |

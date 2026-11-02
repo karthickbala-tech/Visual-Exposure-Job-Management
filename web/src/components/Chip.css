@@ -1,5 +1,0 @@
-.progress { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: var(--space-2); font-size: 13px; }
-.progress__label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
-.progress__track { height: 8px; background: var(--grey-band); border-radius: 4px; overflow: hidden; }
-.progress__fill { display: block; height: 100%; background: var(--accent); }
-.progress__value { text-align: right; }

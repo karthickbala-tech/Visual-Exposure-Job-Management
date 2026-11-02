@@ -1,14 +1,16 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ClipboardCheck } from 'lucide-react';
 import { useMe, useStartChecklist, useTask, useTaskChecklists, useTransitionTask } from '../api/queries';
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip } from '../components/Chip';
-import { SwmsPanel } from './SwmsPanel';
+import { useToast } from '../components/toast';
+import { Card, PageHeader } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
-import './Table.css';
-import './Checklist.css';
+import { SwmsPanel } from './SwmsPanel';
 
 const PHASE_LABEL = { pre: 'Pre-job checklist', post: 'Post-job checklist' } as const;
+const TYPE_LABEL: Record<string, string> = { design: 'Design task', fabrication: 'Fabrication task', install: 'Install task' };
 
 export function TaskDetail() {
 	const { id } = useParams();
@@ -18,11 +20,10 @@ export function TaskDetail() {
 	const lists = useTaskChecklists(id);
 	const start = useStartChecklist(id ?? '');
 	const move = useTransitionTask(q.data?.task.job_id ?? '');
+	const { notify } = useToast();
 
 	if (q.isPending) return <p role="status">Loading task...</p>;
-	if (q.error instanceof ApiError && q.error.status === 404) {
-		return <h1 className="page-title">Task not found</h1>;
-	}
+	if (q.error instanceof ApiError && q.error.status === 404) return <h1 className="page-title">Task not found</h1>;
 	if (q.isError) return <p role="alert">Could not load this task.</p>;
 
 	const { task, assignees, nextStages } = q.data;
@@ -30,78 +31,101 @@ export function TaskDetail() {
 	const iAmAssigned = !!myId && assignees.some((a) => a.personId === myId);
 	const mine = (lists.data?.items ?? []).filter((c) => c.assigneeId === myId);
 	const others = (lists.data?.items ?? []).filter((c) => c.assigneeId !== myId);
-	const hasOpen = (phase: 'pre' | 'post') => mine.find((c) => c.phase === phase);
+	const existing = (phase: 'pre' | 'post') => mine.find((c) => c.phase === phase);
 
-	const open = (phase: 'pre' | 'post') =>
-		start.mutate(phase, { onSuccess: (view) => navigate('/checklists/' + view.checklist.id) });
+	const open = (phase: 'pre' | 'post') => start.mutate(phase, { onSuccess: (view) => navigate('/checklists/' + view.checklist.id) });
 
 	return (
 		<>
-			<p>
-				<Link to={'/jobs/' + task.job_id}>&larr; Back to job</Link>
-			</p>
-			<h1 className="page-title">{task.name}</h1>
-			<p>
+			<Link className="back-link" to={'/jobs/' + task.job_id}>
+				<ArrowLeft size={16} aria-hidden="true" /> Back to job
+			</Link>
+
+			<PageHeader eyebrow={TYPE_LABEL[task.task_type] ?? 'Task'} title={task.name}>
 				<Chip status={task.stage} />
-			</p>
+			</PageHeader>
 			{task.description && <p className="lead">{task.description}</p>}
 
-			<section className="panel" aria-label="Task facts">
-				<div>Type: {task.task_type}</div>
-				<div>Quoted hours: {num(task.quoted_hours)}</div>
-				<div>Booked hours: {num(task.booked_hours)}</div>
-				<div>Scheduled: {task.scheduled_date || '-'}</div>
-				<div>Team: {assignees.length ? assignees.map((a) => `${a.name ?? 'Unknown'} (${a.role})`).join(', ') : 'Nobody assigned yet'}</div>
-			</section>
+			<Card title="Details">
+				<dl className="facts">
+					<div className="fact">
+						<dt>Quoted hours</dt>
+						<dd className="num">{num(task.quoted_hours)}</dd>
+					</div>
+					<div className="fact">
+						<dt>Booked hours</dt>
+						<dd className="num">{num(task.booked_hours)}</dd>
+					</div>
+					<div className="fact">
+						<dt>Scheduled</dt>
+						<dd>{task.scheduled_date || '-'}</dd>
+					</div>
+					<div className="fact">
+						<dt>Team</dt>
+						<dd>{assignees.length ? assignees.map((a) => `${a.name ?? 'Unknown'} (${a.role})`).join(', ') : 'Nobody assigned yet'}</dd>
+					</div>
+				</dl>
+			</Card>
 
 			{nextStages.length > 0 && (
-				<div className="actions" aria-label="Move this task">
-					{nextStages.map((s) => (
-						<button key={s} className="btn btn-ghost" disabled={move.isPending} onClick={() => move.mutate({ taskId: task.ROWID, to: s })}>
-							{s}
-						</button>
-					))}
-				</div>
+				<Card title="Move this task">
+					<div className="actions">
+						{nextStages.map((s) => (
+							<button key={s} className="btn btn-ghost" disabled={move.isPending} onClick={() => move.mutate({ taskId: task.ROWID, to: s }, { onSuccess: () => notify(`Moved to ${s}`) })}>
+								{s}
+							</button>
+						))}
+					</div>
+					{move.isError && (
+						<p role="alert" style={{ marginTop: 12 }}>
+							{move.error.message}
+						</p>
+					)}
+				</Card>
 			)}
-			{move.isError && <p role="alert">{move.error.message}</p>}
 
 			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
 
+			<Card title="Checklists">
+				{iAmAssigned ? (
+					<div className="actions">
+						{(['pre', 'post'] as const).map((p) => {
+							const c = existing(p);
+							return c ? (
+								<Link key={p} className="btn" to={'/checklists/' + c.id}>
+									<ClipboardCheck size={16} aria-hidden="true" /> {c.status === 'Completed' ? 'View' : 'Continue'} {PHASE_LABEL[p].toLowerCase()}
+								</Link>
+							) : (
+								<button key={p} className="btn" disabled={start.isPending} onClick={() => open(p)}>
+									Start {PHASE_LABEL[p].toLowerCase()}
+								</button>
+							);
+						})}
+					</div>
+				) : (
+					<p className="muted">Only people assigned to this task fill in its checklists.</p>
+				)}
+				{start.isError && (
+					<p role="alert" style={{ marginTop: 12 }}>
+						{start.error.message}
+					</p>
+				)}
+
+				{others.length > 0 && (
+					<ul className="plain-list" style={{ marginTop: 16 }}>
+						{others.map((c) => (
+							<li key={c.id}>
+								<Link className="row-link" to={'/checklists/' + c.id}>
+									{PHASE_LABEL[c.phase]} ({c.role})
+								</Link>{' '}
+								<Chip status={c.status} />
+							</li>
+						))}
+					</ul>
+				)}
+			</Card>
+
 			<FilesPanel entityType="task" entityId={task.ROWID} canUpload={iAmAssigned} />
-
-			<h2 className="group__title">Checklists</h2>
-			{iAmAssigned && (
-				<div className="actions">
-					{(['pre', 'post'] as const).map((p) => {
-						const existing = hasOpen(p);
-						return existing ? (
-							<Link key={p} className="btn btn-primary" to={'/checklists/' + existing.id}>
-								{existing.status === 'Completed' ? 'View ' : 'Continue '}
-								{PHASE_LABEL[p].toLowerCase()}
-							</Link>
-						) : (
-							<button key={p} className="btn btn-primary" disabled={start.isPending} onClick={() => open(p)}>
-								Start {PHASE_LABEL[p].toLowerCase()}
-							</button>
-						);
-					})}
-				</div>
-			)}
-			{start.isError && <p role="alert">{start.error.message}</p>}
-			{!iAmAssigned && <p>Only people assigned to this task fill in its checklists.</p>}
-
-			{others.length > 0 && (
-				<ul className="plain-list">
-					{others.map((c) => (
-						<li key={c.id}>
-							<Link to={'/checklists/' + c.id}>
-								{PHASE_LABEL[c.phase]} ({c.role})
-							</Link>{' '}
-							<Chip status={c.status} />
-						</li>
-					))}
-				</ul>
-			)}
 		</>
 	);
 }
