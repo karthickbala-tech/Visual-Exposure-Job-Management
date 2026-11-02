@@ -147,3 +147,11 @@ No behaviour changes are made to the existing endpoints from this review; the ca
 2. Confirm the Zoho OAuth client was rotated (needed for B6, not before).
 3. The sender email for system emails (needed for B4).
 4. ~~Frontend skills~~ done: `frontend-design` and `web-design-guidelines` installed. Not installed: UI UX Pro Max, Taste, Impeccable, Emil Kowalski, Interface Design (design-direction skills that would compete with the fixed brand), shadcn/ui (we are not committing to it yet), webapp-testing (we already have Playwright through MCP).
+
+### Phase 3 status (2026-11-02, in progress)
+
+| Part | State |
+|---|---|
+| **Issues (B3 part)** | `domain/issues.js` (statuses Open, In Progress, Resolved, Closed; moves along a fixed list; routing by task type), `services/issues.js` (raise, list, get, update; crew see only their own; managers move them). A checklist answer flagged as a problem raises one issue for the task's department, once, even if the checklist is redone. Issues screen with raise form and status buttons. Checked against Development data |
+| **Not started** | SWMS lifecycle and sign-off, hazard library seed, file uploads to Stratus (`file_asset`, signed URLs), email templates and send |
+| **Assumptions** | Four issue statuses and the allowed moves, department routing by task type, default priority Normal |
