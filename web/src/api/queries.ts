@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { ChecklistListItem, ChecklistView, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { ChecklistListItem, ChecklistView, FileItem, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -146,3 +146,31 @@ export const useSwmsAction = (id: string) => {
 		onSuccess: (data) => qc.setQueryData(['swms', id], data),
 	});
 };
+
+export const useFiles = (entityType: string, entityId: string) =>
+	useQuery({
+		queryKey: ['files', entityType, entityId],
+		queryFn: () => api<{ items: FileItem[] }>('/files?entity_type=' + entityType + '&entity_id=' + entityId),
+	});
+
+/**
+ * Three steps: ask the server for a short-lived upload link, send the file straight to storage
+ * (it never passes through our server), then tell the server it finished.
+ */
+export const useUploadFile = (entityType: string, entityId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: async (file: File) => {
+			const slot = await api<{ file: FileItem; uploadUrl: string; headers: Record<string, string> }>(
+				'/files/upload-url',
+				json('POST', { entity_type: entityType, entity_id: entityId, file_name: file.name, mime_type: file.type, size_bytes: file.size }),
+			);
+			const put = await fetch(slot.uploadUrl, { method: 'PUT', headers: slot.headers, body: file });
+			if (!put.ok) throw new Error('The upload did not finish (' + put.status + '). Please try again.');
+			return api<{ file: FileItem }>('/files/' + slot.file.id + '/confirm', json('POST'));
+		},
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['files', entityType, entityId] }),
+	});
+};
+
+export const getDownloadUrl = (id: string) => api<{ url: string; name: string }>('/files/' + id + '/download-url');

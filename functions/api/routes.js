@@ -10,6 +10,7 @@ const checklists = require('./lib/services/checklists');
 const admin = require('./lib/services/admin');
 const issues = require('./lib/services/issues');
 const swms = require('./lib/services/swms');
+const files = require('./lib/services/files');
 
 const router = createRouter();
 
@@ -73,6 +74,12 @@ router.add('GET', '/swms/:id', withCtx(async (ctx, { params }) => ok(await swms.
 router.add('PATCH', '/swms/:id', withCtx(async (ctx, { req, params }) => ok(await swms.updateSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/sign', withCtx(async (ctx, { req, params }) => ok(await swms.signSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { params }) => created(await swms.declare(ctx, params.id))));
+
+// Files
+router.add('GET', '/files', withCtx(async (ctx, { url }) => ok(await files.listFiles(ctx, parseQuery(url)))));
+router.add('POST', '/files/upload-url', withCtx(async (ctx, { req }) => created(await files.requestUpload(ctx, await readJson(req)))));
+router.add('POST', '/files/:id/confirm', withCtx(async (ctx, { params }) => ok(await files.confirmUpload(ctx, params.id))));
+router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => ok(await files.downloadUrl(ctx, params.id))));
 
 // Admin
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));

@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -78,6 +78,16 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return rows.length;
 			},
 		},
+		files: {
+			findById: async (id) => clone(db.files.find((f) => String(f.ROWID) === String(id))),
+			listForEntity: async (type, id) => db.files.filter((f) => f.entity_type === type && String(f.entity_id) === String(id)).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.files.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.files, row),
+		},
 		swms: {
 			findById: async (id) => clone(db.swms.find((s) => String(s.ROWID) === String(id))),
 			insert: async (row) => {
@@ -142,6 +152,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const ctx = {
 		actor: { roles, person: person ? { ROWID: person.ROWID } : null },
 		repos,
+		storage: { signedPut: async (key) => 'https://put.test/' + key, signedGet: async (key) => 'https://get.test/' + key },
 		log,
 		now: () => new Date('2026-11-02T10:00:00Z'),
 		publish: async (type, payload) => published.push({ type, payload }),

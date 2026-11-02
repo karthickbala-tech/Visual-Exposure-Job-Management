@@ -116,3 +116,12 @@ export interface SwmsView {
 	declarations: { personId: string; name: string | null; at: string }[];
 	signoff: { pm?: { name: string | null; at: string }; tl?: { name: string | null; at: string } };
 }
+
+export interface FileItem {
+	id: string;
+	name: string;
+	kind: string;
+	mimeType: string;
+	sizeBytes: number;
+	uploaded: boolean;
+}
