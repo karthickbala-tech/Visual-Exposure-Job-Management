@@ -1,7 +1,10 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthGate } from './auth/AuthGate';
 import { Shell } from './components/Shell';
 import { Home } from './pages/Home';
+import { Jobs } from './pages/Jobs';
+import { JobDetail } from './pages/JobDetail';
 import { Placeholder } from './pages/Placeholder';
 import './pages/Home.css';
 
@@ -9,20 +12,25 @@ const queryClient = new QueryClient({
 	defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
+/**
+ * HashRouter: Catalyst client hosting serves one index.html, so hash URLs
+ * (/app/#/jobs) refresh and deep-link without any server rewrite rules.
+ */
 export default function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<BrowserRouter>
-				<Routes>
-					<Route element={<Shell />}>
-						<Route index element={<Home />} />
-						{['jobs', 'tasks', 'swms', 'issues', 'hours'].map((p) => (
-							<Route key={p} path={p} element={<Placeholder title={p} />} />
-						))}
-						<Route path="*" element={<Placeholder title="Page not found" />} />
-					</Route>
-				</Routes>
-			</BrowserRouter>
+			<AuthGate>
+				<HashRouter>
+					<Routes>
+						<Route element={<Shell />}>
+							<Route index element={<Home />} />
+							<Route path="jobs" element={<Jobs />} />
+							<Route path="jobs/:id" element={<JobDetail />} />
+							<Route path="*" element={<Placeholder title="Page not found" />} />
+						</Route>
+					</Routes>
+				</HashRouter>
+			</AuthGate>
 		</QueryClientProvider>
 	);
 }

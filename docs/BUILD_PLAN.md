@@ -39,6 +39,18 @@ What we build in code, in what order, and when each piece is done. Sources: `FSD
 | **Local run** | `catalyst serve --only functions:api --http 3100` serves the API at `http://localhost:3100/server/api/`. Vite proxies `/server` to it. Event and job functions are not served locally; they are tested through unit tests and deployed jobs |
 | **Frontend scaffold** | `web/` (Vite, React, TypeScript, React Router, TanStack Query, self-hosted Raleway). Branded shell and a status page that reads `/health` and `/me`. Checked in a real browser at desktop and phone width; two mobile layout bugs found and fixed during the local test |
 
+### Phase 1 status (2026-11-02)
+
+| Part | State |
+|---|---|
+| **B1 backend** | Built and deployed. Domain rules as pure tested functions (`lib/domain`: stage state machines for design, fabrication and install, job rollup, completion %). Repositories (`lib/repos`), services (`lib/services/jobs.js`, `tasks.js`), request context. Endpoints: jobs (list, create, get, update), `POST /jobs/:id/tasks`, tasks (list, get, update), `POST /tasks/:id/transition`, assignees (add, remove). 64 tests pass, including role scoping, closed-job rules, reject and reopen comments, rollup after each transition, and a failed event publish never failing the request |
+| **F0 frontend** | Embedded Catalyst login inside the branded page, auth gate (401 shows sign-in, 403 shows "no access"), role-aware navigation, sign out |
+| **F1 frontend** | Dashboard (jobs by stage), jobs list with stage filter, job detail with progress and tasks grouped by type. Tables turn into labelled cards on phones |
+| **Checked locally** | `catalyst serve` with client and API: the unsigned visitor gets the sign-in page with Catalyst's real form; all protected endpoints return 401 |
+| **Checked live** | Hosted app returns 200; `/health` 200; `/jobs` and `/tasks` return 401 without a session |
+| **Not yet checked** | Signed-in screens in a browser: needs the first user to be invited (a login only the account owner can do) |
+| **Deferred to a later slice** | Caching the person lookup (needs measurements on real traffic), task action buttons in the UI, create-job and add-task forms, SWMS creation for install tasks (B3) |
+
 ## 3. Backend slices
 
 | Slice | Contents | Tables | Pure logic (tested first) | Done when |

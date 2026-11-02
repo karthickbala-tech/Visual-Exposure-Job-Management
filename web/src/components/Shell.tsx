@@ -1,27 +1,47 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useMe } from '../api/queries';
+import { signOut } from '../auth/Login';
 import './Shell.css';
 
-const NAV = [
+interface NavItem {
+	to: string;
+	label: string;
+	end?: boolean;
+	/** Roles that see this item. Omit for everyone. The server enforces access regardless. */
+	roles?: string[];
+}
+
+/** Only screens that exist are listed; more appear as later phases are built. */
+const NAV: NavItem[] = [
 	{ to: '/', label: 'Dashboard', end: true },
 	{ to: '/jobs', label: 'Jobs' },
-	{ to: '/tasks', label: 'Tasks' },
-	{ to: '/swms', label: 'SWMS' },
-	{ to: '/issues', label: 'Issues' },
-	{ to: '/hours', label: 'Hours' },
 ];
+
+const ROLE_LABEL = (r: string) => r.replace(/_/g, ' ');
 
 /** App frame: slate sidebar and top bar, green active item, as on the public site. */
 export function Shell() {
+	const me = useMe();
+	const roles = me.data?.roles ?? [];
+	const items = NAV.filter((n) => !n.roles || n.roles.some((r) => roles.includes(r)));
+	const name = me.data ? `${me.data.user.firstName} ${me.data.user.lastName}`.trim() || me.data.user.email : '';
+
 	return (
 		<div className="shell">
-			<a className="skip" href="#main">Skip to content</a>
+			<a className="skip" href="#main">
+				Skip to content
+			</a>
 			<aside className="shell__side" aria-label="Main navigation">
 				<div className="shell__brand">
 					<span className="shell__logo" aria-hidden="true" />
-					<span>Visual<br />Exposure</span>
+					<span>
+						Visual
+						<br />
+						Exposure
+					</span>
 				</div>
 				<nav>
-					{NAV.map((n) => (
+					{items.map((n) => (
 						<NavLink key={n.to} to={n.to} end={n.end} className="shell__link">
 							{n.label}
 						</NavLink>
@@ -30,7 +50,13 @@ export function Shell() {
 			</aside>
 			<div className="shell__body">
 				<header className="shell__top">
-					<span className="shell__tag">Done properly</span>
+					<span className="shell__who">
+						{name}
+						{roles[0] && <span className="shell__role"> ({ROLE_LABEL(roles[0])})</span>}
+					</span>
+					<button className="shell__signout" onClick={signOut}>
+						Sign out
+					</button>
 				</header>
 				<main id="main" className="shell__main">
 					<Outlet />

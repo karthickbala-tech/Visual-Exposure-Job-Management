@@ -1,0 +1,31 @@
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.toolbar { display: flex; gap: var(--space-3); margin: var(--space-4) 0; align-items: end; }
+.toolbar__label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: var(--space-1); }
+select { min-height: var(--touch); padding: 0 var(--space-3); font: 600 14px var(--font); border: 2px solid var(--grey-band); border-radius: var(--radius); background: var(--paper); color: var(--ink); }
+
+.table-wrap { overflow-x: auto; margin-top: var(--space-3); }
+.table { width: 100%; border-collapse: collapse; }
+.table th { background: var(--slate); color: #fff; text-align: left; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: var(--space-2) var(--space-3); }
+.table td { padding: var(--space-3); border-bottom: 1px solid var(--grey-band); vertical-align: middle; }
+.table tbody tr:nth-child(even) { background: var(--paper-alt); }
+.table a { font-weight: 700; color: var(--ink); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+
+.panel { background: var(--paper-alt); padding: var(--space-4); margin: var(--space-4) 0; display: grid; gap: var(--space-2); max-width: 520px; }
+.group { margin-top: var(--space-5); }
+.group__title { font-size: 22px; }
+.lead { max-width: 70ch; }
+.status { padding: var(--space-5); }
+
+/* Phone: each row becomes a labelled card instead of a wide table. */
+@media (max-width: 640px) {
+	.table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+	.table tr { display: block; border-top: 6px solid var(--grey-band); margin-bottom: var(--space-3); background: var(--paper-alt); }
+	.table td { display: grid; grid-template-columns: 110px 1fr; gap: var(--space-2); border-bottom: 0; padding: var(--space-2) var(--space-3); }
+	.table td::before { content: attr(data-label); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+}
+
+.inline-form { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; margin: var(--space-4) 0; }
+.inline-form label { min-width: min(240px, 100%); }
+input { min-height: var(--touch); padding: 0 var(--space-3); font: 500 15px var(--font); border: 2px solid var(--grey-band); border-radius: var(--radius); background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
+input:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }

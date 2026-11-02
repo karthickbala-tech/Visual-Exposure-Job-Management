@@ -1,41 +1,33 @@
-import { ApiError } from '../api/client';
-import { useHealth, useMe } from '../api/queries';
+import { Link } from 'react-router-dom';
+import { useJobs, useMe } from '../api/queries';
+import { Chip } from '../components/Chip';
 
-/** Phase 0 landing page: proves the shell, the brand and the backend connection. */
+const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed'];
+
+/** Dashboard placeholder for Phase 1: counts by stage, from the jobs the user can see. */
 export function Home() {
-	const health = useHealth();
 	const me = useMe();
+	const jobs = useJobs();
+	const first = me.data?.user.firstName;
 
-	const apiState = health.isPending ? 'Checking...' : health.isSuccess ? 'Online' : 'Unreachable';
-	const authState = me.isPending
-		? 'Checking...'
-		: me.isSuccess
-			? `Signed in as ${me.data.user.email}`
-			: me.error instanceof ApiError && me.error.status === 401
-				? 'Not signed in'
-				: 'Unavailable';
+	const counts = new Map<string, number>();
+	for (const j of jobs.data?.items ?? []) counts.set(j.stage, (counts.get(j.stage) ?? 0) + 1);
 
 	return (
 		<>
-			<h1 className="page-title">Dashboard</h1>
-			<section aria-label="System status" className="tiles">
-				<div className="tile">
-					<span className="tile__label">Backend</span>
-					<span className="tile__value num" data-ok={health.isSuccess}>{apiState}</span>
-				</div>
-				<div className="tile">
-					<span className="tile__label">Account</span>
-					<span className="tile__value">{authState}</span>
-				</div>
-				<div className="tile">
-					<span className="tile__label">Job stages</span>
-					<span className="tile__chips">
-						{['Preparation', 'In Progress', 'On Hold', 'Completed', 'Cancelled'].map((s) => (
-							<span key={s} className="chip" data-status={s}>{s}</span>
-						))}
-					</span>
-				</div>
+			<h1 className="page-title">{first ? `Hello, ${first}` : 'Dashboard'}</h1>
+
+			<section aria-label="Jobs by stage" className="tiles">
+				{STAGES.map((s) => (
+					<Link key={s} to="/jobs" className="tile tile--link">
+						<span className="tile__label">
+							<Chip status={s} />
+						</span>
+						<span className="tile__value num">{jobs.isSuccess ? (counts.get(s) ?? 0) : '-'}</span>
+					</Link>
+				))}
 			</section>
+			{jobs.isError && <p role="alert">Could not load job counts.</p>}
 		</>
 	);
 }

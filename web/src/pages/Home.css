@@ -4,3 +4,5 @@
 .tile__value { font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
 .tile__value[data-ok='true'] { color: #3f7a2b; }
 .tile__chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tile--link { text-decoration: none; color: inherit; }
+.tile--link:hover { background: var(--grey-band); }

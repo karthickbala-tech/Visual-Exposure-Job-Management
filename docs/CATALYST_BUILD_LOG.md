@@ -10,6 +10,8 @@ Production must be an **AU** project. Nothing here hard-codes the project, org o
 |---|---|
 | Data Store | **24 tables**, all columns and foreign keys, empty (the earlier 16 empty tables were deleted first) |
 | Stratus | Bucket `ve-files-dev` (created in the console): Authenticated template, encryption on, versioning off, PII flag on. Endpoint `https://ve-files-dev-development.zohostratus.in` |
+| Web client | `web/` (Vite + React) deployed to client hosting: `https://visualexposure-60093485853.development.catalystserverless.in/app/index.html`. `catalyst.json` client source is `web/dist`; the client package name must stay `react-app` (Catalyst registered it at project creation). Routing uses hash URLs so deep links need no server rewrites |
+| Test data | Dev-only fake data tagged `seed-` in `legacy_id`: 2 people (one is the project owner's account, as admin), 3 jobs named "TEST - ...", 8 tasks, 1 assignment. Remove with `DELETE ... WHERE legacy_id LIKE 'seed-%'` (children first) before any real data load |
 | Cache | Segments `config` and `kpi` |
 | Job Scheduling | Job pool `ve_jobs_pool` (Function type, 256 MB) |
 | Authentication | **Embedded login enabled** (Web SDK v4, SDK script `catalystWebSDK.js` 4.6.2). Public sign-up off, social logins off, CSS customization off for now (can be enabled when the login page is styled). User limit 1000. **11 custom roles created** (admin, project_manager, fab_manager, install_coordinator, second_ic, installer, fab_worker, workshop, designer, contractor, viewer) plus the default App Administrator and App User |

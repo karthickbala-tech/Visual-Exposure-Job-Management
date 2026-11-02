@@ -38,3 +38,13 @@
 	.shell__link.active { border-bottom-color: var(--accent); }
 	.shell__main { padding: var(--space-4) var(--space-3) var(--space-5); }
 }
+
+.shell__top { gap: var(--space-3); }
+.shell__who { font-weight: 600; font-size: 14px; }
+.shell__role { text-transform: capitalize; opacity: 0.8; font-weight: 400; }
+.shell__signout {
+	min-height: 36px; padding: 0 var(--space-3); background: transparent; color: #fff;
+	border: 2px solid var(--grey-mid); border-radius: var(--radius);
+	font: 600 12px var(--font); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+}
+.shell__signout:hover { border-color: var(--accent); color: var(--accent); }
