@@ -117,6 +117,26 @@ export interface SwmsView {
 	signoff: { pm?: { name: string | null; at: string }; tl?: { name: string | null; at: string } };
 }
 
+export interface DashboardData {
+	scope: 'all' | 'mine';
+	today: string;
+	myTasks: Task[];
+	jobsByStage?: Record<string, number>;
+	overdueTasks?: number;
+	openIssues?: number;
+	swmsAwaiting?: number;
+	generatedAt?: string;
+}
+
+export interface CalendarItem {
+	ROWID: string;
+	job_id: string;
+	name: string;
+	task_type: 'design' | 'fabrication' | 'install';
+	stage: string;
+	scheduled_date: string;
+}
+
 export interface FileItem {
 	id: string;
 	name: string;

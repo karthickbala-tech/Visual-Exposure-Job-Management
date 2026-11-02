@@ -1,0 +1,7 @@
+.cal__nav { margin: var(--space-3) 0; }
+.cal { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: var(--space-3); }
+.cal__day { background: var(--paper-alt); border-top: 6px solid var(--grey-band); padding: var(--space-3); min-width: 0; }
+.cal__day[data-today="true"] { border-top-color: var(--accent); }
+.cal__title { font-size: 16px; margin: 0 0 var(--space-2); }
+.cal__item { padding: var(--space-2) 0; border-bottom: 1px solid var(--grey-band); overflow-wrap: anywhere; }
+.cal__item[data-type="install"] { border-left: 4px solid var(--accent); padding-left: var(--space-2); }

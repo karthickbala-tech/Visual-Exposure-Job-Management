@@ -165,3 +165,13 @@ No behaviour changes are made to the existing endpoints from this review; the ca
 | **Email (B4)** | `domain/notifications.js` (escaped templates), `lib/mail.js` (Catalyst Mail; sends only when `MAIL_FROM` is set), handlers for a new issue (to project managers) and for a task sent back by a reject or reopen (to the people assigned). Skipped and logged when no sender is set. Tested with a fake mailer |
 | **Needs you (console)** | 1. Stratus bucket CORS: allow origins `http://localhost:3000` and the hosted app URL, methods PUT and GET, header `content-type`. Without it the browser blocks the upload (the signed link itself works). 2. Mail: verify a sender domain (DKIM and SPF), then set function environment variables `MAIL_FROM` (and optionally `APP_URL`). Production also needs `STRATUS_BUCKET` for its own bucket |
 | **Not done** | SWMS PDF (SmartBrowz to confirm), hazard library seed, photo answers inside checklists (the file service is ready; the question type still shows a placeholder), file upload on issues in the UI |
+
+### Phase 4 status (2026-11-02)
+
+| Part | State |
+|---|---|
+| **B7 dashboard and calendar** | `GET /dashboard`: managers get jobs by stage, overdue tasks, open issues and SWMS awaiting signature (four small grouped queries, cached in the `kpi` segment for 60 seconds and invalidated by date); everyone gets their own upcoming work. Crew never receive company-wide counts. `GET /calendar?from&to`: scheduled tasks, scoped, at most 62 days. "Today" is Melbourne time (override with `BUSINESS_TZ`) |
+| **Permission matrix** | `domain/matrix.js` (validation; the admin role can never be reduced), `services/settings.js`. `GET` and `PUT /admin/authz` (admin only) store overrides in `setting` (versioned, logged). Every request loads the matrix from the `config` segment (5 minutes), falling back to the built-in defaults; a damaged value can never lock anyone out. Roles you do not override keep their defaults. **No admin screen yet** (API only) |
+| **F2 and F4 frontend** | Role-aware dashboard and a weekly calendar grouped by day, both phone-first. Checked against Development data |
+| **Measured** | Dashboard call about 0.8 to 1.0 s through the local proxy, including sign-in checks. The "under 500 ms" target is **not yet verified** on the deployed app with realistic data; the likely cost is the per-request user and person lookups, not the figures |
+| **Not done** | Seven separate role dashboards (one shared, role-aware dashboard instead; split further once the real needs are known), kanban board, matrix editing screen, fabrication and install calendars as separate views |

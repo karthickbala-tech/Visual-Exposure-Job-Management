@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { ChecklistListItem, ChecklistView, FileItem, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { CalendarItem, ChecklistListItem, ChecklistView, DashboardData, FileItem, Issue, Job, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -174,3 +174,13 @@ export const useUploadFile = (entityType: string, entityId: string) => {
 };
 
 export const getDownloadUrl = (id: string) => api<{ url: string; name: string }>('/files/' + id + '/download-url');
+
+export const useDashboard = () =>
+	useQuery({ queryKey: ['dashboard'], queryFn: () => api<DashboardData>('/dashboard'), staleTime: 30_000 });
+
+export const useCalendar = (from: string, to: string) =>
+	useQuery({
+		queryKey: ['calendar', from, to],
+		queryFn: () => api<{ items: CalendarItem[] }>('/calendar?from=' + from + '&to=' + to),
+		staleTime: 30_000,
+	});
