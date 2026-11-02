@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { AlertTriangle, Briefcase, Clock, Hammer, LayoutDashboard, PenTool, Settings, ShieldCheck, Truck, Users, X } from 'lucide-react';
 import { NAV } from '../navConfig';
 import { useDemo } from '../context/DemoContext';
+import { canAccess } from '../lib/access';
 
 const ICONS = {
   home: LayoutDashboard, jobs: Briefcase, design: PenTool, fab: Hammer, install: Truck,
@@ -20,7 +21,7 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       <nav className="side-nav">
-        {NAV.map((item) => {
+        {NAV.filter((item) => canAccess(roleId, item.path)).map((item) => {
           const Icon = ICONS[item.icon];
           return (
             <NavLink key={item.path} to={item.path} end={item.end} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
