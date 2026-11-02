@@ -1440,6 +1440,7 @@
 	--f-brand-soft: #1f2e18;
 	--f-on-brand: #10190b;
 	--f-danger: #ff6b63;
+	color-scheme: dark;
 }
 /* Visual Exposure look for Catalyst's embedded sign-in form.
    Appended AFTER Catalyst's own stylesheet (Catalyst's instructions: never edit their lines, add after them).

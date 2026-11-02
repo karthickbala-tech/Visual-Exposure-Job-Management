@@ -17,7 +17,8 @@ const THEMES = {
 
 mkdirSync(join(here, '..', 'public', 'css'), { recursive: true });
 for (const [name, vars] of Object.entries(THEMES)) {
-	const root = ':root {\n' + Object.entries(vars).map(([k, v]) => `\t--f-${k}: ${v};`).join('\n') + '\n}\n';
+	// color-scheme matters: if the frame's scheme differs from the page's, the browser paints an opaque white backdrop behind it.
+	const root = ':root {\n' + Object.entries(vars).map(([k, v]) => `\t--f-${k}: ${v};`).join('\n') + `\n\tcolor-scheme: ${name};\n}\n`;
 	// @import must come first in a stylesheet, so it is lifted out of the overrides and placed at the top.
 	// (the font address contains semicolons, so match up to the closing bracket of url(...), not the first semicolon)
 	const importLine = overrides.match(/@import url\([^)]*\);/)?.[0] ?? '';
