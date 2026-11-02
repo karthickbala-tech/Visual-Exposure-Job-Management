@@ -90,3 +90,16 @@ export interface ChecklistListItem {
 	role: string;
 	hours?: number | string | null;
 }
+
+export interface Issue {
+	ROWID: string;
+	subject: string;
+	description?: string;
+	department?: string;
+	issue_status: string;
+	issue_priority?: string;
+	source_kind?: string;
+	task_id?: string;
+	CREATEDTIME?: string;
+	nextStatuses?: string[];
+}

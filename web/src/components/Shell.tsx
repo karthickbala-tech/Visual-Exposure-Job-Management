@@ -16,6 +16,7 @@ interface NavItem {
 const NAV: NavItem[] = [
 	{ to: '/', label: 'Dashboard', end: true },
 	{ to: '/jobs', label: 'Jobs' },
+	{ to: '/issues', label: 'Issues' },
 ];
 
 const ROLE_LABEL = (r: string) => r.replace(/_/g, ' ');

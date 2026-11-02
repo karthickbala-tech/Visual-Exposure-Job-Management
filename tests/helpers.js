@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -76,6 +76,21 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				rows.forEach((c) => (c.checklist_status = 'In Progress'));
 				return rows.length;
 			},
+		},
+		issues: {
+			findById: async (id) => clone(db.issues.find((i) => String(i.ROWID) === String(id))),
+			list: async ({ status, taskId, reportedBy } = {}) =>
+				db.issues
+					.filter((i) => (!status || i.issue_status === status) && (!taskId || String(i.task_id) === String(taskId)) && (!reportedBy || String(i.reported_by_id) === String(reportedBy)))
+					.map(clone),
+			findOpenBySubject: async (taskId, subject) =>
+				clone(db.issues.find((i) => String(i.task_id) === String(taskId) && i.subject === subject.slice(0, 255) && i.source_kind === 'checklist' && ['Open', 'In Progress'].includes(i.issue_status))),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.issues.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.issues, row),
 		},
 		templates: {
 			findByKey: async (key) => clone(db.templates.find((t) => t.template_key === key)),

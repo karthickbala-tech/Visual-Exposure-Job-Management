@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { ChecklistListItem, ChecklistView, Job, JobDetailResponse, TaskDetailResponse } from './types';
+import type { ChecklistListItem, ChecklistView, Issue, Job, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -108,5 +108,28 @@ export const useCompleteChecklist = (id: string, taskId: string) => {
 			qc.invalidateQueries({ queryKey: ['task-checklists', taskId] });
 			qc.invalidateQueries({ queryKey: ['task', taskId] });
 		},
+	});
+};
+
+export const useIssues = (status?: string) =>
+	useQuery({
+		queryKey: ['issues', status ?? 'all'],
+		queryFn: () => api<{ items: Issue[]; count: number }>('/issues' + (status ? '?status=' + encodeURIComponent(status) : '')),
+		staleTime: 15_000,
+	});
+
+export const useCreateIssue = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (input: { subject: string; description?: string; issue_priority?: string }) => api('/issues', json('POST', input)),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['issues'] }),
+	});
+};
+
+export const useMoveIssue = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { id: string; issue_status: string }) => api('/issues/' + v.id, json('PATCH', { issue_status: v.issue_status })),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['issues'] }),
 	});
 };
