@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -60,6 +60,40 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		people: { findByIds: async (ids) => byIds(db.people, ids).map(clone) },
 		activity: { insert: async (row) => (db.activity.push(row), row) },
+		checklists: {
+			findById: async (id) => clone(db.checklists.find((c) => String(c.ROWID) === String(id))),
+			findMine: async ({ taskId, personId, phase }) =>
+				clone(db.checklists.find((c) => String(c.task_id) === String(taskId) && String(c.assignee_id) === String(personId) && c.phase === phase)),
+			listByTask: async (taskId) => db.checklists.filter((c) => String(c.task_id) === String(taskId)).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.checklists.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.checklists, row),
+		},
+		templates: {
+			findByKey: async (key) => clone(db.templates.find((t) => t.template_key === key)),
+			findLatest: async ({ taskType, phase, role }) =>
+				clone(
+					db.templates
+						.filter((t) => t.task_type === taskType && t.phase === phase && t.assignee_role === role && t.is_active !== false)
+						.sort((a, b) => b.version_no - a.version_no)[0]
+				),
+		},
+		timeEntries: {
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.time.push(r);
+				return clone(r);
+			},
+			listByTask: async (taskId) => db.time.filter((e) => String(e.task_id) === String(taskId)).map(clone),
+			approveForTask: async (taskId) => {
+				const rows = db.time.filter((e) => String(e.task_id) === String(taskId) && e.approved !== 'true');
+				rows.forEach((e) => (e.approved = 'true'));
+				return rows.length;
+			},
+		},
 	};
 
 	const log = { info() {}, warn() {}, error() {} };
