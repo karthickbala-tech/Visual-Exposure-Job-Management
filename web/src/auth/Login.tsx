@@ -1,3 +1,4 @@
+import logo from '../assets/visual_exposure_logo.avif';
 import { useEffect, useRef, useState } from 'react';
 import './Login.css';
 
@@ -47,8 +48,7 @@ export function Login() {
 	return (
 		<div className="login">
 			<header className="login__band">
-				<span className="login__logo" aria-hidden="true" />
-				<span className="login__name">Visual<br />Exposure</span>
+				<img className="login__logo" src={logo} alt="Visual Exposure" />
 			</header>
 			<main className="login__card">
 				<h1 className="page-title">Sign in</h1>

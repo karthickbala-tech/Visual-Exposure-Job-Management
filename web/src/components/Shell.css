@@ -10,10 +10,7 @@
 	padding: 0 var(--space-4) var(--space-4);
 	font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.1;
 }
-.shell__logo {
-	width: 36px; height: 36px; border-radius: 50%;
-	background: radial-gradient(circle at 50% 50%, var(--slate) 38%, var(--accent) 40%, var(--accent) 100%);
-}
+.shell__logo { height: 44px; width: auto; max-width: 100%; }
 .shell__link {
 	display: flex; align-items: center; min-height: var(--touch);
 	padding: 0 var(--space-4); color: #fff; text-decoration: none;

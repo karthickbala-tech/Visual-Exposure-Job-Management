@@ -3,10 +3,7 @@
 	background: var(--slate); color: #fff; display: flex; align-items: center; gap: var(--space-3);
 	padding: var(--space-3) var(--space-4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.1;
 }
-.login__logo {
-	width: 36px; height: 36px; border-radius: 50%;
-	background: radial-gradient(circle at 50% 50%, var(--slate) 38%, var(--accent) 40%, var(--accent) 100%);
-}
+.login__logo { height: 44px; width: auto; }
 .login__card { max-width: 440px; margin: var(--space-6) auto; padding: var(--space-5) var(--space-4); background: var(--paper); border-top: 6px solid var(--accent); }
 .login__form { margin-top: var(--space-4); min-height: 420px; }
 .login__error { margin-top: var(--space-4); color: #9b1c20; }

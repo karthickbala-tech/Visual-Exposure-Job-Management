@@ -1,3 +1,4 @@
+import logo from '../assets/visual_exposure_logo.avif';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMe } from '../api/queries';
 import { signOut } from '../auth/Login';
@@ -33,12 +34,7 @@ export function Shell() {
 			</a>
 			<aside className="shell__side" aria-label="Main navigation">
 				<div className="shell__brand">
-					<span className="shell__logo" aria-hidden="true" />
-					<span>
-						Visual
-						<br />
-						Exposure
-					</span>
+					<img className="shell__logo" src={logo} alt="Visual Exposure" />
 				</div>
 				<nav>
 					{items.map((n) => (
