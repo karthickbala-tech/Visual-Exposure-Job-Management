@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import Guard from './components/Guard';
 import { DemoProvider, useDemo } from './context/DemoContext';
+import { ThemeProvider } from './context/ThemeContext';
 import PlaceholderPage from './pages/PlaceholderPage';
 import PmDashboard from './pages/PmDashboard';
 import JobsPage from './pages/JobsPage';
@@ -24,6 +25,7 @@ function Home() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <DemoProvider>
       <HashRouter>
         <Routes>
@@ -51,5 +53,6 @@ export default function App() {
         </Routes>
       </HashRouter>
     </DemoProvider>
+    </ThemeProvider>
   );
 }

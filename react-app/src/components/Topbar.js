@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { Bell, Menu, Search } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
 import { ROLES } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Topbar({ onMenu }) {
   const { roleId, changeRole } = useDemo();
+  const { theme, toggleTheme } = useTheme();
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +37,15 @@ export default function Topbar({ onMenu }) {
             {Object.entries(ROLES).map(([id, r]) => <option key={id} value={id}>{r.label}</option>)}
           </select>
         </label>
+        <button
+          type="button"
+          className="icon-btn theme-toggle"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <button type="button" className="icon-btn bell" aria-label="Notifications"><Bell size={18} /><i /></button>
       </div>
     </div>
