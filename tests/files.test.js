@@ -71,3 +71,22 @@ test('access follows the task: outsiders get 404; only the uploader confirms', a
 	const pm = w.as(['project_manager'], '105747000000900002');
 	assert.ok((await files.downloadUrl(pm, up.file.id)).url);
 });
+
+test('issue files: a read-only viewer cannot add one, a reporter can add to their own issue only', async () => {
+	const w = makeWorld({ roles: ['installer'] });
+	const issues = require('../lib/services/issues');
+	const { issue } = await issues.createIssue(w.ctx, { subject: 'Mine' });
+	w.db.issues.push({ ROWID: '105747000001999555', subject: 'Not mine', reported_by_id: '105747000000900003', issue_status: 'Open' });
+	const body = (id) => ({ entity_type: 'issue', entity_id: String(id), file_name: 'a.jpg', mime_type: 'image/jpeg', size_bytes: 1000 });
+
+	// A viewer may see issues but must not attach files to them.
+	await rejects(files.requestUpload(w.as(['viewer'], '105747000000900004'), body(issue.ROWID)), 403);
+	assert.equal(w.db.files.length, 0, 'no record and no upload link');
+
+	// The reporter can attach to their own issue, but not to someone else's.
+	assert.ok((await files.requestUpload(w.ctx, body(issue.ROWID))).uploadUrl);
+	await rejects(files.requestUpload(w.ctx, body('105747000001999555')), 404);
+
+	// Viewing files is still allowed for viewers.
+	await files.listFiles(w.as(['viewer'], '105747000000900004'), { entity_type: 'issue', entity_id: String(issue.ROWID) });
+});
