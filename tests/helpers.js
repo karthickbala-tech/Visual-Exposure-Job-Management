@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -23,6 +23,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const repos = {
 		jobs: {
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
+			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
 			countByStage: async () => db.jobs.reduce((m, j) => ({ ...m, [j.stage]: (m[j.stage] || 0) + 1 }), {}),
 			list: async ({ stage, ids } = {}) =>
 				byIds(db.jobs, ids).filter((j) => !stage || j.stage === stage).map(clone),
@@ -100,6 +101,16 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				rows.forEach((c) => (c.checklist_status = 'In Progress'));
 				return rows.length;
 			},
+		},
+		outbox: {
+			findByKey: async (key) => clone(db.outbox.find((o) => o.idempotency_key === key)),
+			listDue: async (until) => db.outbox.filter((o) => o.job_status === 'Pending' && o.next_run_at && o.next_run_at <= until).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.outbox.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.outbox, row),
 		},
 		complianceTypes: {
 			findById: async (id) => clone(db.ctypes.find((t) => String(t.ROWID) === String(id))),

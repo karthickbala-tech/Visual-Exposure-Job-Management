@@ -13,6 +13,9 @@ const swms = require('./lib/services/swms');
 const files = require('./lib/services/files');
 const dashboard = require('./lib/services/dashboard');
 const settings = require('./lib/services/settings');
+const catalyst = require('zcatalyst-sdk-node');
+const { createDb } = require('./lib/db');
+const crmWebhook = require('./lib/services/crmWebhook');
 const people = require('./lib/services/people');
 const compliance = require('./lib/services/compliance');
 
@@ -98,6 +101,21 @@ router.add('PATCH', '/compliance/:id', withCtx(async (ctx, { req, params }) => o
 // Dashboard and calendar
 router.add('GET', '/dashboard', withCtx(async (ctx) => ok(await dashboard.getDashboard(ctx))));
 router.add('GET', '/calendar', withCtx(async (ctx, { url }) => ok(await dashboard.getCalendar(ctx, parseQuery(url)))));
+
+// Inbound CRM webhook. Public (the CRM has no browser session) but guarded by a shared secret, and
+// switched off (503) until CRM_WEBHOOK_SECRET is set. Receiving the same deal twice is harmless.
+router.add(
+	'POST',
+	'/webhooks/crm/deal-won',
+	async ({ req, log }) => {
+		crmWebhook.authenticate(process.env.CRM_WEBHOOK_SECRET, req.headers);
+		const body = await readJson(req);
+		const app = catalyst.initialize(req, { scope: 'admin' });
+		const system = { roles: ['admin'], person: null, user: null, db: createDb(app), app };
+		return ok(await crmWebhook.dealWon(makeContext(system, log), body));
+	},
+	{ public: true }
+);
 
 // Admin
 router.add('POST', '/admin/seed-compliance-types', withCtx(async (ctx) => ok(await compliance.seedComplianceTypes(ctx))));
