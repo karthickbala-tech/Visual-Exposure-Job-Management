@@ -59,7 +59,10 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.links = db.links.filter((l) => !ids.map(String).includes(String(l.ROWID)));
 			},
 		},
-		people: { findByIds: async (ids) => byIds(db.people, ids).map(clone) },
+		people: {
+			findByIds: async (ids) => byIds(db.people, ids).map(clone),
+			listByRole: async (role) => db.people.filter((p) => (p.roles || []).includes(role)).map(clone),
+		},
 		activity: { insert: async (row) => (db.activity.push(row), row) },
 		checklists: {
 			findById: async (id) => clone(db.checklists.find((c) => String(c.ROWID) === String(id))),
