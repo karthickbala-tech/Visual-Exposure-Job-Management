@@ -221,3 +221,7 @@ Kalyani's prototype (`react-app/`) is the reference for layout and interaction; 
 ### Type scale (compact, 2026-11-02)
 
 Raleway only, weights 400, 600 and 700. Body 14px; page title 22 to 28px; card and table headings 11 to 12px in capitals; table cells 13px; buttons 12.5px (11.5px small); status chips 10.5px; big numbers 28px; sidebar items 12.5px in capitals. On phones, buttons and fields stay 44px tall so they are easy to tap. Figures use Raleway's normal numerals.
+
+### Sign-in page (2026-11-02)
+
+The page follows the prototype's layout (brand panel with icons, theme toggle, labelled field, full-width green button, green forgot-password link), in our colours and Raleway, light and dark. The form itself is still Catalyst's real login. Its look comes from a stylesheet Catalyst loads inside the form (`css_url`): `web/login-frame/build.mjs` joins Catalyst's default sheet (`embedded_signin.base.css`, unchanged) with our overrides (`overrides.css`) and writes `public/css/login-frame-light.css` and `login-frame-dark.css`. After editing the overrides run `node login-frame/build.mjs`. Works on the deployed Development site without any console setting. The frame sets its own `color-scheme` (otherwise the browser paints a white backdrop in dark mode). The password step, the forgot-password page and the one-time-code steps use the same sheet but were only checked for the email step and the "account does not exist" error, because I have no test password.
