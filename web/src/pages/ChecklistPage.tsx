@@ -52,7 +52,7 @@ function Field({ q, value, disabled, onChange }: { q: Question; value: string | 
 		return (
 			<div className="q">
 				{label}
-				<p className="q__hint">Photo upload arrives with the files phase.</p>
+				<p className="q__hint">Add photos on the task page, under Photos and files.</p>
 			</div>
 		);
 	}
@@ -139,7 +139,7 @@ function Body({ data }: { data: ChecklistView }) {
 				<Chip status={checklist.status} />
 			</PageHeader>
 
-			<Card title="Answered">
+			<Card title="Progress">
 				<div style={{ maxWidth: 480 }}>
 					<Progress label="Answered" value={progress.percent} />
 				</div>

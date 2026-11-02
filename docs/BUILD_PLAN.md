@@ -217,3 +217,7 @@ Kalyani's prototype (`react-app/`) is the reference for layout and interaction; 
 | **Security review** | Done on the whole branch. One finding (a read-only viewer could attach files to any issue), fixed and covered by a test. Everything else checked held up |
 | **Go-live plan** | `docs/GO_LIVE.md`: what is needed from you, how the AU project is built, environment variables, schedules, connections, the migration rules and reconciliation report, UAT by role, cut-over and rollback, the assumed business rules, and the known gaps |
 | **Not started** | The migration script itself (needs the Creator data export), the AU project (needs you to create it), schedules, real Zoho connections (need the rotated OAuth client) |
+
+### Type scale (compact, 2026-11-02)
+
+Raleway only, weights 400, 600 and 700. Body 14px; page title 22 to 28px; card and table headings 11 to 12px in capitals; table cells 13px; buttons 12.5px (11.5px small); status chips 10.5px; big numbers 28px; sidebar items 12.5px in capitals. On phones, buttons and fields stay 44px tall so they are easy to tap. Figures use Raleway's normal numerals.
