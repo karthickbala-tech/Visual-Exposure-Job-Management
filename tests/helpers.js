@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -73,6 +73,14 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		people: {
 			findByIds: async (ids) => byIds(db.people, ids).map(clone),
+			findByEmail: async (email) => clone(db.people.find((p) => p.email === email)),
+			list: async ({ active } = {}) => db.people.filter((p) => active === undefined || (p.is_active !== false) === active).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.people.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.people, row),
 			listByRole: async (role) => db.people.filter((p) => (p.roles || []).includes(role)).map(clone),
 		},
 		activity: { insert: async (row) => (db.activity.push(row), row) },
@@ -92,6 +100,26 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				rows.forEach((c) => (c.checklist_status = 'In Progress'));
 				return rows.length;
 			},
+		},
+		complianceTypes: {
+			findById: async (id) => clone(db.ctypes.find((t) => String(t.ROWID) === String(id))),
+			list: async () => db.ctypes.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.ctypes.push(r);
+				return clone(r);
+			},
+		},
+		compliance: {
+			findById: async (id) => clone(db.citems.find((i) => String(i.ROWID) === String(id))),
+			list: async ({ personId } = {}) => db.citems.filter((i) => i.is_active !== 'false' && (!personId || String(i.person_id) === String(personId))).map(clone),
+			listDue: async (until) => db.citems.filter((i) => i.is_active !== 'false' && i.next_reminder_at && i.next_reminder_at <= until).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.citems.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.citems, row),
 		},
 		settings: {
 			findByKey: async (key) => clone(db.settings.find((s) => s.setting_key === key)),

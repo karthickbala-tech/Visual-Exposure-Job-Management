@@ -13,6 +13,8 @@ const swms = require('./lib/services/swms');
 const files = require('./lib/services/files');
 const dashboard = require('./lib/services/dashboard');
 const settings = require('./lib/services/settings');
+const people = require('./lib/services/people');
+const compliance = require('./lib/services/compliance');
 
 const router = createRouter();
 
@@ -83,11 +85,22 @@ router.add('POST', '/files/upload-url', withCtx(async (ctx, { req }) => created(
 router.add('POST', '/files/:id/confirm', withCtx(async (ctx, { params }) => ok(await files.confirmUpload(ctx, params.id))));
 router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => ok(await files.downloadUrl(ctx, params.id))));
 
+// People and compliance
+router.add('GET', '/people', withCtx(async (ctx, { url }) => ok(await people.listPeople(ctx, parseQuery(url)))));
+router.add('POST', '/people', withCtx(async (ctx, { req }) => created(await people.createPerson(ctx, await readJson(req)))));
+router.add('GET', '/people/:id', withCtx(async (ctx, { params }) => ok(await people.getPerson(ctx, params.id))));
+router.add('PATCH', '/people/:id', withCtx(async (ctx, { req, params }) => ok(await people.updatePerson(ctx, params.id, await readJson(req)))));
+router.add('GET', '/compliance/types', withCtx(async (ctx) => ok(await compliance.listTypes(ctx))));
+router.add('GET', '/compliance', withCtx(async (ctx, { url }) => ok(await compliance.listItems(ctx, parseQuery(url)))));
+router.add('POST', '/compliance', withCtx(async (ctx, { req }) => created(await compliance.createItem(ctx, await readJson(req)))));
+router.add('PATCH', '/compliance/:id', withCtx(async (ctx, { req, params }) => ok(await compliance.updateItem(ctx, params.id, await readJson(req)))));
+
 // Dashboard and calendar
 router.add('GET', '/dashboard', withCtx(async (ctx) => ok(await dashboard.getDashboard(ctx))));
 router.add('GET', '/calendar', withCtx(async (ctx, { url }) => ok(await dashboard.getCalendar(ctx, parseQuery(url)))));
 
 // Admin
+router.add('POST', '/admin/seed-compliance-types', withCtx(async (ctx) => ok(await compliance.seedComplianceTypes(ctx))));
 router.add('GET', '/admin/authz', withCtx(async (ctx) => ok(await settings.getAuthz(ctx))));
 router.add('PUT', '/admin/authz', withCtx(async (ctx, { req }) => ok(await settings.setAuthz(ctx, await readJson(req)))));
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));
