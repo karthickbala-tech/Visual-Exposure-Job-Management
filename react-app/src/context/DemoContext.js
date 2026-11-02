@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { ROLES, designTasks, fabTasks, installTasks, seedJobs, seedSwms } from '../data/mockData';
 import { TRANSITIONS } from '../lib/workflow';
 import { seedHoursLog, seedTimesheets } from '../data/hoursSeed';
+import { ISSUE_MANAGERS, seedIssues } from '../data/issuesSeed';
+import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seedInductions, seedTickets, seedWorkers, ticketTypes } from '../data/workersSeed';
 import { ZERO_PAY, calcPay } from '../lib/payRules';
 import { shortName } from '../lib/people';
 import { toKey, today } from '../lib/dates';
@@ -37,6 +39,12 @@ export function DemoProvider({ children }) {
   const [tasks, setTasks] = useState(seedTasks);
   const [hoursLog, setHoursLog] = useState(seedHoursLog);
   const [timesheets, setTimesheets] = useState(seedTimesheets);
+  const [issues, setIssues] = useState(seedIssues);
+  const [workers, setWorkers] = useState(seedWorkers);
+  const [companies, setCompanies] = useState(seedCompanies);
+  const [tickets, setTickets] = useState(seedTickets);
+  const [inductions, setInductions] = useState(seedInductions);
+  const [companyDocs, setCompanyDocs] = useState(seedCompanyDocs);
   const [toast, setToast] = useState(null);
 
   const notify = useCallback((msg) => setToast({ id: Date.now(), msg }), []);
@@ -192,9 +200,81 @@ export function DemoProvider({ children }) {
     notify('Shift added');
   }, [roleId, notify]);
 
+  // ---- Issues: the department manager is assigned automatically, like the Creator "Assign Manager" workflow ----
+  const addIssue = useCallback((i) => {
+    const setup = ISSUE_MANAGERS[i.department];
+    const rec = {
+      location: '', site: '', direction: '', taskId: '', review: '', completionNotes: '', dateCompleted: '', dueDate: '', history: [], ...i,
+      id: '', status: 'To Be discussed', reportedBy: ROLES[roleId].name, date: toKey(today()), assignedTo: setup.manager, notify: setup.also,
+    };
+    setIssues((prev) => {
+      const n = Math.max(0, ...prev.map((x) => Number(x.id.slice(3)) || 0)) + 1;
+      return [{ ...rec, id: `IS-${n}` }, ...prev];
+    });
+    notify(`Issue reported. ${setup.manager} notified${setup.also.length ? `, ${setup.also.join(' and ')} informed` : ''}.`);
+  }, [roleId, notify]);
+
+  // One management-history update. The issue's status, next step and due date follow the latest entry.
+  const addIssueUpdate = useCallback((id, u) => {
+    const done = u.status === 'Completed';
+    setIssues((prev) => prev.map((x) => (x.id !== id ? x : {
+      ...x,
+      status: u.status,
+      dueDate: done ? x.dueDate : u.dueDate,
+      site: u.site ?? x.site,
+      direction: u.direction ?? x.direction,
+      dateCompleted: done ? toKey(today()) : '',
+      completionNotes: done ? u.workCompleted : '',
+      history: [...x.history, { at: new Date().toISOString(), by: ROLES[roleId].name, personResponsible: u.personResponsible, status: u.status, nextStep: u.nextStep, workCompleted: u.workCompleted, dueDate: u.dueDate }],
+    })));
+    notify(done ? `Issue ${id} completed. Completion email sent (demo).` : `Issue ${id} updated`);
+  }, [roleId, notify]);
+
+  // ---- Workers: adding a worker creates the tickets and inductions they need, like the Creator "create worker ticket" workflow ----
+  const addWorker = useCallback((w) => {
+    const company = companies.find((c) => c.id === w.companyId);
+    const isVe = company?.name === VE_NAME;
+    const id = `W-${Math.max(0, ...workers.map((x) => Number(x.id.slice(2)) || 0)) + 1}`;
+    const needT = ticketTypes.filter((t) => (isVe ? t.ve : t.nonVe));
+    const needI = inductionTypes.filter((t) => (isVe ? t.ve : t.nonVe));
+    setWorkers((prev) => [{ ...w, id, active: true, ratings: [] }, ...prev]);
+    setTickets((prev) => [...needT.map((t, i) => ({ id: `TK-${Date.now()}-${i}`, workerId: id, typeId: t.id, ref: '', issue: '', expiry: '' })), ...prev]);
+    setInductions((prev) => [...needI.map((t, i) => ({ id: `IN-${Date.now()}-${i}`, workerId: id, typeId: t.id, ref: '', issue: '', expiry: '' })), ...prev]);
+    notify(`${w.name} added. ${needT.length} tickets and ${needI.length} inductions to fill in.`);
+    return id;
+  }, [companies, workers, notify]);
+
+  // Adding a company creates the documents every new company must supply.
+  const addCompany = useCallback((c) => {
+    const id = `C-${Math.max(0, ...companies.map((x) => Number(x.id.slice(2)) || 0)) + 1}`;
+    const need = docTypes.filter((d) => d.required);
+    setCompanies((prev) => [...prev, { ...c, id, active: true }]);
+    setCompanyDocs((prev) => [...need.map((d, i) => ({ id: `CD-${Date.now()}-${i}`, companyId: id, typeId: d.id, name: d.name, issue: '', expiry: '' })), ...prev]);
+    notify(`${c.name} added. ${need.length} documents to collect.`);
+  }, [companies, notify]);
+
+  const updateCompliance = useCallback((kind, id, patch) => {
+    const set = kind === 'ticket' ? setTickets : kind === 'induction' ? setInductions : setCompanyDocs;
+    set((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    notify('Saved');
+  }, [notify]);
+
+  // Creates a design task in Not Started. The Creator version also emails the team and creates the WorkDrive folder.
+  const addDesignTask = useCallback((t) => {
+    const who = ROLES[roleId].name;
+    setTasks((prev) => {
+      const n = Math.max(0, ...prev.filter((x) => x.kind === 'design').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
+      return [{
+        id: `D${n}`, kind: 'design', name: t.name, jobId: t.jobId, type: t.type, owner: t.owner, stage: 'Not Started', due: t.due, date: t.due,
+        quoted: t.quoted || 0, booked: 0, description: t.description || '', history: [{ at: stamp(), who, text: 'Task created' }],
+      }, ...prev];
+    });
+    notify(`Design task created for ${t.owner}. Folder created (demo).`);
+  }, [roleId, notify]);
+
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, notify, toast, dismissToast,
-  }), [roleId, changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
