@@ -266,3 +266,12 @@ export const useSyncQuotes = (jobId: string) => {
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['sign-groups', jobId] }),
 	});
 };
+
+/** Ask the CRM for newly won deals and make jobs for them (the same thing the hourly job does). */
+export const usePullWonDeals = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => api<{ ran: boolean; reason?: string; changedDeals?: number; wonDeals?: number; created?: number; alreadyHadJob?: number; failed?: number }>('/admin/crm/pull-won-deals', json('POST')),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+	});
+};

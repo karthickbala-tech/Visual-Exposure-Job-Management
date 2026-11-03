@@ -23,6 +23,7 @@ const outbox = require('./lib/services/outbox');
 const directory = require('./lib/services/directory');
 const integrations = require('./lib/services/integrations');
 const quotes = require('./lib/services/quotes');
+const crmPull = require('./lib/services/crmPull');
 const { createZoho } = require('./lib/integrations/zoho');
 
 const router = createRouter();
@@ -193,6 +194,7 @@ router.add(
 // Admin
 router.add('POST', '/admin/seed-compliance-types', withCtx(async (ctx) => ok(await compliance.seedComplianceTypes(ctx))));
 router.add('GET', '/admin/authz', withCtx(async (ctx) => ok(await settings.getAuthz(ctx))));
+router.add('POST', '/admin/crm/pull-won-deals', withCtx(async (ctx) => ok(await crmPull.pullWonDeals({ ...ctx, zoho: zoho() }))));
 router.add('GET', '/admin/integrations', withCtx(async (ctx) => ok(await integrations.status(ctx))));
 router.add('GET', '/admin/outbox', withCtx(async (ctx, { url }) => ok(await outbox.listOutbox(ctx, parseQuery(url)))));
 router.add('POST', '/admin/outbox/:id/retry', withCtx(async (ctx, { params }) => ok(await outbox.retryOutbox(ctx, params.id))));

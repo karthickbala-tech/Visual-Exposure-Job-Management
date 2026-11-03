@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCw } from 'lucide-react';
-import { useAuthz, useCheckIntegrations, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
+import { useAuthz, useCheckIntegrations, usePullWonDeals, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
 import type { Matrix, Scope, Verb } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -203,6 +203,7 @@ function Outbox() {
 
 function Integrations() {
 	const check = useCheckIntegrations();
+	const pull = usePullWonDeals();
 	const row = (name: string, c?: { configured: boolean; ok: boolean; message: string }) => (
 		<tr key={name}>
 			<td data-label="Service" className="cell-primary">
@@ -218,8 +219,19 @@ function Integrations() {
 				<button className="btn" disabled={check.isPending} onClick={() => check.mutate()}>
 					{check.isPending ? 'Checking...' : 'Check connections'}
 				</button>
+				<button className="btn btn-ghost" disabled={pull.isPending} onClick={() => pull.mutate()}>
+					{pull.isPending ? 'Pulling...' : 'Pull won deals from CRM now'}
+				</button>
 				{check.isError && <p role="alert">{check.error.message}</p>}
+				{pull.isError && <p role="alert">{pull.error.message}</p>}
 			</div>
+			{pull.data && (
+				<p role="status" style={{ padding: '0 16px' }}>
+					{pull.data.ran
+						? `Looked at ${pull.data.changedDeals} changed deal(s): ${pull.data.wonDeals} won, ${pull.data.created} new job(s) created, ${pull.data.alreadyHadJob} already had a job${pull.data.failed ? `, ${pull.data.failed} could not be created` : ''}.`
+						: pull.data.reason}
+				</p>
+			)}
 			<p className="muted" style={{ padding: '0 16px' }}>
 				Makes one small read at Zoho CRM and one at WorkDrive. The credentials are set on the functions in the Catalyst console and are never shown here.
 			</p>
