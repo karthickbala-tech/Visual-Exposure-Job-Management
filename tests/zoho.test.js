@@ -132,3 +132,24 @@ test('the admin check reports not-configured, connected, and failures; only admi
 
 	await rejects(integrations.status({ ...w.as(['project_manager']), zoho: ok }), 403);
 });
+
+test('the folder check: found, not a folder, refused, and not set', async () => {
+	const w = makeWorld();
+	const mk = (folder) => ({ crm: { ping: async () => ({}) }, workdrive: { ping: async () => ({}), getFolder: folder }, parentFolderId: 'p' });
+	const found = await integrations.status({ ...w.ctx, zoho: mk(async () => ({ name: 'Jobs', isFolder: true })) });
+	assert.equal(found.workdriveFolder.ok, true);
+	assert.match(found.workdriveFolder.message, /Jobs/);
+	assert.equal((await integrations.status({ ...w.ctx, zoho: mk(async () => ({ name: 'x', isFolder: false })) })).workdriveFolder.ok, false);
+	const refused = await integrations.status({ ...w.ctx, zoho: mk(async () => { throw new Error('Zoho GET /files/p failed (HTTP 401): F7003 Unauthorized access'); }) });
+	assert.equal(refused.workdriveFolder.ok, false);
+	assert.match(refused.workdriveFolder.message, /F7003/);
+	const unset = await integrations.status({ ...w.ctx, zoho: { ...mk(async () => ({})), parentFolderId: null } });
+	assert.equal(unset.workdriveFolder.configured, false);
+});
+
+test('WorkDrive getFolder reads the folder and a refusal carries the HTTP status and Zoho error id', async () => {
+	const ok = fakeNet((u) => (u.includes('/oauth/v2/token') ? tokenOk : { status: 200, body: { data: { attributes: { name: 'Jobs', is_folder: true } } } }));
+	assert.deepEqual(await createZoho({ env: ENV, fetchFn: ok.fetchFn }).workdrive.getFolder('abc'), { name: 'Jobs', type: null, isFolder: true });
+	const no = fakeNet((u) => (u.includes('/oauth/v2/token') ? tokenOk : { status: 401, body: { errors: [{ id: 'F7003', title: 'Unauthorized access' }] } }));
+	await assert.rejects(createZoho({ env: ENV, fetchFn: no.fetchFn }).workdrive.getFolder('abc'), /HTTP 401.*F7003 Unauthorized access/);
+});

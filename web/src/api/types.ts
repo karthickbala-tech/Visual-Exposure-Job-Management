@@ -285,5 +285,6 @@ export interface IntegrationCheck {
 export interface IntegrationStatus {
 	crm: IntegrationCheck;
 	workdrive: IntegrationCheck;
+	workdriveFolder: IntegrationCheck;
 	workdriveFolderSet: boolean;
 }

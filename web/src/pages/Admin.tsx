@@ -236,6 +236,7 @@ function Integrations() {
 					<tbody>
 						{row('Zoho CRM', check.data?.crm)}
 						{row('Zoho WorkDrive', check.data?.workdrive)}
+						{row('WorkDrive job folder', check.data?.workdriveFolder)}
 					</tbody>
 				</table>
 			</div>
