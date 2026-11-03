@@ -44,6 +44,8 @@ Legend: **[You]** needs your login or a decision. **[Me]** I can do it once the 
 | `CRM_WEBHOOK_SECRET` | api | a long random secret. The deal-won webhook returns 503 until it is set |
 | `BUSINESS_TZ` | api, jobs | optional; default is Australia/Melbourne |
 
+**Development status (3 Nov 2026):** set on `api`: `APP_URL`, `STRATUS_BUCKET` (ve-files-dev), `CRM_WEBHOOK_SECRET` (read it from the Catalyst console, Functions, api, Environment Variables, when creating the CRM webhook). Set on `jobs`: `APP_URL`. Still unset: `MAIL_FROM` (needs a verified sender). The webhook was tested: no token or a wrong token is refused, the right token works and repeating a deal does not create a second job.
+
 Never put these in the repository. The development ids hard-coded as fallbacks in the code are for Development only, which is why production must set them.
 
 ## 4. Scheduled jobs to create in production
