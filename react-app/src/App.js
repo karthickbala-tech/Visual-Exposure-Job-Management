@@ -19,6 +19,8 @@ import HoursPage from './pages/HoursPage';
 import { IssuesBoard, IssueDetail } from './pages/IssuesPage';
 import { WorkersPage, WorkerDetail } from './pages/WorkersPage';
 import DesignPage from './pages/DesignPage';
+import EquipmentPage from './pages/EquipmentPage';
+import DevicesPage from './pages/DevicesPage';
 import RoleHome from './pages/RoleHome';
 import { NAV } from './navConfig';
 import './App.css';
@@ -54,10 +56,12 @@ export default function App() {
             <Route path="issues" element={<IssuesBoard />} />
             <Route path="issues/:issueId" element={<IssueDetail />} />
             <Route path="design" element={<DesignPage />} />
+            <Route path="equipment" element={<EquipmentPage />} />
+            <Route path="devices" element={<DevicesPage />} />
             <Route path="workers" element={<WorkersPage />} />
             <Route path="workers/:workerId" element={<WorkerDetail />} />
             <Route path="swms/:swmsId" element={<SwmsDetail />} />
-            {NAV.filter((n) => n.path !== '/' && n.path !== '/jobs' && n.path !== '/fabrication' && n.path !== '/installation' && n.path !== '/swms' && n.path !== '/hours' && n.path !== '/issues' && n.path !== '/workers' && n.path !== '/design').map((n) => (
+            {NAV.filter((n) => n.path !== '/' && n.path !== '/jobs' && n.path !== '/fabrication' && n.path !== '/installation' && n.path !== '/swms' && n.path !== '/hours' && n.path !== '/issues' && n.path !== '/workers' && n.path !== '/design' && n.path !== '/equipment' && n.path !== '/devices').map((n) => (
               <Route key={n.path} path={n.path} element={<PlaceholderPage title={n.label} blurb={n.blurb} replaces={n.replaces} />} />
             ))}
             <Route path="*" element={<PlaceholderPage title="Page not found" />} />

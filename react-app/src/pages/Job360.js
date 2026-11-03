@@ -24,7 +24,7 @@ function Ring({ value }) {
 
 export default function Job360() {
   const { jobId } = useParams();
-  const { jobs, tasks, notify } = useDemo();
+  const { allJobs: jobs, tasks, notify } = useDemo();
   const [tab, setTab] = useState('design');
   const [selectedId, setSelectedId] = useState(null);
 

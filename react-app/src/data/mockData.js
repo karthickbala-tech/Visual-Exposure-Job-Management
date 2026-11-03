@@ -24,6 +24,7 @@ export const seedJobs = [
   { id: 'J-1051', name: 'Metro Tunnel Site Hoardings', client: 'Metro Rail Alliance', stage: 'Preparation', fab: 0, install: 0, job: 12, finish: day(43), risk: '', booked: 0, quoted: 90 },
   { id: 'J-1053', name: 'Southern Cross Façade', client: 'Southern Cross Hardware', stage: 'In Progress', fab: 35, install: 0, job: 24, finish: day(28), risk: 'Hours 32% over quote', booked: 185, quoted: 140 },
   { id: 'J-1058', name: 'Eastfield Building Letters', client: 'Eastfield University', stage: 'In Progress', fab: 100, install: 85, job: 92, finish: day(3), risk: '', booked: 98, quoted: 96 },
+  { id: 'J-0000', name: 'Workshop and maintenance', client: 'Visual Exposure (internal)', stage: 'In Progress', fab: 0, install: 0, job: 0, finish: day(365), risk: '', booked: 0, quoted: 0, internal: true },
   { id: 'J-1060', name: 'Summit Pylon Concept', client: 'Summit Supermarkets', stage: 'Preparation', fab: 0, install: 0, job: 5, finish: day(52), risk: '', booked: 0, quoted: 60 },
 ];
 
@@ -64,5 +65,9 @@ export const fabTasks = [
   { id: 'F2', name: 'Pylon frame welding', jobId: 'J-1042', type: 'Metal', date: day(1), leader: 'Tom H.', member: 'Jo P.', stage: 'Scheduled', quoted: 30, booked: 0 },
   { id: 'F3', name: 'Pylon spray paint', jobId: 'J-1042', type: 'Paint', date: day(5), leader: 'Mia T.', member: '', stage: 'Awaiting Scheduling', quoted: 16, booked: 0 },
   { id: 'F4', name: 'Façade LED module fit', jobId: 'J-1053', type: 'LED', date: day(2), leader: 'Tom H.', member: 'Sam T.', stage: 'Manager Review', quoted: 12, booked: 12 },
+  { id: 'F6', name: 'Clean and tidy paint booth', jobId: 'J-0000', type: 'Workshop', date: day(0), leader: 'Jo P.', member: '', stage: 'In Progress', quoted: 3, booked: 1 },
+  { id: 'F7', name: 'Service CNC router (30 day)', jobId: 'J-0000', type: 'Maintenance', date: day(2), leader: 'Mia T.', member: '', stage: 'Scheduled', quoted: 2, booked: 0 },
+  { id: 'F8', name: 'Restock vinyl and fixings', jobId: 'J-0000', type: 'Workshop', date: day(-1), leader: 'Jo P.', member: 'Sam T.', stage: 'Scheduled', quoted: 2, booked: 0 },
+  { id: 'F9', name: 'Calibrate laser cutter', jobId: 'J-0000', type: 'Maintenance', date: day(4), leader: '', member: '', stage: 'Awaiting Scheduling', quoted: 2, booked: 0 },
   { id: 'F5', name: 'Letter faces cut and pack', jobId: 'J-1058', type: 'CNC Router', date: day(-8), leader: 'Mia T.', member: 'Jo P.', stage: 'Completed', quoted: 20, booked: 19 },
 ];

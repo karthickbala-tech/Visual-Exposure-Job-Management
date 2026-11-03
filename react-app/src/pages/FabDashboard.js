@@ -84,7 +84,7 @@ function ScheduleModal({ task, onClose }) {
 
 // variant: 'manager' (Fab Manager and the Fabrication menu) or 'ic2' (Fab 2IC: week view, starts on "My open").
 export default function FabDashboard({ variant = 'manager' }) {
-  const { tasks, jobs, role, roleId, actOnTask } = useDemo();
+  const { tasks, allJobs: jobs, role, roleId, actOnTask } = useDemo();
   const [filter, setFilter] = useState(variant === 'ic2' ? 'mine' : 'all');
   const [creating, setCreating] = useState(null);
   const [scheduling, setScheduling] = useState(null);

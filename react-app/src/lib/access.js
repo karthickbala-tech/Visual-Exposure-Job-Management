@@ -3,15 +3,18 @@
 const ALL = ['/', '/jobs', '/design', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers'];
 
 export const ACCESS = {
-  pm: ALL,
-  fabManager: ALL,
-  ic2: ['/', '/jobs', '/fabrication', '/installation', '/hours', '/issues', '/workers'],
+  pm: [...ALL, '/equipment', '/devices'],
+  fabManager: [...ALL, '/equipment', '/devices'],
+  ic2: ['/', '/jobs', '/fabrication', '/installation', '/hours', '/issues', '/workers', '/equipment'],
   fabWorker: ['/', '/jobs', '/swms', '/hours', '/issues', '/workers'],
   installer: ['/', '/jobs', '/installation', '/swms', '/hours', '/issues', '/workers'],
-  workshop: ['/', '/jobs', '/fabrication', '/hours', '/issues', '/workers'],
+  workshop: ['/', '/jobs', '/fabrication', '/hours', '/issues', '/workers', '/equipment'],
 };
 
 export const KNOWN_SECTIONS = new Set(Object.values(ACCESS).flat());
 // "/swms/SW-209" belongs to the "/swms" section.
 export const sectionOf = (pathname) => { const seg = pathname.split('/')[1]; return seg ? `/${seg}` : '/'; };
 export const canAccess = (roleId, path) => (ACCESS[roleId] || []).includes(sectionOf(path));
+
+// Who can add and edit equipment, chemicals and workshop locations. Everyone with access can mark a check as done. PROPOSAL: confirm with the client.
+export const EQUIPMENT_EDITORS = ['pm', 'fabManager', 'workshop'];
