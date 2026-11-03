@@ -154,7 +154,13 @@ router.add(
 		const body = await readLooseBody(req); // the CRM may send JSON, form fields or address values
 		const app = catalyst.initialize(req, { scope: 'admin' });
 		const system = { roles: ['admin'], person: null, user: null, db: createDb(app), app };
-		return ok(await crmWebhook.dealWon(makeContext(system, log), body));
+		try {
+			return ok(await crmWebhook.dealWon(makeContext(system, log), body));
+		} catch (err) {
+			// Names only, never values: shows what the CRM actually sent and which field was refused.
+			log.warn('webhook payload refused', { receivedKeys: Object.keys(body), code: err.code, message: err.message, problems: Array.isArray(err.details) ? err.details.map((d) => ({ field: d.path || d.field, message: d.message })) : undefined });
+			throw err;
+		}
 	},
 	{ public: true }
 );
