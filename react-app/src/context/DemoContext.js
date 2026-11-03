@@ -7,7 +7,7 @@ import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seed
 import { ZERO_PAY, calcPay } from '../lib/payRules';
 import { shortName } from '../lib/people';
 import { seedChemicals, seedDevices, seedEquipment, seedLocations } from '../data/equipmentSeed';
-import { nextToolId } from '../lib/equipment';
+import { nextToolId, offHireOnFinish } from '../lib/equipment';
 import { toKey, today } from '../lib/dates';
 
 const stamp = () => new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -91,10 +91,18 @@ export function DemoProvider({ children }) {
 
   const setSubStage = useCallback((id, sub) => {
     const who = ROLES[roleId].name;
+    const task = tasks.find((t) => t.id === id);
+    // EQP-2: finishing on site sends equipment off hire for linked equipment flagged "off hire required".
+    const goingOff = task && sub === 'Finished On Site' ? offHireOnFinish(task, equipment) : [];
     setTasks((prev) => prev.map((t) => (t.id === id
-      ? { ...t, subStage: sub, history: [{ at: stamp(), who, text: sub }, ...(t.history || [])] } : t)));
-    notify(sub);
-  }, [roleId, notify]);
+      ? { ...t, subStage: sub, offHireSent: t.offHireSent || goingOff.length > 0, history: [{ at: stamp(), who, text: goingOff.length ? `${sub}. Off hire: ${goingOff.map((e) => e.id).join(', ')}` : sub }, ...(t.history || [])] } : t)));
+    if (goingOff.length) {
+      const ids = goingOff.map((e) => e.id);
+      setEquipment((prev) => prev.map((e) => (ids.includes(e.id)
+        ? { ...e, status: 'Off hire', history: [{ at: stamp(), who, text: `Off hire after install finished: ${task.name}` }, ...(e.history || [])] } : e)));
+      notify(`${sub}. Equipment Off Hire: ${task.name}. Equipment managers would be emailed (demo)`);
+    } else notify(sub);
+  }, [roleId, tasks, equipment, notify]);
 
   // Adds hours to the task and rolls them up to its job.
   const bookHours = useCallback((id, hours) => {
@@ -138,7 +146,7 @@ export function DemoProvider({ children }) {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'install').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
         id: `I${n}`, kind: 'install', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '',
-        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', swms: needsSwms ? 'Created' : 'Not Required', quoted: t.quoted || 0, booked: 0,
+        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', swms: needsSwms ? 'Created' : 'Not Required', quoted: t.quoted || 0, booked: 0, hiredEquipment: t.hiredEquipment || [],
         history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
     });

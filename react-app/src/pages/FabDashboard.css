@@ -8,3 +8,8 @@
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:560px){.form-row{grid-template-columns:1fr}.fab-types button{flex:1 1 44%}}
+
+.eq-pick { border: 1px solid var(--border, #d9dee5); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.eq-pick legend { font-weight: 600; padding: 0 6px; }
+.eq-pick .check { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.eq-pick .check input { width: 18px; height: 18px; accent-color: var(--brand-strong); }

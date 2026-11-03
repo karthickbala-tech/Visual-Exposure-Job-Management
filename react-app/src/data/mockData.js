@@ -42,7 +42,7 @@ export const seedSwms = [
 ];
 
 export const installTasks = [
-  { id: 'I1', name: 'Wayfinding L1-L2', jobId: 'J-1047', type: 'VE Install', date: day(-3), leader: 'Dave K.', member: 'Sam T.', stage: 'In Progress', swms: 'Completed', quoted: 32, booked: 30 },
+  { id: 'I1', name: 'Wayfinding L1-L2', jobId: 'J-1047', type: 'VE Install', date: day(-3), leader: 'Dave K.', member: 'Sam T.', stage: 'In Progress', swms: 'Completed', quoted: 32, booked: 30, hiredEquipment: ['VE - 106'] },
   { id: 'I2', name: 'Wayfinding L3', jobId: 'J-1047', type: 'VE Install', date: day(3), leader: 'Dave K.', member: 'Sam T.', stage: 'Scheduled', swms: 'PM Signed', quoted: 24, booked: 0 },
   { id: 'I3', name: 'Building letters touch-up', jobId: 'J-1058', type: 'Minor Task', date: day(0), leader: 'Luke M.', member: '', stage: 'In Progress', swms: 'Not Required', quoted: 6, booked: 4 },
   { id: 'I4', name: 'Pylon crane lift', jobId: 'J-1042', type: 'VE Install', date: day(4), leader: 'Luke M.', member: 'Dave K.', stage: 'Scheduled', swms: 'Created', quoted: 16, booked: 0 },

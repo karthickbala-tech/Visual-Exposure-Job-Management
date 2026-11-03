@@ -15,7 +15,7 @@ const field = (set) => (k) => (e) => set((x) => ({ ...x, [k]: e.target.value }))
 /* ---------- Equipment (EQP-1) ---------- */
 function EquipmentModal({ onClose }) {
   const { equipment, locations, addEquipment } = useDemo();
-  const [f, setF] = useState({ name: '', type: EQUIPMENT_TYPES[0], location: locations[0]?.name || '', status: 'In service', intervalDays: '30', responsible: FAB_CREW[0] });
+  const [f, setF] = useState({ name: '', type: EQUIPMENT_TYPES[0], location: locations[0]?.name || '', status: 'In service', intervalDays: '30', responsible: FAB_CREW[0], offHireRequired: false });
   const [error, setError] = useState('');
   const set = field(setF);
   const submit = (e) => {
@@ -24,7 +24,7 @@ function EquipmentModal({ onClose }) {
     if (!f.name.trim()) return setError('Equipment name is required.');
     if (!f.location) return setError('Add a workshop location first.');
     if (!Number.isInteger(days) || days < 1) return setError('Check interval must be a whole number of days, 1 or more.');
-    addEquipment({ name: f.name.trim(), type: f.type, location: f.location, status: f.status, intervalDays: days, responsible: f.responsible });
+    addEquipment({ name: f.name.trim(), type: f.type, location: f.location, status: f.status, intervalDays: days, responsible: f.responsible, offHireRequired: f.offHireRequired });
     return onClose();
   };
   return (
@@ -39,6 +39,7 @@ function EquipmentModal({ onClose }) {
           <label>Check every (days)<input type="number" min="1" step="1" value={f.intervalDays} onChange={set('intervalDays')} /></label>
           <label>Responsible<select value={f.responsible} onChange={set('responsible')}>{FAB_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
         </div>
+        <label className="check"><input type="checkbox" checked={f.offHireRequired} onChange={(e) => setF((x) => ({ ...x, offHireRequired: e.target.checked }))} />Hired equipment: goes off hire when an install task using it finishes on site</label>
         <small>The tool code is assigned automatically: {nextToolId(equipment)}.</small>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
@@ -52,14 +53,14 @@ function EquipmentModal({ onClose }) {
 
 function EquipmentDetail({ item, canEdit, onClose }) {
   const { locations, updateEquipment } = useDemo();
-  const [f, setF] = useState({ location: item.location, intervalDays: String(item.intervalDays), responsible: item.responsible });
+  const [f, setF] = useState({ location: item.location, intervalDays: String(item.intervalDays), responsible: item.responsible, offHireRequired: !!item.offHireRequired });
   const [error, setError] = useState('');
   const set = field(setF);
   const save = (e) => {
     e.preventDefault();
     const days = Number(f.intervalDays);
     if (!Number.isInteger(days) || days < 1) return setError('Check interval must be a whole number of days, 1 or more.');
-    updateEquipment(item.id, { location: f.location, intervalDays: days, responsible: f.responsible }, 'Schedule or location changed');
+    updateEquipment(item.id, { location: f.location, intervalDays: days, responsible: f.responsible, offHireRequired: f.offHireRequired }, 'Schedule or location changed');
     return onClose();
   };
   return (
@@ -77,6 +78,7 @@ function EquipmentDetail({ item, canEdit, onClose }) {
             <label>Check every (days)<input type="number" min="1" step="1" value={f.intervalDays} onChange={set('intervalDays')} /></label>
           </div>
           <label>Responsible<select value={f.responsible} onChange={set('responsible')}>{FAB_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
+          <label className="check"><input type="checkbox" checked={f.offHireRequired} onChange={(e) => setF((x) => ({ ...x, offHireRequired: e.target.checked }))} />Goes off hire when an install task using it finishes on site</label>
           {error && <p className="form-error" role="alert">{error}</p>}
           <div className="form-actions"><button type="submit" className="btn btn-primary">Save changes</button></div>
         </form>
