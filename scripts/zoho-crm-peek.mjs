@@ -1,8 +1,9 @@
-// Read-only look at your Zoho CRM "Deals" module, using the same credentials as the app (from .env).
+// Read-only look at a Zoho CRM module (default "Deals"; pass --module Quotes for another), using the same credentials as the app (from .env).
 // Prints ONLY non-secret facts: field names and types, the stage values, and a few sample deals.
 // Nothing is changed in the CRM and no credential is printed.
 //   node scripts/zoho-crm-peek.mjs            fields + stages + 5 sample deals
-//   node scripts/zoho-crm-peek.mjs --deals 10 more sample deals
+//   node scripts/zoho-crm-peek.mjs --deals 10 more sample records
+//   node scripts/zoho-crm-peek.mjs --module Quotes
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +27,7 @@ for (const k of ['ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRES
 	}
 }
 const dc = env.ZOHO_DC;
+const moduleName = process.argv.includes('--module') ? process.argv[process.argv.indexOf('--module') + 1] : 'Deals';
 const want = Number(process.argv.includes('--deals') ? process.argv[process.argv.indexOf('--deals') + 1] : 5) || 5;
 
 const tok = await (
@@ -46,22 +48,24 @@ const get = async (path) => {
 };
 
 try {
-	const f = await get('/settings/fields?module=Deals');
+	const f = await get(`/settings/fields?module=${moduleName}`);
 	const fields = f.fields || [];
-	console.log(`Deals module: ${fields.length} fields`);
+	console.log(`${moduleName} module: ${fields.length} fields`);
 	console.log('\nField API name | label | type | custom?');
 	for (const x of fields) console.log(`${x.api_name} | ${x.field_label} | ${x.data_type}${x.custom_field ? ' | custom' : ''}`);
 
 	const stage = fields.find((x) => x.api_name === 'Stage');
 	if (stage && stage.pick_list_values) {
-		console.log('\nStage values (what you can set on a deal):');
+		console.log('\nStage values:');
 		console.log(stage.pick_list_values.map((v) => v.actual_value).join(' | '));
 	}
 
-	const list = await get(`/Deals?fields=id,Deal_Name,Stage,Amount,Closing_Date,Owner&per_page=${Math.min(want, 50)}`);
-	console.log(`\nSample deals (${(list.data || []).length}):`);
-	for (const d of list.data || []) console.log(`${d.id} | ${d.Deal_Name} | ${d.Stage} | ${d.Amount ?? '-'} | ${d.Closing_Date || '-'} | owner: ${(d.Owner && d.Owner.email) || (d.Owner && d.Owner.name) || '-'}`);
-	if (!(list.data || []).length) console.log('(no deals in this CRM yet)');
+	const list = await get(`/${moduleName}?fields=${fields.filter((x) => !['subform', 'multiselectlookup', 'multimodulelookup', 'ownerlookup'].includes(x.data_type) || x.api_name === 'Owner').slice(0, 20).map((x) => x.api_name).join(',')}&per_page=${Math.min(want, 20)}`);
+	console.log(`\nSample records (${(list.data || []).length}):`);
+	for (const d of list.data || []) console.log(JSON.stringify(Object.fromEntries(Object.entries(d).filter(([, v]) => v !== null && typeof v !== 'object' || (v && v.name)).map(([k, v]) => [k, v && v.name ? v.name : v]))).slice(0, 400));
+	if (!(list.data || []).length) console.log('(none yet)');
+	const sub = fields.filter((x) => x.data_type === 'subform' || x.api_name === 'Quoted_Items');
+	if (sub.length) console.log('\nSubforms / line items:', sub.map((x) => x.api_name + ' (' + x.data_type + ')').join(', '));
 } catch (err) {
 	console.error('Could not read the CRM:', err.message);
 	process.exit(1);

@@ -8,6 +8,7 @@ import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, Ring } from '../components/ui';
 import { SignsPanel } from './SignsPanel';
+import { QuotesPanel } from './QuotesPanel';
 
 const TYPE_LABEL = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;
 const TYPES = ['design', 'fabrication', 'install'] as const;
@@ -175,6 +176,7 @@ export function JobDetail() {
 					</div>
 				</Card>
 			))}
+			<QuotesPanel jobId={id ?? ''} hasDeal={!!job.crm_deal_id} canSync={!!me.data?.permissions.createTask} />
 			<SignsPanel jobId={id ?? ''} canWrite={!!me.data?.permissions.createTask} />
 		</>
 	);

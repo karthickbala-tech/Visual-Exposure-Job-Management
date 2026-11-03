@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -254,3 +254,15 @@ export const useSigns = (jobId: string) =>
 
 /** Checks the Zoho connections on demand (two small reads at Zoho). Never runs by itself. */
 export const useCheckIntegrations = () => useMutation({ mutationFn: () => api<IntegrationStatus>('/admin/integrations') });
+
+// Quotes pulled from the CRM, saved as the job's sign groups
+export const useSignGroups = (jobId: string) =>
+	useQuery({ queryKey: ['sign-groups', jobId], queryFn: () => api<{ items: SignGroup[] }>('/jobs/' + jobId + '/sign-groups'), enabled: !!jobId, staleTime: 60_000 });
+
+export const useSyncQuotes = (jobId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => api<{ found: number; created: number; updated: number; unchanged: number }>('/jobs/' + jobId + '/sync-quotes', json('POST')),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['sign-groups', jobId] }),
+	});
+};

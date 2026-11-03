@@ -288,3 +288,22 @@ export interface IntegrationStatus {
 	workdriveFolder: IntegrationCheck;
 	workdriveFolderSet: boolean;
 }
+
+export interface QuoteLine {
+	product: string;
+	description: string;
+	qty: number;
+	unitPrice: number;
+	discount: number;
+	total: number;
+}
+export interface SignGroup {
+	id: string;
+	name: string;
+	description: string;
+	crmQuoteId: string | null;
+	stage: string;
+	truncated: boolean;
+	totals: { subTotal: number; discount: number; tax: number; adjustment: number; grandTotal: number };
+	items: QuoteLine[];
+}

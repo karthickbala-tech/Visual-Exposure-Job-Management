@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [], companies: [], sites: [], signs: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [], companies: [], sites: [], signs: [], signGroups: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -22,6 +22,11 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const byIds = (rows, ids) => (ids ? rows.filter((r) => ids.map(String).includes(String(r.ROWID))) : rows);
 
 	const repos = {
+		signGroups: {
+			listByJob: async (jobId) => db.signGroups.filter((g) => String(g.job_id) === String(jobId)).map(clone),
+			insertMany: async (rows) => rows.forEach((row) => db.signGroups.push({ ROWID: nextId(), ...row })),
+			update: async (rows) => patch(db.signGroups, rows),
+		},
 		companies: {
 			findById: async (id) => clone(db.companies.find((r) => String(r.ROWID) === String(id))),
 			list: async () => db.companies.map(clone),

@@ -22,6 +22,8 @@ const registers = require('./lib/services/registers');
 const outbox = require('./lib/services/outbox');
 const directory = require('./lib/services/directory');
 const integrations = require('./lib/services/integrations');
+const quotes = require('./lib/services/quotes');
+const { createZoho } = require('./lib/integrations/zoho');
 
 const router = createRouter();
 
@@ -29,6 +31,17 @@ const ok = (body) => ({ status: 200, body });
 const created = (body) => ({ status: 201, body });
 
 /** Handlers receive { req, url, params, actor, log }. Build the per-request context once. */
+// The Zoho client is built once per warm instance (null when the ZOHO_ settings are not set).
+let zohoClient;
+let zohoBuilt = false;
+const zoho = () => {
+	if (!zohoBuilt) {
+		zohoClient = createZoho();
+		zohoBuilt = true;
+	}
+	return zohoClient;
+};
+
 const withCtx = (fn) => (args) => fn(makeContext(args.actor, args.log), args);
 
 /** Liveness check. Public, reveals nothing about the project. */
@@ -109,6 +122,8 @@ router.add('GET', '/sites', withCtx(async (ctx, { url }) => ok(await directory.l
 router.add('POST', '/sites', withCtx(async (ctx, { req }) => created(await directory.createSite(ctx, await readJson(req)))));
 router.add('PATCH', '/sites/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSite(ctx, params.id, await readJson(req)))));
 router.add('GET', '/jobs/:id/signs', withCtx(async (ctx, { params }) => ok(await directory.listSigns(ctx, params.id))));
+router.add('GET', '/jobs/:id/sign-groups', withCtx(async (ctx, { params }) => ok(await quotes.listSignGroups(ctx, params.id))));
+router.add('POST', '/jobs/:id/sync-quotes', withCtx(async (ctx, { params }) => ok(await quotes.syncJobQuotes({ ...ctx, zoho: zoho() }, params.id))));
 router.add('POST', '/signs', withCtx(async (ctx, { req }) => created(await directory.createSign(ctx, await readJson(req)))));
 router.add('PATCH', '/signs/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSign(ctx, params.id, await readJson(req)))));
 
