@@ -49,3 +49,10 @@ desktop.ini
 
 # Local tooling notes (not for upload)
 MCP/
+
+# Generated: shared lib copied into each function by scripts/sync-lib.js
+functions/*/lib/
+
+# Tool output
+.build/
+.playwright-mcp/

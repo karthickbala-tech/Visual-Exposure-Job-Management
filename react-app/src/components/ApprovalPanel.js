@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Chip, Modal } from './ui';
+import Attachments from './Attachments';
 import { useDemo } from '../context/DemoContext';
 import { MANAGER_ROLES, STEPS, TRANSITIONS, stepIndex } from '../lib/workflow';
 import { checklistPlan, crewOf, stepOrder, stepTitle } from '../lib/checklists';
@@ -121,6 +122,8 @@ export default function ApprovalPanel({ task }) {
           )}
         </>
       )}
+
+      <Attachments taskId={task.id} />
 
       {stageLog.length > 0 && (
         <>

@@ -1,0 +1,10 @@
+{
+	"name": "ve-jobs",
+	"version": "1.0.0",
+	"private": true,
+	"main": "index.js",
+	"dependencies": {
+		"zcatalyst-sdk-node": "^3.4.0",
+		"zod": "^3.23.8"
+	}
+}

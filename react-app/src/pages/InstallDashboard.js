@@ -4,6 +4,9 @@ import { CheckCircle2, Clock, Gauge, Plus, ShieldCheck, Truck } from 'lucide-rea
 import CalendarCard from '../components/CalendarCard';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
+import { isClosedJob } from '../lib/jobs';
+import { showOnInstallCalendar } from '../lib/calendar';
+import { lastPayPeriod, thisPayPeriod } from '../lib/payPeriod';
 import { installTypeStyles } from '../data/mockData';
 import { fabTypeColors } from '../data/fabTypes';
 import { INSTALL_CREW, shortName } from '../lib/people';
@@ -35,7 +38,7 @@ function NewInstallModal({ presetType, onClose }) {
       <form className="form" onSubmit={submit} noValidate>
         <label>Task name<input autoFocus value={f.name} onChange={set('name')} placeholder="e.g. Fit pylon on site" /></label>
         <div className="form-row">
-          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
+          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.filter((j) => !isClosedJob(j)).map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
           <label>Install type<select value={f.type} onChange={set('type')}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select></label>
         </div>
         <div className="form-row">
@@ -94,7 +97,7 @@ function ScheduleModal({ task, onClose }) {
 }
 
 export default function InstallDashboard() {
-  const { tasks, jobs, swms, role, roleId } = useDemo();
+  const { tasks, jobs, swms, role, roleId, hoursLog, settings } = useDemo();
   const [filter, setFilter] = useState('all');
   const [withFab, setWithFab] = useState(false);
   const [creating, setCreating] = useState(null);
@@ -127,9 +130,13 @@ export default function InstallDashboard() {
   const pct = quoted ? Math.round((booked / quoted) * 100) : 0;
 
   const events = [
-    ...install.filter((t) => t.stage !== 'Cancelled').map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type })),
+    ...install.filter((t) => t.stage !== 'Cancelled' && showOnInstallCalendar(t)).map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type })),
     ...(withFab ? tasks.filter((t) => t.kind === 'fab' && t.stage !== 'Cancelled').map((t) => ({ id: t.id, date: t.date, title: `Fab: ${t.name}`, type: t.type })) : []),
   ];
+  // HRS-3: install hours booked in this and the last pay period, from the one pay-period setting.
+  const payHours = (p) => Math.round(hoursLog.filter((h) => h.kind === 'install' && h.date >= p.from && h.date <= p.to).reduce((n, h) => n + h.hours, 0) * 10) / 10;
+  const thisPay = thisPayPeriod(key, settings.payPeriod);
+  const lastPay = lastPayPeriod(key, settings.payPeriod);
   const colors = withFab ? { ...installTypeStyles, ...fabTypeColors } : installTypeStyles;
 
   const columns = [
@@ -171,6 +178,12 @@ export default function InstallDashboard() {
         <KpiCard icon={ShieldCheck} label="SWMS unsigned" value={FILTERS[6][2].length} tone="danger" note="before crews go on site" />
         <KpiCard icon={CheckCircle2} label="Awaiting approval" value={FILTERS[5][2].length} note={canApprove ? 'ready for you to review' : 'with the manager'} />
         <KpiCard icon={Gauge} label="Booked vs quoted" value={`${pct}%`} tone={pct > 100 ? 'danger' : 'brand'} note={`${Math.round(booked * 10) / 10} / ${quoted} hrs`} />
+      </div>
+
+      <div className="pay-buttons" aria-label="Pay period hours">
+        <Link className="btn btn-ghost btn-sm" to="/hours?period=lastPay">Booked hours last pay period · {payHours(lastPay)}h</Link>
+        <Link className="btn btn-ghost btn-sm" to="/hours?period=thisPay">Booked hours this pay period · {payHours(thisPay)}h</Link>
+        <small className="muted">Install hours. External and Print Only tasks are left off the calendar.</small>
       </div>
 
       <div className="fab-filters">

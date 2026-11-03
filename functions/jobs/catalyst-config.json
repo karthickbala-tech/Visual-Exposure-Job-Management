@@ -1,0 +1,11 @@
+{
+	"deployment": {
+		"name": "jobs",
+		"stack": "node22",
+		"type": "job",
+		"env_variables": {}
+	},
+	"execution": {
+		"main": "index.js"
+	}
+}

@@ -3,9 +3,9 @@
 const ALL = ['/', '/jobs', '/design', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers'];
 
 export const ACCESS = {
-  pm: [...ALL, '/equipment', '/devices'],
-  fabManager: [...ALL, '/equipment', '/devices'],
-  ic2: ['/', '/jobs', '/fabrication', '/installation', '/hours', '/issues', '/workers', '/equipment'],
+  pm: [...ALL, '/calendar', '/equipment', '/devices'],
+  fabManager: [...ALL, '/calendar', '/equipment', '/devices'],
+  ic2: ['/', '/jobs', '/fabrication', '/installation', '/calendar', '/hours', '/issues', '/workers', '/equipment'],
   fabWorker: ['/', '/jobs', '/swms', '/hours', '/issues', '/workers'],
   installer: ['/', '/jobs', '/installation', '/swms', '/hours', '/issues', '/workers'],
   workshop: ['/', '/jobs', '/fabrication', '/hours', '/issues', '/workers', '/equipment'],
