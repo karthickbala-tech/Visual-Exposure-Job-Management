@@ -15,6 +15,7 @@ import { People } from './pages/People';
 import { Compliance } from './pages/Compliance';
 import { Equipment } from './pages/Equipment';
 import { Devices } from './pages/Devices';
+import { Admin } from './pages/Admin';
 import { Placeholder } from './pages/Placeholder';
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ export default function App() {
 							<Route path="compliance" element={<Compliance />} />
 							<Route path="equipment" element={<Equipment />} />
 							<Route path="devices" element={<Devices />} />
+							<Route path="admin" element={<Admin />} />
 							<Route path="tasks/:id" element={<TaskDetail />} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />

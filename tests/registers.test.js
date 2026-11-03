@@ -90,3 +90,21 @@ test('devices: PMs may view, workers may not; stale and map link are derived', a
 	assert.equal(out.items[1].lat, null);
 	await rejects(reg.listDevices(w.as(['installer'])), 403);
 });
+
+test('outbox: admin lists items and can retry only failed ones', async () => {
+	const outboxSvc = require('../lib/services/outbox');
+	const w = makeWorld();
+	w.db.outbox.push({ ROWID: '7', job_type: 'crm.stage', job_status: 'Failed', attempts: 6, last_error: 'boom' }, { ROWID: '8', job_type: 'crm.stage', job_status: 'Done', attempts: 1 });
+	assert.equal((await outboxSvc.listOutbox(w.ctx)).items.length, 2);
+	assert.equal((await outboxSvc.listOutbox(w.ctx, { status: 'Failed' })).items[0].lastError, 'boom');
+	await rejects(outboxSvc.retryOutbox(w.ctx, '8'), 400);
+	await outboxSvc.retryOutbox(w.ctx, '7');
+	assert.equal(w.db.outbox[0].job_status, 'Pending');
+	assert.equal(w.db.outbox[0].attempts, 0);
+	await rejects(outboxSvc.listOutbox(w.as(['project_manager'])), 403);
+});
+
+test('the permission matrix accepts the equipment and devices resources', () => {
+	const { validateMatrix } = require('../lib/domain/matrix');
+	assert.deepEqual(validateMatrix({ workshop: { equipment: { verbs: ['view'], scope: 'all' } } }), []);
+});

@@ -125,6 +125,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			},
 		},
 		outbox: {
+			findById: async (id) => clone(db.outbox.find((o) => String(o.ROWID) === String(id))),
+			list: async ({ status } = {}) => db.outbox.filter((o) => !status || o.job_status === status).map(clone),
 			findByKey: async (key) => clone(db.outbox.find((o) => o.idempotency_key === key)),
 			listDue: async (until) => db.outbox.filter((o) => o.job_status === 'Pending' && o.next_run_at && o.next_run_at <= until).map(clone),
 			insert: async (row) => {

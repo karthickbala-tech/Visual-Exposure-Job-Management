@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -220,5 +220,28 @@ export const useRegisterWrite = (invalidate: string[]) => {
 	return useMutation({
 		mutationFn: ({ method, path, body }: { method: 'POST' | 'PATCH'; path: string; body?: unknown }) => api(path, json(method, body ?? {})),
 		onSuccess: () => invalidate.forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
+	});
+};
+
+// Admin: permission matrix and outbox
+export const useAuthz = () =>
+	useQuery({ queryKey: ['authz'], queryFn: () => api<{ matrix: Matrix; customised: boolean; version: number }>('/admin/authz') });
+
+export const useSaveAuthz = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (matrix: Matrix) => api('/admin/authz', json('PUT', { matrix })),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['authz'] }),
+	});
+};
+
+export const useOutbox = (status: string) =>
+	useQuery({ queryKey: ['outbox', status], queryFn: () => api<{ items: OutboxItem[] }>('/admin/outbox' + (status ? '?status=' + status : '')), refetchInterval: 30_000 });
+
+export const useRetryOutbox = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => api('/admin/outbox/' + id + '/retry', json('POST')),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['outbox'] }),
 	});
 };

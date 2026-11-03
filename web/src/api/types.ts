@@ -229,3 +229,18 @@ export interface DeviceItem {
 	stale: boolean;
 	mapUrl: string | null;
 }
+
+export type Verb = 'view' | 'create' | 'edit' | 'delete';
+export type Scope = 'all' | 'assigned' | 'own';
+export type Matrix = Record<string, Record<string, { verbs: Verb[]; scope: Scope }>>;
+
+export interface OutboxItem {
+	id: string;
+	jobType: string;
+	entityType: string;
+	entityId: string;
+	status: 'Pending' | 'Done' | 'Failed';
+	attempts: number;
+	nextRunAt: string | null;
+	lastError: string;
+}

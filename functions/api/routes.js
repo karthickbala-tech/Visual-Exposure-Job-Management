@@ -19,6 +19,7 @@ const crmWebhook = require('./lib/services/crmWebhook');
 const people = require('./lib/services/people');
 const compliance = require('./lib/services/compliance');
 const registers = require('./lib/services/registers');
+const outbox = require('./lib/services/outbox');
 
 const router = createRouter();
 
@@ -135,6 +136,8 @@ router.add(
 // Admin
 router.add('POST', '/admin/seed-compliance-types', withCtx(async (ctx) => ok(await compliance.seedComplianceTypes(ctx))));
 router.add('GET', '/admin/authz', withCtx(async (ctx) => ok(await settings.getAuthz(ctx))));
+router.add('GET', '/admin/outbox', withCtx(async (ctx, { url }) => ok(await outbox.listOutbox(ctx, parseQuery(url)))));
+router.add('POST', '/admin/outbox/:id/retry', withCtx(async (ctx, { params }) => ok(await outbox.retryOutbox(ctx, params.id))));
 router.add('PUT', '/admin/authz', withCtx(async (ctx, { req }) => ok(await settings.setAuthz(ctx, await readJson(req)))));
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));
 
