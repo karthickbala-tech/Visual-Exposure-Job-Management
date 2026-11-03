@@ -236,7 +236,7 @@ export const useSaveAuthz = () => {
 };
 
 export const useOutbox = (status: string) =>
-	useQuery({ queryKey: ['outbox', status], queryFn: () => api<{ items: OutboxItem[] }>('/admin/outbox' + (status ? '?status=' + status : '')), refetchInterval: 30_000 });
+	useQuery({ queryKey: ['outbox', status], queryFn: () => api<{ items: OutboxItem[] }>('/admin/outbox' + (status ? '?status=' + status : '')) });
 
 export const useRetryOutbox = () => {
 	const qc = useQueryClient();

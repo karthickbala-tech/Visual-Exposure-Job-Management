@@ -59,6 +59,7 @@ test('managers get company figures; crew only get their own work', async () => {
 });
 
 test('company figures come from the cache for a minute; a new day misses it', async () => {
+	require('../lib/caches').clearAll();
 	const w = makeWorld();
 	await seed(w);
 	const cache = fakeCache();
@@ -70,6 +71,7 @@ test('company figures come from the cache for a minute; a new day misses it', as
 	assert.equal(cache.calls.set, 1, 'second call reused the cached figures');
 
 	cache.store.set('dashboard.global', { ...cache.store.get('dashboard.global'), today: '2020-01-01' });
+	require('../lib/caches').clearAll(); // a cold instance: only the shared cache is left to ask
 	await dashboard.getDashboard(ctx);
 	assert.equal(cache.calls.set, 2, 'figures from another day are not reused');
 });
@@ -127,6 +129,7 @@ test('only an admin can read or change the matrix; a change takes effect, is ver
 });
 
 test('loading the matrix: defaults when unset, damaged values never lock anyone out, cache avoids queries', async () => {
+	require('../lib/caches').clearAll();
 	const w = makeWorld();
 	assert.equal(await settings.loadMatrix({ repos: w.ctx.repos }), undefined);
 

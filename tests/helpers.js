@@ -15,6 +15,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 
 	const clone = (r) => (r ? { ...r } : r);
 	const patch = (rows, row) => {
+		if (Array.isArray(row)) return row.forEach((r) => patch(rows, r)); // batch update
 		const i = rows.findIndex((r) => String(r.ROWID) === String(row.ROWID));
 		if (i >= 0) rows[i] = { ...rows[i], ...row };
 	};
@@ -170,6 +171,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		complianceTypes: {
 			findById: async (id) => clone(db.ctypes.find((t) => String(t.ROWID) === String(id))),
 			list: async () => db.ctypes.map(clone),
+			insertMany: async (rows) => rows.forEach((row) => db.ctypes.push({ ROWID: nextId(), ...row })),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.ctypes.push(r);
@@ -234,6 +236,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		templates: {
 			findByKey: async (key) => clone(db.templates.find((t) => t.template_key === key)),
+			existingKeys: async (keys) => db.templates.filter((t) => keys.includes(t.template_key)).map((t) => t.template_key),
+			insertMany: async (rows) => rows.forEach((row) => db.templates.push({ ROWID: nextId(), ...row })),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.templates.push(r);
