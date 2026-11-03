@@ -93,14 +93,14 @@ test('sync: refused for a job without a CRM deal, when Zoho is not connected, fo
 	assert.deepEqual(none, { found: 0, created: 0, updated: 0, unchanged: 0 });
 });
 
-test('the CRM client finds a deal\'s quotes by search, then reads each one in full', async () => {
+test('the CRM client reads a deal\'s quotes from its related list, then each one in full', async () => {
 	const calls = [];
 	const fetchFn = async (url, init = {}) => {
 		const u = String(url);
 		calls.push(u);
 		const ok = (body) => ({ ok: true, status: 200, json: async () => body });
 		if (u.includes('/oauth/v2/token')) return ok({ access_token: 'T', expires_in: 3600 });
-		if (u.includes('/Quotes/search')) return ok({ data: [{ id: 'q1' }, { id: 'q2' }] });
+		if (u.includes('/Deals/555/Quotes')) return ok({ data: [{ id: 'q1' }, { id: 'q2' }] });
 		if (u.includes('/Quotes/q1')) return ok({ data: [crmQuote({ id: 'q1' })] });
 		if (u.includes('/Quotes/q2')) return ok({ data: [crmQuote({ id: 'q2' })] });
 		return { ok: false, status: 404, json: async () => ({}) };
@@ -108,5 +108,5 @@ test('the CRM client finds a deal\'s quotes by search, then reads each one in fu
 	const z = createZoho({ env: { ZOHO_DC: 'in', ZOHO_CLIENT_ID: 'a', ZOHO_CLIENT_SECRET: 'b', ZOHO_REFRESH_TOKEN: 'c' }, fetchFn });
 	const list = await z.crm.getQuotesForDeal('555');
 	assert.deepEqual(list.map((q) => q.id), ['q1', 'q2']);
-	assert.ok(calls.some((u) => u.includes('criteria=') && decodeURIComponent(u).includes('(Deal_Name:equals:555)')));
+	assert.ok(calls.some((u) => u.includes('/crm/v8/Deals/555/Quotes')));
 });
