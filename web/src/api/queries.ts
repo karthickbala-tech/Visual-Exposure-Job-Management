@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -245,3 +245,9 @@ export const useRetryOutbox = () => {
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['outbox'] }),
 	});
 };
+
+// Companies, sites, signs
+export const useCompanies = () => useList<CompanyItem>('companies', '/companies?limit=300');
+export const useSites = () => useList<SiteItem>('sites', '/sites?limit=300');
+export const useSigns = (jobId: string) =>
+	useQuery({ queryKey: ['signs', jobId], queryFn: () => api<{ items: SignItem[] }>('/jobs/' + jobId + '/signs'), enabled: !!jobId, staleTime: 30_000 });

@@ -7,6 +7,7 @@ import { num } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, Ring } from '../components/ui';
+import { SignsPanel } from './SignsPanel';
 
 const TYPE_LABEL = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;
 const TYPES = ['design', 'fabrication', 'install'] as const;
@@ -174,6 +175,7 @@ export function JobDetail() {
 					</div>
 				</Card>
 			))}
+			<SignsPanel jobId={id ?? ''} canWrite={!!me.data?.permissions.createTask} />
 		</>
 	);
 }

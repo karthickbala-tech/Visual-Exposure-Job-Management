@@ -244,3 +244,35 @@ export interface OutboxItem {
 	nextRunAt: string | null;
 	lastError: string;
 }
+
+export interface CompanyItem {
+	id: string;
+	name: string;
+	kind: 'subcontractor' | 'supplier' | 'client' | 'internal';
+	state: string;
+	contactName: string;
+	phone: string;
+	email: string;
+	notes: string;
+	isActive: boolean;
+}
+
+export interface SiteItem {
+	id: string;
+	name: string;
+	address: string;
+	contactName: string;
+	phone: string;
+	isActive: boolean;
+}
+
+export interface SignItem {
+	id: string;
+	jobId: string;
+	name: string;
+	revision: string;
+	qty: number;
+	medium: string;
+	finishing: string;
+	installDate: string | null;
+}
