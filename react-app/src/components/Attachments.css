@@ -1,0 +1,5 @@
+.attach { display: grid; gap: 10px; }
+.attach-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.attach-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.attach-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.attach-list strong { overflow-wrap: anywhere; }

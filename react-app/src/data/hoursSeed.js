@@ -27,3 +27,15 @@ export const seedTimesheets = TS.map(([n, worker, start, end, breakMins, notes],
   const pay = calcPay({ date, start, end, breakMins });
   return { id: `T${i + 1}`, worker, date, start, end, breakMins, breakStartedAt: null, status: 'Checked-out', notes, ...pay };
 });
+
+// Completed post-job checklists. Two have zero hours so the "hours not filled" tiles have something to show (HRS-4).
+const post2 = (hours, unbilled = 0) => ({ post2: { hours, unbilled, role: 'TL', at: new Date().toISOString() } });
+export const seedChecklistRecords = [
+  { taskId: 'F11', person: 'Sam T.', role: 'TL', steps: post2(0) },
+  { taskId: 'F12', person: 'Sam T.', role: 'TL', steps: post2(0) },
+  { taskId: 'F12', person: 'Jo P.', role: 'TM', steps: post2(6) },
+  { taskId: 'F5', person: 'Mia T.', role: 'TL', steps: post2(19) },
+  // Zero-hour checklists for the Workshop (Jo P.) and Fab 2IC (Mia T.) dashboards.
+  { taskId: 'F11', person: 'Jo P.', role: 'TM', steps: post2(0) },
+  { taskId: 'F10', person: 'Mia T.', role: 'TL', steps: post2(0) },
+];

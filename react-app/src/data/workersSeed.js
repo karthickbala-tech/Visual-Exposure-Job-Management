@@ -42,6 +42,7 @@ export const seedWorkers = [
   { id: 'W-8', name: 'Ravi Singh', active: true, companyId: 'C-2', type: 'Subby - Local Installer', primaryRole: '', phone: '0400 000 201', email: 'ravi@apexinstall.example', start: '2022-04-04', skills: 'Install crew, crane lifts', ratings: [] },
   { id: 'W-9', name: 'Kim Ho', active: true, companyId: 'C-3', type: 'Subby - Local Fabricator', primaryRole: '', phone: '0400 000 202', email: 'kim@northline.example', start: '2021-08-16', skills: 'Routing, folding', ratings: [] },
   { id: 'W-10', name: 'Ellis Ward', active: true, companyId: 'C-4', type: 'Subby - Interstate', primaryRole: '', phone: '0400 000 203', email: 'ellis@southbankrigging.example', start: '2024-01-22', skills: 'Rigging, high-rise installs', ratings: [] },
+  { id: 'W-11', name: 'Pat Nguyen', active: false, companyId: 'C-2', type: 'Subby - Local Installer', primaryRole: '', phone: '0400 000 204', email: 'pat@apexinstall.example', start: '2020-06-01', skills: 'Install crew (left the company)', ratings: [] },
 ];
 
 const day = (n) => (n === null ? '' : toKey(addDays(today(), n)));
