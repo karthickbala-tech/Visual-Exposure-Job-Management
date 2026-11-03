@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [], companies: [], sites: [], signs: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -21,6 +21,37 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const byIds = (rows, ids) => (ids ? rows.filter((r) => ids.map(String).includes(String(r.ROWID))) : rows);
 
 	const repos = {
+		companies: {
+			findById: async (id) => clone(db.companies.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.companies.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.companies.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.companies, row),
+		},
+		sites: {
+			findById: async (id) => clone(db.sites.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.sites.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.sites.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.sites, row),
+		},
+		signs: {
+			findById: async (id) => clone(db.signs.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.signs.map(clone),
+			listByJob: async (jobId) => db.signs.filter((s) => String(s.job_id) === String(jobId)).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.signs.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.signs, row),
+		},
 		registerItems: {
 			findById: async (id) => clone(db.register.find((r) => String(r.ROWID) === String(id))),
 			list: async ({ kind, locationId } = {}) => db.register.filter((r) => (!kind || r.kind === kind) && (!locationId || String(r.location_id) === String(locationId))).map(clone),
