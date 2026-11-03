@@ -2,6 +2,10 @@
 // The FSD gives only the count (7), not the names of the Creator layouts, so these are PLACEHOLDERS to confirm against
 // the Creator export: two general layouts and one per department. Each layout is a title plus the fields it prints.
 import { formatShort } from './dates';
+import { canSeeField } from './issueFields';
+
+// Which issue field (ISS-6) each printed line comes from. Lines not listed here are always printed.
+const SOURCE = { manager: ['assignedTo'], also: ['notify'], due: ['dueDate'], location: ['location'], billboard: ['site', 'direction'], task: ['taskId'], review: ['review'], completed: ['dateCompleted', 'completionNotes'] };
 
 const FIELDS = {
   id: ['Issue number', (i) => i.id],
@@ -34,9 +38,10 @@ const BY_DEPARTMENT = { Install: 'install', Workshop: 'workshop', 'Civic Billboa
 export const defaultLayout = (issue) => BY_DEPARTMENT[issue.department] || 'full';
 export const layoutById = (id) => PRINT_LAYOUTS.find((l) => l.id === id) || PRINT_LAYOUTS[1];
 
-// The label and value rows a layout prints. Rows with no value are left out.
+// The label and value rows a layout prints. Rows with no value are left out, and so are fields hidden from the role (ISS-6).
 export function printRows(layout, issue, ctx = {}) {
-  return layout.fields.map((k) => ({ label: FIELDS[k][0], value: FIELDS[k][1](issue, ctx) })).filter((r) => r.value);
+  const hidden = (k) => ctx.roleId && SOURCE[k] && SOURCE[k].every((f) => !canSeeField(ctx.roleId, f));
+  return layout.fields.filter((k) => !hidden(k)).map((k) => ({ label: FIELDS[k][0], value: FIELDS[k][1](issue, ctx) })).filter((r) => r.value);
 }
 
 // ISS-4: the CRM deal button. Shown on Management and Civic Billboards issues to managers, and on the person's own reported issues.

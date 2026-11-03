@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ClipboardList, Plus, Search, Wrench } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
+import RepeatFields from '../components/RepeatFields';
+import { repeatLabel, validateRepeat } from '../lib/repeat';
 import HoursNotFilled from '../components/HoursNotFilled';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
@@ -16,17 +18,19 @@ import './FabDashboard.css';
 const CLOSED = CLOSED_STAGES;
 
 // Workshop tasks use the workshop job from settings, never a hard-coded id in the screen (FSD FAB-5).
-function NewWorkshopTaskModal({ onClose }) {
+export function NewWorkshopTaskModal({ onClose }) {
   const { allJobs, addTask, settings } = useDemo();
   const WORKSHOP_JOB_ID = settings.workshopJobId; // set in Admin, settings
   const job = allJobs.find((j) => j.id === WORKSHOP_JOB_ID);
-  const [f, setF] = useState({ name: '', type: WORKSHOP_TASK_TYPES[0], date: toKey(today()), leader: '', quoted: '' });
+  const [f, setF] = useState({ name: '', type: WORKSHOP_TASK_TYPES[0], date: toKey(today()), leader: '', quoted: '', repeat: { count: '', unit: 'Weeks' } });
   const [error, setError] = useState('');
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
 
   const submit = (e) => {
     e.preventDefault();
     if (!f.name.trim() || !f.date) return setError('Task name and date are required.');
+    const bad = validateRepeat(f.repeat);
+    if (bad) return setError(bad);
     addTask({ ...f, name: f.name.trim(), jobId: WORKSHOP_JOB_ID, member: '', quoted: Number(f.quoted) || 0 });
     return onClose();
   };
@@ -43,6 +47,7 @@ function NewWorkshopTaskModal({ onClose }) {
           <label>Team leader<select value={f.leader} onChange={set('leader')}><option value="">Not assigned yet</option>{FAB_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
           <label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')} /></label>
         </div>
+        {f.type === 'Workshop' && <RepeatFields value={f.repeat} onChange={(repeat) => setF((x) => ({ ...x, repeat }))} />}
         <small>Job: {job ? `${job.id} · ${job.name}` : WORKSHOP_JOB_ID}. With a team leader the task starts as Scheduled.</small>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
@@ -82,7 +87,7 @@ export default function WorkshopDashboard() {
   const nextStep = (t) => (TRANSITIONS[t.stage] || []).find((a) => !a.manager && !a.comment && a.action !== 'Schedule');
 
   const taskColumns = [
-    { key: 'name', label: 'Task', primary: true, render: (t) => <div className="stack"><strong>{t.name}</strong><small>{t.id}</small></div> },
+    { key: 'name', label: 'Task', primary: true, render: (t) => <div className="stack"><strong>{t.name}</strong><small>{t.id}{t.repeat ? ` · repeats: ${repeatLabel(t.repeat).toLowerCase()}` : ''}</small></div> },
     { key: 'type', label: 'Type', render: (t) => <span className="type-tag"><i className="dot" style={{ background: fabTypeColors[t.type] }} />{t.type}</span> },
     { key: 'date', label: 'Date', render: (t) => <span className={t.date < key && t.stage !== 'Manager Review' ? 'over' : ''}>{formatShort(t.date)}</span> },
     { key: 'leader', label: 'Team leader', render: (t) => t.leader || 'Unassigned' },

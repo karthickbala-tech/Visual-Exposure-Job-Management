@@ -6,6 +6,7 @@ import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { DEPARTMENTS, DIRECTIONS, PEOPLE, PRIORITIES, SITES, STATUSES } from '../data/issuesSeed';
 import { fmtStamp, formatShort, toKey, today } from '../lib/dates';
+import { canSeeField, hiddenCount } from '../lib/issueFields';
 import { PRINT_LAYOUTS, canCreateDeal, defaultLayout, layoutById, printRows } from '../lib/issuePrint';
 import './IssuesPage.css';
 
@@ -17,7 +18,8 @@ const MANAGE_ROLES = ['admin', 'pm', 'fabManager'];
 const isOpen = (i) => i.status !== 'Completed';
 
 function ReportModal({ onClose }) {
-  const { addIssue, tasks } = useDemo();
+  const { addIssue, tasks, roleId } = useDemo();
+  const see = (field) => canSeeField(roleId, field); // ISS-6
   const [f, setF] = useState({ subject: '', description: '', department: DEPARTMENTS[0], priority: 'Medium', location: '', site: '', direction: '', taskId: '', review: '' });
   const [error, setError] = useState('');
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -40,16 +42,16 @@ function ReportModal({ onClose }) {
           <label>Department<select value={f.department} onChange={set('department')}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select></label>
           <label>Priority<select value={f.priority} onChange={set('priority')}>{PRIORITIES.map((p) => <option key={p}>{p}</option>)}</select></label>
         </div>
-        {f.department === 'Civic Billboards' ? (
+        {f.department === 'Civic Billboards' && see('site') ? (
           <div className="form-row">
             <label>Billboard site<select value={f.site} onChange={set('site')}><option value="">Choose…</option>{SITES.map((s) => <option key={s}>{s}</option>)}</select></label>
             <label>Which face<select value={f.direction} onChange={set('direction')}><option value="">Choose…</option>{DIRECTIONS.map((d) => <option key={d}>{d}</option>)}</select></label>
           </div>
-        ) : <label>Location<input value={f.location} onChange={set('location')} placeholder="Where did it happen?" /></label>}
-        <label>Related task (optional)
+        ) : see('location') && <label>Location<input value={f.location} onChange={set('location')} placeholder="Where did it happen?" /></label>}
+        {see('taskId') && <label>Related task (optional)
           <select value={f.taskId} onChange={set('taskId')}><option value="">None</option>
-            {tasks.filter((t) => t.kind !== 'design').map((t) => <option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label>
-        {reviewOptions.length > 0 && <label>Review needed<select value={f.review} onChange={set('review')}><option value="">None</option>{reviewOptions.map((r) => <option key={r}>{r}</option>)}</select></label>}
+            {tasks.filter((t) => t.kind !== 'design').map((t) => <option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label>}
+        {see('review') && reviewOptions.length > 0 && <label>Review needed<select value={f.review} onChange={set('review')}><option value="">None</option>{reviewOptions.map((r) => <option key={r}>{r}</option>)}</select></label>}
         <small>The department manager is assigned and emailed automatically.</small>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
@@ -63,6 +65,7 @@ function ReportModal({ onClose }) {
 
 export function IssuesBoard() {
   const { issues, role, roleId } = useDemo();
+  const see = (field) => canSeeField(roleId, field); // ISS-6
   const [dept, setDept] = useState('All');
   const [scope, setScope] = useState('all');
   const [view, setView] = useState('board');
@@ -81,9 +84,9 @@ export function IssuesBoard() {
     { key: 'subject', label: 'Issue', primary: true, render: (i) => <div className="stack"><Link className="job-link" to={`/issues/${i.id}`}>{i.subject}</Link><small>{i.id} · {i.department}</small></div> },
     { key: 'priority', label: 'Priority', render: (i) => <Chip value={i.priority} tone={PRIORITY_TONE[i.priority]} /> },
     { key: 'status', label: 'Status', render: (i) => <Chip value={i.status} tone={STATUS_TONE[i.status]} /> },
-    { key: 'assignedTo', label: 'Assigned to' },
+    ...(see('assignedTo') ? [{ key: 'assignedTo', label: 'Assigned to' }] : []),
     { key: 'reportedBy', label: 'Reported by' },
-    { key: 'dueDate', label: 'Due', render: (i) => (i.dueDate ? <span className={isOpen(i) && i.dueDate < key ? 'over' : ''}>{formatShort(i.dueDate)}</span> : '-') },
+    ...(see('dueDate') ? [{ key: 'dueDate', label: 'Due', render: (i) => (i.dueDate ? <span className={isOpen(i) && i.dueDate < key ? 'over' : ''}>{formatShort(i.dueDate)}</span> : '-') }] : []),
   ];
 
   return (
@@ -95,7 +98,7 @@ export function IssuesBoard() {
       <div className="kpis">
         <KpiCard icon={Flag} label="Open issues" value={open.length} note={`${issues.length} in total`} />
         <KpiCard icon={AlertTriangle} label="High priority" value={open.filter((i) => i.priority === 'High').length} tone="danger" note="still open" />
-        <KpiCard icon={Clock} label="Overdue" value={overdue.length} tone={overdue.length ? 'warn' : 'brand'} note="past their due date" />
+        {see('dueDate') && <KpiCard icon={Clock} label="Overdue" value={overdue.length} tone={overdue.length ? 'warn' : 'brand'} note="past their due date" />}
         <KpiCard icon={CheckCircle2} label="Completed" value={issues.length - open.length} note="all time" />
       </div>
 
@@ -106,7 +109,7 @@ export function IssuesBoard() {
       </div>
       <div className="is-tools">
         <select value={scope} onChange={(e) => setScope(e.target.value)} aria-label="Whose issues">
-          <option value="all">All issues</option><option value="mine">Reported by me</option><option value="assigned">Assigned to me</option>
+          <option value="all">All issues</option><option value="mine">Reported by me</option>{see('assignedTo') && <option value="assigned">Assigned to me</option>}
         </select>
         <span className="grow" />
         <div className="segmented" role="tablist" aria-label="View">
@@ -129,7 +132,7 @@ export function IssuesBoard() {
                   <Link key={i.id} to={`/issues/${i.id}`} className={`kcard ${i.priority.toLowerCase()}`}>
                     <strong>{i.subject}</strong>
                     <div className="meta"><Chip value={i.department} tone="gray" /><Chip value={i.priority} tone={PRIORITY_TONE[i.priority]} /></div>
-                    <small>{i.assignedTo}{i.dueDate ? ` · due ${formatShort(i.dueDate)}` : ''}</small>
+                    <small>{[see('assignedTo') && i.assignedTo, see('dueDate') && i.dueDate && `due ${formatShort(i.dueDate)}`].filter(Boolean).join(' · ')}</small>
                   </Link>))}
               </section>);
           })}
@@ -190,6 +193,7 @@ export function IssueDetail() {
   const { issueId } = useParams();
   const { issues, tasks, jobs, roleId, role, createCrmDeal } = useDemo();
   const [layoutId, setLayoutId] = useState('');
+  const see = (field) => canSeeField(roleId, field); // ISS-6
   const issue = issues.find((i) => i.id === issueId);
   if (!issue) return <PlaceholderPage title="Issue not found" blurb="That issue does not exist in the demo data." />;
 
@@ -199,7 +203,7 @@ export function IssueDetail() {
   const late = isOpen(issue) && issue.dueDate && issue.dueDate < key;
   const history = [...issue.history].reverse();
   const layout = layoutById(layoutId || defaultLayout(issue));
-  const rows = printRows(layout, issue, { taskName: task ? `${task.id} · ${task.name}` : '' });
+  const rows = printRows(layout, issue, { taskName: task && see('taskId') ? `${task.id} · ${task.name}` : '', roleId });
   const dealOk = canCreateDeal(issue, { canManage, person: role.name });
 
   return (
@@ -223,33 +227,34 @@ export function IssueDetail() {
             <p>{issue.description}</p>
             <dl>
               <dt>Reported by</dt><dd>{issue.reportedBy} on {formatShort(issue.date)}</dd>
-              <dt>Assigned manager</dt><dd>{issue.assignedTo}</dd>
-              <dt>Also informed</dt><dd>{issue.notify.length ? issue.notify.join(', ') : '-'}</dd>
-              <dt>Due</dt><dd className={late ? 'over' : ''}>{issue.dueDate ? formatShort(issue.dueDate) : 'Not set'}{late ? ' (overdue)' : ''}</dd>
-              {issue.location && <><dt>Location</dt><dd>{issue.location}</dd></>}
-              {issue.site && <><dt>Billboard</dt><dd>{issue.site}{issue.direction ? `, ${issue.direction}` : ''}</dd></>}
-              {task && <><dt>Related task</dt><dd><Link to={`/jobs/${task.jobId}`}>{task.id} · {task.name}</Link> ({jobs.find((j) => j.id === task.jobId)?.name})</dd></>}
-              {issue.review && <><dt>Review</dt><dd><Chip value={issue.review} tone="purple" /></dd></>}
-              {issue.status === 'Completed' && <><dt>Completed</dt><dd>{formatShort(issue.dateCompleted)}. {issue.completionNotes}</dd></>}
+              {see('assignedTo') && <><dt>Assigned manager</dt><dd>{issue.assignedTo}</dd></>}
+              {see('notify') && <><dt>Also informed</dt><dd>{issue.notify.length ? issue.notify.join(', ') : '-'}</dd></>}
+              {see('dueDate') && <><dt>Due</dt><dd className={late ? 'over' : ''}>{issue.dueDate ? formatShort(issue.dueDate) : 'Not set'}{late ? ' (overdue)' : ''}</dd></>}
+              {see('location') && issue.location && <><dt>Location</dt><dd>{issue.location}</dd></>}
+              {see('site') && issue.site && <><dt>Billboard</dt><dd>{issue.site}{issue.direction && see('direction') ? `, ${issue.direction}` : ''}</dd></>}
+              {see('taskId') && task && <><dt>Related task</dt><dd><Link to={`/jobs/${task.jobId}`}>{task.id} · {task.name}</Link> ({jobs.find((j) => j.id === task.jobId)?.name})</dd></>}
+              {see('review') && issue.review && <><dt>Review</dt><dd><Chip value={issue.review} tone="purple" /></dd></>}
+              {issue.status === 'Completed' && <><dt>Completed</dt><dd>{see('dateCompleted') ? formatShort(issue.dateCompleted) : ''}{see('dateCompleted') && see('completionNotes') ? '. ' : ''}{see('completionNotes') ? issue.completionNotes : ''}</dd></>}
             </dl>
+            {hiddenCount(roleId) > 0 && <small className="muted">Some fields are hidden for your role.</small>}
           </Card>
           {canManage && isOpen(issue) && <Card title="Add an update"><UpdateForm issue={issue} /></Card>}
           {!canManage && isOpen(issue) && <p className="muted">Only the Project Manager and Fab Manager can update an issue.</p>}
         </div>
 
-        <Card title="Management history">
+        {see('history') && <Card title="Management history">
           {history.length === 0 && <p className="muted">No updates yet. The manager adds the first one.</p>}
           <ul className="timeline">
             {history.map((h, idx) => (
               <li key={idx}>
                 <strong>{h.status}</strong>
                 <small>{h.by}, {fmtStamp(h.at)} · responsible: {h.personResponsible}</small>
-                {h.nextStep && <span>Next step: {h.nextStep}{h.dueDate ? ` (due ${formatShort(h.dueDate)})` : ''}</span>}
+                {h.nextStep && <span>Next step: {h.nextStep}{h.dueDate && see('dueDate') ? ` (due ${formatShort(h.dueDate)})` : ''}</span>}
                 {h.workCompleted && <span>Work completed: {h.workCompleted}</span>}
               </li>))}
             <li><strong>Reported</strong><small>{issue.reportedBy}, {formatShort(issue.date)}</small></li>
           </ul>
-        </Card>
+        </Card>}
       </div>
 
       <Card title="Print">
@@ -270,14 +275,14 @@ export function IssueDetail() {
         <h2>{issue.subject}</h2>
         <dl>{rows.map((r) => <div key={r.label}><dt>{r.label}</dt><dd>{r.value}</dd></div>)}</dl>
         {layout.description && <><h3>Description</h3><p>{issue.description}</p></>}
-        {layout.history && (
+        {layout.history && see('history') && (
           <>
             <h3>Management history</h3>
             {history.length === 0 && <p>No updates yet.</p>}
             <ol>
               {history.map((h, idx) => (
                 <li key={idx}><strong>{h.status}</strong> · {h.by}, {fmtStamp(h.at)} · responsible: {h.personResponsible}
-                  {h.nextStep && <div>Next step: {h.nextStep}{h.dueDate ? ` (due ${formatShort(h.dueDate)})` : ''}</div>}
+                  {h.nextStep && <div>Next step: {h.nextStep}{h.dueDate && see('dueDate') ? ` (due ${formatShort(h.dueDate)})` : ''}</div>}
                   {h.workCompleted && <div>Work completed: {h.workCompleted}</div>}</li>))}
             </ol>
           </>

@@ -9,6 +9,9 @@ export const CREW_WAIT_FOR_EACH_OTHER = false;
 export const WARN_HOURS = 14;
 export const MAX_HOURS = 16;
 
+// CHK-6: above 14 hours the person must confirm; above 16 hours it cannot be saved.
+export const needsHoursConfirm = (h) => Number(h) > WARN_HOURS && Number(h) <= MAX_HOURS;
+
 export const STEP_TITLES = {
   pre1: 'Job briefing',
   pre2: 'Arrival on site',

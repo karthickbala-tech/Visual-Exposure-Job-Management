@@ -75,7 +75,7 @@ export const fabTasks = [
   { id: 'F4', name: 'Façade LED module fit', jobId: 'J-1053', type: 'LED', date: day(2), leader: 'Tom H.', member: 'Sam T.', stage: 'Manager Review', quoted: 12, booked: 12 },
   { id: 'F6', name: 'Clean and tidy paint booth', jobId: 'J-0000', type: 'Workshop', date: day(0), leader: 'Jo P.', member: '', stage: 'In Progress', quoted: 3, booked: 1 },
   { id: 'F7', name: 'Service CNC router (30 day)', jobId: 'J-0000', type: 'Maintenance', date: day(2), leader: 'Mia T.', member: '', stage: 'Scheduled', quoted: 2, booked: 0 },
-  { id: 'F8', name: 'Restock vinyl and fixings', jobId: 'J-0000', type: 'Workshop', date: day(-1), leader: 'Jo P.', member: 'Sam T.', stage: 'Scheduled', quoted: 2, booked: 0 },
+  { id: 'F8', name: 'Restock vinyl and fixings', jobId: 'J-0000', type: 'Workshop', date: day(-1), leader: 'Jo P.', member: 'Sam T.', stage: 'Scheduled', quoted: 2, booked: 0, repeat: { count: 1, unit: 'Weeks' } },
   { id: 'F9', name: 'Calibrate laser cutter', jobId: 'J-0000', type: 'Maintenance', date: day(4), leader: '', member: '', stage: 'Awaiting Scheduling', quoted: 2, booked: 0 },
   { id: 'F10', name: 'Entry sign cut and finish', jobId: 'J-1039', type: 'CNC Router', date: day(-22), leader: 'Mia T.', member: 'Jo P.', stage: 'Completed', quoted: 20, booked: 22 },
   { id: 'F11', name: 'Tidy chemical store', jobId: 'J-0000', type: 'Workshop', date: day(-3), leader: 'Sam T.', member: '', stage: 'Completed', quoted: 2, booked: 0 },

@@ -8,6 +8,7 @@ import { calcPay, fmtH } from '../lib/payRules';
 import { shortName } from '../lib/people';
 import { lastPayPeriod, thisPayPeriod } from '../lib/payPeriod';
 import { rollupCsv, weeklyRollup } from '../lib/hours';
+import { MAX_HOURS, WARN_HOURS, needsHoursConfirm } from '../lib/checklists';
 import './HoursPage.css';
 
 const VIEW_ALL = ['admin', 'pm', 'fabManager', 'ic2', 'installCoordinator'];
@@ -153,6 +154,7 @@ function ShiftModal({ onClose }) {
   const { addTimesheet } = useDemo();
   const [f, setF] = useState({ date: toKey(today()), start: '07:00', end: '15:30', breakMins: '30', notes: '' });
   const [error, setError] = useState('');
+  const [sure, setSure] = useState(false);
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   const pay = calcPay({ date: f.date, start: f.start, end: f.end, breakMins: Number(f.breakMins) || 0 });
 
@@ -161,6 +163,9 @@ function ShiftModal({ onClose }) {
     if (!f.date || !f.start || !f.end) return setError('Date, start and end are required.');
     if (!pay) return setError('End time must be after start time. Overnight shifts are not supported in this demo.');
     if (f.date > toKey(today())) return setError('You cannot add a shift in the future.');
+    const shift = pay.total + (Number(f.breakMins) || 0) / 60; // the shift length, before the break comes off
+    if (shift > MAX_HOURS) return setError(`A single shift cannot be longer than ${MAX_HOURS} hours.`);
+    if (needsHoursConfirm(shift) && !sure) return setError(`That shift is more than ${WARN_HOURS} hours. Tick the box to confirm it is correct.`);
     addTimesheet({ date: f.date, start: f.start, end: f.end, breakMins: Number(f.breakMins) || 0, notes: f.notes.trim() });
     return onClose();
   };
@@ -175,6 +180,7 @@ function ShiftModal({ onClose }) {
         </div>
         <label>Break minutes<input type="number" min="0" step="5" value={f.breakMins} onChange={set('breakMins')} /></label>
         <label>Work notes<textarea rows={2} value={f.notes} onChange={set('notes')} /></label>
+        {pay && needsHoursConfirm(pay.total + (Number(f.breakMins) || 0) / 60) && <label className="check-inline"><input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} />This long shift is correct</label>}
         <div className="pay-preview" aria-live="polite">
           {pay ? <><span>Single <b>{fmtH(pay.single)}</b></span><span>Time and a half <b>{fmtH(pay.half)}</b></span><span>Double <b>{fmtH(pay.double)}</b></span><span>Total <b>{fmtH(pay.total)}</b></span></>
             : <span>Enter a start and end time to see the pay split.</span>}
