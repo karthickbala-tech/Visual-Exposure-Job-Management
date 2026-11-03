@@ -5,6 +5,8 @@
 	"description": "Visual Exposure on Zoho Catalyst: shared lib, api / events / jobs functions",
 	"scripts": {
 		"sync": "node scripts/sync-lib.js",
+		"deploy:env": "node scripts/deploy-env.mjs",
+		"deploy:env:check": "node scripts/deploy-env.mjs --dry-run",
 		"test": "node --test \"tests/**/*.test.js\"",
 		"predeploy": "npm run sync && npm test",
 		"deploy": "catalyst deploy --only functions"

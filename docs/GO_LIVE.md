@@ -46,6 +46,8 @@ Legend: **[You]** needs your login or a decision. **[Me]** I can do it once the 
 
 **Development status (3 Nov 2026):** set on `api`: `APP_URL`, `STRATUS_BUCKET` (ve-files-dev), `CRM_WEBHOOK_SECRET` (read it from the Catalyst console, Functions, api, Environment Variables, when creating the CRM webhook). Set on `jobs`: `APP_URL`. Still unset: `MAIL_FROM` (needs a verified sender). The webhook was tested: no token or a wrong token is refused, the right token works and repeating a deal does not create a second job.
 
+**How the variables are set (from 3 Nov 2026):** keep them in the local `.env` (copy `.env.example`; git ignores `.env`) and run `npm run deploy:env`. The script writes them into each function's config only while it deploys, then restores the clean files, so nothing secret reaches git. `.env` is the single source of truth: a variable missing from it is removed from Catalyst on the next deploy. `npm run deploy:env:check` shows which variable NAMES each function would get without deploying. Never add an `env_variables` list to a committed `catalyst-config.json`, and avoid plain `catalyst deploy --only functions:...` for functions whose settings matter unless `env_variables` is absent from their config (then the console values are left alone).
+
 Never put these in the repository. The development ids hard-coded as fallbacks in the code are for Development only, which is why production must set them.
 
 ## 4. Scheduled jobs to create in production
