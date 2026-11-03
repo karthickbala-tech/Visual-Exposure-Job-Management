@@ -11,6 +11,12 @@ export const ROLES = {
   fabWorker: { label: 'Fab Worker', name: 'Sam Taylor', initials: 'ST' },
   installer: { label: 'Installer', name: 'Dave Kerr', initials: 'DK' },
   workshop: { label: 'Workshop', name: 'Jo Patel', initials: 'JP' },
+  // FSD section 2: the other five Catalyst roles. Sample people only.
+  admin: { label: 'Admin', name: 'Karen Wells', initials: 'KW' },
+  installCoordinator: { label: 'Install Coordinator', name: 'Ben Okafor', initials: 'BO' },
+  designer: { label: 'Designer', name: 'Anitha Rao', initials: 'AR' },
+  contractor: { label: 'Contractor', name: 'Ravi Singh', initials: 'RS' },
+  viewer: { label: 'Viewer', name: 'Vera Lindqvist', initials: 'VL' },
 };
 
 export const CLIENTS = [

@@ -7,7 +7,7 @@ import { useDemo } from '../context/DemoContext';
 import { fabTypeColors } from '../data/fabTypes';
 import { FAB_CREW, shortName } from '../lib/people';
 import { daysOverdue, isOverdue, nextDue } from '../lib/equipment';
-import { WORKSHOP_JOB_ID, WORKSHOP_TASK_TYPES } from '../lib/config';
+import { WORKSHOP_TASK_TYPES } from '../lib/config';
 import { CLOSED_STAGES, TRANSITIONS } from '../lib/workflow';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import './FabDashboard.css';
@@ -16,7 +16,8 @@ const CLOSED = CLOSED_STAGES;
 
 // Workshop tasks use the workshop job from settings, never a hard-coded id in the screen (FSD FAB-5).
 function NewWorkshopTaskModal({ onClose }) {
-  const { allJobs, addTask } = useDemo();
+  const { allJobs, addTask, settings } = useDemo();
+  const WORKSHOP_JOB_ID = settings.workshopJobId; // set in Admin, settings
   const job = allJobs.find((j) => j.id === WORKSHOP_JOB_ID);
   const [f, setF] = useState({ name: '', type: WORKSHOP_TASK_TYPES[0], date: toKey(today()), leader: '', quoted: '' });
   const [error, setError] = useState('');

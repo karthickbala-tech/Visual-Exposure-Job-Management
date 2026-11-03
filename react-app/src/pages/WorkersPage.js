@@ -4,13 +4,13 @@ import { AlertTriangle, ArrowLeft, Building2, Clock, FileWarning, Plus, Users } 
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
-import { COMPANY_TYPES, PRIMARY_ROLES, VE_NAME, WORKER_TYPES, docTypes, inductionTypes, ticketTypes } from '../data/workersSeed';
+import { COMPANY_TYPES, VE_NAME, WORKER_TYPES, docTypes, inductionTypes, ticketTypes } from '../data/workersSeed';
 import { STATUS_TONE, expiryText, statusOf, worst } from '../lib/compliance';
 import { formatShort, fromKey, toKey, today } from '../lib/dates';
 import './WorkersPage.css';
 
 const TABS = [['ve', 'VE workers'], ['subs', 'Subcontractors'], ['compliance', 'Tickets and inductions'], ['docs', 'Company documents']];
-const MANAGE_ROLES = ['pm', 'fabManager'];
+const MANAGE_ROLES = ['admin', 'pm', 'fabManager'];
 const typeName = (list, id) => list.find((t) => t.id === id)?.name || id;
 const StatusChip = ({ expiry }) => { const s = statusOf(expiry); return <Chip value={s} tone={STATUS_TONE[s]} />; };
 
@@ -51,7 +51,8 @@ function EditItemModal({ item, kind, label, years, onClose }) {
 }
 
 function AddWorkerModal({ onClose }) {
-  const { companies, addWorker } = useDemo();
+  const { companies, addWorker, settings } = useDemo();
+  const PRIMARY_ROLES = settings.primaryRoles; // set in Admin
   const active = companies.filter((c) => c.active);
   const [f, setF] = useState({ name: '', companyId: active[0]?.id || '', type: WORKER_TYPES[0], primaryRole: '', phone: '', email: '', start: toKey(today()), skills: '' });
   const [error, setError] = useState('');
@@ -136,7 +137,7 @@ export function WorkersPage() {
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState('');
-  const canManage = roleId === 'pm';
+  const canManage = ['admin', 'pm'].includes(roleId);
   const company = (id) => companies.find((c) => c.id === id)?.name || id;
   const worker = (id) => workers.find((w) => w.id === id);
 

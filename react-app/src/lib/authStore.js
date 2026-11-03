@@ -45,20 +45,31 @@ export const demoAccounts = Object.entries(ROLES).map(([roleId, r]) => ({ roleId
 
 const publicUser = (u) => ({ id: u.id, name: u.name, firstName: u.firstName, lastName: u.lastName, email: u.email, roleId: u.roleId, initials: u.initials });
 
+async function makeDemoUser(a) {
+  const salt = randomSalt();
+  const [firstName, ...rest] = a.name.split(' ');
+  return {
+    id: `u-${a.roleId}`, name: a.name, firstName, lastName: rest.join(' '), email: a.email, roleId: a.roleId,
+    initials: ROLES[a.roleId].initials, salt, hash: await hashPassword(DEMO_PASSWORD, salt), createdAt: new Date().toISOString(),
+  };
+}
+
 let seeded = null;
 const ensureSeed = () => {
   if (!seeded) {
     seeded = (async () => {
-      if (read(localStorage, USERS_KEY, null)) return;
-      const list = [];
-      for (const a of demoAccounts) {
-        const salt = randomSalt();
-        const [firstName, ...rest] = a.name.split(' ');
-        list.push({
-          id: `u-${a.roleId}`, name: a.name, firstName, lastName: rest.join(' '), email: a.email, roleId: a.roleId,
-          initials: ROLES[a.roleId].initials, salt, hash: await hashPassword(DEMO_PASSWORD, salt), createdAt: new Date().toISOString(),
-        });
+      const existing = read(localStorage, USERS_KEY, null);
+      if (existing) {
+        // Browsers that were seeded before the five extra roles existed get the missing demo accounts added.
+        const missing = demoAccounts.filter((a) => !existing.some((u) => u.id === `u-${a.roleId}`));
+        if (missing.length === 0) return;
+        const extra = [];
+        for (const a of missing) extra.push(await makeDemoUser(a));
+        write(localStorage, USERS_KEY, [...existing, ...extra]);
+        return;
       }
+      const list = [];
+      for (const a of demoAccounts) list.push(await makeDemoUser(a));
       write(localStorage, USERS_KEY, list);
     })();
   }
@@ -130,6 +141,21 @@ export async function signUp({ firstName, lastName, email, password }) {
   const pub = publicUser(user);
   saveSession(pub, true);
   return pub;
+}
+
+// Admin screen: list accounts and change a role. Demo only, like the rest of this file.
+export async function listUsers() {
+  await ensureSeed();
+  return read(localStorage, USERS_KEY, []).map(publicUser);
+}
+
+export async function setUserRole(userId, roleId) {
+  await ensureSeed();
+  if (!ROLES[roleId]) throw new AuthError('That role does not exist.');
+  const users = read(localStorage, USERS_KEY, []);
+  if (!users.some((u) => u.id === userId)) throw new AuthError('That account does not exist.');
+  write(localStorage, USERS_KEY, users.map((u) => (u.id === userId ? { ...u, roleId } : u)));
+  return true;
 }
 
 export function signOut() {

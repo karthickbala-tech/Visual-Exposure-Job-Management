@@ -8,7 +8,7 @@ import { calcPay, fmtH } from '../lib/payRules';
 import { shortName } from '../lib/people';
 import './HoursPage.css';
 
-const VIEW_ALL = ['pm', 'fabManager', 'ic2'];
+const VIEW_ALL = ['admin', 'pm', 'fabManager', 'ic2', 'installCoordinator'];
 const PERIODS = [
   ['week', 'This week'],
   ['last', 'Last week'],

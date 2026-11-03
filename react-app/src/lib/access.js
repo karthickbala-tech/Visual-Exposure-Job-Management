@@ -9,6 +9,16 @@ export const ACCESS = {
   fabWorker: ['/', '/jobs', '/swms', '/hours', '/issues', '/workers'],
   installer: ['/', '/jobs', '/installation', '/swms', '/hours', '/issues', '/workers'],
   workshop: ['/', '/jobs', '/fabrication', '/hours', '/issues', '/workers', '/equipment'],
+  // Admin sees everything, including the two admin-only screens.
+  admin: [...ALL, '/calendar', '/equipment', '/devices', '/compliance', '/admin'],
+  // Install Coordinator: install dashboard, hours reports, calendars (FSD section 2).
+  installCoordinator: ['/', '/jobs', '/installation', '/calendar', '/swms', '/hours', '/issues', '/workers'],
+  // Designer: design tasks and design checklists.
+  designer: ['/', '/jobs', '/design', '/hours', '/issues'],
+  // Contractor: own install work only. No Workers screen, so no employee PII (FSD section 2).
+  contractor: ['/', '/jobs', '/installation', '/swms', '/hours', '/issues'],
+  // Viewer: read-only list screens. Workers and Hours are left out because they hold PII (FSD section 2).
+  viewer: ['/', '/jobs', '/design', '/fabrication', '/installation', '/calendar', '/swms', '/issues', '/equipment', '/devices'],
 };
 
 export const KNOWN_SECTIONS = new Set(Object.values(ACCESS).flat());
@@ -17,4 +27,4 @@ export const sectionOf = (pathname) => { const seg = pathname.split('/')[1]; ret
 export const canAccess = (roleId, path) => (ACCESS[roleId] || []).includes(sectionOf(path));
 
 // Who can add and edit equipment, chemicals and workshop locations. Everyone with access can mark a check as done. PROPOSAL: confirm with the client.
-export const EQUIPMENT_EDITORS = ['pm', 'fabManager', 'workshop'];
+export const EQUIPMENT_EDITORS = ['admin', 'pm', 'fabManager', 'workshop'];
