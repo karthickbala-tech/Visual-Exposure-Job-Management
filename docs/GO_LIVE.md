@@ -114,13 +114,13 @@ Remove all test data (rows whose `legacy_id` starts `seed-`, and jobs, tasks, is
 | Reminders | 30, 14, 7 and 0 days before expiry (each type can override); sent to the person and every project manager |
 | Files | JPEG, PNG, WebP, HEIC up to 15 MB; PDF up to 25 MB |
 | Retries to other systems | After 1 min, 5 min, 15 min, 1 h, 6 h, then parked as Failed |
-| Permissions | The default matrix in `lib/authz.js`; an admin can override roles through the API (no screen yet) |
+| Permissions | The default matrix in `lib/authz.js`; an admin can override roles through the API (Admin screen) |
 
 ## 9. Known gaps (not built)
 
 - Real Zoho CRM, WorkDrive and MDM connections (blocked on credentials).
 - SWMS PDF; hazard library; photo answers inside checklists.
-- Companies, sites and signs screens; equipment and chemical registers.
+- Companies, sites and signs screens. (Equipment, chemicals, workshop locations and devices are built; devices stay empty until the MDM sync exists, and the off-hire rule exists as an endpoint but is not yet tied to an install task finishing.)
 - Weekly reports, profit digest, maintenance tasks.
 - A screen for editing the permission matrix and for the outbox.
 - Role-specific dashboards beyond the single role-aware one.
