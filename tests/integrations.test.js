@@ -201,3 +201,12 @@ test('webhook secret: the header wins, a body parameter works, and the secret ne
 	assert.doesNotThrow(() => authenticate('S', { 'x-webhook-token': extractToken({}, { 'x-webhook-token': 'S' }).token }));
 	assert.throws(() => authenticate('S', { 'x-webhook-token': extractToken({}, {}).token }), (e) => e.status === 401);
 });
+
+test('webhook: the CRM date format mm-dd-yyyy is read; nonsense dates are ignored', () => {
+	const { dealInput } = require('../lib/services/crmWebhook');
+	const f = (d) => dealInput.parse({ deal_id: '1', deal_name: 'A', expected_finish: d }).expected_finish;
+	assert.equal(f('11-04-2026'), '2026-11-04');
+	assert.equal(f('13-45-2026'), undefined);
+	assert.equal(f('04/11/2026'), undefined);
+	assert.equal(f('2026-11-04'), '2026-11-04');
+});
