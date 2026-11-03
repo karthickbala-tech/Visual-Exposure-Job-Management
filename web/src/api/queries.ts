@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -251,3 +251,6 @@ export const useCompanies = () => useList<CompanyItem>('companies', '/companies?
 export const useSites = () => useList<SiteItem>('sites', '/sites?limit=300');
 export const useSigns = (jobId: string) =>
 	useQuery({ queryKey: ['signs', jobId], queryFn: () => api<{ items: SignItem[] }>('/jobs/' + jobId + '/signs'), enabled: !!jobId, staleTime: 30_000 });
+
+/** Checks the Zoho connections on demand (two small reads at Zoho). Never runs by itself. */
+export const useCheckIntegrations = () => useMutation({ mutationFn: () => api<IntegrationStatus>('/admin/integrations') });

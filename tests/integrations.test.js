@@ -125,7 +125,8 @@ test('a job moving stage queues exactly one CRM update, only when it came from a
 	};
 	const fromDeal = await make('From CRM', { crm_deal_id: 'D42' });
 	const manual = await make('Manual job', {});
-	assert.equal(w.db.outbox.length, 0, 'creating tasks does not change the stage');
+	const crmRows = () => w.db.outbox.filter((o) => o.job_type === 'crm.update_deal');
+	assert.equal(crmRows().length, 0, 'creating tasks does not change the stage');
 
 	for (const { task } of [fromDeal, manual]) {
 		await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Scheduled' });
@@ -133,8 +134,8 @@ test('a job moving stage queues exactly one CRM update, only when it came from a
 	}
 	assert.equal(w.db.jobs.find((j) => j.name === 'From CRM').stage, 'In Progress');
 
-	assert.equal(w.db.outbox.length, 1, 'one update, and none for the job without a deal');
-	const row = w.db.outbox[0];
+	assert.equal(crmRows().length, 1, 'one update, and none for the job without a deal');
+	const row = crmRows()[0];
 	assert.equal(row.job_type, 'crm.update_deal');
 	assert.equal(String(row.entity_id), String(fromDeal.job.ROWID));
 	assert.deepEqual(JSON.parse(row.payload), { dealId: 'D42', fields: { Job_Stage: 'In Progress' } });

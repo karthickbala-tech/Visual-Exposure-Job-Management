@@ -276,3 +276,14 @@ export interface SignItem {
 	finishing: string;
 	installDate: string | null;
 }
+
+export interface IntegrationCheck {
+	configured: boolean;
+	ok: boolean;
+	message: string;
+}
+export interface IntegrationStatus {
+	crm: IntegrationCheck;
+	workdrive: IntegrationCheck;
+	workdriveFolderSet: boolean;
+}

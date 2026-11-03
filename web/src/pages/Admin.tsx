@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCw } from 'lucide-react';
-import { useAuthz, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
+import { useAuthz, useCheckIntegrations, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
 import type { Matrix, Scope, Verb } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -14,7 +14,7 @@ const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms'
 /** Administrator tools: who can do what, and the queue of work waiting to reach other systems. */
 export function Admin() {
 	const me = useMe();
-	const [tab, setTab] = useState<'permissions' | 'outbox'>('permissions');
+	const [tab, setTab] = useState<'permissions' | 'outbox' | 'integrations'>('permissions');
 	if (me.isSuccess && !me.data.roles.includes('admin')) {
 		return (
 			<>
@@ -27,13 +27,13 @@ export function Admin() {
 		<>
 			<PageHeader eyebrow="Administration" title="Admin" subtitle="Permissions and the queue of work for other systems." />
 			<div className="inline-form" role="tablist" aria-label="Admin">
-				{(['permissions', 'outbox'] as const).map((t) => (
+				{(['permissions', 'outbox', 'integrations'] as const).map((t) => (
 					<button key={t} role="tab" aria-selected={tab === t} className={'btn' + (tab === t ? '' : ' btn-ghost')} onClick={() => setTab(t)}>
-						{t === 'permissions' ? 'Permissions' : 'Outbox'}
+						{t === 'permissions' ? 'Permissions' : t === 'outbox' ? 'Outbox' : 'Integrations'}
 					</button>
 				))}
 			</div>
-			{tab === 'permissions' ? <Permissions /> : <Outbox />}
+			{tab === 'permissions' ? <Permissions /> : tab === 'outbox' ? <Outbox /> : <Integrations />}
 		</>
 	);
 }
@@ -196,6 +196,53 @@ function Outbox() {
 						</tbody>
 					</table>
 				</div>
+			)}
+		</Card>
+	);
+}
+
+function Integrations() {
+	const check = useCheckIntegrations();
+	const row = (name: string, c?: { configured: boolean; ok: boolean; message: string }) => (
+		<tr key={name}>
+			<td data-label="Service" className="cell-primary">
+				<strong>{name}</strong>
+			</td>
+			<td data-label="Status">{c ? <span className={'chip ' + (c.ok ? 'chip-green' : c.configured ? 'chip-red' : 'chip-gray')}>{c.ok ? 'Connected' : c.configured ? 'Not working' : 'Not set up'}</span> : '-'}</td>
+			<td data-label="Detail">{c ? c.message : 'Not checked yet.'}</td>
+		</tr>
+	);
+	return (
+		<Card flush>
+			<div className="inline-form">
+				<button className="btn" disabled={check.isPending} onClick={() => check.mutate()}>
+					{check.isPending ? 'Checking...' : 'Check connections'}
+				</button>
+				{check.isError && <p role="alert">{check.error.message}</p>}
+			</div>
+			<p className="muted" style={{ padding: '0 16px' }}>
+				Makes one small read at Zoho CRM and one at WorkDrive. The credentials are set on the functions in the Catalyst console and are never shown here.
+			</p>
+			<div className="table-wrap">
+				<table className="table">
+					<caption className="sr-only">Integrations</caption>
+					<thead>
+						<tr>
+							<th scope="col">Service</th>
+							<th scope="col">Status</th>
+							<th scope="col">Detail</th>
+						</tr>
+					</thead>
+					<tbody>
+						{row('Zoho CRM', check.data?.crm)}
+						{row('Zoho WorkDrive', check.data?.workdrive)}
+					</tbody>
+				</table>
+			</div>
+			{check.data && !check.data.workdriveFolderSet && (
+				<p className="muted" style={{ padding: '8px 16px' }}>
+					Job folders are not created yet: set <code>WORKDRIVE_PARENT_FOLDER_ID</code> (the WorkDrive folder that job folders go in) on the api and jobs functions.
+				</p>
 			)}
 		</Card>
 	);
