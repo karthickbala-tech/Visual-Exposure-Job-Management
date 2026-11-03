@@ -1,0 +1,3 @@
+.mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mini-table th, .mini-table td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
+.mini-table th { color: var(--ink-2); font-weight: 600; }

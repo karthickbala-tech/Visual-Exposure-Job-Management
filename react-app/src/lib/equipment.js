@@ -20,3 +20,12 @@ export const sdsReviewDue = (c, todayKey) => !!c.reviewDate && c.reviewDate < to
 
 // Only web links are allowed for SDS files, so a pasted "javascript:" address cannot become a clickable link.
 export const isWebUrl = (v) => /^https?:\/\/\S+$/i.test(String(v).trim());
+
+// EQP-2: an install task can list the equipment it uses. When the crew marks it "Finished On Site", linked equipment
+// flagged "off hire required" and still in service goes off hire, and the equipment managers are emailed once.
+export const offHireOnFinish = (task, equipment) => {
+  if (task.kind !== 'install' || task.offHireSent) return [];
+  return (task.hiredEquipment || [])
+    .map((id) => equipment.find((e) => e.id === id))
+    .filter((e) => e && e.offHireRequired && e.status === 'In service');
+};

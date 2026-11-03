@@ -8,17 +8,18 @@ import { installTypeStyles } from '../data/mockData';
 import { fabTypeColors } from '../data/fabTypes';
 import { INSTALL_CREW, shortName } from '../lib/people';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
-import { MANAGER_ROLES } from '../lib/workflow';
+import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
 const TYPES = Object.keys(installTypeStyles);
-const CLOSED = ['Completed', 'Cancelled'];
+const CLOSED = CLOSED_STAGES;
 
 function NewInstallModal({ presetType, onClose }) {
-  const { jobs, addInstallTask } = useDemo();
-  const [f, setF] = useState({ name: '', jobId: jobs[0]?.id || '', type: presetType || TYPES[0], date: toKey(today()), leader: '', member: '', quoted: '' });
+  const { jobs, equipment, addInstallTask } = useDemo();
+  const [f, setF] = useState({ name: '', jobId: jobs[0]?.id || '', type: presetType || TYPES[0], date: toKey(today()), leader: '', member: '', quoted: '', hiredEquipment: [] });
   const [error, setError] = useState('');
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const toggleEq = (id) => setF((x) => ({ ...x, hiredEquipment: x.hiredEquipment.includes(id) ? x.hiredEquipment.filter((i) => i !== id) : [...x.hiredEquipment, id] }));
   const needsSwms = ['VE Install', 'VE Subtask'].includes(f.type);
 
   const submit = (e) => {
@@ -45,6 +46,13 @@ function NewInstallModal({ presetType, onClose }) {
           <label>Team leader<select value={f.leader} onChange={set('leader')}><option value="">Not assigned yet</option>{INSTALL_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
           <label>Team member<select value={f.member} onChange={set('member')}><option value="">None</option>{INSTALL_CREW.filter((c) => c !== f.leader).map((c) => <option key={c}>{c}</option>)}</select></label>
         </div>
+        <fieldset className="eq-pick">
+          <legend>Hired equipment used on this task (optional)</legend>
+          {equipment.filter((e) => e.offHireRequired && e.status === 'In service').map((e) => (
+            <label key={e.id} className="check"><input type="checkbox" checked={f.hiredEquipment.includes(e.id)} onChange={() => toggleEq(e.id)} />{e.id} · {e.name}</label>
+          ))}
+          <small>When the crew marks the task Finished On Site, this equipment goes off hire and the equipment managers are emailed.</small>
+        </fieldset>
         <small>{needsSwms ? 'A SWMS will be created and sent to the Project Manager to sign.' : 'This type does not need a SWMS.'}</small>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
@@ -86,7 +94,7 @@ function ScheduleModal({ task, onClose }) {
 }
 
 export default function InstallDashboard() {
-  const { tasks, jobs, swms, role, roleId, actOnTask } = useDemo();
+  const { tasks, jobs, swms, role, roleId } = useDemo();
   const [filter, setFilter] = useState('all');
   const [withFab, setWithFab] = useState(false);
   const [creating, setCreating] = useState(null);
@@ -137,7 +145,6 @@ export default function InstallDashboard() {
     { key: 'action', label: 'Action', render: (t) => (
       <div className="row-actions">
         {isPm && t.stage === 'Awaiting Scheduling' && <button type="button" className="btn btn-primary btn-sm" onClick={() => setScheduling(t)}>Schedule</button>}
-        {t.stage === 'Manager Review' && canApprove && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Approve')}>Approve</button>}
         <Link className="btn btn-ghost btn-sm" to={`/jobs/${t.jobId}`}>{t.stage === 'Manager Review' ? 'Review' : 'Open'}</Link>
       </div>) },
   ];

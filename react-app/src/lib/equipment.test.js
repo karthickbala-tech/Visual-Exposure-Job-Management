@@ -1,4 +1,4 @@
-import { daysOverdue, isOverdue, isWebUrl, nextDue, nextToolId, sdsMissing, sdsReviewDue } from './equipment';
+import { daysOverdue, isOverdue, isWebUrl, nextDue, nextToolId, offHireOnFinish, sdsMissing, sdsReviewDue } from './equipment';
 
 const item = { status: 'In service', intervalDays: 30, lastChecked: '2026-10-01' };
 
@@ -32,4 +32,24 @@ test('only http and https links are accepted for an SDS', () => {
   expect(isWebUrl('https://example.com/sds.pdf')).toBe(true);
   expect(isWebUrl('javascript:alert(1)')).toBe(false);
   expect(isWebUrl('example.com')).toBe(false);
+});
+
+describe('off hire when an install finishes on site (EQP-2)', () => {
+  const eq = [
+    { id: 'VE - 1', status: 'In service', offHireRequired: true },
+    { id: 'VE - 2', status: 'In service', offHireRequired: false },
+    { id: 'VE - 3', status: 'Off hire', offHireRequired: true },
+  ];
+  const task = { id: 'I1', kind: 'install', hiredEquipment: ['VE - 1', 'VE - 2', 'VE - 3'] };
+
+  test('only linked equipment that is flagged and still in service goes off hire', () => {
+    expect(offHireOnFinish(task, eq).map((e) => e.id)).toEqual(['VE - 1']);
+  });
+  test('it fires once per task', () => {
+    expect(offHireOnFinish({ ...task, offHireSent: true }, eq)).toEqual([]);
+  });
+  test('fab tasks and tasks with no equipment are ignored', () => {
+    expect(offHireOnFinish({ ...task, kind: 'fab' }, eq)).toEqual([]);
+    expect(offHireOnFinish({ id: 'I2', kind: 'install' }, eq)).toEqual([]);
+  });
 });
