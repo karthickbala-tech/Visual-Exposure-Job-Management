@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { ROLES, designTasks, fabTasks, installTasks, seedJobs, seedSwms } from '../data/mockData';
 import { TRANSITIONS } from '../lib/workflow';
+import { crewOf, roleOf, stepTitle, submitBlockReason, taskSwmsStatus, validateStep } from '../lib/checklists';
+import { applyAction, subtaskDraft } from '../lib/taskActions';
 import { seedHoursLog, seedTimesheets } from '../data/hoursSeed';
 import { ISSUE_MANAGERS, seedIssues } from '../data/issuesSeed';
 import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seedInductions, seedTickets, seedWorkers, ticketTypes } from '../data/workersSeed';
@@ -51,6 +53,7 @@ export function DemoProvider({ children }) {
   const [tickets, setTickets] = useState(seedTickets);
   const [inductions, setInductions] = useState(seedInductions);
   const [companyDocs, setCompanyDocs] = useState(seedCompanyDocs);
+  const [checklists, setChecklists] = useState([]);
   const [toast, setToast] = useState(null);
 
   const notify = useCallback((msg) => setToast({ id: Date.now(), msg }), []);
@@ -76,18 +79,35 @@ export function DemoProvider({ children }) {
     notify(`${id} signed by ${signer.name}`);
   }, [notify]);
 
-  const actOnTask = useCallback((id, action, comment = '') => {
+  // One transition from the approval lifecycle. Submit is blocked until every crew closure is done (INS-3).
+  // extra is merged into the task, for example the PM review recorded on approval (INS-5).
+  const actOnTask = useCallback((id, action, comment = '', extra = null) => {
     const who = ROLES[roleId].name;
-    setTasks((prev) => prev.map((t) => {
-      if (t.id !== id) return t;
-      const step = (TRANSITIONS[t.stage] || []).find((a) => a.action === action);
-      if (!step) return t;
-      const at = new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-      const text = comment ? `${action}: ${comment}` : action;
-      return { ...t, stage: step.to, history: [{ at, who, text }, ...(t.history || [])] };
-    }));
-    notify(`${action} done`);
-  }, [roleId, notify]);
+    const task = tasks.find((t) => t.id === id);
+    const step = task && (TRANSITIONS[task.stage] || []).find((a) => a.action === action);
+    if (!step) return false;
+    if (action === 'Submit for approval') {
+      const why = submitBlockReason(task, checklists);
+      if (why) { notify(why); return false; }
+    }
+    const text = comment ? `${action}: ${comment}` : action;
+    setTasks((prev) => prev.map((t) => (t.id !== id ? t : {
+      ...t, ...(extra || {}), stage: step.to,
+      ...(action === 'Reject' && t.kind === 'install' ? { subStage: 'On Site' } : {}),
+      history: [{ at: stamp(), who, text, from: t.stage, to: step.to }, ...(t.history || [])],
+    })));
+    // A rejection resets the post-job checklists so the crew redo them (WORKFLOWS 4.3).
+    if (action === 'Reject') {
+      setChecklists((prev) => prev.map((c) => {
+        if (c.taskId !== id) return c;
+        const { post1, post2, ...keep } = c.steps; // eslint-disable-line no-unused-vars
+        return { ...c, steps: keep };
+      }));
+    }
+    const flagged = extra?.pmReview && (extra.pmReview.ohs === 'Yes' || extra.pmReview.mgmtReview);
+    notify(flagged ? 'Approved. The installation manager and the inform-also list would be emailed (demo)' : `${action} done`);
+    return true;
+  }, [roleId, tasks, checklists, notify]);
 
   const setSubStage = useCallback((id, sub) => {
     const who = ROLES[roleId].name;
@@ -105,7 +125,7 @@ export function DemoProvider({ children }) {
   }, [roleId, tasks, equipment, notify]);
 
   // Adds hours to the task and rolls them up to its job.
-  const bookHours = useCallback((id, hours) => {
+  const bookHours = useCallback((id, hours, unbilled = 0) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     const who = ROLES[roleId].name;
@@ -113,7 +133,7 @@ export function DemoProvider({ children }) {
     setTasks((prev) => prev.map((t) => (t.id === id
       ? { ...t, booked: add(t.booked), history: [{ at: stamp(), who, text: `Booked ${hours}h` }, ...(t.history || [])] } : t)));
     setJobs((prev) => prev.map((j) => (j.id === task.jobId ? { ...j, booked: add(j.booked) } : j)));
-    setHoursLog((prev) => [{ id: `H${Date.now()}`, date: toKey(today()), worker: shortName(ROLES[roleId].name), kind: task.kind === 'install' ? 'install' : 'fab', jobId: task.jobId, hours, unbilled: 0 }, ...prev]);
+    setHoursLog((prev) => [{ id: `H${Date.now()}`, date: toKey(today()), worker: shortName(ROLES[roleId].name), kind: task.kind === 'install' ? 'install' : 'fab', jobId: task.jobId, hours, unbilled }, ...prev]);
     notify(`${hours}h booked`);
   }, [tasks, roleId, notify]);
 
@@ -355,11 +375,91 @@ export function DemoProvider({ children }) {
     return true;
   }, [locations, equipment, chemicals, notify]);
 
+  // CHK-1 to CHK-8: saves one checklist step for one crew member. Returns an error message, or '' when saved.
+  // The team leader's steps drive the task's sub-stage (INS-2), and the closure step books the hours (TSK-4).
+  const completeChecklistStep = useCallback((taskId, person, key, data) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return 'Task not found.';
+    const role = roleOf(task, person);
+    const swmsStatus = key === 'pre1' && role === 'TL' && task.type === 'VE Install' ? taskSwmsStatus(task, swms) : undefined;
+    const err = validateStep(key, role, data, { kind: task.kind, swmsStatus });
+    if (err) return err;
+
+    const who = ROLES[roleId].name;
+    const title = stepTitle(task, key);
+    const done = { ...data, role, at: new Date().toISOString() };
+    setChecklists((prev) => {
+      const has = prev.some((c) => c.taskId === taskId && c.person === person);
+      if (!has) return [...prev, { taskId, person, role, steps: { [key]: done } }];
+      return prev.map((c) => (c.taskId === taskId && c.person === person ? { ...c, steps: { ...c.steps, [key]: done } } : c));
+    });
+    const log = (text) => ({ at: stamp(), who, text });
+    const startNow = task.stage === 'Scheduled' && role === 'TL';
+    setTasks((prev) => prev.map((t) => (t.id !== taskId ? t : {
+      ...t, ...(startNow ? { stage: 'In Progress' } : {}),
+      history: [log(`${person} completed ${title}`), ...(startNow ? [{ ...log('Start'), from: 'Scheduled', to: 'In Progress' }] : []), ...(t.history || [])],
+    })));
+
+    if (key === 'post2') bookHours(taskId, Number(data.hours), Number(data.unbilled) || 0);
+    // CHK-5: an OH&S or WHS concern raises an issue for the department manager.
+    if (data.ohsConcern === 'Yes') {
+      addIssue({
+        subject: `${task.kind === 'install' ? 'WHS' : 'OH&S'} concern: ${task.name}`, description: data.ohsDetail.trim(),
+        department: task.kind === 'install' ? 'Install' : 'Workshop', priority: 'High', taskId,
+        review: task.kind === 'install' ? 'WHS Reported' : 'OH&S Reported',
+      });
+    }
+
+    // The team leader's steps move the sub-stage. Finished On Site also triggers EQP-2 inside setSubStage.
+    const sub = role === 'TL' ? { install: { pre1: 'Team Briefed', pre2: 'On Site', post1: 'Finished On Site' }, fab: { pre1: 'Fabrication Started' } }[task.kind]?.[key] : null;
+    if (!data.ohsConcern || data.ohsConcern === 'No') notify(`${title} saved`);
+    if (sub) setSubStage(taskId, sub);
+    // Fab: once every crew member has closed, the task is ready to submit.
+    if (task.kind === 'fab' && key === 'post2') {
+      const others = crewOf(task).filter((p) => p !== person);
+      if (others.every((p) => checklists.find((c) => c.taskId === taskId && c.person === p)?.steps.post2)) setSubStage(taskId, 'Fabrication Done');
+    }
+    return '';
+  }, [tasks, swms, checklists, roleId, bookHours, addIssue, setSubStage, notify]);
+
+  // TSK-2: hold, release, cancel, mark not used, reset assignment and close (external or print only).
+  const runTaskAction = useCallback((id, actionId, comment = '') => {
+    const task = tasks.find((t) => t.id === id);
+    const r = task && applyAction(task, actionId);
+    if (!r) return false;
+    if (r.action.comment && !comment.trim()) return false;
+    const who = ROLES[roleId].name;
+    const text = comment.trim() ? `${r.action.label}: ${comment.trim()}` : r.action.label;
+    const notUsedInstall = actionId === 'notUsed' && task.kind === 'install' && task.swms === 'Created';
+    setTasks((prev) => prev.map((t) => (t.id === id
+      ? { ...t, ...r.patch, ...(notUsedInstall ? { swms: 'Not Required' } : {}), history: [{ at: stamp(), who, text, from: t.stage, to: r.patch.stage }, ...(t.history || [])] } : t)));
+    if (r.dropChecklists) setChecklists((prev) => prev.filter((c) => c.taskId !== id));
+    if (notUsedInstall) setSwms((prev) => prev.map((s) => (s.jobId === task.jobId && s.title === task.name && s.status === 'Created' ? { ...s, status: 'Not Required' } : s)));
+    notify(`${r.action.label}: done`);
+    return true;
+  }, [tasks, roleId, notify]);
+
+  // WORKFLOWS section 7: a subtask is created under the root parent, unscheduled, with zero hours.
+  const createSubtask = useCallback((id) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return false;
+    const res = subtaskDraft(task, tasks, jobs.find((j) => j.id === task.jobId));
+    if (res.error) { notify(res.error); return false; }
+    const who = ROLES[roleId].name;
+    const prefix = task.kind === 'install' ? 'I' : 'F';
+    setTasks((prev) => {
+      const n = Math.max(0, ...prev.filter((x) => x.kind === task.kind).map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
+      return [{ ...res.draft, id: `${prefix}${n}`, history: [{ at: stamp(), who, text: `Subtask created from ${task.id}` }] }, ...prev];
+    });
+    notify(`Subtask created: ${res.draft.name}`);
+    return true;
+  }, [tasks, jobs, roleId, notify]);
+
   const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
 
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

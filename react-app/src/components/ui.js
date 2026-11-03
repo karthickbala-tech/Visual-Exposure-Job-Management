@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 const TONES = {
   // job + task stages (names from the Creator export)
   Preparation: 'gray', 'In Progress': 'blue', 'On Hold': 'amber', Completed: 'green',
-  'Completed - Closed': 'green', Cancelled: 'red',
+  'Completed - Closed': 'green', Cancelled: 'red', 'Complete - Not Used': 'gray',
   'Awaiting Scheduling': 'gray', Scheduled: 'blue', 'Manager Review': 'purple', Rejected: 'red', Reopen: 'amber',
   'Not Started': 'gray', 'Client Review': 'purple',
   // SWMS

@@ -8,11 +8,11 @@ import { installTypeStyles } from '../data/mockData';
 import { fabTypeColors } from '../data/fabTypes';
 import { INSTALL_CREW, shortName } from '../lib/people';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
-import { MANAGER_ROLES } from '../lib/workflow';
+import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
 const TYPES = Object.keys(installTypeStyles);
-const CLOSED = ['Completed', 'Cancelled'];
+const CLOSED = CLOSED_STAGES;
 
 function NewInstallModal({ presetType, onClose }) {
   const { jobs, equipment, addInstallTask } = useDemo();
@@ -94,7 +94,7 @@ function ScheduleModal({ task, onClose }) {
 }
 
 export default function InstallDashboard() {
-  const { tasks, jobs, swms, role, roleId, actOnTask } = useDemo();
+  const { tasks, jobs, swms, role, roleId } = useDemo();
   const [filter, setFilter] = useState('all');
   const [withFab, setWithFab] = useState(false);
   const [creating, setCreating] = useState(null);
@@ -145,7 +145,6 @@ export default function InstallDashboard() {
     { key: 'action', label: 'Action', render: (t) => (
       <div className="row-actions">
         {isPm && t.stage === 'Awaiting Scheduling' && <button type="button" className="btn btn-primary btn-sm" onClick={() => setScheduling(t)}>Schedule</button>}
-        {t.stage === 'Manager Review' && canApprove && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Approve')}>Approve</button>}
         <Link className="btn btn-ghost btn-sm" to={`/jobs/${t.jobId}`}>{t.stage === 'Manager Review' ? 'Review' : 'Open'}</Link>
       </div>) },
   ];
