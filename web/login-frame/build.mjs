@@ -12,8 +12,8 @@ const overrides = readFileSync(join(here, 'overrides.css'), 'utf8');
 
 // Same values as src/styles/tokens.css, so the form matches the page around it.
 const THEMES = {
-	light: { ink: '#1b1b1e', 'ink-2': '#44484c', muted: '#5f6368', line: '#cdd1cc', 'input-bg': '#ffffff', brand: '#68b04d', 'brand-hover': '#5a9a41', 'brand-strong': '#3f7a2b', 'brand-soft': '#e8f2e2', 'on-brand': '#10190b', danger: '#e02424' },
-	dark: { ink: '#eceeef', 'ink-2': '#c3c7ca', muted: '#9aa0a5', line: '#3b3f44', 'input-bg': '#16181a', brand: '#68b04d', 'brand-hover': '#79bd5c', 'brand-strong': '#86c96a', 'brand-soft': '#1f2e18', 'on-brand': '#10190b', danger: '#ff6b63' },
+	light: { ink: '#1b1b1e', 'ink-2': '#44484c', muted: '#5f6368', line: '#cdd1cc', 'input-bg': '#ffffff', brand: '#68b04d', 'brand-hover': '#5a9a41', 'brand-strong': '#3f7a2b', 'brand-soft': '#e8f2e2', 'on-brand': '#f6f7f5', danger: '#e02424' },
+	dark: { ink: '#eceeef', 'ink-2': '#c3c7ca', muted: '#9aa0a5', line: '#3b3f44', 'input-bg': '#16181a', brand: '#68b04d', 'brand-hover': '#79bd5c', 'brand-strong': '#86c96a', 'brand-soft': '#1f2e18', 'on-brand': '#121315', danger: '#ff6b63' },
 };
 
 // The reset page keeps its own title (the sign-in page's title is supplied by our page instead).

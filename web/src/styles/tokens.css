@@ -7,7 +7,7 @@
 	--brand: #68b04d;
 	--brand-strong: #3f7a2b; /* green that is readable as text on light surfaces */
 	--brand-soft: #e8f2e2;
-	--on-brand: #10190b; /* dark text on the green, for contrast */
+	--on-brand: var(--bg); /* text on the green is the page background colour, in both themes */
 	--brand-hover: #5a9a41;
 	--link: #4e5ac3;
 

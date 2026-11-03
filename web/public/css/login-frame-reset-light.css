@@ -1912,7 +1912,7 @@ input[type="text"],input[type="password"],input[type="email"],input[type="number
 	--f-brand-hover: #5a9a41;
 	--f-brand-strong: #3f7a2b;
 	--f-brand-soft: #e8f2e2;
-	--f-on-brand: #10190b;
+	--f-on-brand: #f6f7f5;
 	--f-danger: #e02424;
 	color-scheme: light;
 }
