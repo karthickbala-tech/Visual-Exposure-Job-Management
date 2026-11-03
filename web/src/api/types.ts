@@ -177,3 +177,102 @@ export interface FileItem {
 	sizeBytes: number;
 	uploaded: boolean;
 }
+
+export interface EquipmentItem {
+	id: string;
+	code: string;
+	name: string;
+	type: string;
+	locationId: string | null;
+	locationName: string | null;
+	status: 'In service' | 'Off hire' | 'Out of service';
+	offHireRequired: boolean;
+	frequencyDays: number | null;
+	lastChecked: string | null;
+	nextDue: string | null;
+	overdue: boolean;
+	daysOverdue: number;
+}
+
+export interface ChemicalItem {
+	id: string;
+	code: string;
+	name: string;
+	locationId: string | null;
+	locationName: string | null;
+	sdsUrl: string;
+	sdsMissing: boolean;
+	reviewDate: string | null;
+	reviewDue: boolean;
+	stock: number | null;
+	unit: string;
+	hazardClass: string;
+}
+
+export interface WorkshopLocation {
+	id: string;
+	name: string;
+	description: string;
+	supervisorId: string | null;
+	supervisorName: string | null;
+}
+
+export interface DeviceItem {
+	id: string;
+	personName: string | null;
+	model: string;
+	os: string;
+	lat: number | null;
+	lng: number | null;
+	address: string;
+	lastSeenAt: string | null;
+	stale: boolean;
+	mapUrl: string | null;
+}
+
+export type Verb = 'view' | 'create' | 'edit' | 'delete';
+export type Scope = 'all' | 'assigned' | 'own';
+export type Matrix = Record<string, Record<string, { verbs: Verb[]; scope: Scope }>>;
+
+export interface OutboxItem {
+	id: string;
+	jobType: string;
+	entityType: string;
+	entityId: string;
+	status: 'Pending' | 'Done' | 'Failed';
+	attempts: number;
+	nextRunAt: string | null;
+	lastError: string;
+}
+
+export interface CompanyItem {
+	id: string;
+	name: string;
+	kind: 'subcontractor' | 'supplier' | 'client' | 'internal';
+	state: string;
+	contactName: string;
+	phone: string;
+	email: string;
+	notes: string;
+	isActive: boolean;
+}
+
+export interface SiteItem {
+	id: string;
+	name: string;
+	address: string;
+	contactName: string;
+	phone: string;
+	isActive: boolean;
+}
+
+export interface SignItem {
+	id: string;
+	jobId: string;
+	name: string;
+	revision: string;
+	qty: number;
+	medium: string;
+	finishing: string;
+	installDate: string | null;
+}

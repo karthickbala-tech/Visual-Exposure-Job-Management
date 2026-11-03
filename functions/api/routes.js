@@ -18,6 +18,9 @@ const { createDb } = require('./lib/db');
 const crmWebhook = require('./lib/services/crmWebhook');
 const people = require('./lib/services/people');
 const compliance = require('./lib/services/compliance');
+const registers = require('./lib/services/registers');
+const outbox = require('./lib/services/outbox');
+const directory = require('./lib/services/directory');
 
 const router = createRouter();
 
@@ -97,6 +100,31 @@ router.add('GET', '/compliance/types', withCtx(async (ctx) => ok(await complianc
 router.add('GET', '/compliance', withCtx(async (ctx, { url }) => ok(await compliance.listItems(ctx, parseQuery(url)))));
 router.add('POST', '/compliance', withCtx(async (ctx, { req }) => created(await compliance.createItem(ctx, await readJson(req)))));
 router.add('PATCH', '/compliance/:id', withCtx(async (ctx, { req, params }) => ok(await compliance.updateItem(ctx, params.id, await readJson(req)))));
+// Companies, sites, signs
+router.add('GET', '/companies', withCtx(async (ctx, { url }) => ok(await directory.listCompanies(ctx, parseQuery(url)))));
+router.add('POST', '/companies', withCtx(async (ctx, { req }) => created(await directory.createCompany(ctx, await readJson(req)))));
+router.add('PATCH', '/companies/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateCompany(ctx, params.id, await readJson(req)))));
+router.add('GET', '/sites', withCtx(async (ctx, { url }) => ok(await directory.listSites(ctx, parseQuery(url)))));
+router.add('POST', '/sites', withCtx(async (ctx, { req }) => created(await directory.createSite(ctx, await readJson(req)))));
+router.add('PATCH', '/sites/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSite(ctx, params.id, await readJson(req)))));
+router.add('GET', '/jobs/:id/signs', withCtx(async (ctx, { params }) => ok(await directory.listSigns(ctx, params.id))));
+router.add('POST', '/signs', withCtx(async (ctx, { req }) => created(await directory.createSign(ctx, await readJson(req)))));
+router.add('PATCH', '/signs/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSign(ctx, params.id, await readJson(req)))));
+
+// Equipment, chemicals, workshop locations, devices
+router.add('GET', '/equipment', withCtx(async (ctx, { url }) => ok(await registers.listEquipment(ctx, parseQuery(url)))));
+router.add('POST', '/equipment', withCtx(async (ctx, { req }) => created(await registers.createEquipment(ctx, await readJson(req)))));
+router.add('PATCH', '/equipment/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateEquipment(ctx, params.id, await readJson(req)))));
+router.add('POST', '/equipment/:id/checked', withCtx(async (ctx, { params }) => ok(await registers.markChecked(ctx, params.id))));
+router.add('POST', '/equipment/off-hire', withCtx(async (ctx, { req }) => ok(await registers.offHireForFinishedInstall(ctx, (await readJson(req)).equipment_ids))));
+router.add('GET', '/chemicals', withCtx(async (ctx, { url }) => ok(await registers.listChemicals(ctx, parseQuery(url)))));
+router.add('POST', '/chemicals', withCtx(async (ctx, { req }) => created(await registers.createChemical(ctx, await readJson(req)))));
+router.add('PATCH', '/chemicals/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateChemical(ctx, params.id, await readJson(req)))));
+router.add('GET', '/locations', withCtx(async (ctx) => ok(await registers.listLocations(ctx))));
+router.add('POST', '/locations', withCtx(async (ctx, { req }) => created(await registers.createLocation(ctx, await readJson(req)))));
+router.add('PATCH', '/locations/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateLocation(ctx, params.id, await readJson(req)))));
+router.add('GET', '/devices', withCtx(async (ctx, { url }) => ok(await registers.listDevices(ctx, parseQuery(url)))));
+
 
 // Dashboard and calendar
 router.add('GET', '/dashboard', withCtx(async (ctx) => ok(await dashboard.getDashboard(ctx))));
@@ -120,6 +148,8 @@ router.add(
 // Admin
 router.add('POST', '/admin/seed-compliance-types', withCtx(async (ctx) => ok(await compliance.seedComplianceTypes(ctx))));
 router.add('GET', '/admin/authz', withCtx(async (ctx) => ok(await settings.getAuthz(ctx))));
+router.add('GET', '/admin/outbox', withCtx(async (ctx, { url }) => ok(await outbox.listOutbox(ctx, parseQuery(url)))));
+router.add('POST', '/admin/outbox/:id/retry', withCtx(async (ctx, { params }) => ok(await outbox.retryOutbox(ctx, params.id))));
 router.add('PUT', '/admin/authz', withCtx(async (ctx, { req }) => ok(await settings.setAuthz(ctx, await readJson(req)))));
 router.add('POST', '/admin/seed-templates', withCtx(async (ctx) => ok(await admin.seedChecklistTemplates(ctx))));
 

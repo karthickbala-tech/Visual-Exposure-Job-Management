@@ -253,6 +253,15 @@ export function Login() {
 	);
 }
 
-export function signOut() {
-	window.catalyst?.auth.signOut(window.location.pathname);
+/** The sign-in SDK is only loaded by the sign-in page, so load it first when someone signs out from inside the app. */
+export async function signOut() {
+	try {
+		await loadScript(SDK_SRC);
+		await loadScript(INIT_SRC);
+		// Catalyst wants the full address to come back to, not just a path.
+		window.catalyst?.auth.signOut(window.location.origin + window.location.pathname);
+	} catch {
+		// Could not reach Catalyst: reload, which shows the sign-in page if the session has ended.
+		window.location.reload();
+	}
 }

@@ -139,3 +139,19 @@ test('Catalyst roles map to ours; unknown roles map to null', () => {
 	assert.equal(mapCatalystRole('App User'), null);
 	assert.equal(mapCatalystRole(undefined), null);
 });
+
+test('memo: serves a value until its time limit, is bounded, and can be cleared', () => {
+	const { createMemo } = require('../lib/memo');
+	const m = createMemo(1000, 2);
+	m.set('a', 1, 0);
+	assert.equal(m.get('a', 500), 1);
+	assert.equal(m.get('a', 1500), undefined, 'expired');
+	m.set('a', 1, 0);
+	m.set('b', 2, 0);
+	m.set('c', 3, 0);
+	assert.equal(m.size, 2, 'oldest entry dropped at the limit');
+	assert.equal(m.get('a', 0), undefined);
+	m.clear();
+	assert.equal(m.size, 0);
+	assert.equal(m.get('missing'), undefined);
+});

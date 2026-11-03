@@ -8,19 +8,73 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [], companies: [], sites: [], signs: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
 
 	const clone = (r) => (r ? { ...r } : r);
 	const patch = (rows, row) => {
+		if (Array.isArray(row)) return row.forEach((r) => patch(rows, r)); // batch update
 		const i = rows.findIndex((r) => String(r.ROWID) === String(row.ROWID));
 		if (i >= 0) rows[i] = { ...rows[i], ...row };
 	};
 	const byIds = (rows, ids) => (ids ? rows.filter((r) => ids.map(String).includes(String(r.ROWID))) : rows);
 
 	const repos = {
+		companies: {
+			findById: async (id) => clone(db.companies.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.companies.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.companies.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.companies, row),
+		},
+		sites: {
+			findById: async (id) => clone(db.sites.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.sites.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.sites.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.sites, row),
+		},
+		signs: {
+			findById: async (id) => clone(db.signs.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.signs.map(clone),
+			listByJob: async (jobId) => db.signs.filter((s) => String(s.job_id) === String(jobId)).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.signs.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.signs, row),
+		},
+		registerItems: {
+			findById: async (id) => clone(db.register.find((r) => String(r.ROWID) === String(id))),
+			list: async ({ kind, locationId } = {}) => db.register.filter((r) => (!kind || r.kind === kind) && (!locationId || String(r.location_id) === String(locationId))).map(clone),
+			findByIds: async (ids) => byIds(db.register, ids).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.register.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.register, row),
+		},
+		locations: {
+			findById: async (id) => clone(db.locations.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.locations.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.locations.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.locations, row),
+		},
+		devices: { list: async () => db.devices.map(clone) },
 		jobs: {
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
 			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
@@ -103,6 +157,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			},
 		},
 		outbox: {
+			findById: async (id) => clone(db.outbox.find((o) => String(o.ROWID) === String(id))),
+			list: async ({ status } = {}) => db.outbox.filter((o) => !status || o.job_status === status).map(clone),
 			findByKey: async (key) => clone(db.outbox.find((o) => o.idempotency_key === key)),
 			listDue: async (until) => db.outbox.filter((o) => o.job_status === 'Pending' && o.next_run_at && o.next_run_at <= until).map(clone),
 			insert: async (row) => {
@@ -115,6 +171,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		complianceTypes: {
 			findById: async (id) => clone(db.ctypes.find((t) => String(t.ROWID) === String(id))),
 			list: async () => db.ctypes.map(clone),
+			insertMany: async (rows) => rows.forEach((row) => db.ctypes.push({ ROWID: nextId(), ...row })),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.ctypes.push(r);
@@ -179,6 +236,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		templates: {
 			findByKey: async (key) => clone(db.templates.find((t) => t.template_key === key)),
+			existingKeys: async (keys) => db.templates.filter((t) => keys.includes(t.template_key)).map((t) => t.template_key),
+			insertMany: async (rows) => rows.forEach((row) => db.templates.push({ ROWID: nextId(), ...row })),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.templates.push(r);

@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthGate } from './auth/AuthGate';
+import { ApiError } from './api/client';
 import { Shell } from './components/Shell';
 import { ThemeProvider } from './components/theme';
 import { ToastProvider } from './components/toast';
@@ -13,10 +14,22 @@ import { Issues } from './pages/Issues';
 import { Calendar } from './pages/Calendar';
 import { People } from './pages/People';
 import { Compliance } from './pages/Compliance';
+import { Equipment } from './pages/Equipment';
+import { Devices } from './pages/Devices';
+import { Admin } from './pages/Admin';
+import { Directory } from './pages/Directory';
 import { Placeholder } from './pages/Placeholder';
 
 const queryClient = new QueryClient({
-	defaultOptions: { queries: { refetchOnWindowFocus: false } },
+	// Every request costs the Catalyst plan's small monthly allowance: no refetch on focus or reconnect, and a failed
+	// request is retried once, never for a refusal (401, 403, 404, 400), which a retry cannot fix.
+	defaultOptions: {
+		queries: {
+			refetchOnWindowFocus: false,
+			refetchOnReconnect: false,
+			retry: (count, error) => count < 1 && !(error instanceof ApiError && error.status < 500),
+		},
+	},
 });
 
 /**
@@ -39,6 +52,10 @@ export default function App() {
 							<Route path="calendar" element={<Calendar />} />
 							<Route path="people" element={<People />} />
 							<Route path="compliance" element={<Compliance />} />
+							<Route path="equipment" element={<Equipment />} />
+							<Route path="devices" element={<Devices />} />
+							<Route path="admin" element={<Admin />} />
+							<Route path="directory" element={<Directory />} />
 							<Route path="tasks/:id" element={<TaskDetail />} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />

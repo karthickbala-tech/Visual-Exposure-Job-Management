@@ -2,6 +2,8 @@
 
 Status: prepared 2026-11-02. Nothing in this document has been run against production. The Development project (India data center) stays the test bed; **production must be a separate AU project** so customer data stays in Australia.
 
+**Order of work (decided 3 Nov 2026):** 1) finish everything, including the CRM, WorkDrive and MDM integrations, on the current Development project (India data center) and its Zoho account; 2) review with the client and make their changes; 3) only then do sections 2 to 7 below to move to the AU project. Until step 3, the AU project, the AU OAuth client and the production domain are not needed.
+
 Legend: **[You]** needs your login or a decision. **[Me]** I can do it once the AU project is connected. **[Both]** needs a console action and a check.
 
 ---
@@ -42,6 +44,8 @@ Legend: **[You]** needs your login or a decision. **[Me]** I can do it once the 
 | `CRM_WEBHOOK_SECRET` | api | a long random secret. The deal-won webhook returns 503 until it is set |
 | `BUSINESS_TZ` | api, jobs | optional; default is Australia/Melbourne |
 
+**Development status (3 Nov 2026):** set on `api`: `APP_URL`, `STRATUS_BUCKET` (ve-files-dev), `CRM_WEBHOOK_SECRET` (read it from the Catalyst console, Functions, api, Environment Variables, when creating the CRM webhook). Set on `jobs`: `APP_URL`. Still unset: `MAIL_FROM` (needs a verified sender). The webhook was tested: no token or a wrong token is refused, the right token works and repeating a deal does not create a second job.
+
 Never put these in the repository. The development ids hard-coded as fallbacks in the code are for Development only, which is why production must set them.
 
 ## 4. Scheduled jobs to create in production
@@ -50,8 +54,8 @@ All run the `jobs` function, with the parameter `job`.
 
 | Job (`job` parameter) | Schedule | State |
 |---|---|---|
-| `compliance-due` | daily 07:00 Melbourne | built and tested, **not scheduled yet** |
-| `drain-outbox` | every 5 minutes | built and tested, **not scheduled yet** |
+| `compliance-due` | daily 07:00 Melbourne | created in Dev 3 Nov 2026 as cron `compliance_due_daily` (expression `0 7 * * *`, Australia/Melbourne); **first run not yet confirmed** |
+| `drain-outbox` | every 5 minutes | created in Dev 3 Nov 2026 as cron `drain_outbox_5min` (expression `*/5 * * * *`); **first run not yet confirmed**. The API echoes `cron_detail` hour/minute 0 for both, so check `success_count` in the console after the first interval |
 | `weekly-hours-report`, `weekly-issues-report`, `maintenance-tasks`, `profit-digest`, `mdm-sync` | per FSD | **not built** |
 
 ## 5. Connections (needs the rotated OAuth client)
@@ -114,13 +118,13 @@ Remove all test data (rows whose `legacy_id` starts `seed-`, and jobs, tasks, is
 | Reminders | 30, 14, 7 and 0 days before expiry (each type can override); sent to the person and every project manager |
 | Files | JPEG, PNG, WebP, HEIC up to 15 MB; PDF up to 25 MB |
 | Retries to other systems | After 1 min, 5 min, 15 min, 1 h, 6 h, then parked as Failed |
-| Permissions | The default matrix in `lib/authz.js`; an admin can override roles through the API (no screen yet) |
+| Permissions | The default matrix in `lib/authz.js`; an admin can override roles through the API (Admin screen) |
 
 ## 9. Known gaps (not built)
 
 - Real Zoho CRM, WorkDrive and MDM connections (blocked on credentials).
 - SWMS PDF; hazard library; photo answers inside checklists.
-- Companies, sites and signs screens; equipment and chemical registers.
+- Companies, sites and signs screens. (Equipment, chemicals, workshop locations and devices are built; devices stay empty until the MDM sync exists, and the off-hire rule exists as an endpoint but is not yet tied to an install task finishing.)
 - Weekly reports, profit digest, maintenance tasks.
 - A screen for editing the permission matrix and for the outbox.
 - Role-specific dashboards beyond the single role-aware one.

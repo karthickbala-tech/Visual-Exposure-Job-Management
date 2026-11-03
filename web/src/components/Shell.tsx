@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
 import { useMe } from '../api/queries';
@@ -24,7 +24,11 @@ const NAV: NavItem[] = [
 	{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
 	{ to: '/issues', label: 'Issues', icon: AlertTriangle },
 	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
+	{ to: '/equipment', label: 'Equipment', icon: Wrench, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'workshop', 'fab_worker'] },
+	{ to: '/directory', label: 'Companies and sites', icon: Building2, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'viewer'] },
 	{ to: '/people', label: 'People', icon: Users, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic'] },
+	{ to: '/devices', label: 'Devices', icon: Smartphone, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator'] },
+	{ to: '/admin', label: 'Admin', icon: Settings, roles: ['admin'] },
 ];
 
 const roleLabel = (r: string) => r.replace(/_/g, ' ');

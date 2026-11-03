@@ -9,7 +9,7 @@ const TONES: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 're
 	// issues
 	Open: 'red', Resolved: 'green', Closed: 'gray',
 	// compliance and people
-	Valid: 'green', Expiring: 'amber', Expired: 'red', 'No expiry': 'gray', Active: 'green', Inactive: 'gray',
+	'In service': 'green', 'Off hire': 'gray', 'Out of service': 'red', subcontractor: 'blue', supplier: 'purple', client: 'green', internal: 'gray', Pending: 'amber', Done: 'green', Failed: 'red', Valid: 'green', Expiring: 'amber', Expired: 'red', 'No expiry': 'gray', Active: 'green', Inactive: 'gray',
 	// checklists
 	'Not Completed': 'gray',
 };
