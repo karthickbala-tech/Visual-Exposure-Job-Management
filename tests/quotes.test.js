@@ -43,12 +43,17 @@ test('the sign group row keeps the CRM quote id and stays inside the column limi
 	const row = toSignGroupRow('77', normaliseQuote(crmQuote()));
 	assert.equal(row.job_id, '77');
 	assert.equal(row.name, '#1001 Pylon refresh');
-	assert.equal(JSON.parse(row.totals).crm_quote_id, '1482987000000600001');
+	assert.equal(row.legacy_id, 'crm:1482987000000600001');
+	assert.equal(row.legacy_id.length <= 30, true, 'fits the legacy_id column');
+	assert.equal(row.grand_total, 990);
+	assert.equal(JSON.parse(row.line_items).items.length, 2);
 	const many = Array.from({ length: 200 }, (_, i) => ({ product: 'P' + i, description: 'x'.repeat(300), qty: 1, unitPrice: 1, discount: 0, total: 1 }));
 	const fit = fitItems(many);
-	assert.ok(fit.json.length <= 9000);
+	assert.ok(JSON.stringify(fit.items).length <= 9000 - 400);
 	assert.equal(fit.truncated, true);
-	assert.equal(JSON.parse(toSignGroupRow('1', { ...normaliseQuote(crmQuote()), items: many }).totals).truncated, true);
+	const big = toSignGroupRow('1', { ...normaliseQuote(crmQuote()), items: many });
+	assert.equal(JSON.parse(big.line_items).truncated, true);
+	assert.ok(big.line_items.length <= 10000, 'fits the column');
 	assert.equal(sameAsStored(row, { ...row }), true);
 	assert.equal(sameAsStored(row, { ...row, name: 'other' }), false);
 });
@@ -109,4 +114,13 @@ test('the CRM client reads a deal\'s quotes from its related list, then each one
 	const list = await z.crm.getQuotesForDeal('555');
 	assert.deepEqual(list.map((q) => q.id), ['q1', 'q2']);
 	assert.ok(calls.some((u) => u.includes('/crm/v8/Deals/555/Quotes')));
+});
+
+test('contract: a sign group row only uses columns that exist in the real sign_group table', () => {
+	// Copied from the live Development table (read through the Catalyst API on 3 Nov 2026). Update it if the table changes.
+	const REAL_COLUMNS = ['name', 'description', 'line_items', 'sub_total', 'total_cost', 'profit_margin', 'tax', 'grand_total', 'legacy_id', 'job_id', 'site_id'];
+	const row = toSignGroupRow('77', normaliseQuote(crmQuote()));
+	for (const key of Object.keys(row)) assert.ok(REAL_COLUMNS.includes(key), `sign_group has no column "${key}"`);
+	assert.ok(row.name.length <= 200 && row.legacy_id.length <= 30);
+	assert.ok(row.description.length <= 10000 && row.line_items.length <= 10000);
 });
