@@ -54,5 +54,5 @@ test('checklist dialog: shows the SWMS block and saves the step when met', () =>
   click(document.querySelector('input[type=checkbox]'));
   click(btn('Complete step'));
   expect(document.body.textContent).toContain('SWMS must be signed');
-  expect(api.checklists.length).toBe(0);
+  expect(api.checklists.some((c) => c.taskId === 'I1' && c.person === 'Dave K.')).toBe(false); // nothing saved for this task
 });

@@ -19,13 +19,14 @@ export const CLIENTS = [
 ];
 
 export const seedJobs = [
-  { id: 'J-1042', name: 'Northgate Mall Pylon Refresh', client: 'Northgate Retail Group', stage: 'In Progress', fab: 68, install: 0, job: 42, finish: day(19), risk: 'Fab behind schedule', booked: 132, quoted: 180 },
-  { id: 'J-1047', name: 'Harbourline Wayfinding', client: 'Harbourline Logistics', stage: 'In Progress', fab: 100, install: 55, job: 78, finish: day(7), risk: '', booked: 104, quoted: 120 },
-  { id: 'J-1051', name: 'Metro Tunnel Site Hoardings', client: 'Metro Rail Alliance', stage: 'Preparation', fab: 0, install: 0, job: 12, finish: day(43), risk: '', booked: 0, quoted: 90 },
-  { id: 'J-1053', name: 'Southern Cross Façade', client: 'Southern Cross Hardware', stage: 'In Progress', fab: 35, install: 0, job: 24, finish: day(28), risk: 'Hours 32% over quote', booked: 185, quoted: 140 },
-  { id: 'J-1058', name: 'Eastfield Building Letters', client: 'Eastfield University', stage: 'In Progress', fab: 100, install: 85, job: 92, finish: day(3), risk: '', booked: 98, quoted: 96 },
+  { id: 'J-1042', name: 'Northgate Mall Pylon Refresh', client: 'Northgate Retail Group', stage: 'In Progress', fab: 68, install: 0, job: 42, finish: day(19), risk: 'Fab behind schedule', booked: 132, quoted: 180, pm: 'Rachel Barnes', fabManager: 'Tom Hendry', fabRequired: day(12), fabAgreed: day(14) },
+  { id: 'J-1047', name: 'Harbourline Wayfinding', client: 'Harbourline Logistics', stage: 'In Progress', fab: 100, install: 55, job: 78, finish: day(7), risk: '', booked: 104, quoted: 120, pm: 'Rachel Barnes', fabManager: 'Tom Hendry', fabRequired: day(-4), fabAgreed: day(-4) },
+  { id: 'J-1051', name: 'Metro Tunnel Site Hoardings', client: 'Metro Rail Alliance', stage: 'Preparation', fab: 0, install: 0, job: 12, finish: day(43), risk: '', booked: 0, quoted: 90, pm: 'Helen Cho', fabManager: 'Greg Walsh', fabRequired: day(30), fabAgreed: '' },
+  { id: 'J-1053', name: 'Southern Cross Façade', client: 'Southern Cross Hardware', stage: 'In Progress', fab: 35, install: 0, job: 24, finish: day(28), risk: 'Hours 32% over quote', booked: 185, quoted: 140, pm: 'Helen Cho', fabManager: 'Tom Hendry', fabRequired: day(20), fabAgreed: day(22) },
+  { id: 'J-1058', name: 'Eastfield Building Letters', client: 'Eastfield University', stage: 'In Progress', fab: 100, install: 85, job: 92, finish: day(3), risk: '', booked: 98, quoted: 96, pm: 'Rachel Barnes', fabManager: 'Greg Walsh', fabRequired: day(-2), fabAgreed: day(-2) },
   { id: 'J-0000', name: 'Workshop and maintenance', client: 'Visual Exposure (internal)', stage: 'In Progress', fab: 0, install: 0, job: 0, finish: day(365), risk: '', booked: 0, quoted: 0, internal: true },
-  { id: 'J-1060', name: 'Summit Pylon Concept', client: 'Summit Supermarkets', stage: 'Preparation', fab: 0, install: 0, job: 5, finish: day(52), risk: '', booked: 0, quoted: 60 },
+  { id: 'J-1039', name: 'Westbrook Entry Signage', client: 'Summit Supermarkets', stage: 'Completed', fab: 100, install: 100, job: 100, finish: day(-12), risk: '', booked: 52, quoted: 48, pm: 'Rachel Barnes', fabManager: 'Tom Hendry', fabRequired: day(-20), fabAgreed: day(-20) },
+  { id: 'J-1060', name: 'Summit Pylon Concept', client: 'Summit Supermarkets', stage: 'Preparation', fab: 0, install: 0, job: 5, finish: day(52), risk: '', booked: 0, quoted: 60, pm: 'Helen Cho', fabManager: 'Greg Walsh', fabRequired: day(40), fabAgreed: '' },
 ];
 
 export const designTasks = [
@@ -49,6 +50,7 @@ export const installTasks = [
   { id: 'I5', name: 'Hoarding vinyl wrap', jobId: 'J-1051', type: 'Print Only', date: day(11), leader: 'Sam T.', member: 'Jo P.', stage: 'Awaiting Scheduling', swms: 'Not Required', quoted: 20, booked: 0 },
   { id: 'I6', name: 'Façade lightbox removal', jobId: 'J-1053', type: 'VE Subtask', date: day(10), leader: 'Dave K.', member: 'Jo P.', stage: 'Scheduled', swms: 'Created', quoted: 10, booked: 0 },
   { id: 'I7', name: 'Electrical connection', jobId: 'J-1053', type: 'External Install', date: day(13), leader: 'Spark Co.', member: '', stage: 'Awaiting Scheduling', swms: 'Not Required', quoted: 4, booked: 0 },
+  { id: 'I9', name: 'Entry sign fit', jobId: 'J-1039', type: 'VE Install', date: day(-14), leader: 'Dave K.', member: 'Sam T.', stage: 'Completed', swms: 'Completed', quoted: 28, booked: 30 },
   { id: 'I8', name: 'Building letters L5', jobId: 'J-1058', type: 'VE Install', date: day(-9), leader: 'Luke M.', member: 'Sam T.', stage: 'Manager Review', swms: 'Completed', quoted: 28, booked: 36 },
 ];
 
@@ -69,5 +71,8 @@ export const fabTasks = [
   { id: 'F7', name: 'Service CNC router (30 day)', jobId: 'J-0000', type: 'Maintenance', date: day(2), leader: 'Mia T.', member: '', stage: 'Scheduled', quoted: 2, booked: 0 },
   { id: 'F8', name: 'Restock vinyl and fixings', jobId: 'J-0000', type: 'Workshop', date: day(-1), leader: 'Jo P.', member: 'Sam T.', stage: 'Scheduled', quoted: 2, booked: 0 },
   { id: 'F9', name: 'Calibrate laser cutter', jobId: 'J-0000', type: 'Maintenance', date: day(4), leader: '', member: '', stage: 'Awaiting Scheduling', quoted: 2, booked: 0 },
+  { id: 'F10', name: 'Entry sign cut and finish', jobId: 'J-1039', type: 'CNC Router', date: day(-22), leader: 'Mia T.', member: 'Jo P.', stage: 'Completed', quoted: 20, booked: 22 },
+  { id: 'F11', name: 'Tidy chemical store', jobId: 'J-0000', type: 'Workshop', date: day(-3), leader: 'Sam T.', member: '', stage: 'Completed', quoted: 2, booked: 0 },
+  { id: 'F12', name: 'Entry sign packing', jobId: 'J-1039', type: 'Pack', date: day(-18), leader: 'Sam T.', member: 'Jo P.', stage: 'Completed', quoted: 6, booked: 6 },
   { id: 'F5', name: 'Letter faces cut and pack', jobId: 'J-1058', type: 'CNC Router', date: day(-8), leader: 'Mia T.', member: 'Jo P.', stage: 'Completed', quoted: 20, booked: 19 },
 ];

@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Clock, Coffee, LogIn, LogOut, Plus, Timer, Wallet } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Clock, Coffee, Download, LogIn, LogOut, Plus, Timer, Wallet } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
 import { addDays, formatShort, startOfWeek, toKey, today } from '../lib/dates';
 import { calcPay, fmtH } from '../lib/payRules';
 import { shortName } from '../lib/people';
+import { lastPayPeriod, thisPayPeriod } from '../lib/payPeriod';
+import { rollupCsv, weeklyRollup } from '../lib/hours';
 import './HoursPage.css';
 
 const VIEW_ALL = ['pm', 'fabManager', 'ic2'];
@@ -13,22 +15,28 @@ const PERIODS = [
   ['week', 'This week'],
   ['last', 'Last week'],
   ['days8', 'Last 8 days'],
+  ['thisPay', 'This pay period'],
+  ['lastPay', 'Last pay period'],
 ];
 const KIND = { install: 'Install', fab: 'Fab', workshop: 'Workshop' };
 const sum = (list, f) => Math.round(list.reduce((n, x) => n + f(x), 0) * 100) / 100;
 
-function rangeFor(period) {
+function rangeFor(period, payPeriod) {
   const t = today();
+  if (period === 'thisPay' || period === 'lastPay') {
+    const p = (period === 'thisPay' ? thisPayPeriod : lastPayPeriod)(toKey(t), payPeriod);
+    return [p.from, p.to];
+  }
   if (period === 'last') { const s = addDays(startOfWeek(t), -7); return [toKey(s), toKey(addDays(s, 6))]; }
   if (period === 'days8') return [toKey(addDays(t, -8)), toKey(t)];
   return [toKey(startOfWeek(t)), toKey(addDays(startOfWeek(t), 6))];
 }
 
-function BookedHours({ viewAll, me }) {
-  const { hoursLog } = useDemo();
-  const [period, setPeriod] = useState('week');
+function BookedHours({ viewAll, me, initialPeriod }) {
+  const { hoursLog, settings } = useDemo();
+  const [period, setPeriod] = useState(initialPeriod);
   const [worker, setWorker] = useState('all');
-  const [from, to] = rangeFor(period);
+  const [from, to] = rangeFor(period, settings.payPeriod);
 
   const inRange = hoursLog.filter((h) => h.date >= from && h.date <= to && (viewAll ? (worker === 'all' || h.worker === worker) : h.worker === me));
   const workers = [...new Set(hoursLog.map((h) => h.worker))].sort();
@@ -85,6 +93,58 @@ function BookedHours({ viewAll, me }) {
       <div style={{ height: 16 }} />
       <Card title="Entries" flush><ResponsiveTable columns={entryCols} rows={[...inRange].sort((a, b) => b.date.localeCompare(a.date))} empty="No hours booked in this period" /></Card>
       <p className="muted pad">Hours are added when a worker books them on a task, and later come from the post-job checklist.</p>
+    </>
+  );
+}
+
+// HRS-1: Employee Hours for one week. Daily hours, fab, install and workshop, unbilled and final (billed) hours.
+function WeeklyRollup({ viewAll, me }) {
+  const { hoursLog, notify } = useDemo();
+  const [weekStart, setWeekStart] = useState(() => toKey(startOfWeek(today())));
+  const log = viewAll ? hoursLog : hoursLog.filter((h) => h.worker === me);
+  const data = useMemo(() => weeklyRollup(log, weekStart), [log, weekStart]);
+  const shift = (n) => setWeekStart(toKey(addDays(new Date(`${weekStart}T00:00:00`), n * 7)));
+  const dayLabel = (k) => { const d = new Date(`${k}T00:00:00`); return `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][(d.getDay() + 6) % 7]} ${d.getDate()}`; };
+
+  const cols = [
+    { key: 'name', label: 'Worker', primary: true, render: (r) => <strong>{r.name}</strong> },
+    ...data.days.map((k) => ({ key: k, label: dayLabel(k), render: (r) => (r.byDay[k] ? fmtH(r.byDay[k]) : '-') })),
+    { key: 'fab', label: 'Fab', render: (r) => fmtH(r.fab) },
+    { key: 'install', label: 'Install', render: (r) => fmtH(r.install) },
+    { key: 'workshop', label: 'Workshop', render: (r) => fmtH(r.workshop) },
+    { key: 'total', label: 'Total', render: (r) => <strong>{fmtH(r.total)}</strong> },
+    { key: 'unbilled', label: 'Unbilled', render: (r) => <span className={r.unbilled ? 'over' : ''}>{fmtH(r.unbilled)}</span> },
+    { key: 'final', label: 'Final', render: (r) => fmtH(r.final) },
+  ];
+  const download = () => {
+    try {
+      const url = URL.createObjectURL(new Blob([rollupCsv(data)], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `employee-hours-${weekStart}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    } catch { notify('Could not create the file in this browser'); }
+  };
+
+  return (
+    <>
+      <div className="hp-tools">
+        <div className="cal-nav">
+          <button type="button" className="icon-btn" aria-label="Previous week" onClick={() => shift(-1)}><ChevronLeft size={18} /></button>
+          <button type="button" className="icon-btn" aria-label="Next week" onClick={() => shift(1)}><ChevronRight size={18} /></button>
+          <strong className="cal-label">Week of {formatShort(data.days[0])} to {formatShort(data.days[6])}</strong>
+        </div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setWeekStart(toKey(startOfWeek(today())))}>This week</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={download}><Download size={14} aria-hidden="true" /> Download CSV</button>
+      </div>
+      <div className="kpis">
+        <KpiCard icon={Clock} label="Total hours" value={fmtH(data.totals.total)} note="fab, install and workshop" />
+        <KpiCard icon={Wallet} label="Final hours" value={fmtH(data.totals.final)} note="total minus unbilled" />
+        <KpiCard icon={Timer} label="Unbilled" value={fmtH(data.totals.unbilled)} tone={data.totals.unbilled ? 'warn' : 'brand'} note="not charged to a job" />
+        <KpiCard icon={Clock} label="Workshop" value={fmtH(data.totals.workshop)} note="included in the total" />
+      </div>
+      <Card title="Employee hours" flush>
+        <ResponsiveTable columns={cols} rows={data.rows.length ? [...data.rows, { ...data.totals, id: 'total', name: 'All workers' }] : []} empty="No hours booked this week" />
+      </Card>
     </>
   );
 }
@@ -189,6 +249,9 @@ function Timesheet({ viewAll, me }) {
 
 export default function HoursPage() {
   const { role, roleId } = useDemo();
+  const [params] = useSearchParams();
+  const asked = params.get('period');
+  const initialPeriod = PERIODS.some(([id]) => id === asked) ? asked : 'week';
   const [tab, setTab] = useState('hours');
   const viewAll = VIEW_ALL.includes(roleId);
   const me = shortName(role.name);
@@ -199,10 +262,13 @@ export default function HoursPage() {
       <div className="hp-tabs">
         <div className="segmented" role="tablist" aria-label="Hours view">
           <button type="button" role="tab" aria-selected={tab === 'hours'} className={tab === 'hours' ? 'on' : ''} onClick={() => setTab('hours')}>Booked hours</button>
+          <button type="button" role="tab" aria-selected={tab === 'weekly'} className={tab === 'weekly' ? 'on' : ''} onClick={() => setTab('weekly')}>Weekly roll-up</button>
           <button type="button" role="tab" aria-selected={tab === 'timesheet'} className={tab === 'timesheet' ? 'on' : ''} onClick={() => setTab('timesheet')}>Timesheet</button>
         </div>
       </div>
-      {tab === 'hours' ? <BookedHours viewAll={viewAll} me={me} /> : <Timesheet viewAll={viewAll} me={me} />}
+      {tab === 'hours' && <BookedHours viewAll={viewAll} me={me} initialPeriod={initialPeriod} />}
+      {tab === 'weekly' && <WeeklyRollup viewAll={viewAll} me={me} />}
+      {tab === 'timesheet' && <Timesheet viewAll={viewAll} me={me} />}
     </div>
   );
 }

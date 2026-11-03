@@ -1,0 +1,10 @@
+.job-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.job-kpi { padding: 16px 20px; border-top: 3px solid var(--brand); }
+.job-kpi h2 { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.job-kpi dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
+.job-kpi dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.job-kpi dd { margin: 2px 0 0; font-size: 24px; font-weight: 800; }
+.job-kpi dd.over { color: var(--danger); }
+.closed-note { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.filter-select { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.filter-select select { height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink); }

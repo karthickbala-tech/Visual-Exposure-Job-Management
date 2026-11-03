@@ -4,9 +4,10 @@ import { AlertTriangle, CheckCircle2, Clock, Gauge, Hammer, Plus } from 'lucide-
 import CalendarCard from '../components/CalendarCard';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
+import { isClosedJob } from '../lib/jobs';
 import { FAB_TYPES, fabTypeColors } from '../data/fabTypes';
 import { FAB_CREW, shortName } from '../lib/people';
-import { formatShort, fullDate, toKey, today } from '../lib/dates';
+import { addDays, formatShort, fullDate, startOfWeek, toKey, today } from '../lib/dates';
 import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
@@ -31,7 +32,7 @@ function NewTaskModal({ presetType, onClose }) {
       <form className="form" onSubmit={submit} noValidate>
         <label>Task name<input autoFocus value={f.name} onChange={set('name')} placeholder="e.g. Pylon panel CNC cut" /></label>
         <div className="form-row">
-          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
+          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.filter((j) => !isClosedJob(j)).map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
           <label>Fab type<select value={f.type} onChange={set('type')}>{FAB_TYPES.map((t) => <option key={t}>{t}</option>)}</select></label>
         </div>
         <div className="form-row">
@@ -84,7 +85,7 @@ function ScheduleModal({ task, onClose }) {
 
 // variant: 'manager' (Fab Manager and the Fabrication menu) or 'ic2' (Fab 2IC: week view, starts on "My open").
 export default function FabDashboard({ variant = 'manager' }) {
-  const { tasks, allJobs: jobs, role, roleId } = useDemo();
+  const { tasks, allJobs: jobs, role, roleId, hoursLog } = useDemo();
   const [filter, setFilter] = useState(variant === 'ic2' ? 'mine' : 'all');
   const [creating, setCreating] = useState(null);
   const [scheduling, setScheduling] = useState(null);
@@ -110,6 +111,10 @@ export default function FabDashboard({ variant = 'manager' }) {
   const booked = fab.reduce((n, t) => n + (t.booked || 0), 0);
   const quoted = fab.reduce((n, t) => n + (t.quoted || 0), 0);
   const pct = quoted ? Math.round((booked / quoted) * 100) : 0;
+  // FSD 5.12, IC dashboard: my hours last week (Monday to Sunday).
+  const lastWeekStart = toKey(addDays(startOfWeek(today()), -7));
+  const lastWeekEnd = toKey(addDays(startOfWeek(today()), -1));
+  const hoursLastWeek = Math.round(hoursLog.filter((h) => h.worker === me && h.date >= lastWeekStart && h.date <= lastWeekEnd).reduce((n, h) => n + h.hours, 0) * 10) / 10;
   const events = fab.filter((t) => t.stage !== 'Cancelled').map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type }));
 
   const columns = [
@@ -147,6 +152,7 @@ export default function FabDashboard({ variant = 'manager' }) {
         <KpiCard icon={Clock} label="Unscheduled" value={FILTERS[2][2].length} tone="warn" note="need a date and a team" />
         <KpiCard icon={CheckCircle2} label="Awaiting approval" value={FILTERS[5][2].length} note={canApprove ? 'ready for you to review' : 'with the Fab Manager'} />
         <KpiCard icon={AlertTriangle} label="Overdue" value={overdue} tone="danger" note="past their date" />
+        {variant === 'ic2' && <KpiCard icon={Clock} label="My hours last week" value={`${hoursLastWeek}h`} note={`${formatShort(lastWeekStart)} to ${formatShort(lastWeekEnd)}`} />}
         <KpiCard icon={Gauge} label="Booked vs quoted" value={`${pct}%`} tone={pct > 100 ? 'danger' : 'brand'} note={`${Math.round(booked * 10) / 10} / ${quoted} hrs`} />
       </div>
 

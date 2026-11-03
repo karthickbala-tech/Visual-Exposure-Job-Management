@@ -19,6 +19,11 @@ export const NAV = [
     replaces: ['Install Dashboard', 'Installer Dashboard', 'All Install Tasks', 'My Install Calendar 2IC', 'Install and Fab Dashboard'],
   },
   {
+    label: 'Calendar', path: '/calendar', icon: 'calendar',
+    blurb: 'Unified, fabrication and installation calendars.',
+    replaces: ['Fab Calendar by Type', 'Install Calendar', 'Unified Calendar'],
+  },
+  {
     label: 'SWMS', path: '/swms', icon: 'swms',
     blurb: 'Safe Work Method Statements: create, PM and team leader signing, PPE rules and the PDF.',
     replaces: ['SWMS Project Manager report', 'Task Template', 'SWMS PDF and email'],

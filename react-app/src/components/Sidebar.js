@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { AlertTriangle, Briefcase, Clock, Hammer, LayoutDashboard, PenTool, ShieldCheck, Smartphone, Truck, Users, Wrench, X } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, Clock, Hammer, LayoutDashboard, PenTool, ShieldCheck, Smartphone, Truck, Users, Wrench, X } from 'lucide-react';
 import { NAV } from '../navConfig';
 import { useDemo } from '../context/DemoContext';
 import { canAccess } from '../lib/access';
 
 const ICONS = {
-  home: LayoutDashboard, jobs: Briefcase, design: PenTool, fab: Hammer, install: Truck,
+  calendar: CalendarDays, home: LayoutDashboard, jobs: Briefcase, design: PenTool, fab: Hammer, install: Truck,
   swms: ShieldCheck, hours: Clock, issues: AlertTriangle, people: Users, equipment: Wrench, devices: Smartphone,
 };
 

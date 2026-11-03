@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Clock, PencilRuler, Plus, RotateCcw } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
+import { isClosedJob } from '../lib/jobs';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import { MANAGER_ROLES } from '../lib/workflow';
 import './DesignPage.css';
@@ -29,7 +30,7 @@ function NewDesignModal({ onClose }) {
       <form className="form" onSubmit={submit} noValidate>
         <label>Task name<input autoFocus value={f.name} onChange={set('name')} placeholder="e.g. Pylon artwork rev D" /></label>
         <div className="form-row">
-          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
+          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.filter((j) => !isClosedJob(j)).map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
           <label>Design type<select value={f.type} onChange={set('type')}>{Object.keys(DESIGN_TYPES).map((t) => <option key={t}>{t}</option>)}</select></label>
         </div>
         <div className="form-row">

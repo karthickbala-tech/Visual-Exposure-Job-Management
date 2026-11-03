@@ -20,7 +20,10 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
 
   let days;
   let label;
-  if (view === 'Week') {
+  if (view === 'Day') {
+    days = [anchor];
+    label = formatLong(toKey(anchor));
+  } else if (view === 'Week') {
     const s = startOfWeek(anchor);
     const e = addDays(s, 6);
     days = Array.from({ length: 7 }, (_, i) => addDays(s, i));
@@ -36,11 +39,12 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
 
   const shift = (dir) => {
     if (view === 'Month') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1));
+    else if (view === 'Day') setAnchor(addDays(anchor, dir));
     else setAnchor(addDays(anchor, dir * 7));
   };
 
   const agenda = days
-    .filter((d) => view === 'Week' || d.getMonth() === anchor.getMonth())
+    .filter((d) => view !== 'Month' || d.getMonth() === anchor.getMonth())
     .map((d) => ({ key: toKey(d), list: byDate[toKey(d)] || [] }))
     .filter((d) => d.list.length > 0);
 
@@ -57,14 +61,21 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
         <div className="cal-ctrl">
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAnchor(today())}>Today</button>
           <div className="segmented" role="tablist" aria-label="Calendar view">
-            {['Month', 'Week'].map((v) => (
+            {['Month', 'Week', 'Day'].map((v) => (
               <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{v}</button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className={`cal-grid cal-${view.toLowerCase()}`}>
+      {view === 'Day' && (
+        <div className="cal-dayview" aria-label="Day schedule">
+          {(byDate[toKey(anchor)] || []).length === 0 && <p className="muted pad">Nothing scheduled on this day.</p>}
+          {(byDate[toKey(anchor)] || []).map((e) => <div key={e.id} className="agenda-ev">{dot(e.type)}<span>{e.title}</span><small>{e.type}</small></div>)}
+        </div>
+      )}
+
+      {view !== 'Day' && <div className={`cal-grid cal-${view.toLowerCase()}`}>
         {DAY_NAMES.map((n) => <div key={n} className="cal-dow">{n}</div>)}
         {days.map((d) => {
           const key = toKey(d);
@@ -80,9 +91,9 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
             </div>
           );
         })}
-      </div>
+      </div>}
 
-      <div className="cal-agenda">
+      {view !== 'Day' && <div className="cal-agenda">
         {agenda.length === 0 && <p className="muted pad">Nothing scheduled in this {view.toLowerCase()}.</p>}
         {agenda.map(({ key, list }) => (
           <div key={key} className="agenda-day">
@@ -90,7 +101,7 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
             {list.map((e) => <div key={e.id} className="agenda-ev">{dot(e.type)}<span>{e.title}</span><small>{e.type}</small></div>)}
           </div>
         ))}
-      </div>
+      </div>}
 
       <div className="cal-legend">
         {Object.entries(typeColors).map(([name, color]) => (

@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, CheckCircle2, Clock, Hourglass, ListChecks, MapPin, Users } from 'lucide-react';
+import CalendarCard from '../components/CalendarCard';
 import ChecklistDialog from '../components/ChecklistDialog';
-import { Chip, KpiCard, PageHeader } from '../components/ui';
+import HoursNotFilled from '../components/HoursNotFilled';
+import { Card, Chip, KpiCard, PageHeader, ResponsiveTable } from '../components/ui';
+import { fabTypeColors } from '../data/fabTypes';
+import { installTypeStyles } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, fullDate, greeting, toKey, today } from '../lib/dates';
 import { CLOSED_STAGES, MAX_ENTRY_HOURS, SUBSTAGES, TRANSITIONS } from '../lib/workflow';
@@ -112,7 +116,7 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
 }
 
 export default function MyDay() {
-  const { roleId, role, tasks, jobs, swms } = useDemo();
+  const { roleId, role, tasks, jobs, swms, checklists } = useDemo();
   const kind = KIND_FOR_ROLE[roleId];
   const me = shortName(role.name);
   const key = toKey(today());
@@ -127,6 +131,19 @@ export default function MyDay() {
   const jobName = (id) => jobs.find((j) => j.id === id)?.name || id;
   const swmsFor = (t) => (t.swms === 'Created' ? (swms.find((s) => s.jobId === t.jobId)?.status ?? t.swms) : t.swms);
   const booked = mine.reduce((n, t) => n + (t.booked || 0), 0);
+  const events = mine.filter((t) => t.stage !== 'Cancelled').map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type }));
+  // FSD 5.12 Fab Worker dashboard: my post-job checklists, newest tasks first.
+  const post = kind === 'fab'
+    ? mine.filter((t) => ['In Progress', 'Rejected', 'Reopen', 'Manager Review', 'Completed'].includes(t.stage))
+      .map((t) => ({ id: t.id, task: t, rec: checklists.find((c) => c.taskId === t.id && c.person === me)?.steps.post2 }))
+      .sort((a, b) => b.task.date.localeCompare(a.task.date)).slice(0, 8)
+    : [];
+  const postCols = [
+    { key: 'name', label: 'Task', primary: true, render: (r) => <strong>{r.task.name}</strong> },
+    { key: 'date', label: 'Date', render: (r) => formatShort(r.task.date) },
+    { key: 'stage', label: 'Task stage', render: (r) => <Chip value={r.task.stage} /> },
+    { key: 'post', label: 'Post-job checklist', render: (r) => (r.rec ? <span>Done, {r.rec.hours}h</span> : <span className="over">Open</span>) },
+  ];
 
   return (
     <div className="dash">
@@ -140,6 +157,10 @@ export default function MyDay() {
         <KpiCard icon={Clock} label="Hours booked" value={`${Math.round(booked * 10) / 10}h`} note="across your tasks" />
       </div>
 
+      {kind === 'fab' && <HoursNotFilled person={me} />}
+
+      <CalendarCard title="My calendar" events={events} typeColors={kind === 'install' ? installTypeStyles : fabTypeColors} defaultView="Week" />
+
       {groups.map((g) => (
         <section key={g.id} className={`myday-group ${g.id === 'late' ? 'late' : ''}`} aria-label={g.title}>
           <h2>{g.title} <span className="count">{g.list.length}</span></h2>
@@ -148,6 +169,7 @@ export default function MyDay() {
             : <div className="myday-cols">{g.list.map((t) => <TaskCard key={t.id} task={t} jobName={jobName(t.jobId)} swmsStatus={swmsFor(t)} late={g.id === 'late'} />)}</div>}
         </section>
       ))}
+      {post.length > 0 && <Card title="My post-job checklists" flush><ResponsiveTable columns={postCols} rows={post} /></Card>}
     </div>
   );
 }
