@@ -2,6 +2,8 @@
 
 Status: prepared 2026-11-02. Nothing in this document has been run against production. The Development project (India data center) stays the test bed; **production must be a separate AU project** so customer data stays in Australia.
 
+**Order of work (decided 3 Nov 2026):** 1) finish everything, including the CRM, WorkDrive and MDM integrations, on the current Development project (India data center) and its Zoho account; 2) review with the client and make their changes; 3) only then do sections 2 to 7 below to move to the AU project. Until step 3, the AU project, the AU OAuth client and the production domain are not needed.
+
 Legend: **[You]** needs your login or a decision. **[Me]** I can do it once the AU project is connected. **[Both]** needs a console action and a check.
 
 ---
