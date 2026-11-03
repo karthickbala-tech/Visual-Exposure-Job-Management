@@ -153,6 +153,10 @@ router.add(
 				receivedKeys: Object.keys(body),
 				contentType: req.headers['content-type'] || null,
 				contentLength: req.headers['content-length'] || null,
+				bodyBytesRead: req.bodyBytesRead,
+				platformBodyType: req.body === undefined ? 'none' : Buffer.isBuffer(req.body) ? 'buffer' : typeof req.body,
+				sentIsPrefixOfSecret: typeof token === 'string' && token.length > 0 && (process.env.CRM_WEBHOOK_SECRET || '').startsWith(token),
+				sentCharset: typeof token !== 'string' ? 'none' : /^[0-9a-f]+$/i.test(token) ? 'hex' : /^[A-Za-z0-9]+$/.test(token) ? 'alphanumeric' : 'other characters',
 				hadAddressValues: String(req.url || '').includes('?'),
 				headerNames: Object.keys(req.headers).filter((h) => !/^x-zc-|^x-forwarded|^cf-|^sec-/i.test(h)),
 			});
