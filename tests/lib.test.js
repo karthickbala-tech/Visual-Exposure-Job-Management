@@ -155,3 +155,14 @@ test('memo: serves a value until its time limit, is bounded, and can be cleared'
 	assert.equal(m.size, 0);
 	assert.equal(m.get('missing'), undefined);
 });
+
+test('loose body: JSON, form fields and address values all reach the webhook; body wins; bad JSON is 400', () => {
+	const { parseLooseBody } = require('../lib/http');
+	assert.deepEqual(parseLooseBody('{"deal_id":"1","deal_name":"A \\"quoted\\" name"}', 'application/json'), { deal_id: '1', deal_name: 'A "quoted" name' });
+	assert.deepEqual(parseLooseBody('deal_id=1&deal_name=Fish+%26+Chips', 'application/x-www-form-urlencoded'), { deal_id: '1', deal_name: 'Fish & Chips' });
+	assert.deepEqual(parseLooseBody('', '', '/x/deal-won?deal_id=9&deal_name=Q'), { deal_id: '9', deal_name: 'Q' });
+	assert.deepEqual(parseLooseBody('deal_name=Body', '', '/x?deal_id=9&deal_name=Url'), { deal_id: '9', deal_name: 'Body' });
+	assert.deepEqual(parseLooseBody('{"a":1}', ''), { a: 1 }, 'JSON is recognised without a content type');
+	assert.deepEqual(parseLooseBody('', ''), {});
+	assert.throws(() => parseLooseBody('{broken', 'application/json'), (e) => e.status === 400);
+});

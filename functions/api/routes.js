@@ -1,6 +1,6 @@
 'use strict';
 
-const { createRouter, parseQuery, readJson } = require('./lib/http');
+const { createRouter, parseQuery, readJson, readLooseBody } = require('./lib/http');
 const { projectRow, permissionsFor } = require('./lib/authz');
 const { withBooleans } = require('./lib/db');
 const { makeContext } = require('./lib/context');
@@ -138,7 +138,7 @@ router.add(
 	'/webhooks/crm/deal-won',
 	async ({ req, log }) => {
 		crmWebhook.authenticate(process.env.CRM_WEBHOOK_SECRET, req.headers);
-		const body = await readJson(req);
+		const body = await readLooseBody(req); // the CRM may send JSON, form fields or address values
 		const app = catalyst.initialize(req, { scope: 'admin' });
 		const system = { roles: ['admin'], person: null, user: null, db: createDb(app), app };
 		return ok(await crmWebhook.dealWon(makeContext(system, log), body));
