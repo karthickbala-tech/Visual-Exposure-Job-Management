@@ -137,21 +137,23 @@ router.add(
 	'POST',
 	'/webhooks/crm/deal-won',
 	async ({ req, log }) => {
+		const raw = await readLooseBody(req); // the CRM may send JSON, form fields or address values
+		// The secret may be a header (preferred) or a body parameter named x-webhook-token or token.
+		const { token, body } = crmWebhook.extractToken(req.headers, raw);
 		try {
-			crmWebhook.authenticate(process.env.CRM_WEBHOOK_SECRET, req.headers);
+			crmWebhook.authenticate(process.env.CRM_WEBHOOK_SECRET, { 'x-webhook-token': token });
 		} catch (err) {
-			// Help diagnose a wrong header without ever logging the secret or what was sent: only shapes and lengths.
-			const sent = req.headers['x-webhook-token'];
+			// Help diagnose a wrong secret without ever logging it or what was sent: only shapes and lengths.
 			log.warn('webhook auth refused', {
-				headerArrived: sent !== undefined,
-				sentLength: typeof sent === 'string' ? sent.length : 0,
+				secretArrived: token !== undefined,
+				arrivedAs: req.headers['x-webhook-token'] ? 'header' : token !== undefined ? 'body parameter' : 'nowhere',
+				sentLength: typeof token === 'string' ? token.length : 0,
 				expectedLength: (process.env.CRM_WEBHOOK_SECRET || '').length,
-				sentHasQuoteOrSpaceAtEdge: typeof sent === 'string' && /^["'\s]|["'\s]$/.test(sent),
-				otherHeaderNames: Object.keys(req.headers).filter((h) => /token|auth|secret|key/i.test(h)),
+				sentHasQuoteOrSpaceAtEdge: typeof token === 'string' && /^["'s]|["'s]$/.test(token),
+				receivedKeys: Object.keys(body),
 			});
 			throw err;
 		}
-		const body = await readLooseBody(req); // the CRM may send JSON, form fields or address values
 		const app = catalyst.initialize(req, { scope: 'admin' });
 		const system = { roles: ['admin'], person: null, user: null, db: createDb(app), app };
 		try {

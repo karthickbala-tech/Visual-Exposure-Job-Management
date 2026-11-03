@@ -186,3 +186,18 @@ test('webhook: a closing date in another format is ignored, a datetime keeps its
 	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A', expected_finish: '2026-11-06' }).expected_finish, '2026-11-06');
 	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A' }).expected_finish, undefined);
 });
+
+test('webhook secret: the header wins, a body parameter works, and the secret never reaches the deal data', () => {
+	const { extractToken, authenticate } = require('../lib/services/crmWebhook');
+	let r = extractToken({ 'x-webhook-token': 'H' }, { 'x-webhook-token': 'B', deal_id: '1' });
+	assert.equal(r.token, 'H');
+	assert.deepEqual(r.body, { deal_id: '1' });
+	r = extractToken({}, { 'x-webhook-token': 'B', deal_id: '1', deal_name: 'A' });
+	assert.equal(r.token, 'B');
+	assert.deepEqual(r.body, { deal_id: '1', deal_name: 'A' });
+	assert.equal(extractToken({}, { token: 'T' }).token, 'T');
+	assert.equal(extractToken({}, {}).token, undefined);
+	assert.equal(extractToken({}, undefined).token, undefined);
+	assert.doesNotThrow(() => authenticate('S', { 'x-webhook-token': extractToken({}, { 'x-webhook-token': 'S' }).token }));
+	assert.throws(() => authenticate('S', { 'x-webhook-token': extractToken({}, {}).token }), (e) => e.status === 401);
+});
