@@ -83,7 +83,6 @@ export default function DesignPage() {
       <div className="row-actions">
         {t.stage === 'Not Started' && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Start')}>Start</button>}
         {t.stage === 'In Progress' && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Submit for approval')}>Submit</button>}
-        {t.stage === 'Manager Review' && canApprove && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Approve')}>Approve</button>}
         <Link className="btn btn-ghost btn-sm" to={`/jobs/${t.jobId}`}>{t.stage === 'Manager Review' ? 'Review' : 'Open'}</Link>
       </div>) },
   ];

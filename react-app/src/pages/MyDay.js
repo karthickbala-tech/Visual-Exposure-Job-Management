@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, CheckCircle2, Clock, Hourglass, ListChecks, MapPin, Users } from 'lucide-react';
+import ChecklistDialog from '../components/ChecklistDialog';
 import { Chip, KpiCard, PageHeader } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, fullDate, greeting, toKey, today } from '../lib/dates';
-import { MAX_ENTRY_HOURS, SUBSTAGES, TRANSITIONS } from '../lib/workflow';
+import { CLOSED_STAGES, MAX_ENTRY_HOURS, SUBSTAGES, TRANSITIONS } from '../lib/workflow';
+import { checklistPlan, nextStep, stepTitle, submitBlockReason } from '../lib/checklists';
 import './MyDay.css';
 
 // Fab Worker and Installer home: "my" tasks only, big touch targets, one clear next step.
@@ -15,21 +17,26 @@ const shortName = (full) => {
 };
 
 function TaskCard({ task, jobName, swmsStatus, late }) {
-  const { setSubStage, actOnTask, bookHours } = useDemo();
+  const { actOnTask, bookHours, checklists, role } = useDemo();
+  const [dialog, setDialog] = useState(null);
   const [hours, setHours] = useState('');
   const [error, setError] = useState('');
 
   const isInstall = task.kind === 'install';
   const inProgress = task.stage === 'In Progress';
   const subIdx = SUBSTAGES.indexOf(task.subStage);
-  const nextSub = SUBSTAGES[subIdx + 1];
-  const finished = !isInstall || subIdx === SUBSTAGES.length - 1;
-  const steps = (TRANSITIONS[task.stage] || []).filter((s) => !s.manager);
+  const plan = checklistPlan(task);
+  const me = shortName(role.name);
+  const mine = checklists.find((c) => c.taskId === task.id && c.person === me);
+  const next = nextStep(task, mine);
+  // Pre-job steps start the task, so Start is only offered when there is no pre-job checklist.
+  const steps = (TRANSITIONS[task.stage] || []).filter((s) => !s.manager && !(s.action === 'Start' && plan.pre));
   const sentBack = task.stage === 'Rejected' || task.stage === 'Reopen';
 
   const blocked = (step) => {
     if (step.action !== 'Submit for approval') return '';
-    if (!finished) return 'Mark Finished On Site first';
+    if (plan.post) return submitBlockReason(task, checklists);
+    if (isInstall && task.subStage !== 'Finished On Site') return 'Mark Finished On Site first';
     if (!task.booked) return 'Book your hours first';
     return '';
   };
@@ -72,8 +79,8 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
       )}
 
       <div className="mtask-actions">
-        {isInstall && inProgress && nextSub && (
-          <button type="button" className="btn btn-primary" onClick={() => setSubStage(task.id, nextSub)}>Mark: {nextSub}</button>
+        {next.step && ['Scheduled', 'In Progress', 'Rejected', 'Reopen'].includes(task.stage) && (
+          <button type="button" className="btn btn-primary" onClick={() => setDialog(next.step)}>Checklist: {stepTitle(task, next.step)}</button>
         )}
         {steps.map((step) => {
           const why = blocked(step);
@@ -87,7 +94,13 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
         {task.stage === 'Completed' && <small className="muted"><CheckCircle2 size={14} aria-hidden="true" /> Done.</small>}
       </div>
 
-      {inProgress && (
+      {!next.step && next.message && (plan.pre || plan.post) && <small className="muted">{next.message}</small>}
+      {plan.post && task.stage !== 'Scheduled' && (
+        <small className="muted">Closure: {[task.leader, task.member].filter(Boolean).map((p) => `${p} ${checklists.find((c) => c.taskId === task.id && c.person === p)?.steps.post2 ? 'done' : 'open'}`).join(', ')}</small>
+      )}
+      {dialog && <ChecklistDialog task={task} person={me} step={dialog} swmsStatus={swmsStatus} onClose={() => setDialog(null)} />}
+
+      {inProgress && !plan.post && (
         <form className="hours-form" onSubmit={submitHours} noValidate>
           <input type="number" inputMode="decimal" step="0.5" min="0" value={hours} onChange={(e) => setHours(e.target.value)} aria-label="Hours to book" placeholder="Hours" />
           <button type="submit" className="btn btn-ghost">Book hours</button>
@@ -105,7 +118,7 @@ export default function MyDay() {
   const key = toKey(today());
 
   const mine = tasks.filter((t) => t.kind === kind && [t.leader, t.member].includes(me));
-  const open = mine.filter((t) => t.stage !== 'Completed' && t.stage !== 'Cancelled');
+  const open = mine.filter((t) => !CLOSED_STAGES.includes(t.stage) && t.stage !== 'On Hold');
   const groups = [
     { id: 'late', title: 'Earlier and still open', list: open.filter((t) => t.date < key) },
     { id: 'today', title: 'Today', list: open.filter((t) => t.date === key) },

@@ -25,3 +25,6 @@ export const MANAGER_ROLES = ['pm', 'fabManager'];
 export const SUBSTAGES = ['Team Briefed', 'On Site', 'Finished On Site'];
 // Longest single time entry allowed (the Creator checklist rejects entries of 16 hours or more).
 export const MAX_ENTRY_HOURS = 16;
+
+// Stages after which a task no longer counts as open.
+export const CLOSED_STAGES = ['Completed', 'Cancelled', 'Complete - Not Used'];

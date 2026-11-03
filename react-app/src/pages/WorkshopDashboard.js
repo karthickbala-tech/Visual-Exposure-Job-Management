@@ -8,11 +8,11 @@ import { fabTypeColors } from '../data/fabTypes';
 import { FAB_CREW, shortName } from '../lib/people';
 import { daysOverdue, isOverdue, nextDue } from '../lib/equipment';
 import { WORKSHOP_JOB_ID, WORKSHOP_TASK_TYPES } from '../lib/config';
-import { TRANSITIONS } from '../lib/workflow';
+import { CLOSED_STAGES, TRANSITIONS } from '../lib/workflow';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import './FabDashboard.css';
 
-const CLOSED = ['Completed', 'Cancelled'];
+const CLOSED = CLOSED_STAGES;
 
 // Workshop tasks use the workshop job from settings, never a hard-coded id in the screen (FSD FAB-5).
 function NewWorkshopTaskModal({ onClose }) {

@@ -7,10 +7,10 @@ import { useDemo } from '../context/DemoContext';
 import { FAB_TYPES, fabTypeColors } from '../data/fabTypes';
 import { FAB_CREW, shortName } from '../lib/people';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
-import { MANAGER_ROLES } from '../lib/workflow';
+import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
-const CLOSED = ['Completed', 'Cancelled'];
+const CLOSED = CLOSED_STAGES;
 
 function NewTaskModal({ presetType, onClose }) {
   const { jobs, addTask } = useDemo();
@@ -84,7 +84,7 @@ function ScheduleModal({ task, onClose }) {
 
 // variant: 'manager' (Fab Manager and the Fabrication menu) or 'ic2' (Fab 2IC: week view, starts on "My open").
 export default function FabDashboard({ variant = 'manager' }) {
-  const { tasks, allJobs: jobs, role, roleId, actOnTask } = useDemo();
+  const { tasks, allJobs: jobs, role, roleId } = useDemo();
   const [filter, setFilter] = useState(variant === 'ic2' ? 'mine' : 'all');
   const [creating, setCreating] = useState(null);
   const [scheduling, setScheduling] = useState(null);
@@ -124,7 +124,6 @@ export default function FabDashboard({ variant = 'manager' }) {
     { key: 'action', label: 'Action', render: (t) => (
       <div className="row-actions">
         {t.stage === 'Awaiting Scheduling' && <button type="button" className="btn btn-primary btn-sm" onClick={() => setScheduling(t)}>Schedule</button>}
-        {t.stage === 'Manager Review' && canApprove && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Approve')}>Approve</button>}
         <Link className="btn btn-ghost btn-sm" to={`/jobs/${t.jobId}`}>{t.stage === 'Manager Review' ? 'Review' : 'Open'}</Link>
       </div>) },
   ];
