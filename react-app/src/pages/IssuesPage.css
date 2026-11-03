@@ -21,3 +21,25 @@
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:900px){.is-grid{grid-template-columns:1fr}}
 @media (max-width:560px){.form-row{grid-template-columns:1fr}.is-grid dl{grid-template-columns:1fr}}
+
+/* ISS-5: print layouts. The sheet is a preview on screen and the only thing that prints. */
+.is-print-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.is-print-tools label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.is-print-tools select { height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.is-sheet { max-width: 820px; margin-top: 16px; padding: 28px; border: 1px solid var(--line); background: #fff; color: #111; }
+.is-sheet h2 { margin: 4px 0 14px; font-size: 22px; color: #111; }
+.is-sheet h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #444; }
+.is-sheet-eyebrow { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #555; }
+.is-sheet dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; margin: 0; }
+.is-sheet dl div { padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+.is-sheet dt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #666; }
+.is-sheet dd { margin: 2px 0 0; color: #111; }
+.is-sheet ol { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.is-sheet p { color: #111; }
+@media (max-width: 600px) { .is-sheet dl { grid-template-columns: 1fr; } }
+@media print {
+  .sidebar, .topbar, .toast, .back-link, .is-noprint { display: none !important; }
+  .shell { display: block; }
+  .page { padding: 0; max-width: none; }
+  .is-sheet { margin: 0; padding: 0; border: 0; max-width: none; }
+}

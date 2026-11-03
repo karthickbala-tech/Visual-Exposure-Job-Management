@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Flag, Plus } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Flag, Link2, Plus, Printer } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { DEPARTMENTS, DIRECTIONS, PEOPLE, PRIORITIES, SITES, STATUSES } from '../data/issuesSeed';
 import { fmtStamp, formatShort, toKey, today } from '../lib/dates';
+import { PRINT_LAYOUTS, canCreateDeal, defaultLayout, layoutById, printRows } from '../lib/issuePrint';
 import './IssuesPage.css';
 
 const STATUS_TONE = {
   'To Be discussed': 'gray', 'To Be Quoted': 'amber', Quoted: 'purple', 'Quote Sent': 'purple', 'In Progress': 'blue', 'On Hold': 'red', Completed: 'green',
 };
 const PRIORITY_TONE = { High: 'red', Medium: 'amber', Low: 'gray' };
-const MANAGE_ROLES = ['pm', 'fabManager'];
+const MANAGE_ROLES = ['admin', 'pm', 'fabManager'];
 const isOpen = (i) => i.status !== 'Completed';
 
 function ReportModal({ onClose }) {
@@ -61,7 +62,7 @@ function ReportModal({ onClose }) {
 }
 
 export function IssuesBoard() {
-  const { issues, role } = useDemo();
+  const { issues, role, roleId } = useDemo();
   const [dept, setDept] = useState('All');
   const [scope, setScope] = useState('all');
   const [view, setView] = useState('board');
@@ -88,7 +89,7 @@ export function IssuesBoard() {
   return (
     <div className="dash">
       <PageHeader eyebrow="Safety and operations" title="Issues" subtitle="Report problems, track who owns them and what happens next.">
-        <button type="button" className="btn btn-primary" onClick={() => setReporting(true)}><Plus size={16} aria-hidden="true" /> Report an issue</button>
+        {roleId !== 'viewer' && <button type="button" className="btn btn-primary" onClick={() => setReporting(true)}><Plus size={16} aria-hidden="true" /> Report an issue</button>}
       </PageHeader>
 
       <div className="kpis">
@@ -187,7 +188,8 @@ function UpdateForm({ issue }) {
 
 export function IssueDetail() {
   const { issueId } = useParams();
-  const { issues, tasks, jobs, roleId } = useDemo();
+  const { issues, tasks, jobs, roleId, role, createCrmDeal } = useDemo();
+  const [layoutId, setLayoutId] = useState('');
   const issue = issues.find((i) => i.id === issueId);
   if (!issue) return <PlaceholderPage title="Issue not found" blurb="That issue does not exist in the demo data." />;
 
@@ -196,13 +198,23 @@ export function IssueDetail() {
   const canManage = MANAGE_ROLES.includes(roleId);
   const late = isOpen(issue) && issue.dueDate && issue.dueDate < key;
   const history = [...issue.history].reverse();
+  const layout = layoutById(layoutId || defaultLayout(issue));
+  const rows = printRows(layout, issue, { taskName: task ? `${task.id} · ${task.name}` : '' });
+  const dealOk = canCreateDeal(issue, { canManage, person: role.name });
 
   return (
     <div className="dash">
+      <div className="is-noprint">
       <Link to="/issues" className="back-link"><ArrowLeft size={16} aria-hidden="true" /> All issues</Link>
       <PageHeader eyebrow={`${issue.id} · ${issue.department}`} title={issue.subject}>
         <Chip value={issue.priority} tone={PRIORITY_TONE[issue.priority]} />
         <Chip value={issue.status} tone={STATUS_TONE[issue.status]} />
+        {issue.crmDealId && <Chip value={`CRM deal ${issue.crmDealId}`} tone="purple" />}
+        {dealOk && (
+          <button type="button" className="btn btn-ghost btn-sm" title="Demo: records a deal number. The real Zoho CRM call needs the backend." onClick={() => createCrmDeal(issue.id)}>
+            <Link2 size={14} aria-hidden="true" /> Create CRM deal
+          </button>
+        )}
       </PageHeader>
 
       <div className="is-grid">
@@ -239,6 +251,38 @@ export function IssueDetail() {
           </ul>
         </Card>
       </div>
+
+      <Card title="Print">
+        <div className="is-print-tools">
+          <label>Layout
+            <select value={layout.id} onChange={(e) => setLayoutId(e.target.value)} aria-label="Print layout">
+              {PRINT_LAYOUTS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+            </select>
+          </label>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => window.print()}><Printer size={14} aria-hidden="true" /> Print or save as PDF</button>
+        </div>
+        <small className="muted">Seven layouts: two general and one per department. The layout names are placeholders until they are checked against the Creator originals.</small>
+      </Card>
+      </div>
+
+      <article className="is-sheet" aria-label="Print preview">
+        <p className="is-sheet-eyebrow">Visual Exposure · {layout.title}</p>
+        <h2>{issue.subject}</h2>
+        <dl>{rows.map((r) => <div key={r.label}><dt>{r.label}</dt><dd>{r.value}</dd></div>)}</dl>
+        {layout.description && <><h3>Description</h3><p>{issue.description}</p></>}
+        {layout.history && (
+          <>
+            <h3>Management history</h3>
+            {history.length === 0 && <p>No updates yet.</p>}
+            <ol>
+              {history.map((h, idx) => (
+                <li key={idx}><strong>{h.status}</strong> · {h.by}, {fmtStamp(h.at)} · responsible: {h.personResponsible}
+                  {h.nextStep && <div>Next step: {h.nextStep}{h.dueDate ? ` (due ${formatShort(h.dueDate)})` : ''}</div>}
+                  {h.workCompleted && <div>Work completed: {h.workCompleted}</div>}</li>))}
+            </ol>
+          </>
+        )}
+      </article>
     </div>
   );
 }

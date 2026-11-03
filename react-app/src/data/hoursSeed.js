@@ -35,4 +35,7 @@ export const seedChecklistRecords = [
   { taskId: 'F12', person: 'Sam T.', role: 'TL', steps: post2(0) },
   { taskId: 'F12', person: 'Jo P.', role: 'TM', steps: post2(6) },
   { taskId: 'F5', person: 'Mia T.', role: 'TL', steps: post2(19) },
+  // Zero-hour checklists for the Workshop (Jo P.) and Fab 2IC (Mia T.) dashboards.
+  { taskId: 'F11', person: 'Jo P.', role: 'TM', steps: post2(0) },
+  { taskId: 'F10', person: 'Mia T.', role: 'TL', steps: post2(0) },
 ];

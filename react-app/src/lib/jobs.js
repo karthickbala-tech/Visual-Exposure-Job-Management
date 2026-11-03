@@ -66,11 +66,11 @@ export function rollup(job, tasks) {
   return patch;
 }
 
-// JOB-5: only a Project Manager can close, and only at 100% complete. Returns { ok, reason }.
+// JOB-5: only a Project Manager (or an Admin) can close, and only at 100% complete. Returns { ok, reason }.
 export function canCloseJob(job, roleId) {
   if (isClosedJob(job)) return { ok: false, reason: 'This job is already closed.' };
   if (job.stage === 'Cancelled') return { ok: false, reason: 'A cancelled job cannot be closed.' };
-  if (roleId !== 'pm') return { ok: false, reason: 'Only a Project Manager can close a job.' };
+  if (!['pm', 'admin'].includes(roleId)) return { ok: false, reason: 'Only a Project Manager or an Admin can close a job.' };
   if (job.job !== 100) return { ok: false, reason: `Available at 100% complete. This job is at ${job.job}%.` };
   return { ok: true, reason: '' };
 }

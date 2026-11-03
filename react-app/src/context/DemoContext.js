@@ -5,7 +5,8 @@ import { crewOf, roleOf, stepTitle, submitBlockReason, taskSwmsStatus, validateS
 import { applyAction, subtaskDraft } from '../lib/taskActions';
 import { seedChecklistRecords, seedHoursLog, seedTimesheets } from '../data/hoursSeed';
 import { DEFAULT_SETTINGS } from '../lib/config';
-import { ISSUE_MANAGERS, seedIssues } from '../data/issuesSeed';
+import { seedIssues } from '../data/issuesSeed';
+import { setExpiryDays } from '../lib/compliance';
 import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seedInductions, seedTickets, seedWorkers, ticketTypes } from '../data/workersSeed';
 import { ZERO_PAY, calcPay } from '../lib/payRules';
 import { shortName } from '../lib/people';
@@ -253,7 +254,7 @@ export function DemoProvider({ children }) {
 
   // ---- Issues: the department manager is assigned automatically, like the Creator "Assign Manager" workflow ----
   const addIssue = useCallback((i) => {
-    const setup = ISSUE_MANAGERS[i.department];
+    const setup = settings.issueRouting[i.department] || { manager: '', also: [] }; // routing is edited in Admin
     const rec = {
       location: '', site: '', direction: '', taskId: '', review: '', completionNotes: '', dateCompleted: '', dueDate: '', history: [], ...i,
       id: '', status: 'To Be discussed', reportedBy: ROLES[roleId].name, date: toKey(today()), assignedTo: setup.manager, notify: setup.also,
@@ -262,8 +263,21 @@ export function DemoProvider({ children }) {
       const n = Math.max(0, ...prev.map((x) => Number(x.id.slice(3)) || 0)) + 1;
       return [{ ...rec, id: `IS-${n}` }, ...prev];
     });
-    notify(`Issue reported. ${setup.manager} notified${setup.also.length ? `, ${setup.also.join(' and ')} informed` : ''}.`);
-  }, [roleId, notify]);
+    notify(`Issue reported. ${setup.manager || 'No manager set'} notified${setup.also.length ? `, ${setup.also.join(' and ')} informed` : ''}.`);
+  }, [roleId, settings.issueRouting, notify]);
+
+  // ISS-4: create a CRM deal from an issue. Demo: only a deal number is recorded. The real call to Zoho CRM runs on the server later.
+  const createCrmDeal = useCallback((id) => {
+    const issue = issues.find((x) => x.id === id);
+    if (!issue || issue.crmDealId) return false;
+    const dealId = `DEAL-${issue.id.replace('IS-', '')}${String(Date.now()).slice(-4)}`;
+    setIssues((prev) => prev.map((x) => (x.id !== id ? x : {
+      ...x, crmDealId: dealId,
+      history: [...x.history, { at: new Date().toISOString(), by: ROLES[roleId].name, personResponsible: x.assignedTo, status: x.status, nextStep: `CRM deal created: ${dealId} (demo)`, workCompleted: '', dueDate: x.dueDate }],
+    })));
+    notify(`CRM deal ${dealId} created from ${id} (demo)`);
+    return true;
+  }, [issues, roleId, notify]);
 
   // One management-history update. The issue's status, next step and due date follow the latest entry.
   const addIssueUpdate = useCallback((id, u) => {
@@ -528,6 +542,8 @@ export function DemoProvider({ children }) {
   }, [attachments, roleId, notify]);
 
   const updateSettings = useCallback((patch) => setSettings((prev) => ({ ...prev, ...patch })), []);
+  // The expiry window is read by lib/compliance.js on every screen, so push the setting there.
+  setExpiryDays(settings.expiryDays);
 
   // HRS-4: a worker fills in hours on a closed post-job checklist that was saved with zero hours. The hours are booked on the task.
   const fillHours = useCallback((taskId, person, hours) => {
@@ -545,8 +561,8 @@ export function DemoProvider({ children }) {
   const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
 
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

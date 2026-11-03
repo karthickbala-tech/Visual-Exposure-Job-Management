@@ -19,7 +19,7 @@ export const TRANSITIONS = {
   Reopen: [{ action: 'Start', to: 'In Progress' }],
 };
 
-export const MANAGER_ROLES = ['pm', 'fabManager'];
+export const MANAGER_ROLES = ['admin', 'pm', 'fabManager'];
 
 // Install crew steps while a task is In Progress (from the Creator install sub-stage list).
 export const SUBSTAGES = ['Team Briefed', 'On Site', 'Finished On Site'];

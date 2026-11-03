@@ -14,7 +14,7 @@ import { checklistPlan, nextStep, stepTitle, submitBlockReason } from '../lib/ch
 import './MyDay.css';
 
 // Fab Worker and Installer home: "my" tasks only, big touch targets, one clear next step.
-const KIND_FOR_ROLE = { fabWorker: 'fab', installer: 'install' };
+const KIND_FOR_ROLE = { fabWorker: 'fab', installer: 'install', contractor: 'install' };
 const shortName = (full) => {
   const [first, last = ''] = full.split(' ');
   return `${first} ${last.charAt(0)}.`;

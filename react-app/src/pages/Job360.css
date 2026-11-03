@@ -8,3 +8,13 @@
 .closed-note { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .filter-select { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .filter-select select { height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink); }
+
+/* JOB-3 location and signs */
+.job-site { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.job-site-loc .site-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.job-site-loc li { display: flex; gap: 10px; }
+.job-site-loc li > svg { flex: none; margin-top: 2px; color: var(--brand); }
+.job-site-loc li > div { display: grid; gap: 2px; font-size: 14px; }
+.job-site-loc li span { color: var(--ink-2); }
+.site-map { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; font-weight: 600; }
+@media (max-width: 900px) { .job-site { grid-template-columns: 1fr; } }

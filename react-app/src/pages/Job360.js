@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, FolderOpen, Lock } from 'lucide-react';
 import ApprovalPanel from '../components/ApprovalPanel';
+import JobSitePanel from '../components/JobSitePanel';
 import { Card, Chip, Modal, ResponsiveTable } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
@@ -101,6 +102,8 @@ export default function Job360() {
           );
         })}
       </section>
+
+      <JobSitePanel jobId={job.id} />
 
       <div className="tabs" role="tablist">
         {TABS.map((t) => (

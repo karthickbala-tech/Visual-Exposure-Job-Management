@@ -16,7 +16,7 @@ const EMPTY = {
 
 // JOB-2: tabs (All, My Open, My Jobs, Preparation, Ongoing, Completed) plus stage, PM and fab manager filters.
 export default function JobsPage() {
-  const { jobs, role } = useDemo();
+  const { jobs, role, roleId } = useDemo();
   const [q, setQ] = useState('');
   const [tab, setTab] = useState('all');
   const [stage, setStage] = useState('All');
@@ -45,7 +45,7 @@ export default function JobsPage() {
   return (
     <div className="dash">
       <PageHeader eyebrow="Jobs" title="All jobs" subtitle={`${rows.length} of ${jobs.length} shown`}>
-        <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}><Plus size={16} aria-hidden="true" /> New job</button>
+        {roleId !== 'viewer' && <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}><Plus size={16} aria-hidden="true" /> New job</button>}
       </PageHeader>
 
       <div className="tabs" role="tablist" aria-label="Job lists">

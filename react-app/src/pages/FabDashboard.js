@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Clock, Gauge, Hammer, Plus } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
+import HoursNotFilled from '../components/HoursNotFilled';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
 import { isClosedJob } from '../lib/jobs';
@@ -155,6 +156,8 @@ export default function FabDashboard({ variant = 'manager' }) {
         {variant === 'ic2' && <KpiCard icon={Clock} label="My hours last week" value={`${hoursLastWeek}h`} note={`${formatShort(lastWeekStart)} to ${formatShort(lastWeekEnd)}`} />}
         <KpiCard icon={Gauge} label="Booked vs quoted" value={`${pct}%`} tone={pct > 100 ? 'danger' : 'brand'} note={`${Math.round(booked * 10) / 10} / ${quoted} hrs`} />
       </div>
+
+      {variant === 'ic2' && <HoursNotFilled person={me} />}
 
       <CalendarCard title="Fabrication calendar" events={events} typeColors={fabTypeColors} defaultView={variant === 'ic2' ? 'Week' : 'Month'} />
 

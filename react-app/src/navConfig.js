@@ -48,6 +48,8 @@ export const NAV = [
     blurb: 'Workers, subcontractor companies, tickets, inductions, ratings and devices.',
     replaces: ['Worker Dashboard', 'My Tickets', 'My Inductions', 'Companies', 'Devices'],
   },
+  { label: 'Compliance', path: '/compliance', icon: 'compliance' },
+  { label: 'Admin', path: '/admin', icon: 'admin' },
   {
     label: 'Devices', path: '/devices', icon: 'devices',
     blurb: 'Worker devices and their last known location.',

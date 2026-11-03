@@ -4,13 +4,13 @@ import { AlertTriangle, ArrowLeft, Building2, Clock, FileWarning, Plus, Users } 
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
-import { COMPANY_TYPES, PRIMARY_ROLES, VE_NAME, WORKER_TYPES, docTypes, inductionTypes, ticketTypes } from '../data/workersSeed';
-import { STATUS_TONE, expiryText, statusOf, worst } from '../lib/compliance';
+import { COMPANY_TYPES, VE_NAME, WORKER_TYPES, docTypes, inductionTypes, ticketTypes } from '../data/workersSeed';
+import { STATUS_TONE, bucketOf, complianceSummary, expiryText, statusOf, worst } from '../lib/compliance';
 import { formatShort, fromKey, toKey, today } from '../lib/dates';
 import './WorkersPage.css';
 
 const TABS = [['ve', 'VE workers'], ['subs', 'Subcontractors'], ['compliance', 'Tickets and inductions'], ['docs', 'Company documents']];
-const MANAGE_ROLES = ['pm', 'fabManager'];
+const MANAGE_ROLES = ['admin', 'pm', 'fabManager'];
 const typeName = (list, id) => list.find((t) => t.id === id)?.name || id;
 const StatusChip = ({ expiry }) => { const s = statusOf(expiry); return <Chip value={s} tone={STATUS_TONE[s]} />; };
 
@@ -51,7 +51,8 @@ function EditItemModal({ item, kind, label, years, onClose }) {
 }
 
 function AddWorkerModal({ onClose }) {
-  const { companies, addWorker } = useDemo();
+  const { companies, addWorker, settings } = useDemo();
+  const PRIMARY_ROLES = settings.primaryRoles; // set in Admin
   const active = companies.filter((c) => c.active);
   const [f, setF] = useState({ name: '', companyId: active[0]?.id || '', type: WORKER_TYPES[0], primaryRole: '', phone: '', email: '', start: toKey(today()), skills: '' });
   const [error, setError] = useState('');
@@ -134,27 +135,29 @@ export function WorkersPage() {
   const { workers, companies, tickets, inductions, companyDocs, roleId, role } = useDemo();
   const [tab, setTab] = useState('ve');
   const [filter, setFilter] = useState('all');
+  const [activeOnly, setActiveOnly] = useState(true);
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState('');
-  const canManage = roleId === 'pm';
+  const canManage = ['admin', 'pm'].includes(roleId);
   const company = (id) => companies.find((c) => c.id === id)?.name || id;
   const worker = (id) => workers.find((w) => w.id === id);
 
-  const active = workers.filter((w) => w.active);
-  const veWorkers = active.filter((w) => company(w.companyId) === VE_NAME);
-  const subWorkers = active.filter((w) => company(w.companyId) !== VE_NAME);
+  const sum = complianceSummary({ workers, companies, tickets, inductions, companyDocs, veName: VE_NAME, activeOnly });
+  const veWorkers = sum.shownWorkers.filter((w) => company(w.companyId) === VE_NAME);
+  const subWorkers = sum.shownWorkers.filter((w) => company(w.companyId) !== VE_NAME);
   const all = [
-    ...tickets.map((t) => ({ ...t, kind: 'ticket', name: typeName(ticketTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId, years: ticketTypes.find((x) => x.id === t.typeId)?.years })),
-    ...inductions.map((t) => ({ ...t, kind: 'induction', name: typeName(inductionTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId })),
+    ...sum.tickets.map((t) => ({ ...t, kind: 'ticket', name: typeName(ticketTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId, years: ticketTypes.find((x) => x.id === t.typeId)?.years })),
+    ...sum.inductions.map((t) => ({ ...t, kind: 'induction', name: typeName(inductionTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId })),
   ];
-  const countBy = (s) => all.filter((x) => statusOf(x.expiry) === s).length + companyDocs.filter((x) => statusOf(x.expiry) === s).length;
-  const rows = all.filter((x) => filter === 'all' || statusOf(x.expiry) === filter)
+  const rows = all.filter((x) => filter === 'all' || bucketOf(x.expiry) === filter)
     .sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'));
+  const b = sum.buckets;
+  const split = (k) => `${b[k].tickets} tickets, ${b[k].inductions} inductions, ${b[k].docs} documents`;
   const workerStatus = (w) => worst(itemsFor(w.id, tickets, inductions).map((i) => i.expiry));
   const openItems = (w) => itemsFor(w.id, tickets, inductions).filter((i) => statusOf(i.expiry) !== 'Current').length;
 
   const workerCols = [
-    { key: 'name', label: 'Worker', primary: true, render: (w) => <div className="stack"><Link className="job-link" to={`/workers/${w.id}`}>{w.name}</Link><small>{w.type}</small></div> },
+    { key: 'name', label: 'Worker', primary: true, render: (w) => <div className="stack"><Link className="job-link" to={`/workers/${w.id}`}>{w.name}</Link><small>{w.type}{w.active ? '' : ' · Inactive'}</small></div> },
     { key: 'role', label: 'Primary role', render: (w) => w.primaryRole || company(w.companyId) },
     { key: 'phone', label: 'Phone', render: (w) => w.phone || '-' },
     { key: 'status', label: 'Compliance', render: (w) => { const s = workerStatus(w); return <Chip value={s} tone={STATUS_TONE[s]} />; } },
@@ -192,11 +195,19 @@ export function WorkersPage() {
           <button type="button" className="btn btn-ghost" onClick={() => setAdding('company')}><Building2 size={16} aria-hidden="true" /> Add company</button></>)}
       </PageHeader>
 
-      <div className="kpis">
-        <KpiCard icon={Users} label="Active workers" value={active.length} note={`${veWorkers.length} employees, ${subWorkers.length} subcontractors`} />
-        <KpiCard icon={AlertTriangle} label="Expired" value={countBy('Expired')} tone="danger" note="tickets, inductions and documents" />
-        <KpiCard icon={Clock} label="Expiring soon" value={countBy('Expiring')} tone="warn" note="within 30 days" />
-        <KpiCard icon={FileWarning} label="Not filled in" value={countBy('Incomplete')} note="waiting for details" />
+      <div className="wk-tools">
+        <div className="segmented" role="tablist" aria-label="Active filter">
+          <button type="button" role="tab" aria-selected={activeOnly} className={activeOnly ? 'on' : ''} onClick={() => setActiveOnly(true)}>Active only</button>
+          <button type="button" role="tab" aria-selected={!activeOnly} className={!activeOnly ? 'on' : ''} onClick={() => setActiveOnly(false)}>All</button>
+        </div>
+      </div>
+      <div className="kpis" aria-label="Compliance summary">
+        <KpiCard icon={Users} label={activeOnly ? 'Active VE workers' : 'VE workers'} value={sum.workers.ve} note="employees" />
+        <KpiCard icon={Users} label={activeOnly ? 'Active non-VE workers' : 'Non-VE workers'} value={sum.workers.nonVe} note="subcontractors" />
+        <KpiCard icon={AlertTriangle} label="Expired" value={b.Expired.total} tone={b.Expired.total ? 'danger' : 'brand'} note={split('Expired')} />
+        <KpiCard icon={Clock} label="Expires today" value={b.Today.total} tone={b.Today.total ? 'danger' : 'brand'} note={split('Today')} />
+        <KpiCard icon={Clock} label="Within 30 days" value={b.Soon.total} tone={b.Soon.total ? 'warn' : 'brand'} note={split('Soon')} />
+        <KpiCard icon={FileWarning} label="Not filled in" value={b.Incomplete.total} note="waiting for details" />
       </div>
 
       <div className="wk-tools">
@@ -216,14 +227,14 @@ export function WorkersPage() {
         <>
           <div className="wk-tools">
             <div className="segmented" role="tablist" aria-label="Status filter">
-              {[['all', 'All'], ['Expired', 'Expired'], ['Expiring', 'Expiring soon'], ['Incomplete', 'Not filled in']].map(([id, label]) => (
+              {[['all', 'All'], ['Expired', 'Expired'], ['Today', 'Expires today'], ['Soon', 'Within 30 days'], ['Incomplete', 'Not filled in']].map(([id, label]) => (
                 <button key={id} type="button" role="tab" aria-selected={filter === id} className={filter === id ? 'on' : ''} onClick={() => setFilter(id)}>
-                  {label}<em>{id === 'all' ? all.length : all.filter((x) => statusOf(x.expiry) === id).length}</em></button>))}
+                  {label}<em>{id === 'all' ? all.length : all.filter((x) => bucketOf(x.expiry) === id).length}</em></button>))}
             </div>
           </div>
           <Card flush><ResponsiveTable columns={complianceCols} rows={rows} empty="Nothing in this view" /></Card>
         </>)}
-      {tab === 'docs' && <Card flush><ResponsiveTable columns={docCols} rows={[...companyDocs].sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'))} empty="No company documents" /></Card>}
+      {tab === 'docs' && <Card flush><ResponsiveTable columns={docCols} rows={[...sum.docs].sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'))} empty="No company documents" /></Card>}
 
       {editing && <EditItemModal {...editing} onClose={() => setEditing(null)} />}
       {adding === 'worker' && <AddWorkerModal onClose={() => setAdding('')} />}

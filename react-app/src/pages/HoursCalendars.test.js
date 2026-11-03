@@ -7,6 +7,7 @@ import CalendarPage from './CalendarPage';
 import InstallDashboard from './InstallDashboard';
 import MyDay from './MyDay';
 import FabDashboard from './FabDashboard';
+import WorkshopDashboard from './WorkshopDashboard';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -117,4 +118,22 @@ test('the calendar is open to PM, fab manager and 2IC only', () => {
   const { canAccess } = require('../lib/access');
   expect(['pm', 'fabManager', 'ic2'].every((r) => canAccess(r, '/calendar'))).toBe(true);
   expect(['fabWorker', 'installer', 'workshop'].some((r) => canAccess(r, '/calendar'))).toBe(false);
+});
+
+const tileValues = () => [...document.querySelectorAll('[aria-label="Hours not filled"] .kpi-value')].map((n) => n.textContent);
+
+test('workshop dashboard shows hours-not-filled tiles for the signed-in person', () => {
+  localStorage.setItem('ve-role', 'workshop');
+  show(<WorkshopDashboard />);
+  expect(tileValues()).toEqual(['1', '0']); // Jo P.: one workshop checklist with no hours
+});
+
+test('2IC dashboard shows hours-not-filled tiles, the Fab Manager dashboard does not', () => {
+  localStorage.setItem('ve-role', 'ic2');
+  show(<FabDashboard variant="ic2" />);
+  expect(tileValues()).toEqual(['0', '1']); // Mia T.: one fab checklist with no hours
+  act(() => root.unmount()); root = createRoot(box);
+  localStorage.setItem('ve-role', 'fabManager');
+  show(<FabDashboard variant="manager" />);
+  expect(document.querySelector('[aria-label="Hours not filled"]')).toBeNull();
 });

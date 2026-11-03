@@ -153,3 +153,21 @@ test('an installer can delete only their own attachments', () => {
   act(() => { expect(api.deleteAttachment(mine.id)).toBe(true); });
   expect(api.attachments.some((a) => a.id === 'A1')).toBe(true);
 });
+
+test('Job Details shows the location and the signs with their four stages', () => {
+  renderJob('J-1042');
+  const panel = document.querySelector('[aria-label="Location and signs"]');
+  expect(panel.textContent).toContain('Northgate Shopping Centre');
+  expect(panel.textContent).toContain('Signs (3)');
+  expect(panel.textContent).toContain('Main pylon, north entry');
+  ['Deal', 'Artwork', 'Manufacturing', 'Install'].forEach((h) => expect(panel.textContent).toContain(h));
+  expect(panel.querySelector('a.site-map').getAttribute('href')).toContain('google.com/maps');
+});
+
+test('a job with two sites lists both, and a job with none says so', () => {
+  renderJob('J-1058');
+  expect(document.querySelector('[aria-label="Location and signs"]').textContent).toContain('Locations (2)');
+  act(() => root.unmount()); root = createRoot(box);
+  renderJob('J-0000');
+  expect(document.querySelector('[aria-label="Location and signs"]').textContent).toContain('No site or signs are linked');
+});

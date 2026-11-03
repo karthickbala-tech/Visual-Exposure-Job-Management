@@ -23,8 +23,13 @@ import EquipmentPage from './pages/EquipmentPage';
 import DevicesPage from './pages/DevicesPage';
 import CalendarPage from './pages/CalendarPage';
 import RoleHome from './pages/RoleHome';
+import AdminPage from './pages/AdminPage';
+import CompliancePage from './pages/CompliancePage';
 import { NAV } from './navConfig';
 import './App.css';
+
+// Sidebar paths that have a real screen. Anything else in NAV still shows a placeholder.
+const BUILT = ['/', '/jobs', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers', '/design', '/equipment', '/devices', '/calendar', '/compliance', '/admin'];
 
 function Home() {
   const { roleId } = useDemo();
@@ -60,10 +65,12 @@ export default function App() {
             <Route path="equipment" element={<EquipmentPage />} />
             <Route path="devices" element={<DevicesPage />} />
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="compliance" element={<CompliancePage />} />
+            <Route path="admin" element={<AdminPage />} />
             <Route path="workers" element={<WorkersPage />} />
             <Route path="workers/:workerId" element={<WorkerDetail />} />
             <Route path="swms/:swmsId" element={<SwmsDetail />} />
-            {NAV.filter((n) => n.path !== '/' && n.path !== '/jobs' && n.path !== '/fabrication' && n.path !== '/installation' && n.path !== '/swms' && n.path !== '/hours' && n.path !== '/issues' && n.path !== '/workers' && n.path !== '/design' && n.path !== '/equipment' && n.path !== '/devices' && n.path !== '/calendar').map((n) => (
+            {NAV.filter((n) => !BUILT.includes(n.path)).map((n) => (
               <Route key={n.path} path={n.path} element={<PlaceholderPage title={n.label} blurb={n.blurb} replaces={n.replaces} />} />
             ))}
             <Route path="*" element={<PlaceholderPage title="Page not found" />} />

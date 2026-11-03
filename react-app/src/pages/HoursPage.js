@@ -10,7 +10,7 @@ import { lastPayPeriod, thisPayPeriod } from '../lib/payPeriod';
 import { rollupCsv, weeklyRollup } from '../lib/hours';
 import './HoursPage.css';
 
-const VIEW_ALL = ['pm', 'fabManager', 'ic2'];
+const VIEW_ALL = ['admin', 'pm', 'fabManager', 'ic2', 'installCoordinator'];
 const PERIODS = [
   ['week', 'This week'],
   ['last', 'Last week'],
