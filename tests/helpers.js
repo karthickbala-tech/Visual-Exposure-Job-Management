@@ -8,7 +8,7 @@ let seq = 105747000001000000n;
 const nextId = () => String(++seq);
 
 function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', first_name: 'Test', last_name: 'User' } } = {}) {
-	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [] };
+	const db = { jobs: [], tasks: [], links: [], people: [], activity: [], checklists: [], templates: [], time: [], issues: [], swms: [], files: [], settings: [], ctypes: [], citems: [], outbox: [], register: [], locations: [], devices: [] };
 	const published = [];
 
 	if (person) db.people.push({ ROWID: person.ROWID, first_name: person.first_name, last_name: person.last_name });
@@ -21,6 +21,28 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const byIds = (rows, ids) => (ids ? rows.filter((r) => ids.map(String).includes(String(r.ROWID))) : rows);
 
 	const repos = {
+		registerItems: {
+			findById: async (id) => clone(db.register.find((r) => String(r.ROWID) === String(id))),
+			list: async ({ kind, locationId } = {}) => db.register.filter((r) => (!kind || r.kind === kind) && (!locationId || String(r.location_id) === String(locationId))).map(clone),
+			findByIds: async (ids) => byIds(db.register, ids).map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.register.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.register, row),
+		},
+		locations: {
+			findById: async (id) => clone(db.locations.find((r) => String(r.ROWID) === String(id))),
+			list: async () => db.locations.map(clone),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.locations.push(r);
+				return clone(r);
+			},
+			update: async (row) => patch(db.locations, row),
+		},
+		devices: { list: async () => db.devices.map(clone) },
 		jobs: {
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
 			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
