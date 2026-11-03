@@ -2,8 +2,7 @@
 	"deployment": {
 		"name": "api",
 		"stack": "node22",
-		"type": "advancedio",
-		"env_variables": {}
+		"type": "advancedio"
 	},
 	"execution": {
 		"main": "index.js"

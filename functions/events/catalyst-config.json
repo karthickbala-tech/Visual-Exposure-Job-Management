@@ -2,8 +2,7 @@
 	"deployment": {
 		"name": "events",
 		"stack": "node22",
-		"type": "event",
-		"env_variables": {}
+		"type": "event"
 	},
 	"execution": {
 		"main": "index.js"

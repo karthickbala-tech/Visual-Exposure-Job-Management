@@ -2,8 +2,7 @@
 	"deployment": {
 		"name": "jobs",
 		"stack": "node22",
-		"type": "job",
-		"env_variables": {}
+		"type": "job"
 	},
 	"execution": {
 		"main": "index.js"
