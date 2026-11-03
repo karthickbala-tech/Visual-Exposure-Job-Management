@@ -50,8 +50,8 @@ All run the `jobs` function, with the parameter `job`.
 
 | Job (`job` parameter) | Schedule | State |
 |---|---|---|
-| `compliance-due` | daily 07:00 Melbourne | built and tested, **not scheduled yet** |
-| `drain-outbox` | every 5 minutes | built and tested, **not scheduled yet** |
+| `compliance-due` | daily 07:00 Melbourne | created in Dev 3 Nov 2026 as cron `compliance_due_daily` (expression `0 7 * * *`, Australia/Melbourne); **first run not yet confirmed** |
+| `drain-outbox` | every 5 minutes | created in Dev 3 Nov 2026 as cron `drain_outbox_5min` (expression `*/5 * * * *`); **first run not yet confirmed**. The API echoes `cron_detail` hour/minute 0 for both, so check `success_count` in the console after the first interval |
 | `weekly-hours-report`, `weekly-issues-report`, `maintenance-tasks`, `profit-digest`, `mdm-sync` | per FSD | **not built** |
 
 ## 5. Connections (needs the rotated OAuth client)
