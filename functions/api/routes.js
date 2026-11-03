@@ -151,6 +151,10 @@ router.add(
 				expectedLength: (process.env.CRM_WEBHOOK_SECRET || '').length,
 				sentHasQuoteOrSpaceAtEdge: typeof token === 'string' && /^["'s]|["'s]$/.test(token),
 				receivedKeys: Object.keys(body),
+				contentType: req.headers['content-type'] || null,
+				contentLength: req.headers['content-length'] || null,
+				hadAddressValues: String(req.url || '').includes('?'),
+				headerNames: Object.keys(req.headers).filter((h) => !/^x-zc-|^x-forwarded|^cf-|^sec-/i.test(h)),
 			});
 			throw err;
 		}
