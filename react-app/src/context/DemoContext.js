@@ -6,6 +6,8 @@ import { ISSUE_MANAGERS, seedIssues } from '../data/issuesSeed';
 import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seedInductions, seedTickets, seedWorkers, ticketTypes } from '../data/workersSeed';
 import { ZERO_PAY, calcPay } from '../lib/payRules';
 import { shortName } from '../lib/people';
+import { seedChemicals, seedDevices, seedEquipment, seedLocations } from '../data/equipmentSeed';
+import { nextToolId } from '../lib/equipment';
 import { toKey, today } from '../lib/dates';
 
 const stamp = () => new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -40,6 +42,10 @@ export function DemoProvider({ children }) {
   const [hoursLog, setHoursLog] = useState(seedHoursLog);
   const [timesheets, setTimesheets] = useState(seedTimesheets);
   const [issues, setIssues] = useState(seedIssues);
+  const [equipment, setEquipment] = useState(seedEquipment);
+  const [chemicals, setChemicals] = useState(seedChemicals);
+  const [locations, setLocations] = useState(seedLocations);
+  const [devices] = useState(seedDevices);
   const [workers, setWorkers] = useState(seedWorkers);
   const [companies, setCompanies] = useState(seedCompanies);
   const [tickets, setTickets] = useState(seedTickets);
@@ -272,9 +278,80 @@ export function DemoProvider({ children }) {
     notify(`Design task created for ${t.owner}. Folder created (demo).`);
   }, [roleId, notify]);
 
+  // Marks an equipment check as done today, which pushes the next due date out by the interval.
+  const completeEquipmentCheck = useCallback((id) => {
+    const who = ROLES[roleId].name;
+    setEquipment((prev) => prev.map((e) => (e.id === id
+      ? { ...e, lastChecked: toKey(today()), history: [{ at: stamp(), who, text: 'Check completed' }, ...(e.history || [])] } : e)));
+    notify(`${id} marked as checked`);
+  }, [roleId, notify]);
+
+  // EQP-1: the tool code is assigned automatically. A new item starts with a check dated today.
+  const addEquipment = useCallback((e) => {
+    const who = ROLES[roleId].name;
+    let code = '';
+    setEquipment((prev) => {
+      code = nextToolId(prev);
+      return [...prev, { ...e, id: code, lastChecked: toKey(today()), history: [{ at: stamp(), who, text: 'Added to the register' }] }];
+    });
+    notify('Equipment added');
+  }, [roleId, notify]);
+
+  const updateEquipment = useCallback((id, patch, text = 'Details updated') => {
+    const who = ROLES[roleId].name;
+    setEquipment((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch, history: [{ at: stamp(), who, text }, ...(e.history || [])] } : e)));
+    notify('Equipment updated');
+  }, [roleId, notify]);
+
+  // EQP-2: the real off-hire email is sent by the server. The demo only shows the toast.
+  const setEquipmentStatus = useCallback((id, status) => {
+    const who = ROLES[roleId].name;
+    setEquipment((prev) => prev.map((e) => (e.id === id ? { ...e, status, history: [{ at: stamp(), who, text: status === 'Off hire' ? 'Marked off hire' : 'Back in service' }, ...(e.history || [])] } : e)));
+    notify(status === 'Off hire' ? `${id} off hire. Equipment managers would be emailed (demo)` : `${id} back in service`);
+  }, [roleId, notify]);
+
+  const addChemical = useCallback((ch) => {
+    setChemicals((prev) => [...prev, { ...ch, id: `CH-${Math.max(0, ...prev.map((x) => Number(String(x.id).slice(3)) || 0)) + 1}` }]);
+    notify('Chemical added');
+  }, [notify]);
+
+  const updateChemical = useCallback((id, patch) => {
+    setChemicals((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    notify('Chemical updated');
+  }, [notify]);
+
+  const addLocation = useCallback((l) => {
+    setLocations((prev) => [...prev, { ...l, id: `L-${Math.max(0, ...prev.map((x) => Number(String(x.id).slice(2)) || 0)) + 1}` }]);
+    notify('Location added');
+  }, [notify]);
+
+  // A renamed location is renamed on its equipment and chemicals too, so nothing is left pointing at the old name.
+  const updateLocation = useCallback((id, patch) => {
+    const old = locations.find((x) => x.id === id);
+    setLocations((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    if (old && patch.name && patch.name !== old.name) {
+      setEquipment((prev) => prev.map((e) => (e.location === old.name ? { ...e, location: patch.name } : e)));
+      setChemicals((prev) => prev.map((x) => (x.location === old.name ? { ...x, location: patch.name } : x)));
+    }
+    notify('Location updated');
+  }, [locations, notify]);
+
+  // A location that still holds equipment or chemicals cannot be deleted.
+  const deleteLocation = useCallback((id) => {
+    const loc = locations.find((x) => x.id === id);
+    if (!loc) return false;
+    const inUse = equipment.filter((e) => e.location === loc.name).length + chemicals.filter((x) => x.location === loc.name).length;
+    if (inUse) { notify(`${loc.name} still holds ${inUse} item${inUse === 1 ? '' : 's'}. Move them first.`); return false; }
+    setLocations((prev) => prev.filter((x) => x.id !== id));
+    notify('Location deleted');
+    return true;
+  }, [locations, equipment, chemicals, notify]);
+
+  const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
+
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, jobs, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

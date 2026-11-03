@@ -3,6 +3,7 @@ import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
 import { ROLES } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
 import { useTheme } from '../context/ThemeContext';
+import UserMenu from './UserMenu';
 
 export default function Topbar({ onMenu }) {
   const { roleId, changeRole } = useDemo();
@@ -47,6 +48,7 @@ export default function Topbar({ onMenu }) {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <button type="button" className="icon-btn bell" aria-label="Notifications"><Bell size={18} /><i /></button>
+        <UserMenu />
       </div>
     </div>
   );

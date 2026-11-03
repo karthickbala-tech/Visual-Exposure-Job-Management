@@ -1,0 +1,12 @@
+.dv-map{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.dv-map .grid line{stroke:var(--line-2);stroke-width:1}
+.dv-map .pin circle{fill:var(--brand-strong);stroke:var(--surface);stroke-width:2}
+.dv-map .pin.stale circle{fill:var(--muted)}
+.dv-map .pin text{fill:var(--on-brand);font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.dv-map .north{fill:var(--muted);font-size:11px}
+.dv-note{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.dv-legend{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.dv-legend li{display:flex;gap:10px;align-items:center}
+.dv-legend .dot{width:26px;height:26px;border-radius:50%;background:var(--brand-strong);color:var(--on-brand);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.dv-legend .stale .dot{background:var(--muted)}
+.dv-serial{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}

@@ -34,8 +34,18 @@ export const NAV = [
     replaces: ['Issues form', 'My Reported Issues', 'Workshop, Install, Civic, Management and VT boards'],
   },
   {
+    label: 'Equipment', path: '/equipment', icon: 'equipment',
+    blurb: 'Equipment register, chemicals with SDS links, and workshop locations.',
+    replaces: ['Equipment Register', 'Maintenance Checklists', 'Chemical Register', 'Workshop Locations'],
+  },
+  {
     label: 'Workers', path: '/workers', icon: 'people',
     blurb: 'Workers, subcontractor companies, tickets, inductions, ratings and devices.',
     replaces: ['Worker Dashboard', 'My Tickets', 'My Inductions', 'Companies', 'Devices'],
+  },
+  {
+    label: 'Devices', path: '/devices', icon: 'devices',
+    blurb: 'Worker devices and their last known location.',
+    replaces: ['All Devices', 'Device Locations map', 'Workers with Devices'],
   },
 ];
