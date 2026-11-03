@@ -15,6 +15,9 @@ import { nextToolId, offHireOnFinish } from '../lib/equipment';
 import { toKey, today } from '../lib/dates';
 import { canCloseJob, isClosedJob, rollup } from '../lib/jobs';
 import { canDeleteAttachment, makeAttachments } from '../lib/attachments';
+import { makeNotifications, retried } from '../lib/notifications';
+import { cleanRepeat, nextRepeatTask, shouldRepeat } from '../lib/repeat';
+import { SEED_NOTIFICATIONS } from '../data/adminSeed';
 
 const stamp = () => new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -68,10 +71,23 @@ export function DemoProvider({ children }) {
   const [checklists, setChecklists] = useState(seedChecklistRecords);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [attachments, setAttachments] = useState(seedAttachments);
+  const [notifications, setNotifications] = useState(SEED_NOTIFICATIONS);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const [toast, setToast] = useState(null);
 
   const notify = useCallback((msg) => setToast({ id: Date.now(), msg }), []);
   const dismissToast = useCallback(() => setToast(null), []);
+
+  // Notification log (FSD section 8): every email the server would send writes one row per recipient. Demo: nothing is emailed.
+  const logNotify = useCallback((event, ctx) => {
+    const rows = makeNotifications(event, ctx, settingsRef.current, new Date().toISOString(), Date.now() + Math.floor(Math.random() * 1e6));
+    if (rows.length) setNotifications((prev) => [...rows, ...prev].slice(0, 500));
+  }, []);
+  const retryNotification = useCallback((id) => {
+    setNotifications((prev) => prev.map((r) => (r.id === id ? retried(r, new Date().toISOString()) : r)));
+    notify('Email sent again (demo)');
+  }, [notify]);
 
   const changeRole = useCallback((id) => {
     setRoleId(id);
@@ -83,8 +99,9 @@ export function DemoProvider({ children }) {
       const next = Math.max(...prev.map((j) => Number(j.id.slice(2)))) + 1;
       return [{ id: `J-${next}`, name, client, stage: 'Preparation', fab: 0, install: 0, job: 0, finish, risk: '', booked: 0, quoted: 0, pm: roleId === 'pm' ? ROLES.pm.name : '', fabManager: '', fabRequired: '', fabAgreed: '' }, ...prev];
     });
+    logNotify('job.created', { job: name, pm: roleId === 'pm' ? ROLES.pm.name : '', ref: name });
     notify(`Job created: ${name}`);
-  }, [roleId, notify]);
+  }, [roleId, logNotify, notify]);
 
   const signSwms = useCallback((id, signer) => {
     setSwms((prev) => prev.map((s) => (s.id === id && s.status === 'Created'
@@ -118,10 +135,14 @@ export function DemoProvider({ children }) {
         return { ...c, steps: keep };
       }));
     }
+    const jobPm = jobs.find((j) => j.id === task.jobId)?.pm || '';
+    const typeLabel = { install: 'Install', fab: 'Fabrication', design: 'Design' }[task.kind];
+    if (action === 'Submit for approval') logNotify('task.submitted', { type: typeLabel, kind: task.kind, pm: jobPm, ref: task.id });
+    if (action === 'Reject') logNotify('task.rejected', { type: typeLabel, task: task.name, assignees: [task.leader, task.member].filter(Boolean), ref: task.id });
     const flagged = extra?.pmReview && (extra.pmReview.ohs === 'Yes' || extra.pmReview.mgmtReview);
     notify(flagged ? 'Approved. The installation manager and the inform-also list would be emailed (demo)' : `${action} done`);
     return true;
-  }, [roleId, tasks, checklists, notify]);
+  }, [roleId, tasks, checklists, jobs, logNotify, notify]);
 
   const setSubStage = useCallback((id, sub) => {
     const who = ROLES[roleId].name;
@@ -130,13 +151,17 @@ export function DemoProvider({ children }) {
     const goingOff = task && sub === 'Finished On Site' ? offHireOnFinish(task, equipment) : [];
     setTasks((prev) => prev.map((t) => (t.id === id
       ? { ...t, subStage: sub, offHireSent: t.offHireSent || goingOff.length > 0, history: [{ at: stamp(), who, text: goingOff.length ? `${sub}. Off hire: ${goingOff.map((e) => e.id).join(', ')}` : sub }, ...(t.history || [])] } : t)));
+    if (task && sub === 'Finished On Site') {
+      logNotify('install.finishedOnSite', { task: task.name, employee: shortName(ROLES[roleId].name), pm: jobs.find((j) => j.id === task.jobId)?.pm || '', ref: task.id });
+    }
     if (goingOff.length) {
+      logNotify('equipment.offHire', { task: task.name, ref: task.id });
       const ids = goingOff.map((e) => e.id);
       setEquipment((prev) => prev.map((e) => (ids.includes(e.id)
         ? { ...e, status: 'Off hire', history: [{ at: stamp(), who, text: `Off hire after install finished: ${task.name}` }, ...(e.history || [])] } : e)));
       notify(`${sub}. Equipment Off Hire: ${task.name}. Equipment managers would be emailed (demo)`);
     } else notify(sub);
-  }, [roleId, tasks, equipment, notify]);
+  }, [roleId, tasks, equipment, jobs, logNotify, notify]);
 
   // Adds hours to the task and rolls them up to its job.
   const bookHours = useCallback((id, hours, unbilled = 0) => {
@@ -160,6 +185,7 @@ export function DemoProvider({ children }) {
       return [{
         id: `F${n}`, kind: 'fab', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '',
         stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', quoted: t.quoted || 0, booked: 0,
+        ...(t.type === 'Workshop' && cleanRepeat(t.repeat) ? { repeat: cleanRepeat(t.repeat) } : {}),
         history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
     });
@@ -263,8 +289,9 @@ export function DemoProvider({ children }) {
       const n = Math.max(0, ...prev.map((x) => Number(x.id.slice(3)) || 0)) + 1;
       return [{ ...rec, id: `IS-${n}` }, ...prev];
     });
+    logNotify('issue.reported', { subject: i.subject, department: i.department, reportedBy: ROLES[roleId].name, ref: i.subject });
     notify(`Issue reported. ${setup.manager || 'No manager set'} notified${setup.also.length ? `, ${setup.also.join(' and ')} informed` : ''}.`);
-  }, [roleId, settings.issueRouting, notify]);
+  }, [roleId, settings.issueRouting, logNotify, notify]);
 
   // ISS-4: create a CRM deal from an issue. Demo: only a deal number is recorded. The real call to Zoho CRM runs on the server later.
   const createCrmDeal = useCallback((id) => {
@@ -292,8 +319,10 @@ export function DemoProvider({ children }) {
       completionNotes: done ? u.workCompleted : '',
       history: [...x.history, { at: new Date().toISOString(), by: ROLES[roleId].name, personResponsible: u.personResponsible, status: u.status, nextStep: u.nextStep, workCompleted: u.workCompleted, dueDate: u.dueDate }],
     })));
+    const issue = issues.find((x) => x.id === id);
+    if (issue) logNotify(done ? 'issue.completed' : 'issue.updated', { subject: issue.subject, department: issue.department, reportedBy: issue.reportedBy, ref: id });
     notify(done ? `Issue ${id} completed. Completion email sent (demo).` : `Issue ${id} updated`);
-  }, [roleId, notify]);
+  }, [roleId, issues, logNotify, notify]);
 
   // ---- Workers: adding a worker creates the tickets and inductions they need, like the Creator "create worker ticket" workflow ----
   const addWorker = useCallback((w) => {
@@ -368,8 +397,9 @@ export function DemoProvider({ children }) {
   const setEquipmentStatus = useCallback((id, status) => {
     const who = ROLES[roleId].name;
     setEquipment((prev) => prev.map((e) => (e.id === id ? { ...e, status, history: [{ at: stamp(), who, text: status === 'Off hire' ? 'Marked off hire' : 'Back in service' }, ...(e.history || [])] } : e)));
+    if (status === 'Off hire') logNotify('equipment.offHire', { task: id, ref: id });
     notify(status === 'Off hire' ? `${id} off hire. Equipment managers would be emailed (demo)` : `${id} back in service`);
-  }, [roleId, notify]);
+  }, [roleId, logNotify, notify]);
 
   const addChemical = useCallback((ch) => {
     setChemicals((prev) => [...prev, { ...ch, id: `CH-${Math.max(0, ...prev.map((x) => Number(String(x.id).slice(3)) || 0)) + 1}` }]);
@@ -434,6 +464,7 @@ export function DemoProvider({ children }) {
     })));
 
     if (key === 'post2') bookHours(taskId, Number(data.hours), Number(data.unbilled) || 0);
+    if (key === 'post2' && task.kind === 'fab') logNotify('checklist.fabSubmitted', { task: task.name, employee: person, ref: taskId });
     // CHK-5: an OH&S or WHS concern raises an issue for the department manager.
     if (data.ohsConcern === 'Yes') {
       addIssue({
@@ -453,7 +484,7 @@ export function DemoProvider({ children }) {
       if (others.every((p) => checklists.find((c) => c.taskId === taskId && c.person === p)?.steps.post2)) setSubStage(taskId, 'Fabrication Done');
     }
     return '';
-  }, [tasks, swms, checklists, roleId, bookHours, addIssue, setSubStage, notify]);
+  }, [tasks, swms, checklists, roleId, bookHours, addIssue, setSubStage, logNotify, notify]);
 
   // TSK-2: hold, release, cancel, mark not used, reset assignment and close (external or print only).
   const runTaskAction = useCallback((id, actionId, comment = '') => {
@@ -514,9 +545,10 @@ export function DemoProvider({ children }) {
     if (!chk.ok) { notify(chk.reason); return false; }
     setJobs((prev) => prev.map((j) => (j.id === id
       ? { ...j, stage: 'Completed - Closed', closedAt: toKey(today()), closedBy: ROLES[roleId].name, closureEmailSent: true } : j)));
+    logNotify('job.closed', { job: job.name, pm: job.pm, ref: job.id });
     notify(`${job.name} closed. Closure report emailed and CRM deal updated (demo)`);
     return true;
-  }, [jobs, roleId, notify]);
+  }, [jobs, roleId, logNotify, notify]);
 
   // TSK-5: add and remove task attachments. WorkDrive sync is a demo flag until the backend exists.
   const addAttachments = useCallback((taskId, files) => {
@@ -541,16 +573,40 @@ export function DemoProvider({ children }) {
     return true;
   }, [attachments, roleId, notify]);
 
+  // FAB-3: when a repeating workshop task becomes Completed, create the next one (old date plus the interval).
+  const prevStages = useRef(null);
+  useEffect(() => {
+    const map = {};
+    tasks.forEach((t) => { map[t.id] = t.stage; });
+    const before = prevStages.current;
+    prevStages.current = map;
+    if (!before) return;
+    const due = tasks.filter((t) => before[t.id] && before[t.id] !== 'Completed' && shouldRepeat(t));
+    if (due.length === 0) return;
+    setTasks((prev) => {
+      let n = Math.max(0, ...prev.filter((x) => x.kind === 'fab').map((x) => Number(String(x.id).slice(1)) || 0));
+      const made = [];
+      const marked = prev.map((t) => {
+        if (!due.some((d) => d.id === t.id)) return t;
+        n += 1;
+        made.push(nextRepeatTask(t, `F${n}`, stamp()));
+        return { ...t, repeatSpawned: `F${n}` };
+      });
+      return [...made, ...marked];
+    });
+    notify(due.length === 1 ? `${due[0].name} repeats. The next one is created.` : `${due.length} repeating tasks created their next task.`);
+  }, [tasks, notify]);
+
   const updateSettings = useCallback((patch) => setSettings((prev) => ({ ...prev, ...patch })), []);
   // The expiry window is read by lib/compliance.js on every screen, so push the setting there.
   setExpiryDays(settings.expiryDays);
 
   // HRS-4: a worker fills in hours on a closed post-job checklist that was saved with zero hours. The hours are booked on the task.
-  const fillHours = useCallback((taskId, person, hours) => {
+  const fillHours = useCallback((taskId, person, hours, confirmed = false) => {
     const task = tasks.find((t) => t.id === taskId);
     const rec = checklists.find((c) => c.taskId === taskId && c.person === person);
     if (!task || !rec || !rec.steps.post2) return 'That checklist was not found.';
-    const err = validateStep('post2', rec.role, { hours, unbilled: '', hoursConfirmed: true }, { kind: task.kind });
+    const err = validateStep('post2', rec.role, { hours, unbilled: '', hoursConfirmed: confirmed }, { kind: task.kind });
     if (err) return err;
     setChecklists((prev) => prev.map((c) => (c.taskId === taskId && c.person === person
       ? { ...c, steps: { ...c.steps, post2: { ...c.steps.post2, hours: Number(hours) } } } : c)));
@@ -561,8 +617,8 @@ export function DemoProvider({ children }) {
   const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
 
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, notifications, retryNotification, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, notifications, retryNotification, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

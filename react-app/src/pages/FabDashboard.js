@@ -6,6 +6,8 @@ import HoursNotFilled from '../components/HoursNotFilled';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
 import { isClosedJob } from '../lib/jobs';
+import { NewWorkshopTaskModal } from './WorkshopDashboard';
+import { repeatLabel } from '../lib/repeat';
 import { FAB_TYPES, fabTypeColors } from '../data/fabTypes';
 import { FAB_CREW, shortName } from '../lib/people';
 import { addDays, formatShort, fullDate, startOfWeek, toKey, today } from '../lib/dates';
@@ -90,6 +92,7 @@ export default function FabDashboard({ variant = 'manager' }) {
   const [filter, setFilter] = useState(variant === 'ic2' ? 'mine' : 'all');
   const [creating, setCreating] = useState(null);
   const [scheduling, setScheduling] = useState(null);
+  const [workshopTask, setWorkshopTask] = useState(false);
 
   const me = shortName(role.name);
   const key = toKey(today());
@@ -120,7 +123,7 @@ export default function FabDashboard({ variant = 'manager' }) {
 
   const columns = [
     { key: 'name', label: 'Task', primary: true, render: (t) => (
-      <div className="stack"><strong>{t.name}</strong><small><Link className="job-link" to={`/jobs/${t.jobId}`}>{t.jobId}</Link> · {jobName(t.jobId)}</small></div>) },
+      <div className="stack"><strong>{t.name}</strong><small><Link className="job-link" to={`/jobs/${t.jobId}`}>{t.jobId}</Link> · {jobName(t.jobId)}{t.repeat ? ` · repeats: ${repeatLabel(t.repeat).toLowerCase()}` : ''}</small></div>) },
     { key: 'type', label: 'Type', render: (t) => <span className="type-tag"><i className="dot" style={{ background: fabTypeColors[t.type] || '#7b8794' }} />{t.type}</span> },
     { key: 'date', label: 'Date', render: (t) => <span className={t.date < key && t.stage !== 'Manager Review' ? 'over' : ''}>{formatShort(t.date)}</span> },
     { key: 'leader', label: 'Team leader', render: (t) => t.leader || 'Unassigned' },
@@ -137,6 +140,7 @@ export default function FabDashboard({ variant = 'manager' }) {
   return (
     <div className="dash">
       <PageHeader eyebrow={fullDate()} title={variant === 'ic2' ? 'Fab 2IC Dashboard' : 'Fab Manager Dashboard'}>
+        {variant !== 'ic2' && <button type="button" className="btn btn-ghost" onClick={() => setWorkshopTask(true)}><Plus size={16} aria-hidden="true" /> New workshop task</button>}
         <button type="button" className="btn btn-primary" onClick={() => setCreating('')}><Plus size={16} aria-hidden="true" /> New fab task</button>
       </PageHeader>
 
@@ -174,6 +178,7 @@ export default function FabDashboard({ variant = 'manager' }) {
         <ResponsiveTable columns={columns} rows={rows} empty="No fabrication tasks in this view" />
       </Card>
 
+      {workshopTask && <NewWorkshopTaskModal onClose={() => setWorkshopTask(false)} />}
       {creating !== null && <NewTaskModal presetType={creating} onClose={() => setCreating(null)} />}
       {scheduling && <ScheduleModal task={scheduling} onClose={() => setScheduling(null)} />}
     </div>

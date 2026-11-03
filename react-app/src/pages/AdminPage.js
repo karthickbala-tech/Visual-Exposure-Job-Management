@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Pencil, Plus, Upload, X } from 'lucide-react';
-import { Card, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import { Card, Chip, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
 import { DEPARTMENTS, PEOPLE } from '../data/issuesSeed';
@@ -11,11 +11,13 @@ import {
   addPrimaryRole, canRemovePrimaryRole, exportSettings, generalPatch, parseSettingsImport, placeholdersOf, toCsv, validateGeneral, validateTemplate,
 } from '../lib/admin';
 import { listUsers, setUserRole } from '../lib/authStore';
-import { formatShort, toKey, today } from '../lib/dates';
+import { fmtStamp, formatShort, toKey, today } from '../lib/dates';
+import { ISSUE_FIELDS, hiddenFor } from '../lib/issueFields';
+import { EVENTS, filterLog, logSummary } from '../lib/notifications';
 import { thisPayPeriod } from '../lib/payPeriod';
 import './AdminPage.css';
 
-const TABS = [['general', 'General'], ['notify', 'Notifications'], ['templates', 'Mail templates'], ['roles', 'Roles and users'], ['data', 'Import and export']];
+const TABS = [['general', 'General'], ['notify', 'Notifications'], ['templates', 'Mail templates'], ['log', 'Notification log'], ['roles', 'Roles and users'], ['data', 'Import and export']];
 const ALL_PEOPLE = [...new Set([...PEOPLE, ...Object.values(ROLES).map((r) => r.name)])].sort();
 
 const download = (name, text, type, notify) => {
@@ -194,8 +196,48 @@ function TemplatesTab() {
   return (
     <>
       <Card flush><ResponsiveTable columns={cols} rows={settings.templates.map((t) => ({ ...t, id: t.key }))} empty="No templates" /></Card>
-      <small className="muted">Templates are filled in and sent by the server. Every send is written to the notification log.</small>
+      <small className="muted">Templates are filled in and sent by the server. Every send is written to the notification log (see the Notification log tab).</small>
       {editing && <TemplateModal template={editing} onClose={() => setEditing(null)} />}
+    </>
+  );
+}
+
+// ---- Notification log (FSD section 8): one row per email the server would send ----
+function NotificationLogTab() {
+  const { notifications, retryNotification, notify } = useDemo();
+  const [status, setStatus] = useState('All');
+  const [event, setEvent] = useState('All');
+  const [q, setQ] = useState('');
+  const rows = filterLog(notifications, { status, event, q });
+  const sum = logSummary(notifications);
+  const cols = [
+    { key: 'at', label: 'When', primary: true, render: (r) => fmtStamp(r.at) },
+    { key: 'event', label: 'Event', render: (r) => r.eventLabel },
+    { key: 'recipient', label: 'Recipient', render: (r) => <div className="stack"><strong>{r.recipient}</strong><small>{r.recipientRole}</small></div> },
+    { key: 'subject', label: 'Subject', render: (r) => <span className="mono">{r.subject}</span> },
+    { key: 'status', label: 'Status', render: (r) => <div className="stack"><Chip value={r.status} tone={r.status === 'Sent' ? 'green' : 'red'} />{r.error && <small>{r.error}</small>}</div> },
+    { key: 'attempts', label: 'Tries', render: (r) => r.attempts },
+    { key: 'act', label: '', render: (r) => (r.status === 'Failed'
+      ? <button type="button" className="btn btn-primary btn-sm" aria-label={`Retry: ${r.subject} to ${r.recipient}`} onClick={() => retryNotification(r.id)}>Retry</button> : null) },
+  ];
+  const exportLog = () => download(`notification-log-${toKey(today())}.csv`, toCsv([
+    { label: 'When', get: (r) => r.at }, { label: 'Event', get: (r) => r.eventLabel }, { label: 'Recipient', get: (r) => r.recipient },
+    { label: 'Role', get: (r) => r.recipientRole }, { label: 'Subject', get: (r) => r.subject }, { label: 'Status', get: (r) => r.status }, { label: 'Tries', get: (r) => r.attempts },
+  ], rows), 'text/csv', notify);
+
+  return (
+    <>
+      <Card title="Notification log">
+        <div className="ad-add">
+          <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}><option>All</option><option>Sent</option><option>Failed</option></select>
+          <select aria-label="Event" value={event} onChange={(e) => setEvent(e.target.value)}><option value="All">All events</option>{Object.entries(EVENTS).map(([id, d]) => <option key={id} value={id}>{d.label}</option>)}</select>
+          <input type="search" aria-label="Search the log" placeholder="Recipient, subject or reference" value={q} onChange={(e) => setQ(e.target.value)} />
+          <button type="button" className="btn btn-ghost btn-sm" onClick={exportLog}><Download size={14} aria-hidden="true" /> Download CSV</button>
+        </div>
+        <small className="muted">{sum.total} emails: {sum.sent} sent, {sum.failed} failed. Showing {rows.length}.</small>
+      </Card>
+      <Card flush><ResponsiveTable columns={cols} rows={rows} empty="No emails match these filters" /></Card>
+      <small className="muted">Demo: no email is really sent. In the Catalyst build the server writes a row for every send, and Retry sends it again.</small>
     </>
   );
 }
@@ -250,6 +292,19 @@ function RolesTab() {
         {error && <p className="form-error" role="alert">{error}</p>}
       </Card>
       <Card title="Users and roles" flush><ResponsiveTable columns={userCols} rows={users} empty="No accounts yet" /></Card>
+      <Card title="Issue fields hidden from each role (ISS-6)">
+        <div className="ad-matrix">
+          <table className="rtable">
+            <thead><tr><th>Role</th>{ISSUE_FIELDS.map(([id, label]) => <th key={id}>{label}</th>)}</tr></thead>
+            <tbody>
+              {Object.entries(ROLES).map(([id, r]) => (
+                <tr key={id}><th scope="row">{r.label}</th>{ISSUE_FIELDS.map(([f, label]) => <td key={f} aria-label={`${r.label}, ${label}`}>{hiddenFor(id).includes(f) ? 'Hidden' : '-'}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <small className="muted">This table is a proposal. The Creator export has no permission profiles, so confirm which Issues fields each role sees with the client.</small>
+      </Card>
       <Card title="What each role can open">
         <div className="ad-matrix">
           <table className="rtable">
@@ -322,7 +377,7 @@ function DataTab() {
 
 export default function AdminPage() {
   const [tab, setTab] = useState('general');
-  const body = useMemo(() => ({ general: <GeneralTab />, notify: <NotifyTab />, templates: <TemplatesTab />, roles: <RolesTab />, data: <DataTab /> }[tab]), [tab]);
+  const body = useMemo(() => ({ general: <GeneralTab />, notify: <NotifyTab />, templates: <TemplatesTab />, log: <NotificationLogTab />, roles: <RolesTab />, data: <DataTab /> }[tab]), [tab]);
   return (
     <div className="dash">
       <PageHeader eyebrow="Admin" title="Administration" subtitle="Settings, notifications, mail templates, roles and data. Other screens read these settings." />

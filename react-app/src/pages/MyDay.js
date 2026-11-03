@@ -10,7 +10,7 @@ import { installTypeStyles } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, fullDate, greeting, toKey, today } from '../lib/dates';
 import { CLOSED_STAGES, MAX_ENTRY_HOURS, SUBSTAGES, TRANSITIONS } from '../lib/workflow';
-import { checklistPlan, nextStep, stepTitle, submitBlockReason } from '../lib/checklists';
+import { WARN_HOURS, checklistPlan, needsHoursConfirm, nextStep, stepTitle, submitBlockReason } from '../lib/checklists';
 import './MyDay.css';
 
 // Fab Worker and Installer home: "my" tasks only, big touch targets, one clear next step.
@@ -24,6 +24,7 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
   const { actOnTask, bookHours, checklists, role } = useDemo();
   const [dialog, setDialog] = useState(null);
   const [hours, setHours] = useState('');
+  const [sure, setSure] = useState(false);
   const [error, setError] = useState('');
 
   const isInstall = task.kind === 'install';
@@ -50,8 +51,10 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
     const n = Number(hours);
     if (!n || n <= 0) return setError('Enter the hours you worked.');
     if (n >= MAX_ENTRY_HOURS) return setError(`A single entry must be under ${MAX_ENTRY_HOURS} hours.`);
+    if (needsHoursConfirm(n) && !sure) return setError(`That is more than ${WARN_HOURS} hours. Tick the box to confirm it is correct.`);
     setError('');
     setHours('');
+    setSure(false);
     return bookHours(task.id, n);
   };
 
@@ -107,6 +110,7 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
       {inProgress && !plan.post && (
         <form className="hours-form" onSubmit={submitHours} noValidate>
           <input type="number" inputMode="decimal" step="0.5" min="0" value={hours} onChange={(e) => setHours(e.target.value)} aria-label="Hours to book" placeholder="Hours" />
+          {needsHoursConfirm(hours) && <label className="check-inline"><input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} />{hours} hours is correct</label>}
           <button type="submit" className="btn btn-ghost">Book hours</button>
           {error && <small className="risk" role="alert">{error}</small>}
         </form>

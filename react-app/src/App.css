@@ -375,3 +375,5 @@ small { color: var(--muted); font-size: 12.5px; }
 .type-chip.on { border-color: var(--brand-strong); box-shadow: 0 0 0 1px var(--brand-strong); color: var(--ink); }
 .check-inline { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .pay-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.repeat-fields { border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px 12px; display: grid; gap: 8px; }
+.repeat-fields legend { padding: 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }

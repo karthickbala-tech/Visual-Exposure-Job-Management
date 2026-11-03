@@ -21,3 +21,13 @@ export const ROLE_ASSIGNMENTS = {
   installCoordinator: 'Ben Okafor',
   director: 'Karen Wells',
 };
+
+// Sample notification log rows. One has failed so Retry can be tried. The real log is written by the server (FSD section 8).
+const ago = (hours) => new Date(Date.now() - hours * 3600000).toISOString();
+export const SEED_NOTIFICATIONS = [
+  { id: 'N-seed-1', at: ago(3), event: 'task.submitted', eventLabel: 'Submit for approval', recipient: 'Tom Hendry', recipientRole: 'Fab Manager', subject: 'Fabrication Task Approval', status: 'Sent', attempts: 1, ref: 'F5' },
+  { id: 'N-seed-2', at: ago(5), event: 'install.finishedOnSite', eventLabel: 'Install finished on site', recipient: 'Rachel Barnes', recipientRole: 'Project Manager', subject: 'Install Finished On Site: Building letters L5 - Luke M.', status: 'Sent', attempts: 1, ref: 'I8' },
+  { id: 'N-seed-3', at: ago(5), event: 'install.finishedOnSite', eventLabel: 'Install finished on site', recipient: 'Rachel Barnes', recipientRole: 'Installation manager', subject: 'Install Finished On Site: Building letters L5 - Luke M.', status: 'Failed', attempts: 2, ref: 'I8', error: 'Mailbox unavailable' },
+  { id: 'N-seed-4', at: ago(27), event: 'issue.reported', eventLabel: 'Issue reported', recipient: 'Tom Hendry', recipientRole: 'Department manager', subject: 'Issue Reported: Spray booth filter overdue', status: 'Sent', attempts: 1, ref: 'IS-7' },
+  { id: 'N-seed-5', at: ago(48), event: 'job.created', eventLabel: 'New job created', recipient: 'Tom Hendry', recipientRole: 'Fab Manager', subject: 'Job Checklist: Westbrook Entry Signage', status: 'Sent', attempts: 1, ref: 'J-1039' },
+];
