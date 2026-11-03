@@ -178,3 +178,11 @@ test('webhook: bad payloads are refused, and an unknown owner just leaves the ma
 	assert.equal(r.created, true);
 	assert.equal(w.db.jobs[0].pm_id, undefined);
 });
+
+test('webhook: a closing date in another format is ignored, a datetime keeps its date, the deal still arrives', () => {
+	const { dealInput } = require('../lib/services/crmWebhook');
+	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A', expected_finish: '06/11/2026' }).expected_finish, undefined);
+	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A', expected_finish: '2026-11-06T10:00:00+05:30' }).expected_finish, '2026-11-06');
+	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A', expected_finish: '2026-11-06' }).expected_finish, '2026-11-06');
+	assert.equal(dealInput.parse({ deal_id: '1', deal_name: 'A' }).expected_finish, undefined);
+});
