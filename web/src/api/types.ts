@@ -177,3 +177,55 @@ export interface FileItem {
 	sizeBytes: number;
 	uploaded: boolean;
 }
+
+export interface EquipmentItem {
+	id: string;
+	code: string;
+	name: string;
+	type: string;
+	locationId: string | null;
+	locationName: string | null;
+	status: 'In service' | 'Off hire' | 'Out of service';
+	offHireRequired: boolean;
+	frequencyDays: number | null;
+	lastChecked: string | null;
+	nextDue: string | null;
+	overdue: boolean;
+	daysOverdue: number;
+}
+
+export interface ChemicalItem {
+	id: string;
+	code: string;
+	name: string;
+	locationId: string | null;
+	locationName: string | null;
+	sdsUrl: string;
+	sdsMissing: boolean;
+	reviewDate: string | null;
+	reviewDue: boolean;
+	stock: number | null;
+	unit: string;
+	hazardClass: string;
+}
+
+export interface WorkshopLocation {
+	id: string;
+	name: string;
+	description: string;
+	supervisorId: string | null;
+	supervisorName: string | null;
+}
+
+export interface DeviceItem {
+	id: string;
+	personName: string | null;
+	model: string;
+	os: string;
+	lat: number | null;
+	lng: number | null;
+	address: string;
+	lastSeenAt: string | null;
+	stale: boolean;
+	mapUrl: string | null;
+}

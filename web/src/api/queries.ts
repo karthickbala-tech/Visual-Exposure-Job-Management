@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { CalendarItem, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -203,5 +203,22 @@ export const useCreateCompliance = () => {
 	return useMutation({
 		mutationFn: (input: { person_id: string; type_id: string; reference_no?: string; expiry_date?: string }) => api('/compliance', json('POST', input)),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance'] }),
+	});
+};
+
+// Equipment, chemicals, workshop locations, devices
+const useList = <T,>(key: string, path: string, enabled = true) =>
+	useQuery({ queryKey: [key], queryFn: () => api<{ items: T[] }>(path), enabled, staleTime: 30_000 });
+export const useEquipment = () => useList<EquipmentItem>('equipment', '/equipment?limit=300');
+export const useChemicals = () => useList<ChemicalItem>('chemicals', '/chemicals?limit=300');
+export const useLocations = () => useList<WorkshopLocation>('locations', '/locations');
+export const useDevices = (enabled: boolean) => useList<DeviceItem>('devices', '/devices?limit=300', enabled);
+
+/** One mutation helper for the register screens: send, then refresh the lists it affects. */
+export const useRegisterWrite = (invalidate: string[]) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ method, path, body }: { method: 'POST' | 'PATCH'; path: string; body?: unknown }) => api(path, json(method, body ?? {})),
+		onSuccess: () => invalidate.forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
 	});
 };
