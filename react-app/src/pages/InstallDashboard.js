@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Clock, Gauge, Plus, ShieldCheck, Truck } from 'lucide-react';
+import { CheckCircle2, Clock, Gauge, ShieldCheck, Truck } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
-import { isClosedJob } from '../lib/jobs';
 import { showOnInstallCalendar } from '../lib/calendar';
 import { lastPayPeriod, thisPayPeriod } from '../lib/payPeriod';
 import { installTypeStyles } from '../data/mockData';
@@ -14,58 +13,7 @@ import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
-const TYPES = Object.keys(installTypeStyles);
 const CLOSED = CLOSED_STAGES;
-
-function NewInstallModal({ presetType, onClose }) {
-  const { jobs, equipment, addInstallTask } = useDemo();
-  const [f, setF] = useState({ name: '', jobId: jobs[0]?.id || '', type: presetType || TYPES[0], date: toKey(today()), leader: '', member: '', quoted: '', hiredEquipment: [] });
-  const [error, setError] = useState('');
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-  const toggleEq = (id) => setF((x) => ({ ...x, hiredEquipment: x.hiredEquipment.includes(id) ? x.hiredEquipment.filter((i) => i !== id) : [...x.hiredEquipment, id] }));
-  const needsSwms = ['VE Install', 'VE Subtask'].includes(f.type);
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!f.name.trim() || !f.jobId || !f.date) return setError('Task name, job and install date are required.');
-    if (f.member && !f.leader) return setError('Choose a team leader before a team member.');
-    addInstallTask({ ...f, name: f.name.trim(), quoted: Number(f.quoted) || 0 });
-    return onClose();
-  };
-
-  return (
-    <Modal title="New install task" onClose={onClose}>
-      <form className="form" onSubmit={submit} noValidate>
-        <label>Task name<input autoFocus value={f.name} onChange={set('name')} placeholder="e.g. Fit pylon on site" /></label>
-        <div className="form-row">
-          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.filter((j) => !isClosedJob(j)).map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
-          <label>Install type<select value={f.type} onChange={set('type')}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select></label>
-        </div>
-        <div className="form-row">
-          <label>Install date<input type="date" value={f.date} onChange={set('date')} /></label>
-          <label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')} /></label>
-        </div>
-        <div className="form-row">
-          <label>Team leader<select value={f.leader} onChange={set('leader')}><option value="">Not assigned yet</option>{INSTALL_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
-          <label>Team member<select value={f.member} onChange={set('member')}><option value="">None</option>{INSTALL_CREW.filter((c) => c !== f.leader).map((c) => <option key={c}>{c}</option>)}</select></label>
-        </div>
-        <fieldset className="eq-pick">
-          <legend>Hired equipment used on this task (optional)</legend>
-          {equipment.filter((e) => e.offHireRequired && e.status === 'In service').map((e) => (
-            <label key={e.id} className="check"><input type="checkbox" checked={f.hiredEquipment.includes(e.id)} onChange={() => toggleEq(e.id)} />{e.id} · {e.name}</label>
-          ))}
-          <small>When the crew marks the task Finished On Site, this equipment goes off hire and the equipment managers are emailed.</small>
-        </fieldset>
-        <small>{needsSwms ? 'A SWMS will be created and sent to the Project Manager to sign.' : 'This type does not need a SWMS.'}</small>
-        {error && <p className="form-error" role="alert">{error}</p>}
-        <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary">Create task</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
 
 function ScheduleModal({ task, onClose }) {
   const { scheduleTask } = useDemo();
@@ -100,7 +48,6 @@ export default function InstallDashboard() {
   const { tasks, jobs, swms, role, roleId, hoursLog, settings } = useDemo();
   const [filter, setFilter] = useState('all');
   const [withFab, setWithFab] = useState(false);
-  const [creating, setCreating] = useState(null);
   const [scheduling, setScheduling] = useState(null);
 
   const isPm = roleId === 'pm';
@@ -159,18 +106,10 @@ export default function InstallDashboard() {
   return (
     <div className="dash">
       <PageHeader eyebrow={fullDate()} title="Installation" subtitle="Install tasks, site crews and SWMS status across all jobs.">
-        {isPm && <button type="button" className="btn btn-primary" onClick={() => setCreating('')}><Plus size={16} aria-hidden="true" /> New install task</button>}
+        {isPm && <Link className="btn btn-primary" to="/jobs">Create task from a job</Link>}
       </PageHeader>
 
-      {isPm && (
-        <div className="fab-types" aria-label="Quick create by install type">
-          {TYPES.map((t) => (
-            <button key={t} type="button" onClick={() => setCreating(t)} title={`New ${t} task`}>
-              <i className="dot" style={{ background: installTypeStyles[t] }} />{t}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       <div className="kpis">
         <KpiCard icon={Truck} label="Open install tasks" value={open.length} note={`${FILTERS[1][2].length} assigned to you`} />
@@ -207,7 +146,6 @@ export default function InstallDashboard() {
         <ResponsiveTable columns={columns} rows={rows} empty="No install tasks in this view" />
       </Card>
 
-      {creating !== null && <NewInstallModal presetType={creating} onClose={() => setCreating(null)} />}
       {scheduling && <ScheduleModal task={scheduling} onClose={() => setScheduling(null)} />}
     </div>
   );

@@ -7,11 +7,11 @@ export const JOB_CLOSED = 'Completed - Closed';
 // FSD question 4 is open: should Rejected and Reopen tasks stop a job from completing? Built on "yes" (the safer rule).
 export const REWORK_BLOCKS_COMPLETION = true;
 // FSD question 3 is open: completion is weighted by quoted hours. Design tasks count only in the job-level figure.
-const OPEN_FOR_ROLLUP = ['Awaiting Scheduling', 'Scheduled', 'In Progress', 'On Hold', 'Not Started', 'Client Review', 'Manager Review'];
+const OPEN_FOR_ROLLUP = ['Awaiting Scheduling', 'Scheduled', 'In Progress', 'On Hold', 'Not Started', 'Client Review', 'Manager Review', 'Awaiting Submission'];
 export const BLOCKING_STAGES = REWORK_BLOCKS_COMPLETION ? [...OPEN_FOR_ROLLUP, 'Rejected', 'Reopen'] : OPEN_FOR_ROLLUP;
 
 // WORKFLOWS section 10: the done set for completion percentages.
-export const DONE_STAGES = ['Completed', 'Complete - Not Used', 'Manager Review', 'Cancelled'];
+export const DONE_STAGES = ['Completed', 'Approved & Completed', 'Complete - Not Used', 'Manager Review', 'Cancelled'];
 
 export const isClosedJob = (job) => !!job && job.stage === JOB_CLOSED;
 

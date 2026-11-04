@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, ClipboardCheck, Clock, Hammer, LayoutDashboard, PenTool, Settings, ShieldCheck, Smartphone, Truck, Users, Wrench, X } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, ClipboardCheck, Clock, Hammer, LayoutDashboard, PenTool, Settings, ShieldCheck, Smartphone, ListChecks, Truck, Users, Wrench, X } from 'lucide-react';
 import { NAV } from '../navConfig';
 import { useDemo } from '../context/DemoContext';
 import { canAccess } from '../lib/access';
 
 const ICONS = {
   calendar: CalendarDays, home: LayoutDashboard, jobs: Briefcase, design: PenTool, fab: Hammer, install: Truck,
-  swms: ShieldCheck, compliance: ClipboardCheck, admin: Settings, hours: Clock, issues: AlertTriangle, people: Users, equipment: Wrench, devices: Smartphone,
+  swms: ShieldCheck, checklist: ListChecks, compliance: ClipboardCheck, admin: Settings, hours: Clock, issues: AlertTriangle, people: Users, equipment: Wrench, devices: Smartphone,
 };
 
 export default function Sidebar({ open, onClose }) {

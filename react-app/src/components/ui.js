@@ -6,7 +6,7 @@ const TONES = {
   Preparation: 'gray', 'In Progress': 'blue', 'On Hold': 'amber', Completed: 'green',
   'Completed - Closed': 'green', Cancelled: 'red', 'Complete - Not Used': 'gray',
   'Awaiting Scheduling': 'gray', Scheduled: 'blue', 'Manager Review': 'purple', Rejected: 'red', Reopen: 'amber',
-  'Not Started': 'gray', 'Client Review': 'purple',
+  'Not Started': 'gray', 'Client Review': 'purple', 'Awaiting Submission': 'amber', 'Approved & Completed': 'green',
   // SWMS
   Created: 'red', 'PM Signed': 'amber', 'TL Signed': 'amber', Closed: 'gray', 'Not Required': 'gray',
 };

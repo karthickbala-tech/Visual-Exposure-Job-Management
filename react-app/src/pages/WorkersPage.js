@@ -139,10 +139,14 @@ export function WorkersPage() {
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState('');
   const canManage = ['admin', 'pm'].includes(roleId);
+  const selfOnly = ['installer','fabWorker','workshop','designer','contractor'].includes(roleId);
+  const myWorker = workers.find((w) => w.name === role.name || w.name === role.name.replace(/\s+([A-Z]).*$/, ' $1.'));
+  const scopedTickets = selfOnly ? tickets.filter((x) => x.workerId === myWorker?.id) : tickets;
+  const scopedInductions = selfOnly ? inductions.filter((x) => x.workerId === myWorker?.id) : inductions;
   const company = (id) => companies.find((c) => c.id === id)?.name || id;
   const worker = (id) => workers.find((w) => w.id === id);
 
-  const sum = complianceSummary({ workers, companies, tickets, inductions, companyDocs, veName: VE_NAME, activeOnly });
+  const sum = complianceSummary({ workers: selfOnly ? workers.filter(w => w.id === myWorker?.id) : workers, companies, tickets: scopedTickets, inductions: scopedInductions, companyDocs: selfOnly ? [] : companyDocs, veName: VE_NAME, activeOnly: selfOnly ? false : activeOnly });
   const veWorkers = sum.shownWorkers.filter((w) => company(w.companyId) === VE_NAME);
   const subWorkers = sum.shownWorkers.filter((w) => company(w.companyId) !== VE_NAME);
   const all = [
@@ -190,40 +194,40 @@ export function WorkersPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow="People" title="Workers" subtitle="Employees, subcontractors, tickets, inductions and company documents.">
-        {canManage && (<><button type="button" className="btn btn-primary" onClick={() => setAdding('worker')}><Plus size={16} aria-hidden="true" /> Add worker</button>
+      <PageHeader eyebrow="People" title={selfOnly ? "My tickets & inductions" : "Workers"} subtitle={selfOnly ? "Only your own compliance records are shown." : "Employees, subcontractors, tickets, inductions and company documents."}>
+        {!selfOnly && canManage && (<><button type="button" className="btn btn-primary" onClick={() => setAdding('worker')}><Plus size={16} aria-hidden="true" /> Add worker</button>
           <button type="button" className="btn btn-ghost" onClick={() => setAdding('company')}><Building2 size={16} aria-hidden="true" /> Add company</button></>)}
       </PageHeader>
 
-      <div className="wk-tools">
+      {!selfOnly && <div className="wk-tools">
         <div className="segmented" role="tablist" aria-label="Active filter">
           <button type="button" role="tab" aria-selected={activeOnly} className={activeOnly ? 'on' : ''} onClick={() => setActiveOnly(true)}>Active only</button>
           <button type="button" role="tab" aria-selected={!activeOnly} className={!activeOnly ? 'on' : ''} onClick={() => setActiveOnly(false)}>All</button>
         </div>
-      </div>
-      <div className="kpis" aria-label="Compliance summary">
+      </div>}
+      {!selfOnly && <div className="kpis" aria-label="Compliance summary">
         <KpiCard icon={Users} label={activeOnly ? 'Active VE workers' : 'VE workers'} value={sum.workers.ve} note="employees" />
         <KpiCard icon={Users} label={activeOnly ? 'Active non-VE workers' : 'Non-VE workers'} value={sum.workers.nonVe} note="subcontractors" />
         <KpiCard icon={AlertTriangle} label="Expired" value={b.Expired.total} tone={b.Expired.total ? 'danger' : 'brand'} note={split('Expired')} />
         <KpiCard icon={Clock} label="Expires today" value={b.Today.total} tone={b.Today.total ? 'danger' : 'brand'} note={split('Today')} />
         <KpiCard icon={Clock} label="Within 30 days" value={b.Soon.total} tone={b.Soon.total ? 'warn' : 'brand'} note={split('Soon')} />
         <KpiCard icon={FileWarning} label="Not filled in" value={b.Incomplete.total} note="waiting for details" />
-      </div>
+      </div>}
 
-      <div className="wk-tools">
+      {!selfOnly && <div className="wk-tools">
         <div className="segmented" role="tablist" aria-label="Workers view">
           {TABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>)}
         </div>
-      </div>
+      </div>}
 
-      {tab === 've' && <Card flush><ResponsiveTable columns={workerCols} rows={veWorkers} empty="No active employees" /></Card>}
-      {tab === 'subs' && (
+      {!selfOnly && tab === 've' && <Card flush><ResponsiveTable columns={workerCols} rows={veWorkers} empty="No active employees" /></Card>}
+      {!selfOnly && tab === 'subs' && (
         <>
           <Card title="Subcontractor workers" flush><ResponsiveTable columns={workerCols} rows={subWorkers} empty="No active subcontractors" /></Card>
           <div className="wk-gap" />
           <Card title="Subcontractor companies" flush><ResponsiveTable columns={companyCols} rows={companies.filter((c) => c.name !== VE_NAME)} empty="No companies" /></Card>
         </>)}
-      {tab === 'compliance' && (
+      {(selfOnly || tab === 'compliance') && (
         <>
           <div className="wk-tools">
             <div className="segmented" role="tablist" aria-label="Status filter">
@@ -234,7 +238,7 @@ export function WorkersPage() {
           </div>
           <Card flush><ResponsiveTable columns={complianceCols} rows={rows} empty="Nothing in this view" /></Card>
         </>)}
-      {tab === 'docs' && <Card flush><ResponsiveTable columns={docCols} rows={[...sum.docs].sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'))} empty="No company documents" /></Card>}
+      {!selfOnly && tab === 'docs' && <Card flush><ResponsiveTable columns={docCols} rows={[...sum.docs].sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'))} empty="No company documents" /></Card>}
 
       {editing && <EditItemModal {...editing} onClose={() => setEditing(null)} />}
       {adding === 'worker' && <AddWorkerModal onClose={() => setAdding('')} />}

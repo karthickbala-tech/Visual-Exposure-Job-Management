@@ -18,3 +18,7 @@
 .job-site-loc li span { color: var(--ink-2); }
 .site-map { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; font-weight: 600; }
 @media (max-width: 900px) { .job-site { grid-template-columns: 1fr; } }
+
+.job-task-actions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}.job-task-actions .btn{display:inline-flex;align-items:center;gap:6px}
+
+.task-spec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}.task-spec h3{font-size:14px;margin:0 0 8px}.task-spec pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);padding:10px;border-radius:8px;font-size:12px}

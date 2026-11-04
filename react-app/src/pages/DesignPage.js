@@ -1,64 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Clock, PencilRuler, Plus, RotateCcw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, PencilRuler, RotateCcw } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
-import { isClosedJob } from '../lib/jobs';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import { MANAGER_ROLES } from '../lib/workflow';
 import './DesignPage.css';
 
 // Design types from the Creator Design Task form. Colours are only for the legend dots.
 const DESIGN_TYPES = { 'Artwork Sign Off': '#2f80ed', 'Install Plan': '#0f9d8a', 'LED Design': '#d4a900', 'Manufacturing Sign Off': '#a855f7', 'Proof Of Posting': '#ec4899', 'Project Management': '#475569' };
-const DESIGNERS = ['Anitha R.', 'Marco D.', 'Priya S.']; // sample design team
-const COLUMNS = ['Not Started', 'In Progress', 'Manager Review', 'Rejected', 'Reopen', 'Completed'];
-const isOpen = (t) => t.stage !== 'Completed' && t.stage !== 'Cancelled';
-
-function NewDesignModal({ onClose }) {
-  const { jobs, addDesignTask } = useDemo();
-  const [f, setF] = useState({ name: '', jobId: jobs[0]?.id || '', type: Object.keys(DESIGN_TYPES)[0], owner: DESIGNERS[0], due: '', quoted: '', description: '' });
-  const [error, setError] = useState('');
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-  const submit = (e) => {
-    e.preventDefault();
-    if (!f.name.trim() || !f.jobId || !f.due) return setError('Task name, job and required finish date are required.');
-    addDesignTask({ ...f, name: f.name.trim(), quoted: Number(f.quoted) || 0 });
-    return onClose();
-  };
-  return (
-    <Modal title="New design task" onClose={onClose}>
-      <form className="form" onSubmit={submit} noValidate>
-        <label>Task name<input autoFocus value={f.name} onChange={set('name')} placeholder="e.g. Pylon artwork rev D" /></label>
-        <div className="form-row">
-          <label>Job<select value={f.jobId} onChange={set('jobId')}>{jobs.filter((j) => !isClosedJob(j)).map((j) => <option key={j.id} value={j.id}>{j.id} · {j.name}</option>)}</select></label>
-          <label>Design type<select value={f.type} onChange={set('type')}>{Object.keys(DESIGN_TYPES).map((t) => <option key={t}>{t}</option>)}</select></label>
-        </div>
-        <div className="form-row">
-          <label>Assigned to<select value={f.owner} onChange={set('owner')}>{DESIGNERS.map((d) => <option key={d}>{d}</option>)}</select></label>
-          <label>Required finish<input type="date" value={f.due} onChange={set('due')} /></label>
-        </div>
-        <label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')} /></label>
-        <label>Description<textarea rows={3} value={f.description} onChange={set('description')} /></label>
-        {error && <p className="form-error" role="alert">{error}</p>}
-        <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary">Create task</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
+const COLUMNS = ['Not Started', 'In Progress', 'Awaiting Submission', 'Manager Review', 'Reopen', 'Approved & Completed'];
+const isOpen = (t) => !['Completed','Approved & Completed','Cancelled'].includes(t.stage);
 
 export default function DesignPage() {
-  const { tasks, jobs, roleId, actOnTask } = useDemo();
+  const { tasks, jobs, roleId, actOnTask, bookHours } = useDemo();
   const [filter, setFilter] = useState('open');
   const [view, setView] = useState('board');
-  const [creating, setCreating] = useState(false);
+  const [hoursTask, setHoursTask] = useState(null);
+  const [hoursValue, setHoursValue] = useState('');
   const key = toKey(today());
   const isPm = roleId === 'pm';
   const canApprove = MANAGER_ROLES.includes(roleId);
   const design = tasks.filter((t) => t.kind === 'design');
-  const open = design.filter(isOpen);
+  const open = design.filter((t) => t.stage !== 'Approved & Completed' && t.stage !== 'Cancelled' && isOpen(t));
   const jobName = (id) => jobs.find((j) => j.id === id)?.name || id;
   const late = (t) => isOpen(t) && t.stage !== 'Manager Review' && t.date < key;
 
@@ -66,9 +30,9 @@ export default function DesignPage() {
     ['open', 'All open', open],
     ['notstarted', 'Not started', open.filter((t) => t.stage === 'Not Started')],
     ['late', 'Overdue', open.filter(late)],
-    ['review', 'Awaiting approval', open.filter((t) => t.stage === 'Manager Review')],
+    ['review', 'Awaiting approval', open.filter((t) => ['Awaiting Submission','Manager Review'].includes(t.stage))],
     ['back', 'Sent back', open.filter((t) => t.stage === 'Rejected' || t.stage === 'Reopen')],
-    ['done', 'Completed', design.filter((t) => t.stage === 'Completed')],
+    ['done', 'Completed', design.filter((t) => ['Approved & Completed','Completed'].includes(t.stage))],
   ];
   const shown = FILTERS.find((f) => f[0] === filter)[2];
   const rows = [...shown].sort((a, b) => a.date.localeCompare(b.date));
@@ -82,8 +46,11 @@ export default function DesignPage() {
     { key: 'hours', label: 'Booked / quoted', render: (t) => (t.quoted ? `${t.booked || 0}h / ${t.quoted}h` : '-') },
     { key: 'act', label: 'Action', render: (t) => (
       <div className="row-actions">
+        {!['Approved & Completed','Completed','Cancelled'].includes(t.stage) && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setHoursTask(t); setHoursValue(''); }}>Book hours</button>}
         {t.stage === 'Not Started' && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Start')}>Start</button>}
-        {t.stage === 'In Progress' && <button type="button" className="btn btn-primary btn-sm" onClick={() => actOnTask(t.id, 'Submit for approval')}>Submit</button>}
+        {t.stage === 'In Progress' && <button type="button" className="btn btn-primary btn-sm" disabled={!t.booked} title={!t.booked ? 'Book hours before completing design work' : ''} onClick={() => actOnTask(t.id, 'Complete design work')}>Awaiting submission</button>}
+        {t.stage === 'Awaiting Submission' && <button type="button" className="btn btn-primary btn-sm" disabled={!t.booked} title={!t.booked ? 'Book hours before submitting' : ''} onClick={() => actOnTask(t.id, 'Submit for approval')}>Submit for approval</button>}
+        {t.stage === 'Manager Review' && canApprove && <button type="button" className="btn btn-primary btn-sm" disabled={!t.booked} title={!t.booked ? 'Booked hours are required' : ''} onClick={() => actOnTask(t.id, 'Approve')}>Approve</button>}
         <Link className="btn btn-ghost btn-sm" to={`/jobs/${t.jobId}`}>{t.stage === 'Manager Review' ? 'Review' : 'Open'}</Link>
       </div>) },
   ];
@@ -91,7 +58,7 @@ export default function DesignPage() {
   return (
     <div className="dash">
       <PageHeader eyebrow={fullDate()} title="Design" subtitle="Artwork, install plans, LED designs and sign-offs for every job.">
-        {isPm && <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden="true" /> New design task</button>}
+        {isPm && <Link className="btn btn-primary" to="/jobs">Create from a job</Link>}
       </PageHeader>
 
       <div className="kpis">
@@ -133,7 +100,7 @@ export default function DesignPage() {
           })}
         </div>
       )}
-      {creating && <NewDesignModal onClose={() => setCreating(false)} />}
+      {hoursTask && <Modal title={`Book hours · ${hoursTask.name}`} onClose={() => setHoursTask(null)}><form className="form" onSubmit={e=>{e.preventDefault();const n=Number(hoursValue);if(!Number.isFinite(n)||n<=0)return;bookHours(hoursTask.id,n);setHoursTask(null);}}><label>Hours worked<input autoFocus type="number" min="0.5" step="0.5" value={hoursValue} onChange={e=>setHoursValue(e.target.value)}/></label><small>Design approval is blocked until booked hours are greater than zero.</small><div className="form-actions"><button type="button" className="btn btn-ghost" onClick={()=>setHoursTask(null)}>Cancel</button><button className="btn btn-primary">Save hours</button></div></form></Modal>}
     </div>
   );
 }

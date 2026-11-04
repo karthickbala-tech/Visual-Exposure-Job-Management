@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, FolderOpen, Lock } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FolderOpen, Lock, Pencil, Plus } from 'lucide-react';
 import ApprovalPanel from '../components/ApprovalPanel';
 import JobSitePanel from '../components/JobSitePanel';
 import { Card, Chip, Modal, ResponsiveTable } from '../components/ui';
@@ -27,10 +27,12 @@ function Ring({ value }) {
 
 export default function Job360() {
   const { jobId } = useParams();
-  const { allJobs: jobs, tasks, notify, roleId, closeJob } = useDemo();
+  const { allJobs: jobs, tasks, notify, roleId, closeJob, updateJob, addTask, addInstallTask, addDesignTask, workers } = useDemo();
   const [tab, setTab] = useState('design');
   const [selectedId, setSelectedId] = useState(null);
   const [closing, setClosing] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [creating, setCreating] = useState('');
 
   const job = jobs.find((j) => j.id === jobId);
   if (!job) return <PlaceholderPage title="Job not found" blurb="That job does not exist in the demo data." />;
@@ -42,6 +44,8 @@ export default function Job360() {
   const inReview = jobTasks.filter((t) => t.stage === 'Manager Review').length;
   const tabTasks = jobTasks.filter((t) => t.kind === tab);
   const selected = tabTasks.find((t) => t.id === selectedId) || tabTasks[0];
+  const canSeeProfit = roleId === 'admin';
+  const canCreateTasks = ['admin','pm','fabManager'].includes(roleId);
   const people = (t) => t.owner || [t.leader, t.member].filter(Boolean).join(', ') || '-';
 
   const columns = [
@@ -52,7 +56,9 @@ export default function Job360() {
     { key: 'date', label: tab === 'design' ? 'Due' : 'Date', render: (t) => formatShort(t.date) },
     { key: 'people', label: 'People', render: people },
     { key: 'stage', label: 'Stage', render: (t) => <Chip value={t.stage} /> },
-    { key: 'hours', label: 'Booked / quoted', render: (t) => (t.quoted ? `${t.booked}h / ${t.quoted}h` : '-') },
+    { key: 'hours', label: 'Quoted / proposed / booked', render: (t) => `${t.quoted || 0}h / ${t.proposed || 0}h / ${t.booked || 0}h` },
+    { key: 'cost', label: 'Labour cost', render: (t) => { const person = workers.find(w => w.name === (t.owner || t.leader) || w.name.startsWith(String(t.owner || t.leader || '').split(' ')[0] + ' ')); const rate = Number(person?.hourlyRate || person?.hourly_rate || t.hourlyRate || 0); return rate ? `$${((t.booked || 0) * rate).toFixed(2)}` : 'Rate not set'; } },
+    ...(roleId === 'admin' ? [{ key: 'rate', label: 'Hourly rate', render: (t) => { const person = workers.find(w => w.name === (t.owner || t.leader) || w.name.startsWith(String(t.owner || t.leader || '').split(' ')[0] + ' ')); const rate = person?.hourlyRate || person?.hourly_rate || t.hourlyRate; return rate ? `$${Number(rate).toFixed(2)}/h` : 'Not set'; } }] : []),
   ];
 
   return (
@@ -78,6 +84,7 @@ export default function Job360() {
           {job.risk && <p className="risk">{job.risk}</p>}
         </div>
         <div className="job-head-actions">
+          {(roleId === 'admin' || roleId === 'pm') && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}><Pencil size={14} /> Edit job</button>}
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => notify('Opens the Zoho CRM deal (demo)')}><ExternalLink size={14} aria-hidden="true" /> Go to deal</button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => notify('Opens the WorkDrive folder (demo)')}><ExternalLink size={14} aria-hidden="true" /> Go to WorkDrive</button>
           {closed
@@ -103,8 +110,10 @@ export default function Job360() {
         })}
       </section>
 
+      {canSeeProfit && <section className="card"><div className="card-head"><h2>Profitability (Admin only)</h2></div><div className="card-body job-meta"><span>Revenue <strong>${Number(job.revenue || 0).toLocaleString()}</strong></span><span>Purchases <strong>${Number(job.purchases || 0).toLocaleString()}</strong></span><span>Profit <strong>${Number(job.profit || 0).toLocaleString()}</strong></span><span>Profit % <strong>{job.revenue ? Math.round((job.profit || 0) / job.revenue * 100) : 0}%</strong></span></div></section>}
       <JobSitePanel jobId={job.id} />
 
+      {canCreateTasks && <div className="job-task-actions" aria-label="Create task in this job">{[['design','Add Design Task'],['fab','Add Fabrication Task'],['install','Add Install Task'],['minor','Add Minor Install Task']].map(([id,label]) => <button key={id} type="button" className="btn btn-primary btn-sm" disabled={closed} onClick={() => setCreating(id)}><Plus size={14}/> {label}</button>)}</div>}
       <div className="tabs" role="tablist">
         {TABS.map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''}
@@ -116,8 +125,10 @@ export default function Job360() {
 
       <div className="split">
         <Card flush><ResponsiveTable columns={columns} rows={tabTasks} empty={`No ${tab} tasks for this job yet`} /></Card>
-        <Card title="Approval">{selected ? <ApprovalPanel key={selected.id} task={selected} /> : <p className="muted">Select a task to see its progress and actions.</p>}</Card>
+        <Card title="Approval">{selected ? <><ApprovalPanel key={selected.id} task={selected} />{selected.kind==='fab' && selected.spec && <div className="task-spec"><h3>{selected.type} specification</h3><pre>{JSON.stringify(selected.spec, null, 2)}</pre></div>}</> : <p className="muted">Select a task to see its progress and actions.</p>}</Card>
       </div>
+      {editing && <Modal title="Edit job details" onClose={() => setEditing(false)}><JobEditForm job={job} roleId={roleId} onSave={(patch) => { updateJob(job.id, patch); setEditing(false); }} onCancel={() => setEditing(false)} /></Modal>}
+      {creating && <JobTaskForm kind={creating} job={job} onClose={() => setCreating('')} create={{ addTask, addInstallTask, addDesignTask }} />}
       {closing && (
         <Modal title="Close this job?" onClose={() => setClosing(false)}>
           <div className="form">
@@ -133,3 +144,9 @@ export default function Job360() {
     </div>
   );
 }
+
+function JobEditForm({ job, roleId, onSave, onCancel }) {
+ const [f,setF]=useState({name:job.name||'',finish:job.finish||'',stage:job.stage||'',serverPath:job.serverPath||`\\VE-SERVER\\Jobs\\${job.id}`,dealId:job.dealId||'',createdAt:job.createdAt||new Date().toISOString().slice(0,10)}); const set=k=>e=>setF(x=>({...x,[k]:e.target.value})); const [err,setErr]=useState('');
+ return <form className="form" onSubmit={e=>{e.preventDefault();if(!f.name.trim()||!f.finish||!f.stage||!f.serverPath.trim())return setErr('Please fill the mandatory fields');onSave({...f,name:f.name.trim()});}}><label>Job subject *<input value={f.name} onChange={set('name')} disabled={roleId!=='admin'} /></label><div className="form-row"><label>Expected job finish *<input type="date" value={f.finish} onChange={set('finish')}/></label><label>Stage *<select value={f.stage} onChange={set('stage')}>{['Preparation','In Progress','On Hold','Completed','Completed - Closed','Cancelled'].map(x=><option key={x}>{x}</option>)}</select></label></div><label>File location on VE server *<input value={f.serverPath} onChange={set('serverPath')}/></label>{roleId==='admin'&&<div className="form-row"><label>CRM Deal link / ID<input value={f.dealId} onChange={set('dealId')}/></label><label>Job created date<input type="date" value={f.createdAt} onChange={set('createdAt')}/></label></div>}<small>Completion, hours and cost rollups are read-only.</small>{err&&<p className="form-error">{err}</p>}<div className="form-actions"><button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button><button className="btn btn-primary">Save changes</button></div></form>
+}
+function JobTaskForm({kind,job,onClose,create}) { const [f,setF]=useState({name:'',date:'',type:kind==='fab'?'CCV':kind==='install'?'VE Install':kind==='minor'?'Minor Task':'Artwork Sign Off',quoted:'',proposed:'',width:'',height:'',qty:'',vinyl:'',material:'',thickness:'',returnHeight:'',description:''});const [err,setErr]=useState('');const set=k=>e=>setF(x=>({...x,[k]:e.target.value}));const title={design:'Design',fab:'Fabrication',install:'Install',minor:'Minor Install'}[kind];return <Modal title={`Add ${title} task to ${job.id}`} onClose={onClose}><form className="form" onSubmit={e=>{e.preventDefault();if(!f.name.trim()||!f.date)return setErr('Please fill the mandatory fields');const common={name:f.name.trim(),jobId:job.id,date:f.date,quoted:Number(f.quoted)||0,proposed:Number(f.proposed)||0};let ok;if(kind==='design')ok=create.addDesignTask({...common,type:f.type,due:f.date,description:f.description});else if(kind==='fab')ok=create.addTask({...common,type:f.type,spec:{ccv:{width:Number(f.width)||0,height:Number(f.height)||0,qty:Number(f.qty)||0,vinyl:f.vinyl},cnc:{material:f.material,thickness:Number(f.thickness)||0},clb:{material:f.material,return_height:Number(f.returnHeight)||0}}});else ok=create.addInstallTask({...common,type:kind==='minor'?'Minor Task':f.type});if(ok!==false)onClose();}}><label>Task name *<input autoFocus value={f.name} onChange={set('name')}/></label><div className="form-row"><label>Required / scheduled date *<input type="date" value={f.date} onChange={set('date')}/></label>{kind!=='minor'&&<label>{kind==='fab'?'Fab type':kind==='install'?'Install type':'Design type'}<select value={f.type} onChange={set('type')}>{(kind==='fab'?['CCV','CNC Laser','CNC Router','CLB','General','Metal','Paint','LED','Pack','Workshop','Maintenance']:kind==='install'?['VE Install','VE Subtask','Minor Task','External Install','Print Only']:['Artwork Sign Off','Install Plan','LED Design','Manufacturing Sign Off','Proof Of Posting','Project Management']).map(x=><option key={x}>{x}</option>)}</select></label>}</div><div className="form-row"><label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')}/></label><label>Proposed hours<input type="number" min="0" step="0.5" value={f.proposed} onChange={set('proposed')}/></label></div>{kind==='fab'&&(['CCV'].includes(f.type)?<fieldset><legend>CCV specification</legend><div className="form-row"><label>Width<input type="number" value={f.width} onChange={set('width')}/></label><label>Height<input type="number" value={f.height} onChange={set('height')}/></label><label>Quantity<input type="number" value={f.qty} onChange={set('qty')}/></label></div><label>Vinyl brand / colour<input value={f.vinyl} onChange={set('vinyl')}/></label></fieldset>:['CNC Laser','CNC Router'].includes(f.type)?<fieldset><legend>CNC specification</legend><label>Material<input value={f.material} onChange={set('material')}/></label><label>Thickness<input type="number" value={f.thickness} onChange={set('thickness')}/></label></fieldset>:f.type==='CLB'?<fieldset><legend>CLB specification</legend><label>Material<input value={f.material} onChange={set('material')}/></label><label>Return height<input type="number" value={f.returnHeight} onChange={set('returnHeight')}/></label></fieldset>:null)}{kind==='design'&&<label>Description<textarea value={f.description} onChange={set('description')}/></label>}{err&&<p className="form-error">{err}</p>}<small>Tasks can only be created from their parent job. Closed jobs cannot accept new tasks.</small><div className="form-actions"><button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary">Create task</button></div></form></Modal> }

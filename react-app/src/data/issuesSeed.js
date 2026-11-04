@@ -3,7 +3,7 @@ import { addDays, toKey, today } from '../lib/dates';
 
 export const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
 // Creator has "To Be Quoted" on the issue and "To be Quoted" on its history rows. One spelling is used here.
-export const STATUSES = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed'];
+export const STATUSES = ['To Be discussed', 'In Progress', 'Completed'];
 export const PRIORITIES = ['High', 'Medium', 'Low'];
 export const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
 export const SITES = ['Tullamarine Fwy north face', 'Citylink panel 12', 'West Gate digital screen'];
@@ -23,7 +23,7 @@ const mgr = (dep) => ISSUE_MANAGERS[dep];
 
 const make = (id, o) => ({
   location: '', site: '', direction: '', taskId: '', review: '', completionNotes: '', dateCompleted: '', history: [],
-  assignedTo: mgr(o.department).manager, notify: mgr(o.department).also, ...o, id,
+  assignedTo: mgr(o.department).manager, notify: mgr(o.department).also, ...o, status: ['Completed','In Progress','To Be discussed'].includes(o.status) ? o.status : 'In Progress', id,
 });
 
 export const seedIssues = [

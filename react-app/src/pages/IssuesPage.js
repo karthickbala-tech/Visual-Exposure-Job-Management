@@ -11,7 +11,7 @@ import { PRINT_LAYOUTS, canCreateDeal, defaultLayout, layoutById, printRows } fr
 import './IssuesPage.css';
 
 const STATUS_TONE = {
-  'To Be discussed': 'gray', 'To Be Quoted': 'amber', Quoted: 'purple', 'Quote Sent': 'purple', 'In Progress': 'blue', 'On Hold': 'red', Completed: 'green',
+  'To Be discussed': 'gray', 'In Progress': 'blue', Completed: 'green',
 };
 const PRIORITY_TONE = { High: 'red', Medium: 'amber', Low: 'gray' };
 const MANAGE_ROLES = ['admin', 'pm', 'fabManager'];

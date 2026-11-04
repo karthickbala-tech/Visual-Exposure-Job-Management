@@ -9,7 +9,8 @@ export const TRANSITIONS = {
   'Awaiting Scheduling': [{ action: 'Schedule', to: 'Scheduled' }],
   'Not Started': [{ action: 'Start', to: 'In Progress' }],
   Scheduled: [{ action: 'Start', to: 'In Progress' }],
-  'In Progress': [{ action: 'Submit for approval', to: 'Manager Review' }],
+  'In Progress': [{ action: 'Submit for approval', to: 'Manager Review' }, { action: 'Complete design work', to: 'Awaiting Submission' }],
+  'Awaiting Submission': [{ action: 'Submit for approval', to: 'Manager Review' }],
   'Manager Review': [
     { action: 'Approve', to: 'Completed', manager: true },
     { action: 'Reject', to: 'Rejected', manager: true, comment: true, danger: true },
@@ -27,4 +28,4 @@ export const SUBSTAGES = ['Team Briefed', 'On Site', 'Finished On Site'];
 export const MAX_ENTRY_HOURS = 16;
 
 // Stages after which a task no longer counts as open.
-export const CLOSED_STAGES = ['Completed', 'Cancelled', 'Complete - Not Used'];
+export const CLOSED_STAGES = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];

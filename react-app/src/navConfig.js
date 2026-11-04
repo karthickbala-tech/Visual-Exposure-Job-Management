@@ -48,6 +48,7 @@ export const NAV = [
     blurb: 'Workers, subcontractor companies, tickets, inductions, ratings and devices.',
     replaces: ['Worker Dashboard', 'My Tickets', 'My Inductions', 'Companies', 'Devices'],
   },
+  { label: 'Checklists', path: '/checklists', icon: 'checklist', blurb: 'Checklist register with PM, team leader and team member views.' },
   { label: 'Compliance', path: '/compliance', icon: 'compliance' },
   { label: 'Admin', path: '/admin', icon: 'admin' },
   {
@@ -56,3 +57,5 @@ export const NAV = [
     replaces: ['All Devices', 'Device Locations map', 'Workers with Devices'],
   },
 ];
+
+// FSD §12: checklist register with role-scoped views.

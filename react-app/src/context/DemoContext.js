@@ -103,6 +103,12 @@ export function DemoProvider({ children }) {
     notify(`Job created: ${name}`);
   }, [roleId, logNotify, notify]);
 
+  // JOB-7/8: edit the job in the React demo; rollups remain computed/read-only.
+  const updateJob = useCallback((id, patch) => {
+    setJobs((prev) => prev.map((j) => j.id === id ? { ...j, ...patch, fab: j.fab, install: j.install, job: j.job, booked: j.booked, quoted: j.quoted } : j));
+    notify('Job details saved (demo)');
+  }, [notify]);
+
   const signSwms = useCallback((id, signer) => {
     setSwms((prev) => prev.map((s) => (s.id === id && s.status === 'Created'
       ? { ...s, status: 'PM Signed', pmSignature: { name: signer.name, role: signer.role, signedAt: new Date().toISOString() } }
@@ -117,17 +123,18 @@ export function DemoProvider({ children }) {
     const task = tasks.find((t) => t.id === id);
     const step = task && (TRANSITIONS[task.stage] || []).find((a) => a.action === action);
     if (!step) return false;
+    if (task.kind === 'design' && action === 'Complete design work' && !(task.booked > 0)) { notify('Book hours before completing a design task.'); return false; }
     if (action === 'Submit for approval') {
+      if (task.kind === 'design' && !(task.booked > 0)) { notify('Book hours before submitting a design task.'); return false; }
       const why = submitBlockReason(task, checklists);
       if (why) { notify(why); return false; }
     }
     const text = comment ? `${action}: ${comment}` : action;
     setTasks((prev) => prev.map((t) => (t.id !== id ? t : {
-      ...t, ...(extra || {}), stage: step.to,
+      ...t, ...(extra || {}), stage: (t.kind === 'design' && action === 'Approve') ? 'Approved & Completed' : step.to,
       ...(action === 'Reject' && t.kind === 'install' ? { subStage: 'On Site' } : {}),
-      history: [{ at: stamp(), who, text, from: t.stage, to: step.to }, ...(t.history || [])],
+      history: [{ at: stamp(), who, text, from: t.stage, to: (t.kind === 'design' && action === 'Approve') ? 'Approved & Completed' : step.to }, ...(t.history || [])],
     })));
-    // A rejection resets the post-job checklists so the crew redo them (WORKFLOWS 4.3).
     if (action === 'Reject') {
       setChecklists((prev) => prev.map((c) => {
         if (c.taskId !== id) return c;
@@ -147,7 +154,6 @@ export function DemoProvider({ children }) {
   const setSubStage = useCallback((id, sub) => {
     const who = ROLES[roleId].name;
     const task = tasks.find((t) => t.id === id);
-    // EQP-2: finishing on site sends equipment off hire for linked equipment flagged "off hire required".
     const goingOff = task && sub === 'Finished On Site' ? offHireOnFinish(task, equipment) : [];
     setTasks((prev) => prev.map((t) => (t.id === id
       ? { ...t, subStage: sub, offHireSent: t.offHireSent || goingOff.length > 0, history: [{ at: stamp(), who, text: goingOff.length ? `${sub}. Off hire: ${goingOff.map((e) => e.id).join(', ')}` : sub }, ...(t.history || [])] } : t)));
@@ -163,7 +169,6 @@ export function DemoProvider({ children }) {
     } else notify(sub);
   }, [roleId, tasks, equipment, jobs, logNotify, notify]);
 
-  // Adds hours to the task and rolls them up to its job.
   const bookHours = useCallback((id, hours, unbilled = 0) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -183,8 +188,8 @@ export function DemoProvider({ children }) {
     setTasks((prev) => {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'fab').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
-        id: `F${n}`, kind: 'fab', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '',
-        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', quoted: t.quoted || 0, booked: 0,
+        id: `F${n}`, kind: 'fab', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '', spec: t.spec || {}, parentId: t.parentId || null,
+        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0,
         ...(t.type === 'Workshop' && cleanRepeat(t.repeat) ? { repeat: cleanRepeat(t.repeat) } : {}),
         history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
@@ -200,7 +205,6 @@ export function DemoProvider({ children }) {
     notify('Task scheduled');
   }, [roleId, notify]);
 
-  // Creates an install task. VE Install and VE Subtask also get a SWMS record waiting for the PM's signature.
   const addInstallTask = useCallback((t) => {
     if (isClosedJob(jobs.find((j) => j.id === t.jobId))) { notify(CLOSED_JOB_MSG); return false; }
     const who = ROLES[roleId].name;
@@ -208,8 +212,8 @@ export function DemoProvider({ children }) {
     setTasks((prev) => {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'install').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
-        id: `I${n}`, kind: 'install', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '',
-        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', swms: needsSwms ? 'Created' : 'Not Required', quoted: t.quoted || 0, booked: 0, hiredEquipment: t.hiredEquipment || [],
+        id: `I${n}`, kind: 'install', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '', spec: t.spec || {}, parentId: t.parentId || null,
+        stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', swms: needsSwms ? 'Created' : 'Not Required', quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0, hiredEquipment: t.hiredEquipment || [],
         history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
     });
@@ -223,7 +227,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [roleId, jobs, notify]);
 
-  // Team leader signs at the job briefing (status PM Signed -> TL Signed). The linked install tasks follow.
   const signSwmsTL = useCallback((id, signer) => {
     const rec = swms.find((s) => s.id === id);
     if (!rec || rec.status !== 'PM Signed') return;
@@ -239,28 +242,29 @@ export function DemoProvider({ children }) {
     notify('SWMS saved');
   }, [notify]);
 
-  // Crew declaration: other workers on the job sign after the team leader has.
   const addCrewSignature = useCallback((id, name) => {
     setSwms((prev) => prev.map((s) => (s.id === id ? { ...s, crew: [...(s.crew || []), { name, signedAt: new Date().toISOString() }] } : s)));
     notify(`${name} signed the declaration`);
   }, [notify]);
 
-  // ---- Staff timesheet: check in, break, check out. Hours are split by the pay rules in lib/payRules.js ----
   const checkIn = useCallback(() => {
     const worker = shortName(ROLES[roleId].name);
     setTimesheets((prev) => (prev.some((t) => t.worker === worker && t.status !== 'Checked-out') ? prev
       : [{ id: `T${Date.now()}`, worker, date: toKey(today()), start: nowHM(), end: '', breakMins: 0, breakStartedAt: null, status: 'Checked-in', notes: '', ...ZERO_PAY }, ...prev]));
     notify('Checked in');
   }, [roleId, notify]);
+
   const startBreak = useCallback((id) => {
     setTimesheets((prev) => prev.map((t) => (t.id === id && t.status === 'Checked-in' ? { ...t, status: 'On Break', breakStartedAt: Date.now() } : t)));
     notify('Break started');
   }, [notify]);
+
   const endBreak = useCallback((id) => {
     setTimesheets((prev) => prev.map((t) => (t.id === id && t.status === 'On Break'
       ? { ...t, status: 'Checked-in', breakMins: t.breakMins + Math.max(1, Math.round((Date.now() - t.breakStartedAt) / 60000)), breakStartedAt: null } : t)));
     notify('Break ended');
   }, [notify]);
+
   const checkOut = useCallback((id, notes = '') => {
     setTimesheets((prev) => prev.map((t) => {
       if (t.id !== id || t.status === 'Checked-out') return t;
@@ -272,15 +276,15 @@ export function DemoProvider({ children }) {
     }));
     notify('Checked out');
   }, [notify]);
+
   const addTimesheet = useCallback((entry) => {
     const pay = calcPay(entry) || ZERO_PAY;
     setTimesheets((prev) => [{ id: `T${Date.now()}`, worker: shortName(ROLES[roleId].name), breakStartedAt: null, status: 'Checked-out', ...entry, ...pay }, ...prev]);
     notify('Shift added');
   }, [roleId, notify]);
 
-  // ---- Issues: the department manager is assigned automatically, like the Creator "Assign Manager" workflow ----
   const addIssue = useCallback((i) => {
-    const setup = settings.issueRouting[i.department] || { manager: '', also: [] }; // routing is edited in Admin
+    const setup = settings.issueRouting[i.department] || { manager: '', also: [] };
     const rec = {
       location: '', site: '', direction: '', taskId: '', review: '', completionNotes: '', dateCompleted: '', dueDate: '', history: [], ...i,
       id: '', status: 'To Be discussed', reportedBy: ROLES[roleId].name, date: toKey(today()), assignedTo: setup.manager, notify: setup.also,
@@ -293,7 +297,6 @@ export function DemoProvider({ children }) {
     notify(`Issue reported. ${setup.manager || 'No manager set'} notified${setup.also.length ? `, ${setup.also.join(' and ')} informed` : ''}.`);
   }, [roleId, settings.issueRouting, logNotify, notify]);
 
-  // ISS-4: create a CRM deal from an issue. Demo: only a deal number is recorded. The real call to Zoho CRM runs on the server later.
   const createCrmDeal = useCallback((id) => {
     const issue = issues.find((x) => x.id === id);
     if (!issue || issue.crmDealId) return false;
@@ -306,7 +309,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [issues, roleId, notify]);
 
-  // One management-history update. The issue's status, next step and due date follow the latest entry.
   const addIssueUpdate = useCallback((id, u) => {
     const done = u.status === 'Completed';
     setIssues((prev) => prev.map((x) => (x.id !== id ? x : {
@@ -324,7 +326,6 @@ export function DemoProvider({ children }) {
     notify(done ? `Issue ${id} completed. Completion email sent (demo).` : `Issue ${id} updated`);
   }, [roleId, issues, logNotify, notify]);
 
-  // ---- Workers: adding a worker creates the tickets and inductions they need, like the Creator "create worker ticket" workflow ----
   const addWorker = useCallback((w) => {
     const company = companies.find((c) => c.id === w.companyId);
     const isVe = company?.name === VE_NAME;
@@ -338,7 +339,6 @@ export function DemoProvider({ children }) {
     return id;
   }, [companies, workers, notify]);
 
-  // Adding a company creates the documents every new company must supply.
   const addCompany = useCallback((c) => {
     const id = `C-${Math.max(0, ...companies.map((x) => Number(x.id.slice(2)) || 0)) + 1}`;
     const need = docTypes.filter((d) => d.required);
@@ -353,7 +353,6 @@ export function DemoProvider({ children }) {
     notify('Saved');
   }, [notify]);
 
-  // Creates a design task in Not Started. The Creator version also emails the team and creates the WorkDrive folder.
   const addDesignTask = useCallback((t) => {
     if (isClosedJob(jobs.find((j) => j.id === t.jobId))) { notify(CLOSED_JOB_MSG); return false; }
     const who = ROLES[roleId].name;
@@ -361,14 +360,13 @@ export function DemoProvider({ children }) {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'design').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
         id: `D${n}`, kind: 'design', name: t.name, jobId: t.jobId, type: t.type, owner: t.owner, stage: 'Not Started', due: t.due, date: t.due,
-        quoted: t.quoted || 0, booked: 0, description: t.description || '', history: [{ at: stamp(), who, text: 'Task created' }],
+        quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0, description: t.description || '', history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
     });
     notify(`Design task created for ${t.owner}. Folder created (demo).`);
     return true;
   }, [roleId, jobs, notify]);
 
-  // Marks an equipment check as done today, which pushes the next due date out by the interval.
   const completeEquipmentCheck = useCallback((id) => {
     const who = ROLES[roleId].name;
     setEquipment((prev) => prev.map((e) => (e.id === id
@@ -376,7 +374,6 @@ export function DemoProvider({ children }) {
     notify(`${id} marked as checked`);
   }, [roleId, notify]);
 
-  // EQP-1: the tool code is assigned automatically. A new item starts with a check dated today.
   const addEquipment = useCallback((e) => {
     const who = ROLES[roleId].name;
     let code = '';
@@ -393,7 +390,6 @@ export function DemoProvider({ children }) {
     notify('Equipment updated');
   }, [roleId, notify]);
 
-  // EQP-2: the real off-hire email is sent by the server. The demo only shows the toast.
   const setEquipmentStatus = useCallback((id, status) => {
     const who = ROLES[roleId].name;
     setEquipment((prev) => prev.map((e) => (e.id === id ? { ...e, status, history: [{ at: stamp(), who, text: status === 'Off hire' ? 'Marked off hire' : 'Back in service' }, ...(e.history || [])] } : e)));
@@ -416,7 +412,6 @@ export function DemoProvider({ children }) {
     notify('Location added');
   }, [notify]);
 
-  // A renamed location is renamed on its equipment and chemicals too, so nothing is left pointing at the old name.
   const updateLocation = useCallback((id, patch) => {
     const old = locations.find((x) => x.id === id);
     setLocations((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
@@ -427,7 +422,6 @@ export function DemoProvider({ children }) {
     notify('Location updated');
   }, [locations, notify]);
 
-  // A location that still holds equipment or chemicals cannot be deleted.
   const deleteLocation = useCallback((id) => {
     const loc = locations.find((x) => x.id === id);
     if (!loc) return false;
@@ -438,8 +432,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [locations, equipment, chemicals, notify]);
 
-  // CHK-1 to CHK-8: saves one checklist step for one crew member. Returns an error message, or '' when saved.
-  // The team leader's steps drive the task's sub-stage (INS-2), and the closure step books the hours (TSK-4).
   const completeChecklistStep = useCallback((taskId, person, key, data) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return 'Task not found.';
@@ -465,7 +457,6 @@ export function DemoProvider({ children }) {
 
     if (key === 'post2') bookHours(taskId, Number(data.hours), Number(data.unbilled) || 0);
     if (key === 'post2' && task.kind === 'fab') logNotify('checklist.fabSubmitted', { task: task.name, employee: person, ref: taskId });
-    // CHK-5: an OH&S or WHS concern raises an issue for the department manager.
     if (data.ohsConcern === 'Yes') {
       addIssue({
         subject: `${task.kind === 'install' ? 'WHS' : 'OH&S'} concern: ${task.name}`, description: data.ohsDetail.trim(),
@@ -474,11 +465,9 @@ export function DemoProvider({ children }) {
       });
     }
 
-    // The team leader's steps move the sub-stage. Finished On Site also triggers EQP-2 inside setSubStage.
     const sub = role === 'TL' ? { install: { pre1: 'Team Briefed', pre2: 'On Site', post1: 'Finished On Site' }, fab: { pre1: 'Fabrication Started' } }[task.kind]?.[key] : null;
     if (!data.ohsConcern || data.ohsConcern === 'No') notify(`${title} saved`);
     if (sub) setSubStage(taskId, sub);
-    // Fab: once every crew member has closed, the task is ready to submit.
     if (task.kind === 'fab' && key === 'post2') {
       const others = crewOf(task).filter((p) => p !== person);
       if (others.every((p) => checklists.find((c) => c.taskId === taskId && c.person === p)?.steps.post2)) setSubStage(taskId, 'Fabrication Done');
@@ -486,7 +475,6 @@ export function DemoProvider({ children }) {
     return '';
   }, [tasks, swms, checklists, roleId, bookHours, addIssue, setSubStage, logNotify, notify]);
 
-  // TSK-2: hold, release, cancel, mark not used, reset assignment and close (external or print only).
   const runTaskAction = useCallback((id, actionId, comment = '') => {
     const task = tasks.find((t) => t.id === id);
     const r = task && applyAction(task, actionId);
@@ -503,7 +491,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [tasks, roleId, notify]);
 
-  // WORKFLOWS section 7: a subtask is created under the root parent, unscheduled, with zero hours.
   const createSubtask = useCallback((id) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return false;
@@ -519,8 +506,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [tasks, jobs, roleId, notify]);
 
-  // JOB-6: after any task stage change (or a new task), recalculate the job's percentages and stage.
-  // The first run only records the starting point, so the sample numbers stay as seeded until a task changes.
   const lastSig = useRef(null);
   useEffect(() => {
     const sigs = {};
@@ -537,7 +522,6 @@ export function DemoProvider({ children }) {
     }));
   }, [tasks]);
 
-  // JOB-5: close a job at 100%. The closure report email is sent once and the CRM deal is updated by the server later.
   const closeJob = useCallback((id) => {
     const job = jobs.find((j) => j.id === id);
     if (!job) return false;
@@ -550,7 +534,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [jobs, roleId, logNotify, notify]);
 
-  // TSK-5: add and remove task attachments. WorkDrive sync is a demo flag until the backend exists.
   const addAttachments = useCallback((taskId, files) => {
     const who = ROLES[roleId].name;
     const made = makeAttachments(taskId, files, who, stamp());
@@ -573,7 +556,6 @@ export function DemoProvider({ children }) {
     return true;
   }, [attachments, roleId, notify]);
 
-  // FAB-3: when a repeating workshop task becomes Completed, create the next one (old date plus the interval).
   const prevStages = useRef(null);
   useEffect(() => {
     const map = {};
@@ -598,10 +580,8 @@ export function DemoProvider({ children }) {
   }, [tasks, notify]);
 
   const updateSettings = useCallback((patch) => setSettings((prev) => ({ ...prev, ...patch })), []);
-  // The expiry window is read by lib/compliance.js on every screen, so push the setting there.
   setExpiryDays(settings.expiryDays);
 
-  // HRS-4: a worker fills in hours on a closed post-job checklist that was saved with zero hours. The hours are booked on the task.
   const fillHours = useCallback((taskId, person, hours, confirmed = false) => {
     const task = tasks.find((t) => t.id === taskId);
     const rec = checklists.find((c) => c.taskId === taskId && c.person === person);
@@ -617,8 +597,8 @@ export function DemoProvider({ children }) {
   const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
 
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, notifications, retryNotification, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, notifications, retryNotification, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, updateJob, notifications, retryNotification, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+  }), [roleId, changeRole, updateJob, notifications, retryNotification, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

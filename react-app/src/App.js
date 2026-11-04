@@ -25,11 +25,12 @@ import CalendarPage from './pages/CalendarPage';
 import RoleHome from './pages/RoleHome';
 import AdminPage from './pages/AdminPage';
 import CompliancePage from './pages/CompliancePage';
+import ChecklistsPage from './pages/ChecklistsPage';
 import { NAV } from './navConfig';
 import './App.css';
 
 // Sidebar paths that have a real screen. Anything else in NAV still shows a placeholder.
-const BUILT = ['/', '/jobs', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers', '/design', '/equipment', '/devices', '/calendar', '/compliance', '/admin'];
+const BUILT = ['/', '/jobs', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers', '/design', '/equipment', '/devices', '/calendar', '/compliance', '/admin', '/checklists'];
 
 function Home() {
   const { roleId } = useDemo();
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="devices" element={<DevicesPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="compliance" element={<CompliancePage />} />
+            <Route path="checklists" element={<ChecklistsPage />} />
             <Route path="admin" element={<AdminPage />} />
             <Route path="workers" element={<WorkersPage />} />
             <Route path="workers/:workerId" element={<WorkerDetail />} />
