@@ -32,10 +32,10 @@ Overall: (40 + 16 / 2) / 64 = **75%**. (62% at the first count, 67% after batch 
 ## Built in batch 2 (4 Nov 2026): fabrication
 
 - **FAB-1** fab types (CCV, CNC, CLB, General/Pack, Metal, Paint, Maintenance, LED, Workshop) with spec checks. ASSUMPTION: the spec fields for CCV, CNC and CLB (material, size, thickness, quantity and so on) are my guess because the spec does not list them; confirm with the client. Workshop tasks have no pre-job checklist.
-- **FAB-2** the task list can be returned grouped (): parents with their subtasks, roots by stage in a custom order, then date.
+- **FAB-2** the task list can be returned grouped (order=grouped): parents with their subtasks, roots by stage in a custom order, then date.
 - **FAB-3** repeating workshop tasks: on Complete the next task is created for previous date + interval (days, weeks x 7, months x 30), once per task.
-- **FAB-4** daily job : due equipment (in service, with a schedule, next check today or earlier) gets one Maintenance task and its next due date moves forward; finishing the task counts as the check. Needs the workshop job set (Admin settings).
-- **FAB-5** the workshop job is a setting (, ), not a hard-coded id.
+- **FAB-4** daily job maintenance-tasks: due equipment (in service, with a schedule, next check today or earlier) gets one Maintenance task and its next due date moves forward; finishing the task counts as the check. Needs the workshop job set (Admin settings).
+- **FAB-5** the workshop job is a setting (PUT /admin/settings and POST /tasks/workshop), not a hard-coded id.
 
 ## Still to build (in order)
 
