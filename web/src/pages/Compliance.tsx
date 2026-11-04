@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
+import { useCompanies, useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
@@ -9,7 +9,7 @@ import { useComplianceDashboard } from '../api/more';
 const KIND_LABEL: Record<string, string> = { ticket: 'Tickets', induction: 'Inductions', company_document: 'Company documents' };
 
 const STATUSES = ['Expired', 'Expiring', 'Valid', 'No expiry'];
-const EMPTY = { person_id: '', type_id: '', reference_no: '', expiry_date: '' };
+const EMPTY = { person_id: '', company_id: '', type_id: '', reference_no: '', expiry_date: '' };
 
 /** Tickets, inductions and documents with their expiry, soonest first. Crew see only their own. */
 export function Compliance() {
@@ -21,12 +21,15 @@ export function Compliance() {
 	const items = useComplianceItems(status || undefined);
 	const types = useComplianceTypes();
 	const people = usePeople(canAdd);
+	const companies = useCompanies();
 	const create = useCreateCompliance();
 	const { notify } = useToast();
 	const [open, setOpen] = useState(false);
+	const [forCompany, setForCompany] = useState(false); // a company document belongs to a company; tickets and inductions to a person
 	const [form, setForm] = useState(EMPTY);
 	const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 	const type = types.data?.items.find((t) => t.id === form.type_id);
+	const typeChoices = (types.data?.items ?? []).filter((t) => (t.kind === 'company_document') === forCompany);
 
 	return (
 		<>
@@ -57,7 +60,7 @@ export function Compliance() {
 						onSubmit={(e) => {
 							e.preventDefault();
 							create.mutate(
-								{ person_id: form.person_id, type_id: form.type_id, reference_no: form.reference_no || undefined, expiry_date: form.expiry_date || undefined },
+								{ ...(forCompany ? { company_id: form.company_id } : { person_id: form.person_id }), type_id: form.type_id, reference_no: form.reference_no || undefined, expiry_date: form.expiry_date || undefined },
 								{
 									onSuccess: () => {
 										setOpen(false);
@@ -68,22 +71,38 @@ export function Compliance() {
 							);
 						}}
 					>
-						<label>
-							<span className="toolbar__label">Person</span>
-							<select value={form.person_id} onChange={set('person_id')} required style={{ width: '100%' }}>
-								<option value="">Choose…</option>
-								{people.data?.items.map((p) => (
-									<option key={p.ROWID} value={p.ROWID}>
-										{`${p.first_name} ${p.last_name ?? ''}`.trim()}
-									</option>
-								))}
-							</select>
-						</label>
+						<div className="segmented" role="group" aria-label="This record is for" style={{ alignSelf: 'end' }}>
+							<button type="button" className={!forCompany ? 'on' : ''} aria-pressed={!forCompany} onClick={() => { setForCompany(false); setForm({ ...form, type_id: '' }); }}>Person</button>
+							<button type="button" className={forCompany ? 'on' : ''} aria-pressed={forCompany} onClick={() => { setForCompany(true); setForm({ ...form, type_id: '' }); }}>Company</button>
+						</div>
+						{forCompany ? (
+							<label>
+								<span className="toolbar__label">Company</span>
+								<select value={form.company_id} onChange={set('company_id')} required style={{ width: '100%' }}>
+									<option value="">Choose…</option>
+									{companies.data?.items.map((c) => (
+										<option key={c.id} value={c.id}>{c.name}</option>
+									))}
+								</select>
+							</label>
+						) : (
+							<label>
+								<span className="toolbar__label">Person</span>
+								<select value={form.person_id} onChange={set('person_id')} required style={{ width: '100%' }}>
+									<option value="">Choose…</option>
+									{people.data?.items.map((p) => (
+										<option key={p.ROWID} value={p.ROWID}>
+											{`${p.first_name} ${p.last_name ?? ''}`.trim()}
+										</option>
+									))}
+								</select>
+							</label>
+						)}
 						<label>
 							<span className="toolbar__label">Type</span>
 							<select value={form.type_id} onChange={set('type_id')} required style={{ width: '100%' }}>
 								<option value="">Choose…</option>
-								{types.data?.items.map((t) => (
+								{typeChoices.map((t) => (
 									<option key={t.id} value={t.id}>
 										{t.name}
 									</option>
@@ -129,7 +148,7 @@ export function Compliance() {
 							<caption className="sr-only">Compliance records</caption>
 							<thead>
 								<tr>
-									<th scope="col">Person</th>
+									<th scope="col">Person or company</th>
 									<th scope="col">Type</th>
 									<th scope="col">Reference</th>
 									<th scope="col">Expires</th>
@@ -139,8 +158,8 @@ export function Compliance() {
 							<tbody>
 								{items.data.items.map((i) => (
 									<tr key={i.id}>
-										<td data-label="Person" className="cell-primary">
-											<strong>{i.personName ?? '-'}</strong>
+										<td data-label="Person or company" className="cell-primary">
+											<strong>{i.personName ?? i.companyName ?? '-'}</strong>
 										</td>
 										<td data-label="Type">{i.typeName ?? i.kind}</td>
 										<td data-label="Reference">{i.referenceNo || '-'}</td>

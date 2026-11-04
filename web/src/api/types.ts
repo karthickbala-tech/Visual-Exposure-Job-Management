@@ -160,6 +160,8 @@ export interface ComplianceType {
 export interface ComplianceItem {
 	id: string;
 	kind: string;
+	companyId?: string | null;
+	companyName?: string | null;
 	typeName: string | null;
 	personId: string | null;
 	personName: string | null;

@@ -423,3 +423,13 @@ body { overscroll-behavior-y: auto; }
 .next-card--done span { color: var(--muted); font-size: 13px; }
 .next-btn { min-height: 56px; font-size: 14px; width: 100%; }
 @media (min-width: 761px) { .next-btn { width: auto; justify-self: start; } }
+
+/* ---------- Issue board by department ---------- */
+.dept-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.dept-tile { display: grid; gap: 4px; padding: 10px 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line-3); border-radius: 2px; }
+.dept-tile:hover { background: var(--surface-hover); }
+.dept-tile.on { border-color: var(--brand); border-top-color: var(--brand); background: var(--brand-soft); }
+.dept-tile .kpi-value { font-size: 24px; }
+.dept-tile .dept-open { color: var(--danger); }
+.dept-tile:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: 2px; }
+@media (max-width: 760px) { .dept-board { padding-left: 16px; padding-right: 16px; } }

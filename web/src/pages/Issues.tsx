@@ -1,7 +1,8 @@
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileDown, Plus } from 'lucide-react';
-import { pdfUrl, useIssueHistory } from '../api/more';
+import { pdfUrl, useCrmDeal, useIssueBoard, useIssueHistory } from '../api/more';
+import { useMe } from '../api/queries';
 
 function History({ id }: { id: string }) {
 	const q = useIssueHistory(id, true);
@@ -32,6 +33,11 @@ export function Issues() {
 	const { notify } = useToast();
 	const [open, setOpen] = useState(false);
 	const [dept, setDept] = useState('');
+	const me = useMe();
+	const isManager = !!me.data?.permissions.editJob; // the server decides for real
+	const board = useIssueBoard(isManager);
+	const deal = useCrmDeal();
+	const DEAL_DEPARTMENTS = ['Management', 'Civic Billboards']; // ISS-4
 	const [showHistory, setShowHistory] = useState<string | null>(null);
 	const [subject, setSubject] = useState('');
 	const [priority, setPriority] = useState('Normal');
@@ -86,6 +92,21 @@ export function Issues() {
 					</form>
 				)}
 
+				{isManager && board.isSuccess && (
+					<div className="dept-board" role="group" aria-label="Open issues by department">
+						{board.data.departments.map((d) => {
+							const c = board.data.counts[d];
+							return (
+								<button key={d} type="button" className={'dept-tile' + (dept === d ? ' on' : '')} aria-pressed={dept === d} onClick={() => setDept(dept === d ? '' : d)}>
+									<span className="kpi-label">{d}</span>
+									<span className={'kpi-value num' + (c?.openTotal ? ' dept-open' : '')}>{c?.openTotal ?? 0}</span>
+									<small>{c ? `${c.Open} open, ${c['In Progress']} in progress` : 'none'}</small>
+								</button>
+							);
+						})}
+					</div>
+				)}
+
 				<div className="inline-form">
 					<label style={{ flex: '0 1 200px' }}>
 						<span className="toolbar__label">Department</span>
@@ -137,6 +158,15 @@ export function Issues() {
 										</td>
 										<td data-label="Actions">
 											<div className="actions">
+												{isManager && DEAL_DEPARTMENTS.includes(i.department ?? '') && (
+													<button
+														className="btn btn-ghost btn-sm"
+														disabled={deal.isPending}
+														onClick={() => deal.mutate(i.ROWID, { onSuccess: (r) => notify(r.created ? 'CRM deal created' : 'A CRM deal already exists for this issue'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not create the deal', 'error') })}
+													>
+														CRM deal
+													</button>
+												)}
 												<button className="btn btn-ghost btn-sm" aria-expanded={showHistory === i.ROWID} onClick={() => setShowHistory(showHistory === i.ROWID ? null : i.ROWID)}>History</button>
 												<a className="btn btn-ghost btn-sm" href={pdfUrl(`/issues/${i.ROWID}/pdf?layout=full`)} target="_blank" rel="noreferrer" aria-label={`PDF of ${i.subject}`}><FileDown size={14} aria-hidden="true" /> PDF</a>
 												{(i.nextStatuses ?? []).map((s) => (

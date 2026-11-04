@@ -125,7 +125,10 @@ export const useCreateWorkshopTask = () => {
 };
 
 export interface IssueChange { field: string; from: string; to: string }
-export const useIssueHistory = (id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
+export interface DeptCounts { Open: number; 'In Progress': number; Resolved: number; Closed: number; openTotal: number }
+export const useIssueBoard = (enabled: boolean) => useGet<{ departments: string[]; counts: Record<string, DeptCounts>; truncated: boolean }>(['issue-board'], '/issues/board', enabled, 30_000);
+export const useCrmDeal = () => useMutation({ mutationFn: (id: string) => api<{ created: boolean; dealId: string }>(`/issues/${id}/crm-deal`, send('POST')) });
+export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
 
 // ---- people ----
 export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number }
