@@ -4,6 +4,7 @@
 	"private": true,
 	"main": "index.js",
 	"dependencies": {
+		"nodemailer": "^6.10.1",
 		"zcatalyst-sdk-node": "^3.4.0",
 		"zod": "^3.23.8"
 	}
