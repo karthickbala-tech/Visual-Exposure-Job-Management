@@ -157,12 +157,6 @@
       "skillPath": "skills/catalyst-zoho-mcp/SKILL.md",
       "computedHash": "e5d9541e4b8e4c86bab7e7bb179a017de0fda17c81d19ddb0c94bad15954075f"
     },
-    "design-taste-frontend": {
-      "source": "Leonxlnx/taste-skill",
-      "sourceType": "github",
-      "skillPath": "skills/taste-skill/SKILL.md",
-      "computedHash": "53590ee9325bee34d7888bf0d81bd3941a108b1e7850df46802d93104e3f2b90"
-    },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
