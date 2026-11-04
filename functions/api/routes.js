@@ -71,6 +71,8 @@ router.add('GET', '/jobs', withCtx(async (ctx, { url }) => ok(await jobs.listJob
 router.add('POST', '/jobs', withCtx(async (ctx, { req }) => created(await jobs.createJob(ctx, await readJson(req)))));
 router.add('GET', '/jobs/:id', withCtx(async (ctx, { params }) => ok(await jobs.getJob(ctx, params.id))));
 router.add('PATCH', '/jobs/:id', withCtx(async (ctx, { req, params }) => ok(await jobs.updateJob(ctx, params.id, await readJson(req)))));
+router.add('POST', '/jobs/:id/close', withCtx(async (ctx, { params }) => ok(await jobs.closeJob(ctx, params.id))));
+router.add('POST', '/tasks/:id/subtasks', withCtx(async (ctx, { params }) => created(await tasks.createSubtask(ctx, params.id))));
 router.add('POST', '/jobs/:id/tasks', withCtx(async (ctx, { req, params }) => created(await tasks.createTask(ctx, params.id, await readJson(req)))));
 
 // Tasks
