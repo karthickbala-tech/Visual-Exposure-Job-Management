@@ -100,5 +100,29 @@ export const useCloseJob = (jobId: string) => {
 		},
 	});
 };
+// ---- task management (managers) ----
+const useTaskWrite = <V,>(taskId: string, fn: (v: V) => Promise<unknown>) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: fn,
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['task', taskId] });
+			qc.invalidateQueries({ queryKey: ['job'] });
+		},
+	});
+};
+export const useUpdateTask = (taskId: string) => useTaskWrite(taskId, (v: Record<string, unknown>) => api(`/tasks/${taskId}`, send('PATCH', v)));
+export const useAssign = (taskId: string) => useTaskWrite(taskId, (v: { person_id: string; role: string }) => api(`/tasks/${taskId}/assignees`, send('POST', v)));
+export const useUnassign = (taskId: string) => useTaskWrite(taskId, (personId: string) => api(`/tasks/${taskId}/assignees/${personId}`, send('DELETE')));
+export const useAddSubtask = (taskId: string) => useTaskWrite(taskId, (v: { name: string }) => api(`/tasks/${taskId}/subtasks`, send('POST', v)));
+export const useRate = (taskId: string) => useTaskWrite(taskId, (v: { person_id: string; rating: number; comment?: string }) => api(`/tasks/${taskId}/ratings`, send('POST', v)));
+export const useCreateWorkshopTask = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { name: string; scheduled_date?: string; required_finish?: string; repeat?: { every: number; unit: string } | null }) => api<{ task: { ROWID: string } }>('/tasks/workshop', send('POST', v)),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['board'] }),
+	});
+};
+
 export interface IssueChange { field: string; from: string; to: string }
 export const useIssueHistory = (id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);

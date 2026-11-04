@@ -8,6 +8,9 @@ import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
+import { HoursPanel, ManagePanel, RatingPanel } from './TaskManage';
+
+const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 
 const PHASE_LABEL = { pre: 'Pre-job checklist', post: 'Post-job checklist' } as const;
 const TYPE_LABEL: Record<string, string> = { design: 'Design task', fabrication: 'Fabrication task', install: 'Install task' };
@@ -84,6 +87,10 @@ export function TaskDetail() {
 				</Card>
 			)}
 
+			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
+				<ManagePanel taskId={task.ROWID} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} isFab={task.task_type === 'fabrication'} />
+			)}
+
 			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
 
 			<Card title="Checklists">
@@ -124,6 +131,11 @@ export function TaskDetail() {
 					</ul>
 				)}
 			</Card>
+
+			{(iAmAssigned || me.data?.permissions.assignPeople) && task.task_type !== 'design' && !DONE.includes(task.stage) && (
+				<HoursPanel taskId={task.ROWID} assignees={assignees} isManager={!!me.data?.permissions.assignPeople} />
+			)}
+			{me.data?.permissions.assignPeople && ['Completed', 'Approved & Completed'].includes(task.stage) && <RatingPanel taskId={task.ROWID} assignees={assignees} />}
 
 			<FilesPanel entityType="task" entityId={task.ROWID} canUpload={iAmAssigned} />
 		</>
