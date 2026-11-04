@@ -370,25 +370,28 @@ body { overscroll-behavior-y: auto; }
 .user-menu button:focus-visible, .user-trigger:focus-visible { outline: 2px solid #9bd47f; outline-offset: -2px; }
 
 /* ---------- Collapsible sidebar (desktop): full menu, or a slim rail with the eye emblem ---------- */
-.logo-emblem { display: none; width: 36px; height: 36px; }
-.side-collapse { display: flex; align-items: center; gap: 12px; min-height: 40px; margin: 0 8px 4px; padding: 0 12px; border: 0; border-radius: 2px; background: transparent; color: #b6b8ba; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.side-collapse:hover { background: var(--side-hover); color: #fff; }
-.side-collapse:focus-visible { outline: 2px solid #9bd47f; outline-offset: -2px; }
+.logo-emblem { display: none; width: 40px; height: 40px; padding: 2px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.logo-emblem img { display: block; width: 36px; height: 36px; transition: transform 0.15s ease-out; }
+.logo-emblem:hover img { transform: scale(1.08); }
+.logo-emblem:focus-visible { outline: 2px solid #9bd47f; outline-offset: 2px; }
+.side-fold { color: #b6b8ba; }
+.side-fold:hover { background: var(--side-hover); color: #fff; }
+.side-fold:focus-visible { outline: 2px solid #9bd47f; outline-offset: -2px; }
 .shell { transition: grid-template-columns 0.2s cubic-bezier(0.23, 1, 0.32, 1); }
 @media (min-width: 901px) {
 	.shell--collapsed { grid-template-columns: 72px minmax(0, 1fr); }
 	.sidebar.collapsed .logo-img { display: none; }
 	.sidebar.collapsed .logo-emblem { display: block; }
+	.sidebar.collapsed .side-fold { display: none; }
 	.sidebar.collapsed .side-top { justify-content: center; padding: 16px 0; }
 	.sidebar.collapsed .side-nav { padding: 12px 8px; }
 	.sidebar.collapsed .side-link { justify-content: center; gap: 0; padding: 0; border-left-width: 0; position: relative; }
 	.sidebar.collapsed .side-link.active { box-shadow: inset 3px 0 0 var(--brand); }
 	/* In the rail the words are kept for screen readers and shown by the native tooltip (title), so the scrolling menu never clips them. */
 	.sidebar.collapsed .side-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-	.sidebar.collapsed .side-collapse { justify-content: center; gap: 0; padding: 0; position: relative; }
 	.sidebar.collapsed .side-user { padding: 8px 0; }
 	.sidebar.collapsed .user-trigger { justify-content: center; padding: 6px 0; }
 	.sidebar.collapsed .user-trigger .who, .sidebar.collapsed .user-trigger .chev { display: none; }
 	.sidebar.collapsed .user-menu { left: calc(100% + 8px); right: auto; bottom: 8px; width: 200px; }
 }
-@media (max-width: 900px) { .side-collapse { display: none; } }
+@media (max-width: 900px) { .side-fold, .logo-emblem { display: none !important; } }

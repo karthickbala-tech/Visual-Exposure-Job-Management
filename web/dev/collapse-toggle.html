@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidebar collapse control options</title>
+<style>
+	:root { --side: #42484d; --side-hover: #4c5257; --brand: #68b04d; --ink: #1b1b1e; }
+	* { box-sizing: border-box; }
+	body { margin: 0; padding: 24px; font-family: Raleway, system-ui, sans-serif; background: #eceee9; color: var(--ink); }
+	h1 { margin: 0 0 4px; font-size: 22px; text-transform: uppercase; }
+	p.note { margin: 0 0 20px; color: #5f6368; font-size: 13px; max-width: 78ch; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 28px; }
+	figcaption { margin-top: 10px; font-size: 13px; line-height: 1.45; }
+	figcaption b { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
+	figure { margin: 0; }
+	.app { --w: 190px; display: grid; grid-template-columns: var(--w) 1fr; height: 330px; grid-template-rows: 100%; border: 1px solid #c9ccd1; background: #f6f7f5; overflow: visible; position: relative; transition: grid-template-columns .2s cubic-bezier(.23,1,.32,1); }
+	.app.c { --w: 60px; }
+	.side { position: relative; min-height: 0; background: var(--side); color: #fff; display: flex; flex-direction: column; min-width: 0; }
+	.top { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,.1); height: 56px; }
+	.brand { font-weight: 700; letter-spacing: .08em; font-size: 12px; white-space: nowrap; overflow: hidden; }
+	.emb { display: none; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c8f08a, #3c9a1a 60%, #1c6a0a); position: relative; flex: none; }
+	.emb::after { content: ''; position: absolute; inset: 8px 4px; border-radius: 50%; background: #fff; opacity: .95; }
+	.c .brand { display: none; } .c .emb { display: block; }
+	.c .top { justify-content: center; padding: 12px 0; }
+	nav { flex: 1; min-height: 0; padding: 8px 6px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+	nav a { text-decoration: none; display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-left: 3px solid transparent; color: #d3d4d5; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+	nav a i { flex: none; width: 15px; height: 15px; border: 2px solid currentColor; border-radius: 3px; }
+	nav a.on { background: #4c5257; color: #fff; border-left-color: var(--brand); }
+	.c nav a { justify-content: center; padding: 0; gap: 0; border-left-width: 0; }
+	.c nav a span { display: none; }
+	.c nav a.on { box-shadow: inset 3px 0 0 var(--brand); }
+	.user { padding: 10px; border-top: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+	.av { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #f6f7f5; display: grid; place-items: center; font-size: 11px; }
+	.c .user { justify-content: center; padding: 10px 0; } .c .user span.nm { display: none; }
+	.main { display: flex; flex-direction: column; min-width: 0; }
+	.bar { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: #fff; border-bottom: 1px solid #e1e2df; }
+	.search { flex: 1; max-width: 220px; height: 28px; border: 1px solid #e1e2df; border-radius: 2px; padding: 0 8px; font-size: 11px; color: #8d8d8f; display: flex; align-items: center; }
+	.body { padding: 14px; font-size: 12px; color: #5f6368; }
+	.body h2 { margin: 0 0 8px; font-size: 16px; text-transform: uppercase; color: var(--ink); }
+	button { font: inherit; cursor: pointer; }
+	svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+	:focus-visible { outline: 2px solid #3f7a2b; outline-offset: 2px; }
+
+	/* A: round handle on the edge */
+	.A .handle { position: absolute; top: 66px; right: -12px; z-index: 5; width: 24px; height: 24px; border-radius: 50%; border: 1px solid #c9ccd1; background: #fff; color: #42484d; display: grid; place-items: center; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,.15); opacity: 0; transition: opacity .15s, background-color .12s; }
+	.A:hover .handle, .A .handle:focus-visible { opacity: 1; }
+	.A .handle:hover { background: var(--brand); color: #f6f7f5; border-color: var(--brand); }
+	.A .handle svg { width: 13px; transition: transform .2s; } .A.c .handle svg { transform: rotate(180deg); }
+	/* B: icon button in the top bar */
+	.B .tb { width: 32px; height: 32px; border: 0; border-radius: 2px; background: transparent; color: #42484d; display: grid; place-items: center; }
+	.B .tb:hover { background: #eceee9; }
+	/* C: icon button beside the logo */
+	.C .tg { width: 28px; height: 28px; border: 0; border-radius: 2px; background: transparent; color: #b6b8ba; display: grid; place-items: center; flex: none; }
+	.C .tg:hover { background: var(--side-hover); color: #fff; }
+	.C.c .top { flex-direction: column; gap: 8px; height: auto; padding: 10px 0; }
+	/* D: whole edge is a slim click strip */
+	.D .strip { position: absolute; top: 0; bottom: 0; right: -6px; width: 12px; z-index: 5; border: 0; padding: 0; background: transparent; cursor: col-resize; }
+	.D .strip::after { content: ''; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: transparent; transition: background-color .15s; }
+	.D .strip:hover::after, .D .strip:focus-visible::after { background: var(--brand); }
+	.D .strip .tip { position: absolute; top: 70px; left: 14px; padding: 4px 8px; background: #111; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; border-radius: 2px; opacity: 0; pointer-events: none; transition: opacity .12s; }
+	.D .strip:hover .tip, .D .strip:focus-visible .tip { opacity: 1; }
+	.kbd { display: inline-block; padding: 0 5px; border: 1px solid #c9ccd1; border-radius: 3px; font-size: 11px; font-weight: 700; background: #fff; }
+	@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<h1>Sidebar collapse control: options</h1>
+<p class="note">Each mock-up is a small working app. Click the control, press <span class="kbd">[</span> on your keyboard while one is focused, and tab to it to see the focus ring. In A and D the control appears when you hover the sidebar's edge.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+	<symbol id="panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+	<symbol id="ll" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
+</svg>
+
+<div class="grid" id="g"></div>
+
+<script>
+	const nav = ['Dashboard', 'Jobs', 'Calendar', 'Hours', 'Issues', 'People'].map((t, i) => `<a href="#" class="${i === 1 ? 'on' : ''}"><i></i><span>${t}</span></a>`).join('');
+	const shell = (cls, topExtra, edge, barExtra, label) => `
+	<figure><div class="app ${cls}" data-app>
+		<aside class="side"><div class="top"><span class="brand">VISUAL EXPOSURE</span><span class="emb"></span>${topExtra}</div><nav>${nav}</nav><div class="user"><span class="av">KB</span><span class="nm">Karthick Bala</span></div>${edge}</aside>
+		<div class="main"><div class="bar">${barExtra}<div class="search">Search jobs…</div></div><div class="body"><h2>Jobs</h2>Page content sits here.</div></div>
+	</div><figcaption>${label}</figcaption></figure>`;
+	const toggleBtn = (cls, icon, tip) => `<button class="${cls}" data-toggle aria-label="${tip}" title="${tip}"><svg><use href="#${icon}"/></svg></button>`;
+	document.getElementById('g').innerHTML =
+		shell('A', '', toggleBtn('handle', 'l', 'Collapse or expand the menu'), '', '<b>A. Edge handle</b>A small round button on the sidebar edge, shown when you hover the sidebar. Flips direction when collapsed. Common in modern dashboards; keeps the menu itself clean.') +
+		shell('B', '', '', toggleBtn('tb', 'panel', 'Collapse or expand the menu'), '<b>B. Top-bar icon</b>A "panel" icon at the left of the top bar, always visible, beside search. Easy to find and works the same on phones (where it opens the drawer).') +
+		shell('C', toggleBtn('tg', 'll', 'Collapse or expand the menu'), '', '', '<b>C. Icon beside the logo</b>A small double-arrow icon in the logo row. Stays inside the sidebar, always visible. In the rail it sits under the emblem.') +
+		shell('D', '', '<button class="strip" data-toggle aria-label="Collapse or expand the menu"><span class="tip">Click to collapse or expand</span></button>', '', '<b>D. Whole-edge strip</b>No button at all: the sidebar edge lights up green on hover and the entire edge is clickable. Cleanest look, but least obvious to a first-time user.');
+	document.querySelectorAll('[data-app]').forEach((app) => {
+		const flip = () => app.classList.toggle('c');
+		app.querySelectorAll('[data-toggle]').forEach((b) => b.addEventListener('click', flip));
+		app.addEventListener('keydown', (e) => { if (e.key === '[') flip(); });
+	});
+</script>
+</body>
+</html>

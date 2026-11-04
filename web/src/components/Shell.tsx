@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, ChevronsLeft, ChevronsRight, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, ChevronsLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
 import emblem from '../assets/emblem.png';
@@ -162,7 +162,12 @@ export function Shell() {
 			<aside className={'sidebar' + (navOpen ? ' open' : '') + (collapsed ? ' collapsed' : '')} aria-label="Main navigation">
 				<div className="side-top">
 					<img className="logo-img" src={logo} alt="Visual Exposure" />
-					<img className="logo-emblem" src={emblem} alt="Visual Exposure" width={36} height={36} />
+					<button type="button" className="logo-emblem" aria-label="Expand the menu" title="Expand the menu" onClick={toggleCollapsed}>
+						<img src={emblem} alt="" width={36} height={36} />
+					</button>
+					<button type="button" className="icon-btn side-fold" aria-label="Collapse the menu" title="Collapse the menu" onClick={toggleCollapsed}>
+						<ChevronsLeft size={18} aria-hidden="true" />
+					</button>
 					<button type="button" className="icon-btn side-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>
 						<X size={18} />
 					</button>
@@ -175,10 +180,6 @@ export function Shell() {
 						</NavLink>
 					))}
 				</nav>
-				<button type="button" className="side-collapse" aria-pressed={collapsed} aria-label={collapsed ? 'Expand the menu' : 'Collapse the menu'} title={collapsed ? 'Expand the menu' : 'Collapse the menu'} onClick={toggleCollapsed}>
-					{collapsed ? <ChevronsRight size={18} aria-hidden="true" /> : <ChevronsLeft size={18} aria-hidden="true" />}
-					<span className="side-label">Collapse</span>
-				</button>
 				<UserMenu name={name} role={roles[0] ? roleLabel(roles[0]) : ''} collapsed={collapsed} />
 			</aside>
 			{navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
