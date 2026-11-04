@@ -13,13 +13,13 @@ Counted on 4 Nov 2026, then updated after each batch. **Done** = built, tested a
 | Design (DES-1 to 3) | 3 | 0 | 0 |
 | Checklists (CHK-1 to 8) | 6 | 2 | 0 |
 | SWMS (SW-1 to 4) | 3 | 0 | 1 |
-| Issues (ISS-1 to 6) | 1 | 3 | 2 |
+| Issues (ISS-1 to 6) | 5 | 0 | 1 |
 | Hours and ratings (HRS-1 to 5) | 5 | 0 | 0 |
 | Compliance (CMP-1 to 5) | 3 | 2 | 0 |
 | Equipment and devices (EQP-1 to 5) | 4 | 1 | 0 |
-| **Total** | **45** | **15** | **4** |
+| **Total** | **49** | **12** | **3** |
 
-Overall: (45 + 15 / 2) / 64 = **82%**. (62% at the first count, 67% after batch 1, 75% after batch 2.)
+Overall: (49 + 12 / 2) / 64 = **86%**. (62% at the first count, then 67%, 75% and 82% after batches 1 to 3.)
 
 ## Built in batch 1 (4 Nov 2026)
 
@@ -46,13 +46,21 @@ Overall: (45 + 15 / 2) / 64 = **82%**. (62% at the first count, 67% after batch 
 - **DES-2** a design task cannot be completed until hours are booked on it. Design tasks have no checklists, so hours are booked by hand with `POST /tasks/{id}/hours` (own hours, or a manager for anyone on the task). Hand-booked hours are plain hours: no start and end times, so no overtime split.
 - A new "hours" area in the permission matrix: managers view all, crew view their own.
 
+## Built in batch 4 (4 Nov 2026): issues
+
+- **ISS-2** every real change is saved as one history entry with each old and new value (`GET /issues/{id}/history`); an update that changes nothing is ignored. A change sends ONE email listing the old and new values to the department people, the reporter, and whoever it is assigned to or owned by, except the person who made the change.
+- **ISS-3** boards: filter by department and by All Open, My Open (assigned to me or owned by me) and My Reported (`GET /issues?department=&view=open|mine|reported`); `GET /issues/board` gives the counts per department and status. Departments: Management, Design, Fabrication, Install, Civic Billboards (an issue can be sent to one by hand).
+- **ISS-1 completed** who is told about each department comes from a setting (`issue_routing`: a manager and an inform-also list per department); a department with no entry goes to every project manager.
+- **ISS-4** create a CRM deal from an issue, once (`POST /issues/{id}/crm-deal`): Deal_Name "Issue: <subject>", stage Qualification, closing date 30 days out, description with the issue text. ASSUMPTION: these deal defaults; the spec does not name the fields.
+- **ISS-6** hidden fields: crew roles and viewers do not see the CRM deal, owner, assignee or source; viewers also do not see who reported it; managers and admin see everything. ASSUMPTION: the spec says about 18 fields are hidden per role but does not list them, so this is my choice.
+- **ISS-5** (seven print layouts as PDF and email) is not built: it comes with the PDF batch.
+
 ## Still to build (in order)
 
-1. **Issues (ISS-2 to 6):** department filter, update emails with old and new values, create a CRM deal from an issue, per-role hidden fields.
-2. **Settings and notifications:** admin settings, editable email templates, a notification log.
-3. **Reports:** the parameterised report endpoints (about 12).
-4. **SWMS PDF (SW-4)** through Catalyst SmartBrowz (availability in the India data center to be verified).
-5. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **Settings and notifications:** admin settings, editable email templates, a notification log.
+2. **Reports:** the parameterised report endpoints (about 12).
+3. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
+4. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 

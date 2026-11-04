@@ -233,9 +233,17 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		issues: {
 			findById: async (id) => clone(db.issues.find((i) => String(i.ROWID) === String(id))),
-			list: async ({ status, taskId, reportedBy } = {}) =>
+			list: async ({ status, statuses, department, involvedId, taskId, reportedBy } = {}) =>
 				db.issues
-					.filter((i) => (!status || i.issue_status === status) && (!taskId || String(i.task_id) === String(taskId)) && (!reportedBy || String(i.reported_by_id) === String(reportedBy)))
+					.filter(
+						(i) =>
+							(!status || i.issue_status === status) &&
+							(!statuses || !statuses.length || statuses.includes(i.issue_status)) &&
+							(!department || i.department === department) &&
+							(!involvedId || String(i.assigned_to_id) === String(involvedId) || String(i.owner_id) === String(involvedId)) &&
+							(!taskId || String(i.task_id) === String(taskId)) &&
+							(!reportedBy || String(i.reported_by_id) === String(reportedBy))
+					)
 					.map(clone),
 			countByStatus: async () => db.issues.reduce((m, i) => ({ ...m, [i.issue_status]: (m[i.issue_status] || 0) + 1 }), {}),
 			findOpenBySubject: async (taskId, subject) =>

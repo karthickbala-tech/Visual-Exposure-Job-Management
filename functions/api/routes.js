@@ -106,6 +106,9 @@ router.add('POST', '/checklists/:id/complete', withCtx(async (ctx, { req, params
 // Issues
 router.add('GET', '/issues', withCtx(async (ctx, { url }) => ok(await issues.listIssues(ctx, parseQuery(url)))));
 router.add('POST', '/issues', withCtx(async (ctx, { req }) => created(await issues.createIssue(ctx, await readJson(req)))));
+router.add('GET', '/issues/board', withCtx(async (ctx) => ok(await issues.issueBoard(ctx))));
+router.add('GET', '/issues/:id/history', withCtx(async (ctx, { params }) => ok(await issues.issueHistory(ctx, params.id))));
+router.add('POST', '/issues/:id/crm-deal', withCtx(async (ctx, { params }) => ok(await issues.createDealFromIssue({ ...ctx, zoho: zoho() }, params.id))));
 router.add('GET', '/issues/:id', withCtx(async (ctx, { params }) => ok(await issues.getIssue(ctx, params.id))));
 router.add('PATCH', '/issues/:id', withCtx(async (ctx, { req, params }) => ok(await issues.updateIssue(ctx, params.id, await readJson(req)))));
 
