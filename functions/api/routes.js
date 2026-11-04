@@ -113,6 +113,7 @@ router.add('POST', '/tasks/:id/assignees', withCtx(async (ctx, { req, params }) 
 router.add('DELETE', '/tasks/:id/assignees/:personId', withCtx(async (ctx, { params }) => ok(await tasks.removeAssignee(ctx, params.id, params.personId))));
 
 // Checklists
+router.add('GET', '/tasks/:id/checklist/next', withCtx(async (ctx, { params }) => ok(await checklists.nextStep(ctx, params.id))));
 router.add('GET', '/tasks/:id/checklists', withCtx(async (ctx, { params }) => ok(await checklists.listForTask(ctx, params.id))));
 router.add('POST', '/tasks/:id/checklists', withCtx(async (ctx, { req, params }) => created(await checklists.startChecklist(ctx, params.id, await readJson(req)))));
 router.add('GET', '/checklists/:id', withCtx(async (ctx, { params }) => ok(await checklists.getChecklist(ctx, params.id))));
@@ -140,6 +141,7 @@ router.add('GET', '/issues/:id/pdf', withCtx(async (ctx, { params, url }) => ok(
 router.add('GET', '/files', withCtx(async (ctx, { url }) => ok(await files.listFiles(ctx, parseQuery(url)))));
 router.add('POST', '/files/upload-url', withCtx(async (ctx, { req }) => created(await files.requestUpload(ctx, await readJson(req)))));
 router.add('POST', '/files/:id/confirm', withCtx(async (ctx, { params }) => ok(await files.confirmUpload(ctx, params.id))));
+router.add('DELETE', '/files/:id', withCtx(async (ctx, { params }) => ok(await files.deleteFile(ctx, params.id))));
 router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => ok(await files.downloadUrl(ctx, params.id))));
 
 // People and compliance

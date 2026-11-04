@@ -175,6 +175,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			findById: async (id) => clone(db.checklists.find((c) => String(c.ROWID) === String(id))),
 			findMine: async ({ taskId, personId, phase }) =>
 				clone(db.checklists.find((c) => String(c.task_id) === String(taskId) && String(c.assignee_id) === String(personId) && c.phase === phase)),
+			remove: async (ids) => { db.checklists = db.checklists.filter((c) => !ids.map(String).includes(String(c.ROWID))); },
 			listByTask: async (taskId) => db.checklists.filter((c) => String(c.task_id) === String(taskId)).map(clone),
 			list: async ({ status, phase, personId } = {}) =>
 				db.checklists.filter((c) => (!status || c.checklist_status === status) && (!phase || c.phase === phase) && (!personId || String(c.assignee_id) === String(personId))).map(clone),
@@ -235,8 +236,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			update: async (row) => patch(db.settings, row),
 		},
 		files: {
-			findById: async (id) => clone(db.files.find((f) => String(f.ROWID) === String(id))),
-			listForEntity: async (type, id) => db.files.filter((f) => f.entity_type === type && String(f.entity_id) === String(id)).map(clone),
+			findById: async (id) => clone(db.files.find((f) => String(f.ROWID) === String(id) && f.is_deleted !== 'true')),
+			listForEntity: async (type, id) => db.files.filter((f) => f.entity_type === type && String(f.entity_id) === String(id) && f.is_deleted !== 'true').map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.files.push(r);
