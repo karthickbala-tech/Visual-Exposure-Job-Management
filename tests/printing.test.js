@@ -61,3 +61,15 @@ test('swmsPdf and issuePdf return a PDF made through SmartBrowz; bad layout is 4
 	await rejects(printing.swmsPdf(w.ctx, swmsId), 502);
 	await rejects(printing.swmsPdf(w.as(['viewer']), swmsId), 403);
 });
+
+test('the PDF can come back as a stream, as the real SDK does, and is read into one file', async () => {
+	const { Readable } = require('node:stream');
+	const w = makeWorld();
+	w.ctx.actor.app = { smartbrowz: () => ({ convertToPdf: async () => Readable.from([Buffer.from('%PDF-1'), Buffer.from('.4 body')]) }) };
+	const job = (await jobs.createJob(w.ctx, { name: 'Pylon' })).job;
+	await tasks.createTask(w.ctx, String(job.ROWID), { task_type: 'install', name: 'Fit', kind: 'VE Install' });
+	const out = await printing.swmsPdf(w.ctx, String(w.db.swms[0].ROWID));
+	assert.equal(out.raw.buffer.toString(), '%PDF-1.4 body');
+	w.ctx.actor.app = { smartbrowz: () => ({ convertToPdf: async () => 42 }) };
+	await rejects(printing.swmsPdf(w.ctx, String(w.db.swms[0].ROWID)), 502);
+});
