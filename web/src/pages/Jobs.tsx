@@ -7,13 +7,22 @@ import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, PageHeader } from '../components/ui';
 
+const VIEWS = [
+	{ key: 'all', label: 'All' },
+	{ key: 'my_open', label: 'My open' },
+	{ key: 'my_jobs', label: 'My jobs' },
+	{ key: 'preparation', label: 'Preparation' },
+	{ key: 'ongoing', label: 'Ongoing' },
+	{ key: 'completed', label: 'Completed' },
+];
 const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed', 'Completed - Closed', 'Cancelled'];
 
 export function Jobs() {
 	const [params, setParams] = useSearchParams();
 	const text = params.get('q') ?? '';
 	const [stage, setStage] = useState('');
-	const jobs = useJobs(stage || undefined);
+	const [view, setView] = useState('all');
+	const jobs = useJobs(stage || undefined, view);
 	const me = useMe();
 	const create = useCreateJob();
 	const navigate = useNavigate();
@@ -63,6 +72,14 @@ export function Jobs() {
 						{create.isError && <p role="alert">{create.error.message}</p>}
 					</form>
 				)}
+
+				<div className="inline-form" role="group" aria-label="Job lists">
+					<div className="segmented" role="group" aria-label="Show">
+						{VIEWS.map((v) => (
+							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => setView(v.key)}>{v.label}</button>
+						))}
+					</div>
+				</div>
 
 				<div className="inline-form" role="group" aria-label="Filter jobs">
 					<label className="search" style={{ flex: '1 1 240px' }}>

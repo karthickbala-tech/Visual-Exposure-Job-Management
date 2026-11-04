@@ -2,6 +2,23 @@ import { Link } from 'react-router-dom';
 import { useDashboard, useMe } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { Card, Kpi, PageHeader } from '../components/ui';
+import { useRoleDashboard } from '../api/more';
+
+const TILE_ROLES = ['project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'];
+
+/** The numbers for the person's own role (the first of their roles that has a dashboard). */
+function RoleTiles({ roles }: { roles: string[] }) {
+	const role = TILE_ROLES.find((r) => roles.includes(r));
+	const q = useRoleDashboard(role);
+	if (!role || !q.isSuccess || q.data.tiles.length === 0) return null;
+	return (
+		<section className="kpis" aria-label={`${role.replace(/_/g, ' ')} figures`}>
+			{q.data.tiles.map((t) => (
+				<Kpi key={t.key} label={t.label} value={t.value} tone={/overdue|not filled/i.test(t.label) ? (t.value ? 'danger' : 'ok') : undefined} />
+			))}
+		</section>
+	);
+}
 
 const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed'];
 
@@ -16,6 +33,8 @@ export function Home() {
 	return (
 		<>
 			<PageHeader eyebrow={q.data ? longDate(q.data.today) : 'Dashboard'} title={first ? `Hello, ${first}` : 'Dashboard'} />
+
+			{me.isSuccess && <RoleTiles roles={me.data.roles} />}
 
 			{q.isPending && <p role="status">Loading your dashboard...</p>}
 			{q.isError && <p role="alert">Could not load the dashboard.</p>}

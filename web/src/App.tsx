@@ -19,6 +19,9 @@ import { Devices } from './pages/Devices';
 import { Admin } from './pages/Admin';
 import { Directory } from './pages/Directory';
 import { Placeholder } from './pages/Placeholder';
+import { Hours } from './pages/Hours';
+import { TaskBoard } from './pages/TaskBoard';
+import { ChecklistReport, SwmsList } from './pages/SwmsList';
 
 const queryClient = new QueryClient({
 	// Every request costs the Catalyst plan's small monthly allowance: no refetch on focus or reconnect, and a failed
@@ -56,6 +59,10 @@ export default function App() {
 							<Route path="devices" element={<Devices />} />
 							<Route path="admin" element={<Admin />} />
 							<Route path="directory" element={<Directory />} />
+							<Route path="tasks" element={<TaskBoard />} />
+							<Route path="hours" element={<Hours />} />
+							<Route path="swms" element={<SwmsList />} />
+							<Route path="reports/checklists" element={<ChecklistReport />} />
 							<Route path="tasks/:id" element={<TaskDetail />} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />

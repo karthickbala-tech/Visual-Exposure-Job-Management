@@ -4,6 +4,8 @@ import type { Assignee } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card } from '../components/ui';
+import { FileDown } from 'lucide-react';
+import { pdfUrl } from '../api/more';
 
 const PM_ROLES = ['admin', 'project_manager', 'install_coordinator'];
 const MANAGER_ROLES = [...PM_ROLES, 'fab_manager', 'second_ic'];
@@ -80,6 +82,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 			</dl>
 
 			<div className="actions">
+				<a className="btn btn-ghost" href={pdfUrl(`/swms/${swmsId}/pdf`)} target="_blank" rel="noreferrer"><FileDown size={16} aria-hidden="true" /> PDF</a>
 				{canPm && (
 					<button className="btn" disabled={busy} onClick={() => run({ path: '/sign', method: 'POST', body: { as: 'pm' } }, 'Signed as project manager')}>
 						Sign as project manager

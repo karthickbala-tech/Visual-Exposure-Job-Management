@@ -16,10 +16,10 @@ export const useHealth = () =>
 export const useMe = () =>
 	useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: 5 * 60_000 });
 
-export const useJobs = (stage?: string) =>
+export const useJobs = (stage?: string, view?: string) =>
 	useQuery({
-		queryKey: ['jobs', stage ?? 'all'],
-		queryFn: () => api<{ items: Job[]; count: number }>(`/jobs${stage ? `?stage=${encodeURIComponent(stage)}` : ''}`),
+		queryKey: ['jobs', stage ?? 'all', view ?? 'all'],
+		queryFn: () => api<{ items: Job[]; count: number }>('/jobs' + [stage && `stage=${encodeURIComponent(stage)}`, view && view !== 'all' && `view=${view}`].filter(Boolean).reduce<string>((s, p, i) => s + (i ? '&' : '?') + p, '')),
 		staleTime: 30_000,
 	});
 

@@ -3,7 +3,10 @@ import { Plus } from 'lucide-react';
 import { useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Card, Kpi, PageHeader } from '../components/ui';
+import { useComplianceDashboard } from '../api/more';
+
+const KIND_LABEL: Record<string, string> = { ticket: 'Tickets', induction: 'Inductions', company_document: 'Company documents' };
 
 const STATUSES = ['Expired', 'Expiring', 'Valid', 'No expiry'];
 const EMPTY = { person_id: '', type_id: '', reference_no: '', expiry_date: '' };
@@ -13,6 +16,8 @@ export function Compliance() {
 	const me = useMe();
 	const canAdd = !!me.data?.permissions.createJob; // managers; the server decides for real
 	const [status, setStatus] = useState('');
+	const [activeOnly, setActiveOnly] = useState(true);
+	const dash = useComplianceDashboard(activeOnly, canAdd);
 	const items = useComplianceItems(status || undefined);
 	const types = useComplianceTypes();
 	const people = usePeople(canAdd);
@@ -32,6 +37,18 @@ export function Compliance() {
 					</button>
 				)}
 			</PageHeader>
+
+			{canAdd && dash.isSuccess && (
+				<>
+					<section className="kpis" aria-label="Expiry overview">
+						{(Object.entries(dash.data.counts) as [string, { overdue: number; today: number; within30: number }][]).map(([kind, c]) => (
+							<Kpi key={kind} label={`${KIND_LABEL[kind] ?? kind} overdue`} value={c.overdue} tone={c.overdue ? 'danger' : 'ok'} note={`${c.today} expire today, ${c.within30} within 30 days`} />
+						))}
+						<Kpi label="Active workers" value={dash.data.workers.ve + dash.data.workers.other} note={`${dash.data.workers.ve} Visual Exposure, ${dash.data.workers.other} others`} />
+					</section>
+					<label className="check"><input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Active records only</label>
+				</>
+			)}
 
 			<Card flush>
 				{canAdd && open && (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
 import { useMe } from '../api/queries';
@@ -22,6 +22,10 @@ const NAV: NavItem[] = [
 	{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
 	{ to: '/jobs', label: 'Jobs', icon: Briefcase },
 	{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
+	{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
+	{ to: '/hours', label: 'Hours', icon: Clock, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'] },
+	{ to: '/swms', label: 'SWMS', icon: FileCheck2, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer'] },
+	{ to: '/reports/checklists', label: 'Checklists', icon: ClipboardList, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator'] },
 	{ to: '/issues', label: 'Issues', icon: AlertTriangle },
 	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
 	{ to: '/equipment', label: 'Equipment', icon: Wrench, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'workshop', 'fab_worker'] },

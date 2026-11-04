@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { FileDown, Plus } from 'lucide-react';
+import { pdfUrl } from '../api/more';
 import { useCreateIssue, useIssues, useMoveIssue } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -112,6 +113,7 @@ export function Issues() {
 										</td>
 										<td data-label="Actions">
 											<div className="actions">
+												<a className="btn btn-ghost btn-sm" href={pdfUrl(`/issues/${i.ROWID}/pdf?layout=full`)} target="_blank" rel="noreferrer" aria-label={`PDF of ${i.subject}`}><FileDown size={14} aria-hidden="true" /> PDF</a>
 												{(i.nextStatuses ?? []).map((s) => (
 													<button
 														key={s}
