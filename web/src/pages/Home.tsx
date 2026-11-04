@@ -3,6 +3,7 @@ import { useDashboard, useMe } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useRoleDashboard } from '../api/more';
+import { CrewTasks } from '../components/CrewCards';
 
 const TILE_ROLES = ['project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'];
 
@@ -62,7 +63,9 @@ export function Home() {
 				</>
 			)}
 
-			{q.isSuccess && (
+			{q.isSuccess && q.data.scope === 'mine' && <CrewTasks tasks={q.data.myTasks} today={q.data.today} />}
+
+			{q.isSuccess && q.data.scope === 'all' && (
 				<Card title="My upcoming work" flush>
 					{q.data.myTasks.length === 0 ? (
 						<p className="table-empty">Nothing is assigned to you right now.</p>

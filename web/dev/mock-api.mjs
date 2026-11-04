@@ -4,6 +4,7 @@
 import http from 'node:http';
 
 const roles = (process.env.MOCK_ROLES || 'admin').split(',');
+const isManager = roles.some((r) => ['admin', 'project_manager', 'fab_manager', 'install_coordinator'].includes(r));
 const TODAY = new Date().toISOString().slice(0, 10);
 const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 
@@ -64,13 +65,14 @@ const templates = ['issueRaised', 'issueUpdated', 'taskSentBack', 'jobClosed', '
 let settings = { workshop_job_id: '1001', pay_period: { start_date: day(-3), length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd' }, hours_report_recipients: ['502'], hours_cutoff_date: null };
 
 const routes = [
-	['GET', /^\/me$/, () => ({ user: { id: '1', email: 'karthick@example.test', firstName: 'Karthick', lastName: 'Bala' }, roles, permissions: { createJob: true, editJob: true, createTask: true, assignPeople: true }, person: { ROWID: '501' } })],
+	['GET', /^\/me$/, () => ({ user: { id: '1', email: 'karthick@example.test', firstName: 'Karthick', lastName: 'Bala' }, roles, permissions: { createJob: isManager, editJob: isManager, createTask: isManager, assignPeople: isManager }, person: { ROWID: isManager ? '501' : '503' } })],
 	['GET', /^\/jobs$/, (_, q) => { let items = jobs; const v = q.get('view'); if (v === 'preparation') items = jobs.filter((j) => j.stage === 'Preparation'); if (v === 'ongoing') items = jobs.filter((j) => ['In Progress', 'On Hold'].includes(j.stage)); if (v === 'completed') items = jobs.filter((j) => j.stage.startsWith('Completed')); if (q.get('stage')) items = items.filter((j) => j.stage === q.get('stage')); return { items, count: items.length }; }],
 	['GET', /^\/jobs\/(\d+)$/, (m) => ({ job: jobs.find((j) => j.ROWID === m[1]) ?? jobs[0], tasks: tasks.filter((t) => t.job_id === m[1]), progress: { fab: 60, install: 20, job: 45 }, kpis: { design: { total: 1, open: 0, overdue: 0, percent: 100 }, fabrication: { total: 2, open: 2, overdue: 1, percent: 40 }, install: { total: 1, open: 1, overdue: 0, percent: 0 } } })],
 	['GET', /^\/tasks\/board$/, (_, q) => board(q.get('type') || 'fabrication')],
 	['GET', /^\/tasks\/(\d+)$/, (m) => ({ task: tasks.find((t) => t.ROWID === m[1]) ?? tasks[0], assignees: [{ linkId: '1', personId: '503', role: 'lead', name: 'Sam Okafor' }], nextStages: ['In Progress'] })],
+	['GET', /^\/tasks\/(\d+)\/checklist\/next$/, () => ({ phase: 'pre', action: 'start', checklistId: null, next: null })],
 	['GET', /^\/tasks\/(\d+)\/checklists$/, () => ({ items: [] })],
-	['GET', /^\/dashboard$/, () => ({ scope: 'all', today: TODAY, myTasks: tasks.slice(1, 4), jobsByStage: { Preparation: 1, 'In Progress': 1, 'On Hold': 1, Completed: 1 }, overdueTasks: 2, openIssues: 2, swmsAwaiting: 1 })],
+	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: tasks.slice(1, 4), jobsByStage: { Preparation: 1, 'In Progress': 1, 'On Hold': 1, Completed: 1 }, overdueTasks: 2, openIssues: 2, swmsAwaiting: 1 } : { scope: 'mine', today: TODAY, myTasks: tasks.slice(1, 4) })],
 	['GET', /^\/dashboards\/(\w+)$/, (m) => ({ role: m[1], tiles: tilesFor(m[1]) })],
 	['GET', /^\/calendar$/, () => ({ items: tasks.filter((t) => t.scheduled_date).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) })],
 	['GET', /^\/issues$/, (_, q) => { const s = q.get('status'); const items = s ? issues.filter((i) => i.issue_status === s) : issues; return { items, count: items.length }; }],

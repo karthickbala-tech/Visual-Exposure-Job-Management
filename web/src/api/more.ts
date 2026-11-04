@@ -126,3 +126,7 @@ export const useCreateWorkshopTask = () => {
 
 export interface IssueChange { field: string; from: string; to: string }
 export const useIssueHistory = (id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
+
+// ---- checklist next step (crew) ----
+export interface NextStep { phase: 'pre' | 'post' | null; action: 'start' | 'continue' | 'done'; checklistId: string | null; next: { label: string } | null }
+export const useNextStep = (taskId: string, enabled: boolean) => useGet<NextStep>(['next-step', taskId], `/tasks/${taskId}/checklist/next`, enabled, 15_000);

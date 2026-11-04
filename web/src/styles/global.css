@@ -408,3 +408,18 @@ body { overscroll-behavior-y: auto; }
 .bell-panel li a:hover { background: var(--surface-hover); }
 .bell-panel li a:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: -2px; }
 @media (max-width: 760px) { .bell { position: static; } .bell-panel { position: fixed; top: 60px; left: 16px; right: 16px; width: auto; } }
+
+/* ---------- Crew views (phone first) ---------- */
+.crew-list { display: grid; gap: 10px; }
+.crew-card { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 2px; color: inherit; text-decoration: none; }
+.crew-card:hover { background: var(--surface-hover); }
+.crew-card:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: 2px; }
+.crew-main { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.crew-main strong { font-size: 15px; overflow-wrap: anywhere; }
+.crew-card svg { flex: none; color: var(--muted); }
+.crew-group { display: grid; gap: 10px; }
+.next-card { display: grid; gap: 10px; padding: 16px; background: var(--brand-soft); border: 1px solid var(--brand); border-radius: 2px; }
+.next-card--done { background: var(--surface); border-color: var(--line); }
+.next-card--done span { color: var(--muted); font-size: 13px; }
+.next-btn { min-height: 56px; font-size: 14px; width: 100%; }
+@media (min-width: 761px) { .next-btn { width: auto; justify-self: start; } }

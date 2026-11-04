@@ -9,6 +9,7 @@ import { Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
 import { HoursPanel, ManagePanel, RatingPanel } from './TaskManage';
+import { NextStepCard } from '../components/CrewCards';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 
@@ -48,6 +49,8 @@ export function TaskDetail() {
 				<Chip status={task.stage} />
 			</PageHeader>
 			{task.description && <p className="lead">{task.description}</p>}
+
+			{iAmAssigned && !DONE.includes(task.stage) && <NextStepCard taskId={task.ROWID} />}
 
 			<Card title="Details">
 				<dl className="facts">
