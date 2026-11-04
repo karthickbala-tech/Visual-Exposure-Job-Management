@@ -89,11 +89,20 @@ export function SettingsTab() {
 			<Card title="Reminders and reports">
 				<div className="inline-form" style={{ background: 'transparent', border: 0, padding: 0 }}>
 					<label><span className="toolbar__label">Reminder days before expiry</span><input value={days} onChange={(e) => setDays(e.target.value)} placeholder="30, 7, 0" /></label>
-					<label style={{ flex: '2 1 280px' }}><span className="toolbar__label">Weekly hours report goes to (hold Ctrl to pick several)</span>
-						<select multiple size={4} value={s.hours_report_recipients ?? []} onChange={(e) => setS({ ...s, hours_report_recipients: Array.from(e.target.selectedOptions).map((o) => o.value) })}>
-							{list.map((p) => <option key={p.ROWID} value={p.ROWID}>{fullName(p)}</option>)}
-						</select>
-					</label>
+					<fieldset style={{ flex: '2 1 280px', border: 0, padding: 0, margin: 0 }}>
+						<legend className="toolbar__label">Weekly hours report goes to</legend>
+						<div className="check-list">
+							{list.map((p) => {
+								const on = (s.hours_report_recipients ?? []).includes(p.ROWID);
+								return (
+									<label key={p.ROWID} className="check">
+										<input type="checkbox" checked={on} onChange={(e) => setS({ ...s, hours_report_recipients: e.target.checked ? [...(s.hours_report_recipients ?? []), p.ROWID] : (s.hours_report_recipients ?? []).filter((x) => x !== p.ROWID) })} />
+										{fullName(p)}
+									</label>
+								);
+							})}
+						</div>
+					</fieldset>
 				</div>
 			</Card>
 

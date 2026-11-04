@@ -88,3 +88,17 @@ export const useUpdatePerson = () => {
 
 /** PDFs open in a new tab: the browser sends the sign-in cookie and the server makes the file on request. */
 export const pdfUrl = (path: string) => `${import.meta.env.VITE_API_BASE ?? '/server/api'}${path}`;
+
+// ---- job close, issue history ----
+export const useCloseJob = (jobId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => api(`/jobs/${jobId}/close`, send('POST')),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['job', jobId] });
+			qc.invalidateQueries({ queryKey: ['jobs'] });
+		},
+	});
+};
+export interface IssueChange { field: string; from: string; to: string }
+export const useIssueHistory = (id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);

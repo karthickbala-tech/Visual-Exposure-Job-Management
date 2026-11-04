@@ -1,7 +1,21 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileDown, Plus } from 'lucide-react';
-import { pdfUrl } from '../api/more';
+import { pdfUrl, useIssueHistory } from '../api/more';
+
+function History({ id }: { id: string }) {
+	const q = useIssueHistory(id, true);
+	if (q.isPending) return <p role="status" className="muted">Loading history...</p>;
+	if (q.isError) return <p role="alert">Could not load the history.</p>;
+	if (q.data.items.length === 0) return <p className="muted">No changes yet.</p>;
+	return (
+		<ul className="plain-list">
+			{q.data.items.map((e, i) => (
+				<li key={i}><small>{e.at?.replace('T', ' ').slice(0, 16) ?? ''}</small> {e.changes.map((c) => `${c.field.replace(/_id$/, '').replace(/_/g, ' ')}: ${c.from || '-'} to ${c.to || '-'}`).join('; ')}</li>
+			))}
+		</ul>
+	);
+}
 import { useCreateIssue, useIssues, useMoveIssue } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -17,6 +31,8 @@ export function Issues() {
 	const move = useMoveIssue();
 	const { notify } = useToast();
 	const [open, setOpen] = useState(false);
+	const [dept, setDept] = useState('');
+	const [showHistory, setShowHistory] = useState<string | null>(null);
 	const [subject, setSubject] = useState('');
 	const [priority, setPriority] = useState('Normal');
 
@@ -72,6 +88,13 @@ export function Issues() {
 
 				<div className="inline-form">
 					<label style={{ flex: '0 1 200px' }}>
+						<span className="toolbar__label">Department</span>
+						<select value={dept} onChange={(e) => setDept(e.target.value)} style={{ width: '100%' }}>
+							<option value="">All</option>
+							{['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'].map((d) => <option key={d}>{d}</option>)}
+						</select>
+					</label>
+					<label style={{ flex: '0 1 200px' }}>
 						<span className="toolbar__label">Status</span>
 						<select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: '100%' }}>
 							<option value="">All</option>
@@ -101,8 +124,9 @@ export function Issues() {
 								</tr>
 							</thead>
 							<tbody>
-								{issues.data.items.map((i) => (
-									<tr key={i.ROWID}>
+								{issues.data.items.filter((i) => !dept || i.department === dept).map((i) => (
+									<Fragment key={i.ROWID}>
+									<tr>
 										<td data-label="Issue" className="cell-primary">
 											{i.task_id ? <Link to={'/tasks/' + i.task_id}>{i.subject}</Link> : <strong>{i.subject}</strong>}
 										</td>
@@ -113,6 +137,7 @@ export function Issues() {
 										</td>
 										<td data-label="Actions">
 											<div className="actions">
+												<button className="btn btn-ghost btn-sm" aria-expanded={showHistory === i.ROWID} onClick={() => setShowHistory(showHistory === i.ROWID ? null : i.ROWID)}>History</button>
 												<a className="btn btn-ghost btn-sm" href={pdfUrl(`/issues/${i.ROWID}/pdf?layout=full`)} target="_blank" rel="noreferrer" aria-label={`PDF of ${i.subject}`}><FileDown size={14} aria-hidden="true" /> PDF</a>
 												{(i.nextStatuses ?? []).map((s) => (
 													<button
@@ -127,6 +152,8 @@ export function Issues() {
 											</div>
 										</td>
 									</tr>
+									{showHistory === i.ROWID && <tr><td colSpan={5}><History id={i.ROWID} /></td></tr>}
+									</Fragment>
 								))}
 							</tbody>
 						</table>

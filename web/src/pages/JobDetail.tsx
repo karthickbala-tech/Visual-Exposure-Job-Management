@@ -6,7 +6,8 @@ import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, Ring } from '../components/ui';
+import { Card, Kpi, Ring } from '../components/ui';
+import { useCloseJob } from '../api/more';
 import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
 
@@ -19,6 +20,7 @@ export function JobDetail() {
 	const me = useMe();
 	const move = useTransitionTask(id ?? '');
 	const add = useCreateTask(id ?? '');
+	const close = useCloseJob(id ?? '');
 	const { notify } = useToast();
 	const [taskName, setTaskName] = useState('');
 	const [taskType, setTaskType] = useState<(typeof TYPES)[number]>('design');
@@ -38,6 +40,8 @@ export function JobDetail() {
 	if (q.isError) return <p role="alert">Could not load this job.</p>;
 
 	const { job, tasks, progress } = q.data;
+	const kpis = (q.data as { kpis?: Record<string, { total: number; open: number; overdue: number; percent: number }> }).kpis;
+	const canClose = me.data?.permissions.editJob && job.stage === 'Completed';
 	const groups = TYPES.map((t) => ({ type: t, rows: tasks.filter((x) => x.task_type === t) })).filter((g) => g.rows.length > 0);
 
 	return (
@@ -58,8 +62,21 @@ export function JobDetail() {
 						{job.description && <p className="lead" style={{ marginTop: 12 }}>{job.description}</p>}
 					</div>
 					<Ring value={progress.job} label="Job progress" />
+					{canClose && (
+						<button className="btn" disabled={close.isPending} onClick={() => close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') })}>
+							{close.isPending ? 'Closing...' : 'Close job'}
+						</button>
+					)}
 				</div>
 			</Card>
+
+			{kpis && (
+				<section className="kpis" aria-label="Tasks by discipline">
+					{(['design', 'fabrication', 'install'] as const).map((t) => (
+						<Kpi key={t} label={`${TYPE_LABEL[t]} tasks`} value={`${kpis[t]?.open ?? 0} open`} tone={kpis[t]?.overdue ? 'danger' : undefined} note={`${kpis[t]?.total ?? 0} total, ${kpis[t]?.overdue ?? 0} overdue, ${kpis[t]?.percent ?? 0}% done`} />
+					))}
+				</section>
+			)}
 
 			<Card title="Progress">
 				<div className="stack" style={{ gap: 10, maxWidth: 520 }}>
