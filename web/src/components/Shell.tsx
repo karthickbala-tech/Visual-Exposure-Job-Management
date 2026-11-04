@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
 import { useMe } from '../api/queries';
@@ -43,6 +43,66 @@ const initialsOf = (name: string) =>
 		.slice(0, 2)
 		.map((p) => p[0].toUpperCase())
 		.join('');
+
+/** The signed-in person at the foot of the sidebar. Opens a small menu: theme and sign out. Esc or a click outside closes it. */
+function UserMenu({ name, role }: { name: string; role: string }) {
+	const { theme, toggleTheme } = useTheme();
+	const [open, setOpen] = useState(false);
+	const box = useRef<HTMLDivElement>(null);
+	const trigger = useRef<HTMLButtonElement>(null);
+
+	useEffect(() => {
+		if (!open) return undefined;
+		const first = box.current?.querySelector<HTMLButtonElement>('[role="menuitem"]');
+		first?.focus();
+		const onDown = (e: MouseEvent) => {
+			if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				setOpen(false);
+				trigger.current?.focus();
+			}
+			if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+				const items = Array.from(box.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+				const i = items.indexOf(document.activeElement as HTMLButtonElement);
+				items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+				e.preventDefault();
+			}
+		};
+		document.addEventListener('mousedown', onDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [open]);
+
+	return (
+		<div className="side-user" ref={box}>
+			{open && (
+				<div className="user-menu" role="menu" aria-label="Account">
+					<button type="button" role="menuitem" onClick={() => { toggleTheme(); setOpen(false); }}>
+						{theme === 'dark' ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+						{theme === 'dark' ? 'Light theme' : 'Dark theme'}
+					</button>
+					<hr />
+					<button type="button" role="menuitem" className="out" onClick={signOut}>
+						<LogOut size={16} aria-hidden="true" /> Sign out
+					</button>
+				</div>
+			)}
+			<button ref={trigger} type="button" className="user-trigger" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+				<span className="avatar" aria-hidden="true">{initialsOf(name) || '?'}</span>
+				<span className="who">
+					<strong>{name}</strong>
+					<span>{role}</span>
+				</span>
+				<ChevronUp size={16} className="chev" aria-hidden="true" />
+			</button>
+		</div>
+	);
+}
 
 /** App frame: charcoal sidebar (a drawer on phones), top bar with search and theme toggle, and the page. */
 export function Shell() {
@@ -94,18 +154,7 @@ export function Shell() {
 						</NavLink>
 					))}
 				</nav>
-				<div className="side-user">
-					<span className="avatar" aria-hidden="true">
-						{initialsOf(name) || '?'}
-					</span>
-					<div>
-						<strong>{name}</strong>
-						<span>{roles[0] ? roleLabel(roles[0]) : ''}</span>
-					</div>
-					<button type="button" className="side-signout" aria-label="Sign out" title="Sign out" onClick={signOut}>
-						<LogOut size={17} aria-hidden="true" />
-					</button>
-				</div>
+				<UserMenu name={name} role={roles[0] ? roleLabel(roles[0]) : ''} />
 			</aside>
 			{navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
 
