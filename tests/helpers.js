@@ -145,7 +145,13 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			listByRole: async (role) => db.people.filter((p) => (p.roles || []).includes(role)).map(clone),
 		},
 		activity: {
-			insert: async (row) => (db.activity.push(row), row),
+			insert: async (row) => {
+				const r = { ROWID: nextId(), ...row };
+				db.activity.push(r);
+				return r;
+			},
+			findById: async (id) => clone(db.activity.find((a) => String(a.ROWID) === String(id))),
+			update: async (row) => patch(db.activity, row),
 			listByEntity: async ({ entityType, entityId, activityType }) =>
 				db.activity.filter((a) => a.entity_type === entityType && String(a.entity_id) === String(entityId) && a.activity_type === activityType).reverse(),
 			findByFromValue: async ({ entityType, entityId, activityType, fromValue }) =>

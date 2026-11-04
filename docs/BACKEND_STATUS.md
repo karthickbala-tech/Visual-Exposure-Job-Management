@@ -55,12 +55,20 @@ Overall: (49 + 12 / 2) / 64 = **86%**. (62% at the first count, then 67%, 75% an
 - **ISS-6** hidden fields: crew roles and viewers do not see the CRM deal, owner, assignee or source; viewers also do not see who reported it; managers and admin see everything. ASSUMPTION: the spec says about 18 fields are hidden per role but does not list them, so this is my choice.
 - **ISS-5** (seven print layouts as PDF and email) is not built: it comes with the PDF batch.
 
+## Built in batch 5 (4 Nov 2026): settings and notifications
+
+These come from FSD section 8 and 5.14 (administration), not from the 64 numbered requirements, so the percentage above does not move.
+
+- **Notification log** (FSD section 8, rule 3): every email, from every part of the system, writes one log row: the event, the recipients and the outcome (sent, skipped when no sender is set, failed). A failed email keeps its body, so an administrator can send it again (`GET /admin/notifications`, `POST /admin/notifications/{id}/retry`). A mail problem never breaks the action that caused it. Stored in the activity log (there is no separate table).
+- **Editable emails** (rule 2): an administrator can change the subject, add an intro and a footer to each of the six emails (`GET /admin/mail-templates`, `PUT /admin/mail-templates/{name}`, `GET .../{name}/preview`). Edits can use {placeholders} such as {job} or {subject}; unknown ones are refused when saving, values are escaped in the email, and clearing an edit goes back to the original wording. ASSUMPTION: edits are limited to subject, intro and footer, not the whole body, so a wrong edit cannot break the details of an email.
+- **Settings** (`PUT /admin/settings`, admin only): workshop job, pay period, hours cutoff date, who is told about issues of each department, the global default reminder days for tickets and documents (used by a type that sets none), the company (PCBU) details filled into every new SWMS, and the people who receive the weekly hours report (used by the reports batch).
+- Not built from FSD 5.14: users and role assignment screens (people already carry their roles), primary roles, and import/export (it belongs with the migration script).
+
 ## Still to build (in order)
 
-1. **Settings and notifications:** admin settings, editable email templates, a notification log.
-2. **Reports:** the parameterised report endpoints (about 12).
-3. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
-4. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **Reports:** the parameterised report endpoints (about 12).
+2. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
+3. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
