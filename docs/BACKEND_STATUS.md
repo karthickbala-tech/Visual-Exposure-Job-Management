@@ -106,7 +106,7 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **Export (FSD 5.14):** `GET /admin/export/{jobs|people|companies|issues}?format=csv|json&limit=&offset=` (administrators, up to 300 rows per request, one query). Only whitelisted columns leave (no pay rates, no descriptions); CSV cells that start with = + - @ are defused against spreadsheet formulas.
 - **Import:** `POST /admin/import/people` and `/admin/import/companies` (administrators, up to 50 rows per request). Each row is checked on its own; bad rows and duplicates (same email, same company name) are skipped with a reason and never change existing records. This is the manual way in; the full Creator migration script still waits for the export.
 
-Also in this batch: JOB-4 (a task created outside a job is refused with the familiar wording) and JOB-7 (the job now has a "file location on the VE server" field, required when a job is edited; the column `file_location` was added to the Development Data Store).
+Also in this batch: JOB-4 (a task created outside a job is refused with the familiar wording) and JOB-7 (the job now has a "file location on the VE server" field, required when a job is edited; it uses the existing `server_path` column of the job table).
 
 ## Still to build (in order)
 
