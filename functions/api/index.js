@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
 		const out = await matched.handler({ req, url: req.url, params: matched.params, actor, log });
 		if (out.body && out.body.raw) {
 			const { raw } = out.body;
-			res.writeHead(200, { 'Content-Type': raw.contentType, 'Content-Disposition': `inline; filename="${raw.filename}"`, 'Cache-Control': 'no-store' });
+			res.writeHead(200, { 'Content-Type': raw.contentType, 'Content-Disposition': `${raw.download ? 'attachment' : 'inline'}; filename="${raw.filename}"`, 'Cache-Control': 'no-store' });
 			res.end(raw.buffer);
 		} else ok(res, out.status, out.body);
 		log.info('request', {

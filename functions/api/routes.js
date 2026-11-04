@@ -11,6 +11,7 @@ const admin = require('./lib/services/admin');
 const issues = require('./lib/services/issues');
 const swms = require('./lib/services/swms');
 const printing = require('./lib/services/printing');
+const dataTransfer = require('./lib/services/dataTransfer');
 const files = require('./lib/services/files');
 const dashboard = require('./lib/services/dashboard');
 const settings = require('./lib/services/settings');
@@ -100,6 +101,9 @@ router.add('POST', '/jobs/:id/tasks', withCtx(async (ctx, { req, params }) => cr
 // Tasks
 router.add('GET', '/tasks', withCtx(async (ctx, { url }) => ok(await tasks.listTasks(ctx, parseQuery(url)))));
 router.add('GET', '/tasks/board', withCtx(async (ctx, { url }) => ok(await tasks.taskBoard(ctx, parseQuery(url)))));
+router.add('GET', '/admin/export/:entity', withCtx(async (ctx, { params, url }) => ok(await dataTransfer.exportEntity(ctx, params.entity, parseQuery(url)))));
+router.add('POST', '/admin/import/people', withCtx(async (ctx, { req }) => ok(await dataTransfer.importPeople(ctx, await readJson(req)))));
+router.add('POST', '/admin/import/companies', withCtx(async (ctx, { req }) => ok(await dataTransfer.importCompanies(ctx, await readJson(req)))));
 router.add('GET', '/swms', withCtx(async (ctx, { url }) => ok(await reports.listSwms(ctx, parseQuery(url)))));
 router.add('GET', '/reports/checklists', withCtx(async (ctx, { url }) => ok(await reports.listChecklists(ctx, parseQuery(url)))));
 router.add('GET', '/compliance/dashboard', withCtx(async (ctx, { url }) => ok(await reports.complianceDashboard(ctx, parseQuery(url)))));

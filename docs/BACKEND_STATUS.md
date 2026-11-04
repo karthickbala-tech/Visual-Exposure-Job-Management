@@ -98,10 +98,16 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **Roles (FSD 5.14):** `GET /roles`; only an administrator changes roles or the active flag, and nobody can remove their own administrator role or switch themselves off.
 - **Not built:** attachments to WorkDrive (needs a file-transfer job), import and export, device sync (MDM credentials), "Team Briefed" (checklist wording).
 
+## Built in batch 10 (4 Nov 2026): WorkDrive attachments, import and export
+
+- **TSK-5 finished:** every attachment, once its upload is confirmed, is queued once (outbox job `workdrive.upload_file`) and copied into the WorkDrive folder of its job (through its task, checklist or issue). It waits harmlessly until WorkDrive is connected and the job folder exists, retries with the outbox backoff, skips files deleted before the copy, and runs twice without a second copy. Not yet tried against the real WorkDrive.
+- **Export (FSD 5.14):** `GET /admin/export/{jobs|people|companies|issues}?format=csv|json&limit=&offset=` (administrators, up to 300 rows per request, one query). Only whitelisted columns leave (no pay rates, no descriptions); CSV cells that start with = + - @ are defused against spreadsheet formulas.
+- **Import:** `POST /admin/import/people` and `/admin/import/companies` (administrators, up to 50 rows per request). Each row is checked on its own; bad rows and duplicates (same email, same company name) are skipped with a reason and never change existing records. This is the manual way in; the full Creator migration script still waits for the export.
+
 ## Still to build (in order)
 
 1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 263 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 271 automated tests.
