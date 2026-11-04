@@ -4,22 +4,24 @@ Counted on 4 Nov 2026, then updated after each batch. **Done** = built, tested a
 
 ## Scorecard (64 requirements)
 
-| Area | Done | Partly | Not built |
-|---|---|---|---|
-| Jobs (JOB-1 to 9) | 5 | 3 | 1 |
-| Tasks (TSK-1 to 8) | 5 | 3 | 0 |
-| Install tasks (INS-1 to 6) | 5 | 1 | 0 |
-| Fabrication (FAB-1 to 5) | 5 | 0 | 0 |
-| Design (DES-1 to 3) | 3 | 0 | 0 |
-| Checklists (CHK-1 to 8) | 6 | 2 | 0 |
-| SWMS (SW-1 to 4) | 3 | 0 | 1 |
-| Issues (ISS-1 to 6) | 5 | 0 | 1 |
-| Hours and ratings (HRS-1 to 5) | 5 | 0 | 0 |
-| Compliance (CMP-1 to 5) | 3 | 2 | 0 |
-| Equipment and devices (EQP-1 to 5) | 4 | 1 | 0 |
-| **Total** | **49** | **12** | **3** |
+| Area | Done | Partly | Not built | What is partly built |
+|---|---|---|---|---|
+| Jobs (JOB-1 to 9) | 9 | 0 | 0 | |
+| Tasks (TSK-1 to 8) | 7 | 1 | 0 | TSK-3: checklists are created when a person starts them, not when the task is scheduled |
+| Install tasks (INS-1 to 6) | 5 | 1 | 0 | INS-2: the "Team Briefed" sub-stage waits for the real checklist wording |
+| Fabrication (FAB-1 to 5) | 5 | 0 | 0 | |
+| Design (DES-1 to 3) | 3 | 0 | 0 | |
+| Checklists (CHK-1 to 8) | 7 | 1 | 0 | CHK-2: the briefing step wording is a placeholder |
+| SWMS (SW-1 to 4) | 4 | 0 | 0 | SW-4 PDF is built but not yet tried on the real SmartBrowz |
+| Issues (ISS-1 to 6) | 5 | 1 | 0 | ISS-5: 2 print layouts of the 7 in Creator |
+| Hours and ratings (HRS-1 to 5) | 5 | 0 | 0 | |
+| Compliance (CMP-1 to 5) | 5 | 0 | 0 | |
+| Equipment and devices (EQP-1 to 5) | 4 | 1 | 0 | EQP-4: the device list is built; the sync needs the MDM credentials |
+| **Total** | **59** | **5** | **0** | |
 
-Overall: (49 + 12 / 2) / 64 = **86%**. (62% at the first count, then 67%, 75% and 82% after batches 1 to 3.)
+Overall: (59 + 5 / 2) / 64 = **96%** (recounted on 4 Nov 2026 after batch 10). Earlier counts: 62%, 67%, 75%, 82%, 86%.
+
+"Done" means built, tested with fake data, and deployed to Development. It does not mean proven against the real services: the PDFs, the emails, the WorkDrive file copy and the MDM sync have not been run for real yet (see "Needs input" below).
 
 ## Built in batch 1 (4 Nov 2026)
 
@@ -104,10 +106,12 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **Export (FSD 5.14):** `GET /admin/export/{jobs|people|companies|issues}?format=csv|json&limit=&offset=` (administrators, up to 300 rows per request, one query). Only whitelisted columns leave (no pay rates, no descriptions); CSV cells that start with = + - @ are defused against spreadsheet formulas.
 - **Import:** `POST /admin/import/people` and `/admin/import/companies` (administrators, up to 50 rows per request). Each row is checked on its own; bad rows and duplicates (same email, same company name) are skipped with a reason and never change existing records. This is the manual way in; the full Creator migration script still waits for the export.
 
+Also in this batch: JOB-4 (a task created outside a job is refused with the familiar wording) and JOB-7 (the job now has a "file location on the VE server" field, required when a job is edited; the column `file_location` was added to the Development Data Store).
+
 ## Still to build (in order)
 
 1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 271 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 272 automated tests.

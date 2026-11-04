@@ -12,7 +12,7 @@ const CREW = '105747000000900003';
 
 test('JOB-7/8: edits keep name and expected finish; deal link and created date are admin only', async () => {
 	const w = makeWorld();
-	const id = String((await jobs.createJob(w.ctx, { name: 'Pylon', expected_finish: '2026-12-01' })).job.ROWID);
+	const id = String((await jobs.createJob(w.ctx, { name: 'Pylon', expected_finish: '2026-12-01', file_location: 'S:\Jobs\Pylon' })).job.ROWID);
 	const pm = w.as(['project_manager'], null);
 	assert.equal((await jobs.updateJob(pm, id, { description: 'x' })).job.description, 'x');
 	await rejects(jobs.updateJob(pm, id, { crm_deal_id: '123' }), 403);
@@ -25,7 +25,7 @@ test('JOB-7/8: edits keep name and expected finish; deal link and created date a
 
 	const bare = String((await jobs.createJob(w.ctx, { name: 'No finish' })).job.ROWID);
 	await rejects(jobs.updateJob(w.ctx, bare, { description: 'y' }), 400);
-	assert.ok((await jobs.updateJob(w.ctx, bare, { description: 'y', expected_finish: '2026-12-02' })).job);
+	assert.ok((await jobs.updateJob(w.ctx, bare, { description: 'y', expected_finish: '2026-12-02', file_location: 'S:\Jobs\Bare' })).job);
 });
 
 test('TSK-5: an attachment can be deleted by who added it or a manager, and is gone from the list', async () => {

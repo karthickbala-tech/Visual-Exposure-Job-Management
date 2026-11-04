@@ -76,3 +76,8 @@ test('CHK-8: a photo answer must be a finished photo uploaded for this checklist
 	const ok = await checklists.saveAnswers(w.ctx, '105747000000900001', { answers: { pic: '105747000000700001' } });
 	assert.ok(ok);
 });
+
+test('JOB-4: creating a task outside a job is refused with the familiar wording', () => {
+	const tasks2 = require('../lib/services/tasks');
+	assert.throws(() => tasks2.rejectDirectCreate(), (e) => e.status === 400 && /You cannot create a Task here\. Please create it from within your job/.test(e.message));
+});

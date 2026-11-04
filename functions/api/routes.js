@@ -99,6 +99,7 @@ router.add('POST', '/tasks/:id/subtasks', withCtx(async (ctx, { params }) => cre
 router.add('POST', '/jobs/:id/tasks', withCtx(async (ctx, { req, params }) => created(await tasks.createTask(ctx, params.id, await readJson(req)))));
 
 // Tasks
+router.add('POST', '/tasks', withCtx(async () => tasks.rejectDirectCreate()));
 router.add('GET', '/tasks', withCtx(async (ctx, { url }) => ok(await tasks.listTasks(ctx, parseQuery(url)))));
 router.add('GET', '/tasks/board', withCtx(async (ctx, { url }) => ok(await tasks.taskBoard(ctx, parseQuery(url)))));
 router.add('GET', '/admin/export/:entity', withCtx(async (ctx, { params, url }) => ok(await dataTransfer.exportEntity(ctx, params.entity, parseQuery(url)))));
