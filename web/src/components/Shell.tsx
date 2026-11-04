@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, ChevronsLeft, ChevronsRight, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
+import emblem from '../assets/emblem.png';
 import { useMe } from '../api/queries';
 import { signOut } from '../auth/Login';
 import { useTheme } from './theme';
@@ -44,8 +45,17 @@ const initialsOf = (name: string) =>
 		.map((p) => p[0].toUpperCase())
 		.join('');
 
+const COLLAPSE_KEY = 've.sidebar.collapsed';
+const readCollapsed = () => {
+	try {
+		return window.localStorage.getItem(COLLAPSE_KEY) === '1';
+	} catch {
+		return false;
+	}
+};
+
 /** The signed-in person at the foot of the sidebar. Opens a small menu: theme and sign out. Esc or a click outside closes it. */
-function UserMenu({ name, role }: { name: string; role: string }) {
+function UserMenu({ name, role, collapsed }: { name: string; role: string; collapsed: boolean }) {
 	const { theme, toggleTheme } = useTheme();
 	const [open, setOpen] = useState(false);
 	const box = useRef<HTMLDivElement>(null);
@@ -92,7 +102,7 @@ function UserMenu({ name, role }: { name: string; role: string }) {
 					</button>
 				</div>
 			)}
-			<button ref={trigger} type="button" className="user-trigger" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+			<button ref={trigger} type="button" className="user-trigger" aria-haspopup="menu" aria-expanded={open} aria-label={collapsed ? `${name}, account menu` : undefined} title={collapsed ? name : undefined} onClick={() => setOpen(!open)}>
 				<span className="avatar" aria-hidden="true">{initialsOf(name) || '?'}</span>
 				<span className="who">
 					<strong>{name}</strong>
@@ -110,6 +120,16 @@ export function Shell() {
 	const { theme, toggleTheme } = useTheme();
 	const navigate = useNavigate();
 	const [navOpen, setNavOpen] = useState(false);
+	const [collapsed, setCollapsed] = useState(readCollapsed);
+	const toggleCollapsed = () => {
+		const next = !collapsed;
+		setCollapsed(next);
+		try {
+			window.localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+		} catch {
+			/* the choice just is not remembered */
+		}
+	};
 	const [query, setQuery] = useState('');
 	const searchRef = useRef<HTMLInputElement>(null);
 
@@ -135,26 +155,31 @@ export function Shell() {
 	};
 
 	return (
-		<div className="shell">
+		<div className={'shell' + (collapsed ? ' shell--collapsed' : '')}>
 			<a className="skip" href="#main">
 				Skip to content
 			</a>
-			<aside className={'sidebar' + (navOpen ? ' open' : '')} aria-label="Main navigation">
+			<aside className={'sidebar' + (navOpen ? ' open' : '') + (collapsed ? ' collapsed' : '')} aria-label="Main navigation">
 				<div className="side-top">
 					<img className="logo-img" src={logo} alt="Visual Exposure" />
+					<img className="logo-emblem" src={emblem} alt="Visual Exposure" width={36} height={36} />
 					<button type="button" className="icon-btn side-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>
 						<X size={18} />
 					</button>
 				</div>
 				<nav className="side-nav">
 					{items.map((n) => (
-						<NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')} onClick={() => setNavOpen(false)}>
+						<NavLink key={n.to} to={n.to} end={n.end} title={collapsed ? n.label : undefined} className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')} onClick={() => setNavOpen(false)}>
 							<n.icon size={17} aria-hidden="true" />
-							<span>{n.label}</span>
+							<span className="side-label">{n.label}</span>
 						</NavLink>
 					))}
 				</nav>
-				<UserMenu name={name} role={roles[0] ? roleLabel(roles[0]) : ''} />
+				<button type="button" className="side-collapse" aria-pressed={collapsed} aria-label={collapsed ? 'Expand the menu' : 'Collapse the menu'} title={collapsed ? 'Expand the menu' : 'Collapse the menu'} onClick={toggleCollapsed}>
+					{collapsed ? <ChevronsRight size={18} aria-hidden="true" /> : <ChevronsLeft size={18} aria-hidden="true" />}
+					<span className="side-label">Collapse</span>
+				</button>
+				<UserMenu name={name} role={roles[0] ? roleLabel(roles[0]) : ''} collapsed={collapsed} />
 			</aside>
 			{navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
 
