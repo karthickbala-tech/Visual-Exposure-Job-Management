@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidebar scrollbar options</title>
+<style>
+	@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap');
+	:root { --side: #42484d; --brand: #68b04d; --ink: #1b1b1e; }
+	* { box-sizing: border-box; }
+	body { margin: 0; padding: 24px; font-family: Raleway, system-ui, sans-serif; background: #f6f7f5; color: var(--ink); }
+	h1 { margin: 0 0 4px; font-size: 22px; text-transform: uppercase; }
+	p.note { margin: 0 0 20px; color: #5f6368; font-size: 13px; max-width: 70ch; }
+	.row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+	figure { margin: 0; width: 240px; }
+	figcaption { margin-top: 10px; font-size: 13px; line-height: 1.4; }
+	figcaption b { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; }
+	.side { height: 380px; display: flex; flex-direction: column; background: var(--side); color: #fff; }
+	.logo { padding: 16px; border-bottom: 1px solid rgba(255,255,255,.1); font-weight: 700; letter-spacing: .08em; }
+	.nav { flex: 1; overflow-y: auto; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+	.nav a { display: block; padding: 10px 12px; border-left: 3px solid transparent; color: #d3d4d5; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; }
+	.nav a.on { background: #4c5257; color: #fff; border-left-color: var(--brand); }
+	.nav a:hover { background: #4c5257; color: #fff; }
+	.user { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13px; font-weight: 700; }
+
+	/* 0. today: the browser default */
+	.o0 .nav { }
+
+	/* 1. slim dark-themed bar */
+	.o1 .nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent; }
+	.o1 .nav::-webkit-scrollbar { width: 6px; }
+	.o1 .nav::-webkit-scrollbar-track { background: transparent; }
+	.o1 .nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 3px; }
+	.o1 .nav::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+	/* 2. hover-reveal bar: invisible until the pointer is over the menu */
+	.o2 .nav { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color .2s; }
+	.o2 .nav:hover { scrollbar-color: rgba(255,255,255,.35) transparent; }
+	.o2 .nav::-webkit-scrollbar { width: 6px; }
+	.o2 .nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+	.o2 .nav:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); }
+
+	/* 3. no bar, fade hints at the cut edges (scroll-driven, Chrome and Edge; others show a steady fade) */
+	.o3 .nav { scrollbar-width: none; --fade: 28px;
+		-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bot, 28px)), transparent 100%);
+		mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bot, 28px)), transparent 100%); }
+	.o3 .nav::-webkit-scrollbar { display: none; }
+	@property --fade-top { syntax: '<length>'; inherits: false; initial-value: 0px; }
+	@property --fade-bot { syntax: '<length>'; inherits: false; initial-value: 28px; }
+	@supports (animation-timeline: scroll()) {
+		.o3 .nav { animation: fades linear both; animation-timeline: scroll(self block); }
+		@keyframes fades { 0% { --fade-top: 0px; --fade-bot: 28px; } 8% { --fade-top: 28px; --fade-bot: 28px; } 92% { --fade-top: 28px; --fade-bot: 28px; } 100% { --fade-top: 28px; --fade-bot: 0px; } }
+	}
+
+	/* 4. green accent bar, always visible */
+	.o4 .nav { scrollbar-width: thin; scrollbar-color: var(--brand) rgba(255,255,255,.08); }
+	.o4 .nav::-webkit-scrollbar { width: 5px; }
+	.o4 .nav::-webkit-scrollbar-track { background: rgba(255,255,255,.08); }
+	.o4 .nav::-webkit-scrollbar-thumb { background: var(--brand); }
+</style>
+</head>
+<body>
+<h1>Sidebar scrollbar options</h1>
+<p class="note">Each sidebar below has the same 14 menu items in a short window, so every one scrolls. Scroll with the wheel and hover over each. Use the browser's dark or light mode as you like; the sidebar stays dark in both.</p>
+<div class="row">
+	<figure class="o0"><div class="side"><div class="logo">VISUAL EXPOSURE</div><nav class="nav" id="n0"></nav><div class="user">Karthick Bala</div></div><figcaption><b>Today</b>The browser default bar: thick and bright against the dark panel.</figcaption></figure>
+	<figure class="o1"><div class="side"><div class="logo">VISUAL EXPOSURE</div><nav class="nav" id="n1"></nav><div class="user">Karthick Bala</div></div><figcaption><b>1. Slim dark bar</b>6px, faint white thumb, turns green on hover. Always visible.</figcaption></figure>
+	<figure class="o2"><div class="side"><div class="logo">VISUAL EXPOSURE</div><nav class="nav" id="n2"></nav><div class="user">Karthick Bala</div></div><figcaption><b>2. Hover-reveal</b>No bar until the mouse is over the menu.</figcaption></figure>
+	<figure class="o3"><div class="side"><div class="logo">VISUAL EXPOSURE</div><nav class="nav" id="n3"></nav><div class="user">Karthick Bala</div></div><figcaption><b>3. No bar, fade hints</b>The menu fades at the edge where more items are hidden. Wheel, touch and keyboard still scroll.</figcaption></figure>
+	<figure class="o4"><div class="side"><div class="logo">VISUAL EXPOSURE</div><nav class="nav" id="n4"></nav><div class="user">Karthick Bala</div></div><figcaption><b>4. Green accent bar</b>5px, always visible, same green as the active item.</figcaption></figure>
+</div>
+<script>
+	const items = ['Dashboard','Jobs','Calendar','Task board','Hours','SWMS','Checklists','Issues','Compliance','Equipment','Companies and sites','People','Devices','Admin'];
+	for (let i = 0; i < 5; i++) document.getElementById('n' + i).innerHTML = items.map((t, k) => `<a href="#" class="${k === 1 ? 'on' : ''}">${t}</a>`).join('');
+</script>
+</body>
+</html>

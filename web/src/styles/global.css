@@ -330,3 +330,25 @@ body { overscroll-behavior-y: auto; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .inline-form label select { width: 100%; }
+
+/* ---------- Sidebar scroll: no bar, fade hints at the cut edges ----------
+   The menu still scrolls by wheel, touch and keyboard. A soft fade shows which edge hides more items.
+   Chrome and Edge fade each edge only while there is more to see; other browsers keep a steady fade at the bottom. */
+@property --fade-top { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --fade-bot { syntax: '<length>'; inherits: false; initial-value: 28px; }
+.side-nav {
+	scrollbar-width: none;
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bot)), transparent 100%);
+	mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bot)), transparent 100%);
+}
+.side-nav::-webkit-scrollbar { display: none; }
+@supports (animation-timeline: scroll()) {
+	.side-nav { animation: side-fades linear both; animation-timeline: scroll(self block); }
+	@keyframes side-fades {
+		0% { --fade-top: 0px; --fade-bot: 28px; }
+		8% { --fade-top: 28px; --fade-bot: 28px; }
+		92% { --fade-top: 28px; --fade-bot: 28px; }
+		100% { --fade-top: 28px; --fade-bot: 0px; }
+	}
+}
+@media (prefers-reduced-motion: reduce) { .side-nav { animation: side-fades linear both !important; animation-timeline: scroll(self block) !important; } }
