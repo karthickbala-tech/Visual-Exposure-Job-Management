@@ -26,6 +26,8 @@ const quotes = require('./lib/services/quotes');
 const crmPull = require('./lib/services/crmPull');
 const hours = require('./lib/services/hours');
 const notifications = require('./lib/services/notifications');
+const reports = require('./lib/services/reports');
+const weeklyReports = require('./lib/services/weeklyReports');
 const appSettings = require('./lib/services/appSettings');
 const maintenance = require('./lib/services/maintenance');
 const { createZoho } = require('./lib/integrations/zoho');
@@ -96,6 +98,13 @@ router.add('POST', '/jobs/:id/tasks', withCtx(async (ctx, { req, params }) => cr
 
 // Tasks
 router.add('GET', '/tasks', withCtx(async (ctx, { url }) => ok(await tasks.listTasks(ctx, parseQuery(url)))));
+router.add('GET', '/tasks/board', withCtx(async (ctx, { url }) => ok(await tasks.taskBoard(ctx, parseQuery(url)))));
+router.add('GET', '/swms', withCtx(async (ctx, { url }) => ok(await reports.listSwms(ctx, parseQuery(url)))));
+router.add('GET', '/reports/checklists', withCtx(async (ctx, { url }) => ok(await reports.listChecklists(ctx, parseQuery(url)))));
+router.add('GET', '/compliance/dashboard', withCtx(async (ctx, { url }) => ok(await reports.complianceDashboard(ctx, parseQuery(url)))));
+router.add('GET', '/dashboards/:role', withCtx(async (ctx, { params }) => ok(await reports.roleDashboard(ctx, params.role))));
+router.add('POST', '/admin/reports/weekly-hours', withCtx(async (ctx) => ok(await weeklyReports.runWeeklyHoursReport(ctx))));
+router.add('POST', '/admin/reports/weekly-issues', withCtx(async (ctx) => ok(await weeklyReports.runWeeklyIssuesReport(ctx))));
 router.add('GET', '/tasks/:id', withCtx(async (ctx, { params }) => ok(await tasks.getTask(ctx, params.id))));
 router.add('PATCH', '/tasks/:id', withCtx(async (ctx, { req, params }) => ok(await tasks.updateTask(ctx, params.id, await readJson(req)))));
 router.add('POST', '/tasks/:id/transition', withCtx(async (ctx, { req, params }) => ok(await tasks.transitionTask(ctx, params.id, await readJson(req)))));

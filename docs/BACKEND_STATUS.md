@@ -64,12 +64,21 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **Settings** (`PUT /admin/settings`, admin only): workshop job, pay period, hours cutoff date, who is told about issues of each department, the global default reminder days for tickets and documents (used by a type that sets none), the company (PCBU) details filled into every new SWMS, and the people who receive the weekly hours report (used by the reports batch).
 - Not built from FSD 5.14: users and role assignment screens (people already carry their roles), primary roles, and import/export (it belongs with the migration script).
 
+## Built in batch 6 (4 Nov 2026): reports
+
+- **Job tabs and filters:** `GET /jobs?view=` my_open, my_jobs, preparation, ongoing, completed, all; also project manager, fab manager and name search. The job page carries design, fabrication and install numbers (total, open, overdue, percent).
+- **Tasks:** filters by kind, person, open, overdue, dates; `GET /tasks/board?type=` is a kanban (columns by stage with overdue counts). Crew only ever see their own.
+- **Calendars:** install, fab or all; install leaves out external and print-only work.
+- **SWMS list** (`GET /swms?view=&mine=`) and **checklists report** (`GET /reports/checklists`).
+- **Compliance dashboard** (`GET /compliance/dashboard`): overdue, today and within 30 days per kind, plus worker counts. Managers only.
+- **Role dashboards** (`GET /dashboards/{role}`): tiles for seven roles from real data; admin may open any.
+- **Weekly reports:** hours (Wednesday, one email, hours only, never cost) and open issues per department (Thursday). Jobs `weekly-hours-report` and `weekly-issues-report`, also `POST /admin/reports/weekly-hours|weekly-issues`. They use the monthly mail budget (100 emails on the demo plan).
+
 ## Still to build (in order)
 
-1. **Reports:** the parameterised report endpoints (about 12).
-2. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
-3. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
+2. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 208 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 252 automated tests.

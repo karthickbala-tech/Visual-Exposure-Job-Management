@@ -84,8 +84,19 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
 			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
 			countByStage: async () => db.jobs.reduce((m, j) => ({ ...m, [j.stage]: (m[j.stage] || 0) + 1 }), {}),
-			list: async ({ stage, ids } = {}) =>
-				byIds(db.jobs, ids).filter((j) => !stage || j.stage === stage).map(clone),
+			list: async ({ stage, stages, excludeStages, pmId, fabManagerId, mineId, search, ids } = {}) =>
+				byIds(db.jobs, ids)
+					.filter(
+						(j) =>
+							(!stage || j.stage === stage) &&
+							(!stages || !stages.length || stages.includes(j.stage)) &&
+							(!excludeStages || !excludeStages.length || !excludeStages.includes(j.stage)) &&
+							(!pmId || String(j.pm_id) === String(pmId)) &&
+							(!fabManagerId || String(j.fab_manager_id) === String(fabManagerId)) &&
+							(!mineId || String(j.pm_id) === String(mineId) || String(j.fab_manager_id) === String(mineId)) &&
+							(!search || String(j.name).toLowerCase().includes(String(search).toLowerCase()))
+					)
+					.map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.jobs.push(r);
@@ -99,10 +110,13 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.tasks.filter((t) => t.required_finish && t.required_finish < today && !terminal.includes(t.stage)).length,
 			findBySwms: async (swmsId) => clone(db.tasks.find((t) => String(t.swms_id) === String(swmsId))),
 			listByJob: async (jobId) => db.tasks.filter((t) => String(t.job_id) === String(jobId)).map(clone),
-			list: async ({ jobId, type, stage, ids, excludeStages, from, to } = {}) =>
+			list: async ({ jobId, type, stage, ids, excludeStages, from, to, kind, swmsIds, requiredBefore } = {}) =>
 				byIds(db.tasks, ids)
 					.filter(
 						(t) =>
+							(!kind || t.kind === kind) &&
+							(!swmsIds || swmsIds.map(String).includes(String(t.swms_id))) &&
+							(!requiredBefore || (t.required_finish && t.required_finish < requiredBefore)) &&
 							(!jobId || String(t.job_id) === String(jobId)) &&
 							(!type || t.task_type === type) &&
 							(!stage || t.stage === stage) &&
@@ -162,6 +176,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			findMine: async ({ taskId, personId, phase }) =>
 				clone(db.checklists.find((c) => String(c.task_id) === String(taskId) && String(c.assignee_id) === String(personId) && c.phase === phase)),
 			listByTask: async (taskId) => db.checklists.filter((c) => String(c.task_id) === String(taskId)).map(clone),
+			list: async ({ status, phase, personId } = {}) =>
+				db.checklists.filter((c) => (!status || c.checklist_status === status) && (!phase || c.phase === phase) && (!personId || String(c.assignee_id) === String(personId))).map(clone),
 			listDonePostForPerson: async (personId) => db.checklists.filter((c) => String(c.assignee_id) === String(personId) && c.phase === 'post' && c.checklist_status === 'Completed').map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
@@ -200,6 +216,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		compliance: {
 			findById: async (id) => clone(db.citems.find((i) => String(i.ROWID) === String(id))),
 			list: async ({ personId } = {}) => db.citems.filter((i) => i.is_active !== 'false' && (!personId || String(i.person_id) === String(personId))).map(clone),
+			listExpiringBy: async (date, { activeOnly = true } = {}) => db.citems.filter((i) => i.expiry_date && i.expiry_date <= date && (!activeOnly || i.is_active !== 'false')).map(clone),
 			listDue: async (until) => db.citems.filter((i) => i.is_active !== 'false' && i.next_reminder_at && i.next_reminder_at <= until).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
@@ -229,6 +246,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		swms: {
 			findById: async (id) => clone(db.swms.find((s) => String(s.ROWID) === String(id))),
+			list: async ({ statuses } = {}) => db.swms.filter((s) => !statuses || !statuses.length || statuses.includes(s.swms_status)).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.swms.push(r);

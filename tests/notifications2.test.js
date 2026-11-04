@@ -49,7 +49,7 @@ test('rules: placeholders are checked and edits are applied safely', () => {
 test('admin can list, edit, preview and reset email templates; placeholders and roles are checked', async () => {
 	const { w } = setup();
 	const list = await notifications.listTemplates(w.ctx);
-	assert.equal(list.items.length, 6);
+	assert.equal(list.items.length, 8);
 	assert.deepEqual(list.items.find((i) => i.name === 'issueRaised').placeholders, ['subject', 'department', 'priority']);
 	assert.equal(list.items.find((i) => i.name === 'jobClosed').override, null);
 
