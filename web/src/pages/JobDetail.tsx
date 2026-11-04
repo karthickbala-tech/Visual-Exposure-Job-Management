@@ -6,7 +6,7 @@ import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, Kpi, Ring } from '../components/ui';
+import { Card, Kpi, Ring, fmtDate } from '../components/ui';
 import { useCloseJob } from '../api/more';
 import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
@@ -26,7 +26,7 @@ export function JobDetail() {
 	const [taskType, setTaskType] = useState<(typeof TYPES)[number]>('design');
 	const [adding, setAdding] = useState(false);
 
-	if (q.isPending) return <p role="status">Loading job...</p>;
+	if (q.isPending) return <p role="status">Loading job…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) {
 		return (
 			<>
@@ -57,14 +57,14 @@ export function JobDetail() {
 						<h1>{job.name}</h1>
 						<div className="job-meta">
 							<Chip status={job.stage} />
-							{job.expected_finish && <span>Expected finish {job.expected_finish}</span>}
+							{job.expected_finish && <span>Expected finish {fmtDate(job.expected_finish)}</span>}
 						</div>
 						{job.description && <p className="lead" style={{ marginTop: 12 }}>{job.description}</p>}
 					</div>
 					<Ring value={progress.job} label="Job progress" />
 					{canClose && (
 						<button className="btn" disabled={close.isPending} onClick={() => close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') })}>
-							{close.isPending ? 'Closing...' : 'Close job'}
+							{close.isPending ? 'Closing…' : 'Close job'}
 						</button>
 					)}
 				</div>
@@ -132,7 +132,7 @@ export function JobDetail() {
 								<input value={taskName} onChange={(e) => setTaskName(e.target.value)} required maxLength={200} autoFocus />
 							</label>
 							<button className="btn" disabled={add.isPending || !taskName.trim()}>
-								{add.isPending ? 'Adding...' : 'Add task'}
+								{add.isPending ? 'Adding…' : 'Add task'}
 							</button>
 							<button type="button" className="btn btn-ghost" onClick={() => setAdding(false)}>
 								Cancel
@@ -171,7 +171,7 @@ export function JobDetail() {
 										<td data-label="Quoted hrs" className="num">
 											{num(t.quoted_hours)}
 										</td>
-										<td data-label="Scheduled">{t.scheduled_date || '-'}</td>
+										<td data-label="Scheduled">{fmtDate(t.scheduled_date)}</td>
 										<td data-label="Actions">
 											<div className="actions">
 												{(t.nextStages ?? []).map((s) => (

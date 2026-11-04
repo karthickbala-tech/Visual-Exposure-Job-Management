@@ -81,7 +81,7 @@ export function SignsPanel({ jobId, canWrite }: { jobId: string; canWrite: boole
 						<input type="date" value={form.install_date} onChange={set('install_date')} />
 					</label>
 					<button className="btn" disabled={write.isPending}>
-						{write.isPending ? 'Saving...' : 'Save'}
+						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 						Cancel
@@ -89,7 +89,7 @@ export function SignsPanel({ jobId, canWrite }: { jobId: string; canWrite: boole
 					{write.isError && <p role="alert">{write.error.message}</p>}
 				</form>
 			)}
-			{list.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{list.isError && <p role="alert">Could not load signs.</p>}
 			{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No signs on this job yet.</p>}
 			{list.isSuccess && list.data.items.length > 0 && (

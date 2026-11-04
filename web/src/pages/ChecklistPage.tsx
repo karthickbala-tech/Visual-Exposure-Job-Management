@@ -40,7 +40,7 @@ function Field({ q, value, disabled, onChange }: { q: Question; value: string | 
 			<label className="q">
 				{label}
 				<select value={String(value ?? '')} disabled={disabled} onChange={(e) => onChange(e.target.value || null)}>
-					<option value="">Choose...</option>
+					<option value="">Choose…</option>
 					{(q.options ?? []).map((o) => (
 						<option key={o}>{o}</option>
 					))}
@@ -110,7 +110,7 @@ function ShiftForm({ taskBusy, onSubmit, error }: { taskBusy: boolean; onSubmit:
 			</div>
 			{error && <p role="alert">{error}</p>}
 			<button className="btn btn-primary" disabled={taskBusy}>
-				{taskBusy ? 'Saving...' : 'Complete checklist'}
+				{taskBusy ? 'Saving…' : 'Complete checklist'}
 			</button>
 		</form>
 	);
@@ -179,7 +179,7 @@ export function ChecklistPage() {
 	const { id } = useParams();
 	const q = useChecklist(id);
 
-	if (q.isPending) return <p role="status">Loading checklist...</p>;
+	if (q.isPending) return <p role="status">Loading checklist…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) return <h1 className="page-title">Checklist not found</h1>;
 	if (q.isError) return <p role="alert">Could not load this checklist.</p>;
 	return <Body data={q.data} />;

@@ -5,7 +5,7 @@ import { pdfUrl, useIssueHistory } from '../api/more';
 
 function History({ id }: { id: string }) {
 	const q = useIssueHistory(id, true);
-	if (q.isPending) return <p role="status" className="muted">Loading history...</p>;
+	if (q.isPending) return <p role="status" className="muted">Loading history…</p>;
 	if (q.isError) return <p role="alert">Could not load the history.</p>;
 	if (q.data.items.length === 0) return <p className="muted">No changes yet.</p>;
 	return (
@@ -77,7 +77,7 @@ export function Issues() {
 							</select>
 						</label>
 						<button className="btn" disabled={create.isPending || !subject.trim()}>
-							{create.isPending ? 'Saving...' : 'Raise issue'}
+							{create.isPending ? 'Saving…' : 'Raise issue'}
 						</button>
 						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 							Cancel
@@ -105,7 +105,7 @@ export function Issues() {
 					</label>
 				</div>
 
-				{issues.isPending && <p role="status" className="table-empty">Loading issues...</p>}
+				{issues.isPending && <p role="status" className="table-empty">Loading issues…</p>}
 				{issues.isError && <p role="alert">Could not load issues.</p>}
 				{issues.isSuccess && issues.data.items.length === 0 && <p className="table-empty">No issues to show.</p>}
 				{move.isError && <p role="alert">{move.error.message}</p>}

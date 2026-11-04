@@ -70,7 +70,7 @@ export function Calendar() {
 					</div>
 				</div>
 
-				{q.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{q.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{q.isError && <p role="alert">Could not load the calendar.</p>}
 
 				{q.isSuccess && (

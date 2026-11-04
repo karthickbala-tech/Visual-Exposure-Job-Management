@@ -54,7 +54,7 @@ export function SettingsTab() {
 	const setRoute = (d: string, patch: { manager_id?: string | null; inform_also?: string[] }) => setS({ ...s, issue_routing: { ...(s.issue_routing ?? {}), [d]: { ...route(d), ...patch } } });
 	const list = people.data?.items ?? [];
 
-	if (q.isPending) return <p role="status" className="table-empty">Loading settings...</p>;
+	if (q.isPending) return <p role="status" className="table-empty">Loading settings…</p>;
 	if (q.isError) return <p role="alert">Could not load settings.</p>;
 	return (
 		<div className="stack">
@@ -110,7 +110,7 @@ export function SettingsTab() {
 				<label><span className="toolbar__label">One per line, like "Name: Visual Exposure Pty Ltd"</span><textarea rows={5} value={pcbu} onChange={(e) => setPcbu(e.target.value)} /></label>
 			</Card>
 
-			<div className="actions"><button className="btn" onClick={submit} disabled={save.isPending}>{save.isPending ? 'Saving...' : 'Save settings'}</button></div>
+			<div className="actions"><button className="btn" onClick={submit} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</button></div>
 		</div>
 	);
 }
@@ -119,7 +119,7 @@ export function SettingsTab() {
 export function EmailsTab() {
 	const q = useMailTemplates();
 	const [open, setOpen] = useState<string | null>(null);
-	if (q.isPending) return <p role="status" className="table-empty">Loading emails...</p>;
+	if (q.isPending) return <p role="status" className="table-empty">Loading emails…</p>;
 	if (q.isError) return <p role="alert">Could not load the emails.</p>;
 	return (
 		<div className="stack">
@@ -178,7 +178,7 @@ export function NotificationsTab() {
 					</select>
 				</label>
 			</div>
-			{q.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{q.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{q.isError && <p role="alert">Could not load the log.</p>}
 			{q.isSuccess && q.data.items.length === 0 && <p className="table-empty">No emails yet.</p>}
 			{q.isSuccess && q.data.items.length > 0 && (
@@ -210,7 +210,7 @@ export function RolesTab() {
 	const roles = useRoles();
 	const update = useUpdatePerson();
 	const { notify } = useToast();
-	if (people.isPending || roles.isPending) return <p role="status" className="table-empty">Loading...</p>;
+	if (people.isPending || roles.isPending) return <p role="status" className="table-empty">Loading…</p>;
 	if (people.isError || roles.isError) return <p role="alert">Could not load people.</p>;
 	return (
 		<Card flush title="People and roles">

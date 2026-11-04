@@ -7,7 +7,7 @@ import { Login } from './Login';
 export function AuthGate({ children }: { children: ReactNode }) {
 	const me = useMe();
 
-	if (me.isPending) return <p className="status" role="status">Loading...</p>;
+	if (me.isPending) return <p className="status" role="status">Loading…</p>;
 	if (me.error instanceof ApiError && me.error.status === 401) return <Login />;
 	if (me.error instanceof ApiError && me.error.status === 403) {
 		return (

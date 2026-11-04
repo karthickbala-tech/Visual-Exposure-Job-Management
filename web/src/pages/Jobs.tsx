@@ -5,7 +5,7 @@ import { useCreateJob, useJobs, useMe } from '../api/queries';
 import { num } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDate } from '../components/ui';
 
 const VIEWS = [
 	{ key: 'all', label: 'All' },
@@ -64,7 +64,7 @@ export function Jobs() {
 							<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} autoFocus />
 						</label>
 						<button className="btn" disabled={create.isPending || !name.trim()}>
-							{create.isPending ? 'Creating...' : 'Create job'}
+							{create.isPending ? 'Creating…' : 'Create job'}
 						</button>
 						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 							Cancel
@@ -88,7 +88,7 @@ export function Jobs() {
 							type="search"
 							value={text}
 							onChange={(e) => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })}
-							placeholder="Filter by name or deal"
+							placeholder="Filter by name or deal…"
 							aria-label="Filter jobs"
 						/>
 					</label>
@@ -103,7 +103,7 @@ export function Jobs() {
 					</label>
 				</div>
 
-				{jobs.isPending && <p role="status" className="table-empty">Loading jobs...</p>}
+				{jobs.isPending && <p role="status" className="table-empty">Loading jobs…</p>}
 				{jobs.isError && (
 					<p role="alert">
 						Could not load jobs.{' '}
@@ -138,7 +138,7 @@ export function Jobs() {
 										<td data-label="Progress">
 											<Progress label="Job" value={num(j.percent_job)} single />
 										</td>
-										<td data-label="Expected finish">{j.expected_finish || '-'}</td>
+										<td data-label="Expected finish">{fmtDate(j.expected_finish)}</td>
 									</tr>
 								))}
 							</tbody>

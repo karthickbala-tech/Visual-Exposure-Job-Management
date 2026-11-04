@@ -29,7 +29,7 @@ export function SwmsList() {
 			</PageHeader>
 
 			<Card flush>
-				{q.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{q.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{q.isError && <p role="alert">Could not load SWMS.</p>}
 				{q.isSuccess && q.data.items.length === 0 && <p className="table-empty">No statements to show.</p>}
 				{q.isSuccess && q.data.items.length > 0 && (
@@ -81,7 +81,7 @@ export function ChecklistReport() {
 						</select>
 					</label>
 				</div>
-				{q.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{q.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{q.isError && <p role="alert">Could not load checklists.</p>}
 				{q.isSuccess && q.data.items.length === 0 && <p className="table-empty">No checklists match.</p>}
 				{q.isSuccess && q.data.items.length > 0 && (

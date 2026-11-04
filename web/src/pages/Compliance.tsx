@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, Kpi, PageHeader } from '../components/ui';
+import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useComplianceDashboard } from '../api/more';
 
 const KIND_LABEL: Record<string, string> = { ticket: 'Tickets', induction: 'Inductions', company_document: 'Company documents' };
@@ -71,7 +71,7 @@ export function Compliance() {
 						<label>
 							<span className="toolbar__label">Person</span>
 							<select value={form.person_id} onChange={set('person_id')} required style={{ width: '100%' }}>
-								<option value="">Choose...</option>
+								<option value="">Choose…</option>
 								{people.data?.items.map((p) => (
 									<option key={p.ROWID} value={p.ROWID}>
 										{`${p.first_name} ${p.last_name ?? ''}`.trim()}
@@ -82,7 +82,7 @@ export function Compliance() {
 						<label>
 							<span className="toolbar__label">Type</span>
 							<select value={form.type_id} onChange={set('type_id')} required style={{ width: '100%' }}>
-								<option value="">Choose...</option>
+								<option value="">Choose…</option>
 								{types.data?.items.map((t) => (
 									<option key={t.id} value={t.id}>
 										{t.name}
@@ -99,7 +99,7 @@ export function Compliance() {
 							<input type="date" value={form.expiry_date} onChange={set('expiry_date')} required={!!type?.requiresExpiry} />
 						</label>
 						<button className="btn" disabled={create.isPending}>
-							{create.isPending ? 'Saving...' : 'Save'}
+							{create.isPending ? 'Saving…' : 'Save'}
 						</button>
 						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 							Cancel
@@ -120,7 +120,7 @@ export function Compliance() {
 					</label>
 				</div>
 
-				{items.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{items.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{items.isError && <p role="alert">Could not load compliance records.</p>}
 				{items.isSuccess && items.data.items.length === 0 && <p className="table-empty">No records to show.</p>}
 				{items.isSuccess && items.data.items.length > 0 && (
@@ -145,7 +145,7 @@ export function Compliance() {
 										<td data-label="Type">{i.typeName ?? i.kind}</td>
 										<td data-label="Reference">{i.referenceNo || '-'}</td>
 										<td data-label="Expires">
-											{i.expiryDate ? `${i.expiryDate}${i.daysLeft !== null ? ` (${i.daysLeft < 0 ? Math.abs(i.daysLeft) + ' days ago' : i.daysLeft + ' days'})` : ''}` : '-'}
+											{i.expiryDate ? `${fmtDate(i.expiryDate)}${i.daysLeft !== null ? ` (${i.daysLeft < 0 ? Math.abs(i.daysLeft) + ' days ago' : i.daysLeft + ' days'})` : ''}` : '-'}
 										</td>
 										<td data-label="Status">
 											<Chip status={i.status} />

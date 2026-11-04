@@ -19,7 +19,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 	const [address, setAddress] = useState<string | null>(null);
 	const [taskLines, setTaskLines] = useState('');
 
-	if (q.isPending) return <p role="status">Loading SWMS...</p>;
+	if (q.isPending) return <p role="status">Loading SWMS…</p>;
 	if (q.isError) return <p role="alert">Could not load the SWMS.</p>;
 
 	const s = q.data.swms;
@@ -116,7 +116,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 					</label>
 					<label>
 						<span className="toolbar__label">Add PPE (comma separated)</span>
-						<input value={ppe} onChange={(e) => setPpe(e.target.value)} placeholder="hardhat, boots" />
+						<input value={ppe} onChange={(e) => setPpe(e.target.value)} placeholder="e.g. hard hat, boots…" />
 					</label>
 					<label style={{ flexBasis: '100%' }}>
 						<span className="toolbar__label">Work steps (one per line, replaces the list)</span>

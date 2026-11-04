@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTaskBoard } from '../api/more';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDate } from '../components/ui';
 
 const TYPES = [
 	{ key: 'design', label: 'Design' },
@@ -24,7 +24,7 @@ export function TaskBoard() {
 				</div>
 			</PageHeader>
 
-			{q.isPending && <p role="status">Loading the board...</p>}
+			{q.isPending && <p role="status">Loading the board…</p>}
 			{q.isError && <p role="alert">Could not load the board.</p>}
 			{q.isSuccess && (
 				<div className="board" role="list" aria-label={`${type} tasks by stage`}>
@@ -40,7 +40,7 @@ export function TaskBoard() {
 								{col.items.map((t) => (
 									<Link key={t.ROWID} to={'/tasks/' + t.ROWID} className={'board-card' + (t.overdue ? ' overdue' : '')}>
 										<strong>{t.name}</strong>
-										<small>{[t.kind, t.scheduled_date && `Scheduled ${t.scheduled_date.slice(0, 10)}`, t.required_finish && `Due ${t.required_finish.slice(0, 10)}`].filter(Boolean).join(' · ') || ' '}</small>
+										<small>{[t.kind, t.scheduled_date && `Scheduled ${fmtDate(t.scheduled_date)}`, t.required_finish && `Due ${fmtDate(t.required_finish)}`].filter(Boolean).join(' · ') || ' '}</small>
 									</Link>
 								))}
 							</div>

@@ -227,7 +227,7 @@ export function Login() {
 
 							{errors.form && <p className="login__err" role="alert">{errors.form}</p>}
 							<button className="btn login__submit" disabled={busy}>
-								{busy ? 'Signing in...' : 'Sign in'}
+								{busy ? 'Signing in…' : 'Sign in'}
 							</button>
 						</form>
 					)}

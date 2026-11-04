@@ -311,3 +311,20 @@ body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
 /* Raleway's default numerals are old-style (a 0 looks like an "o"); dates, hours and counts need lining figures. */
 html { font-variant-numeric: lining-nums; font-feature-settings: 'lnum' 1; }
 .num { font-variant-numeric: lining-nums tabular-nums; }
+
+/* Review fixes: balanced headings, sticky bar never covers a focused field, notches, rubber-band only for a mouse */
+h1, h2, h3 { text-wrap: balance; }
+html { scroll-padding-top: 72px; }
+body { overscroll-behavior-y: auto; }
+@media (pointer: fine) { html { overscroll-behavior: none; } }
+.sidebar { padding-bottom: env(safe-area-inset-bottom); }
+.toast { bottom: calc(24px + env(safe-area-inset-bottom)); }
+.table td, .rtable td { font-variant-numeric: lining-nums; }
+
+/* Motion: short, ease-out, transform and opacity only; the reduced-motion rule above switches all of it off. */
+.sidebar { transition: transform 0.22s cubic-bezier(0.23, 1, 0.32, 1); }
+.toast { animation: toast-in 0.18s cubic-bezier(0.23, 1, 0.32, 1); }
+.scrim { animation: fade-in 0.15s ease-out; }
+.btn, .icon-btn, .segmented button, .side-link, .board-card, .kpi { transition: background-color 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

@@ -59,7 +59,7 @@ export function FilesPanel({ entityType, entityId, canUpload }: { entityType: st
 					</p>
 				</div>
 			)}
-			{upload.isPending && <p role="status">Uploading...</p>}
+			{upload.isPending && <p role="status">Uploading…</p>}
 			{upload.isError && <p role="alert">{upload.error.message}</p>}
 		</Card>
 	);

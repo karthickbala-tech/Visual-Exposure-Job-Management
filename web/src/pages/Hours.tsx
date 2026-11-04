@@ -97,7 +97,7 @@ export function Hours() {
 					)}
 					{view !== 'week' && period.data?.period && <span className="cal-label">{period.data.period.start} to {period.data.period.end}</span>}
 				</div>
-				{active.isPending && <p role="status" className="table-empty">Loading hours...</p>}
+				{active.isPending && <p role="status" className="table-empty">Loading hours…</p>}
 				{active.isError && <p role="alert">{active.error instanceof Error ? active.error.message : 'Could not load hours.'}</p>}
 				{active.isSuccess && <Table report={active.data} perDay={view === 'week'} />}
 				{active.isSuccess && view === 'week' && (

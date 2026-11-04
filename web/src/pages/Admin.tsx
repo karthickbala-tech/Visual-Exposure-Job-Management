@@ -55,7 +55,7 @@ function Permissions() {
 		}
 	}, [authz.data]);
 
-	if (authz.isPending) return <p role="status" className="table-empty">Loading...</p>;
+	if (authz.isPending) return <p role="status" className="table-empty">Loading…</p>;
 	if (authz.isError || !matrix) return <p role="alert">Could not load permissions.</p>;
 
 	const roles = Object.keys(matrix).filter((r) => r !== 'admin');
@@ -84,7 +84,7 @@ function Permissions() {
 					</select>
 				</label>
 				<button className="btn" disabled={save.isPending} onClick={() => save.mutate(matrix, { onSuccess: () => notify('Permissions saved. They apply within five minutes.') })}>
-					{save.isPending ? 'Saving...' : 'Save permissions'}
+					{save.isPending ? 'Saving…' : 'Save permissions'}
 				</button>
 				{save.isError && <p role="alert">{save.error.message}</p>}
 			</div>
@@ -155,7 +155,7 @@ function Outbox() {
 					</select>
 				</label>
 			</div>
-			{list.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{list.isError && <p role="alert">Could not load the outbox.</p>}
 			{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">Nothing in the outbox.</p>}
 			{list.isSuccess && list.data.items.length > 0 && (
@@ -220,10 +220,10 @@ function Integrations() {
 		<Card flush>
 			<div className="inline-form">
 				<button className="btn" disabled={check.isPending} onClick={() => check.mutate()}>
-					{check.isPending ? 'Checking...' : 'Check connections'}
+					{check.isPending ? 'Checking…' : 'Check connections'}
 				</button>
 				<button className="btn btn-ghost" disabled={pull.isPending} onClick={() => pull.mutate()}>
-					{pull.isPending ? 'Pulling...' : 'Pull won deals from CRM now'}
+					{pull.isPending ? 'Pulling…' : 'Pull won deals from CRM now'}
 				</button>
 				{check.isError && <p role="alert">{check.error.message}</p>}
 				{pull.isError && <p role="alert">{pull.error.message}</p>}

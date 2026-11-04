@@ -12,7 +12,7 @@ export function Devices() {
 			<PageHeader eyebrow="Workers" title="Devices" subtitle="Last known location of each worker device." />
 			<Card flush>
 				{!allowed && me.isSuccess && <p className="table-empty">You do not have access to devices.</p>}
-				{allowed && list.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{allowed && list.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{allowed && list.isError && <p role="alert">Could not load devices.</p>}
 				{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No devices yet. They appear once the device sync is switched on.</p>}
 				{list.isSuccess && list.data.items.length > 0 && (

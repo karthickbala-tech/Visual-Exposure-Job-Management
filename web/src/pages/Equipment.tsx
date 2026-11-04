@@ -35,7 +35,7 @@ export function Equipment() {
 }
 
 function State({ q, empty }: { q: { isPending: boolean; isError: boolean; data?: { items: unknown[] } }; empty: string }) {
-	if (q.isPending) return <p role="status" className="table-empty">Loading...</p>;
+	if (q.isPending) return <p role="status" className="table-empty">Loading…</p>;
 	if (q.isError) return <p role="alert">Could not load this list.</p>;
 	if (q.data && q.data.items.length === 0) return <p className="table-empty">{empty}</p>;
 	return null;
@@ -115,7 +115,7 @@ function EquipmentTab({ canWrite }: { canWrite: boolean }) {
 						<input type="checkbox" checked={form.off_hire_required} onChange={(e) => setForm({ ...form, off_hire_required: e.target.checked })} /> Hired (off hire when the job ends)
 					</label>
 					<button className="btn" disabled={write.isPending}>
-						{write.isPending ? 'Saving...' : 'Save'}
+						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 						Cancel
@@ -241,7 +241,7 @@ function ChemicalsTab({ canWrite }: { canWrite: boolean }) {
 						<input value={form.hazard_class} onChange={set('hazard_class')} maxLength={100} />
 					</label>
 					<button className="btn" disabled={write.isPending}>
-						{write.isPending ? 'Saving...' : 'Save'}
+						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 						Cancel

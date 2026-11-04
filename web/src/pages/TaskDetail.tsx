@@ -5,7 +5,7 @@ import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
 
@@ -22,7 +22,7 @@ export function TaskDetail() {
 	const move = useTransitionTask(q.data?.task.job_id ?? '');
 	const { notify } = useToast();
 
-	if (q.isPending) return <p role="status">Loading task...</p>;
+	if (q.isPending) return <p role="status">Loading task…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) return <h1 className="page-title">Task not found</h1>;
 	if (q.isError) return <p role="alert">Could not load this task.</p>;
 
@@ -58,7 +58,7 @@ export function TaskDetail() {
 					</div>
 					<div className="fact">
 						<dt>Scheduled</dt>
-						<dd>{task.scheduled_date || '-'}</dd>
+						<dd>{fmtDate(task.scheduled_date)}</dd>
 					</div>
 					<div className="fact">
 						<dt>Team</dt>

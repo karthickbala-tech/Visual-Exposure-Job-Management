@@ -22,7 +22,7 @@ export function People() {
 		<>
 			<PageHeader eyebrow="Team" title="People" subtitle="Staff and subcontractors who work on jobs." />
 			<Card flush>
-				{q.isPending && <p role="status" className="table-empty">Loading...</p>}
+				{q.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{q.isError && <p role="alert">Could not load people.</p>}
 				{q.isSuccess && q.data.items.length === 0 && <p className="table-empty">No people yet.</p>}
 				{q.isSuccess && q.data.items.length > 0 && (

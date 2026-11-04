@@ -23,14 +23,14 @@ export function QuotesPanel({ jobId, hasDeal, canSync }: { jobId: string; hasDea
 			action={
 				hasDeal && canSync ? (
 					<button className="btn btn-ghost" onClick={run} disabled={sync.isPending}>
-						<RefreshCw size={15} aria-hidden="true" /> {sync.isPending ? 'Syncing...' : 'Sync from CRM'}
+						<RefreshCw size={15} aria-hidden="true" /> {sync.isPending ? 'Syncing…' : 'Sync from CRM'}
 					</button>
 				) : undefined
 			}
 		>
 			{sync.isError && <p role="alert">{sync.error.message}</p>}
 			{!hasDeal && <p className="table-empty">This job was not created from a CRM deal, so there are no quotes to pull.</p>}
-			{hasDeal && list.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{hasDeal && list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{hasDeal && list.isError && <p role="alert">Could not load quotes.</p>}
 			{hasDeal && list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No quotes saved yet. Use "Sync from CRM" once a quote exists on the deal.</p>}
 			{list.isSuccess &&

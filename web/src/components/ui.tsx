@@ -64,3 +64,11 @@ export function Ring({ value, label }: { value: number; label: string }) {
 		</svg>
 	);
 }
+
+/** A date for people (4 Nov 2026), whatever way the server wrote it. Anything that is not a date is shown as it is. */
+export function fmtDate(value: string | null | undefined): string {
+	if (!value) return '-';
+	const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+	if (!m) return value;
+	return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}

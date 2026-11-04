@@ -86,7 +86,7 @@ function Companies({ canWrite }: { canWrite: boolean }) {
 						<input type="email" value={form.email} onChange={set('email')} maxLength={200} />
 					</label>
 					<button className="btn" disabled={write.isPending}>
-						{write.isPending ? 'Saving...' : 'Save'}
+						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 						Cancel
@@ -94,7 +94,7 @@ function Companies({ canWrite }: { canWrite: boolean }) {
 					{write.isError && <p role="alert">{write.error.message}</p>}
 				</form>
 			)}
-			{list.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{list.isError && <p role="alert">Could not load companies.</p>}
 			{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No companies yet.</p>}
 			{list.isSuccess && list.data.items.length > 0 && (
@@ -187,7 +187,7 @@ function Sites({ canWrite }: { canWrite: boolean }) {
 						<input value={form.post_code} onChange={set('post_code')} maxLength={10} />
 					</label>
 					<button className="btn" disabled={write.isPending}>
-						{write.isPending ? 'Saving...' : 'Save'}
+						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
 						Cancel
@@ -195,7 +195,7 @@ function Sites({ canWrite }: { canWrite: boolean }) {
 					{write.isError && <p role="alert">{write.error.message}</p>}
 				</form>
 			)}
-			{list.isPending && <p role="status" className="table-empty">Loading...</p>}
+			{list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{list.isError && <p role="alert">Could not load sites.</p>}
 			{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No sites yet.</p>}
 			{list.isSuccess && list.data.items.length > 0 && (

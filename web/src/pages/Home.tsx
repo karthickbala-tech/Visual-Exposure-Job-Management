@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useDashboard, useMe } from '../api/queries';
 import { Chip } from '../components/Chip';
-import { Card, Kpi, PageHeader } from '../components/ui';
+import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useRoleDashboard } from '../api/more';
 
 const TILE_ROLES = ['project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'];
@@ -36,7 +36,7 @@ export function Home() {
 
 			{me.isSuccess && <RoleTiles roles={me.data.roles} />}
 
-			{q.isPending && <p role="status">Loading your dashboard...</p>}
+			{q.isPending && <p role="status">Loading your dashboard…</p>}
 			{q.isError && <p role="alert">Could not load the dashboard.</p>}
 
 			{q.isSuccess && q.data.scope === 'all' && (
@@ -86,7 +86,7 @@ export function Home() {
 											<td data-label="Stage">
 												<Chip status={t.stage} />
 											</td>
-											<td data-label="Scheduled">{t.scheduled_date || '-'}</td>
+											<td data-label="Scheduled">{fmtDate(t.scheduled_date)}</td>
 										</tr>
 									))}
 								</tbody>
