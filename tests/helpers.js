@@ -118,6 +118,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return clone(r);
 			},
 			update: async (row) => patch(db.tasks, row),
+			insertMany: async (rows) => rows.forEach((row) => db.tasks.push({ ROWID: nextId(), ...row })),
 		},
 		assignees: {
 			listForTask: async (taskId) => db.links.filter((l) => String(l.task_id) === String(taskId)).map(clone),
