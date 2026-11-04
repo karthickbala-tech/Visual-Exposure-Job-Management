@@ -90,10 +90,18 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **TSK-5:** `DELETE /files/{id}` (the person who added it or a manager) hides the file and publishes `file.deleted`. Sync of attachments to WorkDrive is NOT built (needs a file transfer job).
 - **Left partly built:** conditional field checks per role on the task form (TSK-6), photo answers inside checklists (CHK-8), the "Team Briefed" sub-stage (needs real checklist wording), companies and documents detail (CMP-1), device sync (EQP-4, needs MDM credentials), attachments to WorkDrive.
 
+## Built in batch 9 (4 Nov 2026): more partly built items
+
+- **TSK-6 (server side):** a finished task is locked except for notes; the scheduled date cannot be after the required finish; only fabrication tasks have a spec.
+- **CHK-8:** a photo answer must be a finished photo upload that belongs to that checklist.
+- **CMP-1:** company documents. A compliance item can belong to a company (documents) or a person (tickets, inductions); `GET /compliance?company_id=`; reminders go to the company contact (unless opted out) and the project managers.
+- **Roles (FSD 5.14):** `GET /roles`; only an administrator changes roles or the active flag, and nobody can remove their own administrator role or switch themselves off.
+- **Not built:** attachments to WorkDrive (needs a file-transfer job), import and export, device sync (MDM credentials), "Team Briefed" (checklist wording).
+
 ## Still to build (in order)
 
 1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 259 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 263 automated tests.

@@ -145,6 +145,7 @@ router.add('DELETE', '/files/:id', withCtx(async (ctx, { params }) => ok(await f
 router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => ok(await files.downloadUrl(ctx, params.id))));
 
 // People and compliance
+router.add('GET', '/roles', withCtx(async (ctx) => ok(await people.listRoles(ctx))));
 router.add('GET', '/people', withCtx(async (ctx, { url }) => ok(await people.listPeople(ctx, parseQuery(url)))));
 router.add('POST', '/people', withCtx(async (ctx, { req }) => created(await people.createPerson(ctx, await readJson(req)))));
 router.add('GET', '/people/:id', withCtx(async (ctx, { params }) => ok(await people.getPerson(ctx, params.id))));

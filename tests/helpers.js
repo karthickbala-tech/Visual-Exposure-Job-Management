@@ -29,6 +29,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		companies: {
 			findById: async (id) => clone(db.companies.find((r) => String(r.ROWID) === String(id))),
+			findByIds: async (ids) => db.companies.filter((r) => ids.map(String).includes(String(r.ROWID))).map(clone),
 			list: async () => db.companies.map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
@@ -216,7 +217,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		compliance: {
 			findById: async (id) => clone(db.citems.find((i) => String(i.ROWID) === String(id))),
-			list: async ({ personId } = {}) => db.citems.filter((i) => i.is_active !== 'false' && (!personId || String(i.person_id) === String(personId))).map(clone),
+			list: async ({ personId, companyId } = {}) => db.citems.filter((i) => i.is_active !== 'false' && (!personId || String(i.person_id) === String(personId)) && (!companyId || String(i.company_id) === String(companyId))).map(clone),
 			listExpiringBy: async (date, { activeOnly = true } = {}) => db.citems.filter((i) => i.expiry_date && i.expiry_date <= date && (!activeOnly || i.is_active !== 'false')).map(clone),
 			listDue: async (until) => db.citems.filter((i) => i.is_active !== 'false' && i.next_reminder_at && i.next_reminder_at <= until).map(clone),
 			insert: async (row) => {
