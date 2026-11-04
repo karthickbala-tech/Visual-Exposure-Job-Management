@@ -144,12 +144,19 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			update: async (row) => patch(db.people, row),
 			listByRole: async (role) => db.people.filter((p) => (p.roles || []).includes(role)).map(clone),
 		},
-		activity: { insert: async (row) => (db.activity.push(row), row) },
+		activity: {
+			insert: async (row) => (db.activity.push(row), row),
+			listByEntity: async ({ entityType, entityId, activityType }) =>
+				db.activity.filter((a) => a.entity_type === entityType && String(a.entity_id) === String(entityId) && a.activity_type === activityType).reverse(),
+			findByFromValue: async ({ entityType, entityId, activityType, fromValue }) =>
+				db.activity.find((a) => a.entity_type === entityType && String(a.entity_id) === String(entityId) && a.activity_type === activityType && a.from_value === fromValue) || null,
+		},
 		checklists: {
 			findById: async (id) => clone(db.checklists.find((c) => String(c.ROWID) === String(id))),
 			findMine: async ({ taskId, personId, phase }) =>
 				clone(db.checklists.find((c) => String(c.task_id) === String(taskId) && String(c.assignee_id) === String(personId) && c.phase === phase)),
 			listByTask: async (taskId) => db.checklists.filter((c) => String(c.task_id) === String(taskId)).map(clone),
+			listDonePostForPerson: async (personId) => db.checklists.filter((c) => String(c.assignee_id) === String(personId) && c.phase === 'post' && c.checklist_status === 'Completed').map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.checklists.push(r);
@@ -270,6 +277,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return rows.length;
 			},
 			listByTask: async (taskId) => db.time.filter((e) => String(e.task_id) === String(taskId)).map(clone),
+			listBetween: async ({ from, to, personId }) => db.time.filter((e) => e.work_date >= from && e.work_date <= to && (!personId || String(e.person_id) === String(personId))).map(clone),
 			approveForTask: async (taskId) => {
 				const rows = db.time.filter((e) => String(e.task_id) === String(taskId) && e.approved !== 'true');
 				rows.forEach((e) => (e.approved = 'true'));

@@ -10,16 +10,16 @@ Counted on 4 Nov 2026, then updated after each batch. **Done** = built, tested a
 | Tasks (TSK-1 to 8) | 5 | 3 | 0 |
 | Install tasks (INS-1 to 6) | 5 | 1 | 0 |
 | Fabrication (FAB-1 to 5) | 5 | 0 | 0 |
-| Design (DES-1 to 3) | 2 | 0 | 1 |
+| Design (DES-1 to 3) | 3 | 0 | 0 |
 | Checklists (CHK-1 to 8) | 6 | 2 | 0 |
 | SWMS (SW-1 to 4) | 3 | 0 | 1 |
 | Issues (ISS-1 to 6) | 1 | 3 | 2 |
-| Hours and ratings (HRS-1 to 5) | 1 | 1 | 3 |
+| Hours and ratings (HRS-1 to 5) | 5 | 0 | 0 |
 | Compliance (CMP-1 to 5) | 3 | 2 | 0 |
 | Equipment and devices (EQP-1 to 5) | 4 | 1 | 0 |
-| **Total** | **40** | **16** | **8** |
+| **Total** | **45** | **15** | **4** |
 
-Overall: (40 + 16 / 2) / 64 = **75%**. (62% at the first count, 67% after batch 1.)
+Overall: (45 + 15 / 2) / 64 = **82%**. (62% at the first count, 67% after batch 1, 75% after batch 2.)
 
 ## Built in batch 1 (4 Nov 2026)
 
@@ -37,14 +37,22 @@ Overall: (40 + 16 / 2) / 64 = **75%**. (62% at the first count, 67% after batch 
 - **FAB-4** daily job maintenance-tasks: due equipment (in service, with a schedule, next check today or earlier) gets one Maintenance task and its next due date moves forward; finishing the task counts as the check. Needs the workshop job set (Admin settings).
 - **FAB-5** the workshop job is a setting (PUT /admin/settings and POST /tasks/workshop), not a hard-coded id.
 
+## Built in batch 3 (4 Nov 2026): hours
+
+- **HRS-1** weekly employee hours (`GET /hours/weekly`): per person per day (Monday to Sunday), hours by fab, install, workshop and design, plus unbilled and final. Workshop hours ARE counted in the total (the Creator app left them out). ASSUMPTION: final = total worked minus unbilled. Managers see everyone; crew see only themselves; cost is shown to admins only.
+- **HRS-3** one pay-period setting (start date and length in days, in Admin settings) drives "this pay period" and "last pay period" (`GET /hours/pay-period`).
+- **HRS-4** hours not filled (`GET /hours/not-filled`): past fabrication work the person has no finished post-job checklist for, split into workshop and other, with an optional cutoff date setting. ASSUMPTION: in this app a finished post-job checklist always has hours, so "not filled" means the post-job checklist is not finished.
+- **HRS-5** a manager rates each person on a finished task once (`POST /tasks/{id}/ratings`, 1 to 5 with a comment); `GET /people/{id}/ratings` lists them with the average. ASSUMPTION: a 1 to 5 scale (the spec gives none). Ratings are stored in the activity log, as the plan says.
+- **DES-2** a design task cannot be completed until hours are booked on it. Design tasks have no checklists, so hours are booked by hand with `POST /tasks/{id}/hours` (own hours, or a manager for anyone on the task). Hand-booked hours are plain hours: no start and end times, so no overtime split.
+- A new "hours" area in the permission matrix: managers view all, crew view their own.
+
 ## Still to build (in order)
 
-1. **Hours (HRS-1, 3, 4, 5):** weekly employee hours, pay-period settings, hours-not-filled counts, employee rating.
-2. **Issues (ISS-2 to 6):** department filter, update emails with old and new values, create a CRM deal from an issue, per-role hidden fields.
-3. **Settings and notifications:** admin settings, editable email templates, a notification log.
-4. **Reports:** the parameterised report endpoints (about 12).
-5. **SWMS PDF (SW-4)** through Catalyst SmartBrowz (availability in the India data center to be verified); **DES-2** design completion needs booked hours.
-6. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **Issues (ISS-2 to 6):** department filter, update emails with old and new values, create a CRM deal from an issue, per-role hidden fields.
+2. **Settings and notifications:** admin settings, editable email templates, a notification log.
+3. **Reports:** the parameterised report endpoints (about 12).
+4. **SWMS PDF (SW-4)** through Catalyst SmartBrowz (availability in the India data center to be verified).
+5. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
