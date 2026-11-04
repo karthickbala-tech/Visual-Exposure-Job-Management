@@ -35,7 +35,11 @@ module.exports = async (req, res) => {
 		const actor = matched.opts.public ? null : await resolveActor(req);
 		if (actor) actor.matrix = await loadMatrix({ repos: createRepos(actor.db), cache: createCache(actor.app, 'config') });
 		const out = await matched.handler({ req, url: req.url, params: matched.params, actor, log });
-		ok(res, out.status, out.body);
+		if (out.body && out.body.raw) {
+			const { raw } = out.body;
+			res.writeHead(200, { 'Content-Type': raw.contentType, 'Content-Disposition': `inline; filename="${raw.filename}"`, 'Cache-Control': 'no-store' });
+			res.end(raw.buffer);
+		} else ok(res, out.status, out.body);
 		log.info('request', {
 			method,
 			path,

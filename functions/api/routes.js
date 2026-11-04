@@ -10,6 +10,7 @@ const checklists = require('./lib/services/checklists');
 const admin = require('./lib/services/admin');
 const issues = require('./lib/services/issues');
 const swms = require('./lib/services/swms');
+const printing = require('./lib/services/printing');
 const files = require('./lib/services/files');
 const dashboard = require('./lib/services/dashboard');
 const settings = require('./lib/services/settings');
@@ -132,6 +133,8 @@ router.add('GET', '/swms/:id', withCtx(async (ctx, { params }) => ok(await swms.
 router.add('PATCH', '/swms/:id', withCtx(async (ctx, { req, params }) => ok(await swms.updateSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/sign', withCtx(async (ctx, { req, params }) => ok(await swms.signSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { params }) => created(await swms.declare(ctx, params.id))));
+router.add('GET', '/swms/:id/pdf', withCtx(async (ctx, { params }) => ok(await printing.swmsPdf(ctx, params.id))));
+router.add('GET', '/issues/:id/pdf', withCtx(async (ctx, { params, url }) => ok(await printing.issuePdf(ctx, params.id, parseQuery(url)))));
 
 // Files
 router.add('GET', '/files', withCtx(async (ctx, { url }) => ok(await files.listFiles(ctx, parseQuery(url)))));

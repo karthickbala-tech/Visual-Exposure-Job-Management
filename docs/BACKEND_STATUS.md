@@ -74,11 +74,17 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **Role dashboards** (`GET /dashboards/{role}`): tiles for seven roles from real data; admin may open any.
 - **Weekly reports:** hours (Wednesday, one email, hours only, never cost) and open issues per department (Thursday). Jobs `weekly-hours-report` and `weekly-issues-report`, also `POST /admin/reports/weekly-hours|weekly-issues`. They use the monthly mail budget (100 emails on the demo plan).
 
+## Built in batch 7 (4 Nov 2026): PDFs
+
+- **SW-4:** `GET /swms/{id}/pdf` makes the SWMS as an A4 PDF (company details, site, PPE, tasks, declarations, sign-offs) with Catalyst SmartBrowz, with the same access rules as viewing the SWMS.
+- **ISS-5:** `GET /issues/{id}/pdf?layout=summary|full` (full adds details and the change history). It prints only what the caller may see (hidden fields stay hidden).
+- ASSUMPTION: two layouts, not the seven from Creator, until the client confirms them (FSD question 7). PDFs are made on request only and are not stored.
+- **Before it works live:** SmartBrowz must be switched on once in the console (SmartBrowz, "Start Exploring"). Not yet tried against the real service.
+
 ## Still to build (in order)
 
-1. **SWMS PDF (SW-4) and the issue print layouts (ISS-5)** through Catalyst SmartBrowz (availability in the India data center to be verified).
-2. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 252 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 255 automated tests.
