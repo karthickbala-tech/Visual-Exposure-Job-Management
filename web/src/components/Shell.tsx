@@ -8,6 +8,7 @@ import emblem from '../assets/emblem.png';
 import { useMe } from '../api/queries';
 import { signOut } from '../auth/Login';
 import { useTheme } from './theme';
+import { NotificationBell } from './NotificationBell';
 
 interface NavItem {
 	to: string;
@@ -204,6 +205,7 @@ export function Shell() {
 						>
 							{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
 						</button>
+						<NotificationBell />
 					</div>
 				</div>
 				<main id="main" className="page">
