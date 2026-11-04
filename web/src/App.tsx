@@ -20,6 +20,7 @@ import { Admin } from './pages/Admin';
 import { Directory } from './pages/Directory';
 import { Placeholder } from './pages/Placeholder';
 import { Hours } from './pages/Hours';
+import { PersonDetail } from './pages/PersonDetail';
 import { TaskBoard } from './pages/TaskBoard';
 import { ChecklistReport, SwmsList } from './pages/SwmsList';
 
@@ -54,6 +55,7 @@ export default function App() {
 							<Route path="issues" element={<Issues />} />
 							<Route path="calendar" element={<Calendar />} />
 							<Route path="people" element={<People />} />
+							<Route path="people/:id" element={<PersonDetail />} />
 							<Route path="compliance" element={<Compliance />} />
 							<Route path="equipment" element={<Equipment />} />
 							<Route path="devices" element={<Devices />} />

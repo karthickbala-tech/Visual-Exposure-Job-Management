@@ -58,6 +58,9 @@ const tilesFor = (role) => ({
 	project_manager: [['My open jobs', 3], ['My open install tasks', 2], ['My open design tasks', 1], ['All open fab tasks', 5]],
 	fab_manager: [['Open fab tasks', 5], ['Awaiting scheduling', 2], ['Scheduled', 1], ['In progress', 1], ['Manager review', 1], ['Overdue fab tasks', 2]],
 	installer: [['My tasks today', 1], ['My open install tasks', 2]],
+	fab_worker: [['Hours not filled in', 3], ['Hours not filled (workshop)', 1], ['My tasks today', 2], ['My open fab tasks', 3]],
+	workshop: [['Open workshop tasks', 2], ['My open tasks', 3], ['Equipment overdue for checks', 1]],
+	install_coordinator: [['Open install tasks', 4], ['Awaiting scheduling', 2], ['Scheduled', 1], ['Overdue install tasks', 1]],
 }[role] ?? []).map(([label, value], i) => ({ key: `t${i}`, label, value }));
 
 const templates = ['issueRaised', 'issueUpdated', 'taskSentBack', 'jobClosed', 'equipmentOffHire', 'complianceDue', 'weeklyHours', 'weeklyIssues'].map((name) => ({ name, label: name.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()), placeholders: ['job', 'subject', 'link'], override: name === 'jobClosed' ? { intro: 'Well done team.' } : null }));
@@ -78,6 +81,8 @@ const routes = [
 	['GET', /^\/issues$/, (_, q) => { const s = q.get('status'); const items = s ? issues.filter((i) => i.issue_status === s) : issues; return { items, count: items.length }; }],
 	['GET', /^\/issues\/(\d+)\/history$/, () => ({ items: [{ at: new Date().toISOString(), changes: [{ field: 'issue_status', from: 'Open', to: 'In Progress' }, { field: 'assigned_to_id', from: '', to: 'Rachel Nguyen' }] }] })],
 	['POST', /^\/jobs\/(\d+)\/close$/, () => ({ job: { stage: 'Completed - Closed' } })],
+	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2002', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2003', rating: 4, comment: '', ratedAt: null }], count: 2, average: 4.5 })],
+	['GET', /^\/people\/(\d+)$/, (m) => ({ person: people.find((p) => p.ROWID === m[1]) ?? people[0] })],
 	['GET', /^\/people$/, () => ({ items: people, count: people.length })],
 	['GET', /^\/roles$/, () => ({ items: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop', 'viewer'].map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
 	['GET', /^\/hours\/(weekly|pay-period)$/, () => hoursReport()],

@@ -5,6 +5,15 @@ import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useRoleDashboard } from '../api/more';
 import { CrewTasks } from '../components/CrewCards';
 
+/** Where a tile goes when it is tapped. */
+const TILE_LINK = (key: string): string | undefined => {
+	if (key.startsWith('hours')) return '/hours';
+	if (key.startsWith('my_open_jobs')) return '/jobs';
+	if (key.startsWith('equipment')) return '/equipment';
+	if (/^(fab|install|design|my_(fab|install|design)|workshop|jobs_with)/.test(key)) return '/tasks';
+	return undefined;
+};
+
 const TILE_ROLES = ['project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'];
 
 /** The numbers for the person's own role (the first of their roles that has a dashboard). */
@@ -15,7 +24,7 @@ function RoleTiles({ roles }: { roles: string[] }) {
 	return (
 		<section className="kpis" aria-label={`${role.replace(/_/g, ' ')} figures`}>
 			{q.data.tiles.map((t) => (
-				<Kpi key={t.key} label={t.label} value={t.value} tone={/overdue|not filled/i.test(t.label) ? (t.value ? 'danger' : 'ok') : undefined} />
+				<Kpi key={t.key} to={TILE_LINK(t.key)} label={t.label} value={t.value} tone={/overdue|not filled/i.test(t.label) ? (t.value ? 'danger' : 'ok') : undefined} />
 			))}
 		</section>
 	);

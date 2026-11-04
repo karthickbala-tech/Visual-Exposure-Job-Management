@@ -127,6 +127,19 @@ export const useCreateWorkshopTask = () => {
 export interface IssueChange { field: string; from: string; to: string }
 export const useIssueHistory = (id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
 
+// ---- people ----
+export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number }
+export const usePerson = (id: string | undefined) => useGet<{ person: PersonFull }>(['person', id ?? ''], `/people/${id}`, !!id, 60_000);
+export const useRatings = (id: string | undefined) => useGet<{ items: { taskId: string; rating: number; comment: string; ratedAt: string | null }[]; count: number; average: number | null }>(['ratings', id ?? ''], `/people/${id}/ratings`, !!id, 60_000);
+export const usePersonCompliance = (id: string | undefined) => useGet<{ items: { id: string; typeName: string | null; referenceNo: string; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id, 60_000);
+export const useCreatePerson = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; roles?: string[] }) => api<{ person: PersonFull }>('/people', send('POST', v)),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['people'] }),
+	});
+};
+
 // ---- checklist next step (crew) ----
 export interface NextStep { phase: 'pre' | 'post' | null; action: 'start' | 'continue' | 'done'; checklistId: string | null; next: { label: string } | null }
 export const useNextStep = (taskId: string, enabled: boolean) => useGet<NextStep>(['next-step', taskId], `/tasks/${taskId}/checklist/next`, enabled, 15_000);
