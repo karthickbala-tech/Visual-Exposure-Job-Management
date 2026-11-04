@@ -64,3 +64,15 @@ test('the WorkDrive client sends the file as a multipart upload with the folder 
 	assert.ok(up.init.body instanceof FormData);
 	assert.equal(up.init.headers.Authorization, 'Zoho-oauthtoken t');
 });
+
+test('confirming an upload that never reached storage is refused and nothing is queued', async () => {
+	const w = makeWorld();
+	w.ctx.storage = { signedPut: async () => 'u', signedGet: async () => 'g', exists: async () => false };
+	const job = (await jobs.createJob(w.ctx, { name: 'Pylon' })).job;
+	const task = (await tasks.createTask(w.ctx, String(job.ROWID), { task_type: 'design', name: 'Art' })).task;
+	const up = await files.requestUpload(w.ctx, { entity_type: 'task', entity_id: String(task.ROWID), file_name: 'a.png', mime_type: 'image/png', size_bytes: 10 });
+	await assert.rejects(files.confirmUpload(w.ctx, up.file.id), (e) => e.status === 409 && e.code === 'not_uploaded');
+	assert.equal(w.db.outbox.filter((o) => o.job_type === 'workdrive.upload_file').length, 0);
+	w.ctx.storage.exists = async () => true;
+	assert.equal((await files.confirmUpload(w.ctx, up.file.id)).file.uploaded, true);
+});

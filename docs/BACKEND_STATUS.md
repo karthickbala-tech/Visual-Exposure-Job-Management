@@ -12,7 +12,7 @@ Counted on 4 Nov 2026, then updated after each batch. **Done** = built, tested a
 | Fabrication (FAB-1 to 5) | 5 | 0 | 0 | |
 | Design (DES-1 to 3) | 3 | 0 | 0 | |
 | Checklists (CHK-1 to 8) | 7 | 1 | 0 | CHK-2: the briefing step wording is a placeholder |
-| SWMS (SW-1 to 4) | 4 | 0 | 0 | SW-4 PDF is built but not yet tried on the real SmartBrowz |
+| SWMS (SW-1 to 4) | 4 | 0 | 0 | SW-4 PDF verified on the real SmartBrowz |
 | Issues (ISS-1 to 6) | 5 | 1 | 0 | ISS-5: 2 print layouts of the 7 in Creator |
 | Hours and ratings (HRS-1 to 5) | 5 | 0 | 0 | |
 | Compliance (CMP-1 to 5) | 5 | 0 | 0 | |
@@ -21,7 +21,7 @@ Counted on 4 Nov 2026, then updated after each batch. **Done** = built, tested a
 
 Overall: (59 + 5 / 2) / 64 = **96%** (recounted on 4 Nov 2026 after batch 10). Earlier counts: 62%, 67%, 75%, 82%, 86%.
 
-"Done" means built, tested with fake data, and deployed to Development. It does not mean proven against the real services: the PDFs, the emails, the WorkDrive file copy and the MDM sync have not been run for real yet (see "Needs input" below).
+"Done" means built, tested with fake data, and deployed to Development. Proven against the real services on 4 Nov 2026: the CRM and WorkDrive connections, the PDFs and the WorkDrive file copy. Not yet run for real: the emails (no sender set) and the MDM sync (no credentials). Open finding: the browser cannot upload files until CORS is set on the Stratus bucket `ve-files-dev` (a console setting).
 
 ## Built in batch 1 (4 Nov 2026)
 
@@ -81,7 +81,7 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 - **SW-4:** `GET /swms/{id}/pdf` makes the SWMS as an A4 PDF (company details, site, PPE, tasks, declarations, sign-offs) with Catalyst SmartBrowz, with the same access rules as viewing the SWMS.
 - **ISS-5:** `GET /issues/{id}/pdf?layout=summary|full` (full adds details and the change history). It prints only what the caller may see (hidden fields stay hidden).
 - ASSUMPTION: two layouts, not the seven from Creator, until the client confirms them (FSD question 7). PDFs are made on request only and are not stored.
-- **Before it works live:** SmartBrowz must be switched on once in the console (SmartBrowz, "Start Exploring"). Not yet tried against the real service.
+- **Verified live on 4 Nov 2026:** the SWMS PDF and both issue layouts come back as real PDFs from SmartBrowz (about 21 to 25 KB each). The first live try failed because the SDK returns a stream; that is fixed.
 
 ## Built in batch 8 (4 Nov 2026): finishing partly built items
 
@@ -102,7 +102,7 @@ These come from FSD section 8 and 5.14 (administration), not from the 64 numbere
 
 ## Built in batch 10 (4 Nov 2026): WorkDrive attachments, import and export
 
-- **TSK-5 finished:** every attachment, once its upload is confirmed, is queued once (outbox job `workdrive.upload_file`) and copied into the WorkDrive folder of its job (through its task, checklist or issue). It waits harmlessly until WorkDrive is connected and the job folder exists, retries with the outbox backoff, skips files deleted before the copy, and runs twice without a second copy. Not yet tried against the real WorkDrive.
+- **TSK-5 finished:** every attachment, once its upload is confirmed, is queued once (outbox job `workdrive.upload_file`) and copied into the WorkDrive folder of its job (through its task, checklist or issue). It waits harmlessly until WorkDrive is connected and the job folder exists, retries with the outbox backoff, skips files deleted before the copy, and runs twice without a second copy. Verified on the real WorkDrive on 4 Nov 2026 (a test file went from storage into the job folder). A confirm now checks the file really reached storage and says so if it did not.
 - **Export (FSD 5.14):** `GET /admin/export/{jobs|people|companies|issues}?format=csv|json&limit=&offset=` (administrators, up to 300 rows per request, one query). Only whitelisted columns leave (no pay rates, no descriptions); CSV cells that start with = + - @ are defused against spreadsheet formulas.
 - **Import:** `POST /admin/import/people` and `/admin/import/companies` (administrators, up to 50 rows per request). Each row is checked on its own; bad rows and duplicates (same email, same company name) are skipped with a reason and never change existing records. This is the manual way in; the full Creator migration script still waits for the export.
 
@@ -114,4 +114,4 @@ Also in this batch: JOB-4 (a task created outside a job is refused with the fami
 
 ## Also done outside the 64 requirements
 
-CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 272 automated tests.
+CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 274 automated tests.
