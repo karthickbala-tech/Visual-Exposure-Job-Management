@@ -23,13 +23,21 @@ test('admin menu is grouped into sections; the current page opens its section', 
   expect(groups).toEqual(['Work', 'Field and safety', 'People', 'Assets']);
   expect(links()).toContain('Equipment'); // Assets is open because Equipment is the current page
   expect(links()).not.toContain('Jobs');
-  click(btn('Work'));
-  expect(links()).toContain('Jobs');
 });
 
-test('an installer has short sections; single pages are not wrapped in a section', () => {
+test('every role gets the same sections with only its own pages; an installer has no Assets section', () => {
   show('installer');
-  expect(box.querySelectorAll('.side-group-btn').length).toBeLessThan(3);
+  const groups = [...box.querySelectorAll('.side-group-btn')].map((b) => b.textContent.trim());
+  expect(groups).toEqual(['Work', 'Field and safety', 'People']);
+  click(btn('People'));
+  expect(links()).toContain('Workers');
+});
+
+test('one section is open at a time, so the menu always fits', () => {
+  show('admin', '/equipment');
+  click(btn('Work'));
+  expect(links()).toContain('Jobs');
+  expect(links()).not.toContain('Equipment');
 });
 
 test('collapse makes the menu icons only, and it is remembered', () => {

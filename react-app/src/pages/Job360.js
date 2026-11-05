@@ -24,7 +24,7 @@ import BulkDialog from '../components/BulkTaskDialog';
 import AddTaskWizard, { KINDS } from '../components/AddTaskWizard';
 import { AssignDesignerModal, DeleteTaskModal, ScheduleModal, TaskEditModal } from '../components/TaskForms';
 import { SIGN_STAGES, SignModal } from '../components/JobSitePanel';
-import { Modal } from '../components/ui';
+import { Chip, Modal } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, toKey, today } from '../lib/dates';
@@ -36,6 +36,7 @@ import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import { shortName } from '../lib/people';
 import { seedQuotes } from '../data/quotesSeed';
 import { cn } from '../lib/utils';
+import './JobsWeb.css';
 
 const GROUP_LABEL = { design: 'Design', fab: 'Fabrication', install: 'Installation' };
 const DONE = [...CLOSED_STAGES];
@@ -164,22 +165,20 @@ export default function Job360() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="ui-scope grid min-w-0 gap-4 font-sans [&>*]:min-w-0">
+      <div className="ui-scope wjobs wjob grid min-w-0 gap-4 font-sans [&>*]:min-w-0">
         <Link to="/jobs" className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground"><ArrowLeft className="h-4 w-4" /> All jobs</Link>
 
         {/* 1. Header: one main button, the rest in More */}
         <Card className="overflow-hidden">
           <div className="flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-center">
-            <div className="flex min-w-0 items-center gap-4">
-              <Ring value={job.job} />
-              <div className="min-w-0">
-                <p className="m-0 text-xs text-muted-foreground">{job.id} · {job.client}</p>
-                <h1 className="m-0 flex flex-wrap items-center gap-2 text-xl font-bold leading-tight sm:text-2xl">{job.name} <StageBadge stage={job.stage} /></h1>
-                <p className="m-0 mt-1 text-sm text-muted-foreground">
-                  Finish <b className="text-foreground">{formatShort(job.finish)}</b>
-                  {job.pm && <> · PM <b className="text-foreground">{job.pm}</b></>}
-                  {job.fabManager && <> · Fab manager <b className="text-foreground">{job.fabManager}</b></>}
-                </p>
+            <div className="min-w-0">
+              <p className="wj-eyebrow">Job · {job.id} · {job.client}</p>
+              <h1 className="job-title wj-title">{job.name}</h1>
+              <div className="wj-meta">
+                <Chip value={job.stage} />
+                <span>Expected finish {job.finish ? formatShort(job.finish) : '-'}</span>
+                {job.pm && <span className="wj-dot">PM <b>{job.pm}</b></span>}
+                {job.fabManager && <span className="wj-dot">Fab manager <b>{job.fabManager}</b></span>}
               </div>
             </div>
             <div className="flex gap-2 md:ml-auto">
@@ -214,6 +213,7 @@ export default function Job360() {
                   </DropdownMenu>
                 )}
             </div>
+            <div className="hidden md:block"><Ring value={job.job} /></div>
           </div>
 
           {(toApprove > 0 || job.risk) && !closed && (
@@ -242,23 +242,36 @@ export default function Job360() {
           </Collapsible>
         </Card>
 
-        {/* 3. Progress strip */}
-        <Card className="grid overflow-hidden sm:grid-cols-3" aria-label="Progress by discipline">
-          {KPI_GROUPS.map((g, i) => {
+        {/* 3. Discipline tiles and progress, as on the web job page */}
+        <div className="wj-kpis" aria-label="Progress by discipline">
+          {KPI_GROUPS.map((g) => {
             const k = stats[g.kind];
             return (
-              <div key={g.kind} className={cn('px-5 py-3', i < 2 && 'border-b sm:border-b-0 sm:border-r')}>
-                <div className="flex justify-between text-sm"><b>{GROUP_LABEL[g.kind]}</b><span className="text-muted-foreground">{k.pct}%</span></div>
-                <Progress value={Math.max(k.pct, 2)} className="my-2 h-1.5 bg-track [&>div]:bg-brand" aria-label={`${GROUP_LABEL[g.kind]} ${k.pct}% complete`} />
-                <p className="m-0 text-xs text-muted-foreground">
-                  {k.total === 0 ? 'No tasks yet' : <>{k.open} open · {k.overdue > 0
-                    ? <Button variant="link" className="h-auto p-0 text-xs font-bold text-destructive" onClick={() => { setTab('tasks'); setView('late'); }}>{k.overdue} overdue</Button>
-                    : 'nothing overdue'}</>}
-                </p>
+              <div key={g.kind} className="wj-kpi">
+                <span className="wj-kpi-label">{GROUP_LABEL[g.kind]} tasks</span>
+                <span className="wj-kpi-value">{k.open} open</span>
+                <span className="wj-kpi-note">
+                  {k.total} total, {k.overdue > 0
+                    ? <button type="button" className="wj-late" onClick={() => { setTab('tasks'); setView('late'); }}>{k.overdue} overdue</button>
+                    : '0 overdue'}, {k.pct}% done
+                </span>
               </div>
             );
           })}
-        </Card>
+        </div>
+
+        <section className="wj-card" aria-label="Progress">
+          <h2 className="wj-card-head">Progress</h2>
+          <div className="wj-progress">
+            {[['Fab', job.fab], ['Install', job.install], ['Job', job.job]].map(([label, v]) => (
+              <div key={label} className="wj-progress-row">
+                <span className="wj-progress-label">{label}</span>
+                <span className="wprogress-track"><span style={{ width: `${Math.min(100, v || 0)}%` }} /></span>
+                <span className="wprogress-value">{v || 0}%</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* 4. Page tabs */}
         <Card className="overflow-hidden">
@@ -499,3 +512,4 @@ function JobEditForm({ job, roleId, onSave, onCancel }) {
  const [f,setF]=useState({name:job.name||'',finish:job.finish||'',stage:job.stage||'',serverPath:job.serverPath||`\\VE-SERVER\\Jobs\\${job.id}`,dealId:job.dealId||'',createdAt:job.createdAt||new Date().toISOString().slice(0,10)}); const set=k=>e=>setF(x=>({...x,[k]:e.target.value})); const [err,setErr]=useState('');
  return <form className="form" onSubmit={e=>{e.preventDefault();if(!f.name.trim()||!f.finish||!f.stage||!f.serverPath.trim())return setErr('Please fill the mandatory fields');onSave({...f,name:f.name.trim()});}}><label>Job subject *<input value={f.name} onChange={set('name')} disabled={roleId!=='admin'} /></label><div className="form-row"><label>Expected job finish *<input type="date" value={f.finish} onChange={set('finish')}/></label><label>Stage *<select value={f.stage} onChange={set('stage')}>{['Preparation','In Progress','On Hold','Completed','Completed - Closed','Cancelled'].map(x=><option key={x}>{x}</option>)}</select></label></div><label>File location on VE server *<input value={f.serverPath} onChange={set('serverPath')}/></label>{roleId==='admin'&&<div className="form-row"><label>CRM Deal link / ID<input value={f.dealId} onChange={set('dealId')}/></label><label>Job created date<input type="date" value={f.createdAt} onChange={set('createdAt')}/></label></div>}<small>Completion, hours and cost rollups are read-only.</small>{err&&<p className="form-error">{err}</p>}<div className="form-actions"><button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button><button className="btn btn-primary">Save changes</button></div></form>
 }
+

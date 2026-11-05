@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { MapPin, Smartphone, UserX, WifiOff } from 'lucide-react';
-import { Card, Chip, KpiCard, PageHeader, ResponsiveTable } from '../components/ui';
-import KpiLink from '../components/KpiLink';
+import { PageHeader } from '../components/ui';
 import { useDemo } from '../context/DemoContext';
 import { hasLocation, isStale, osmLink, toMapPoints } from '../lib/devices';
-import { fmtStamp, fullDate } from '../lib/dates';
+import { fmtStamp } from '../lib/dates';
 import './FabDashboard.css';
 import './EquipmentPage.css';
 import './DevicesPage.css';
@@ -59,39 +57,55 @@ export default function DevicesPage() {
   const shown = filter === 'with' ? withDevice : filter === 'without' ? without : entries;
   const company = (id) => companies.find((c) => c.id === id)?.name || '-';
 
-  const columns = [
-    { key: 'worker', label: 'Worker', primary: true, render: (e) => <div className="stack"><strong>{e.worker.name}</strong><small>{company(e.worker.companyId)}</small></div> },
-    { key: 'device', label: 'Device', render: (e) => (e.device ? `${e.device.model} · ${e.device.os}` : <span className="muted">No device</span>) },
-    { key: 'where', label: 'Last location', render: (e) => (!e.device ? '-' : hasLocation(e.device) ? e.device.address : <span className="muted">No location reported</span>) },
-    { key: 'seen', label: 'Last seen', render: (e) => (!e.device || !e.device.seenAt ? '-' : (
-      <span>{fmtStamp(e.device.seenAt)} {isStale(e.device) && <Chip value="Stale" tone="amber" />}</span>)) },
-    { key: 'serial', label: 'Serial', render: (e) => (e.device ? <span className="dv-serial">{e.device.serial}</span> : '-') },
-  ];
-
   const located = devices.filter(hasLocation).length;
+  const FILTERS = [['all', 'All workers', entries.length], ['with', 'Workers with devices', withDevice.length], ['without', 'Workers without a device', without.length]];
+
+  // Same layout as web/src/pages/Devices.tsx: one card, a table of Person, Device, Last seen and Location.
+  // The react extras stay: who has or has no device, and the schematic map.
   return (
-    <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Devices" subtitle="Device locations come from the MDM sync. Sample data in this demo." />
-      <div className="kpis">
-        <KpiLink icon={Smartphone} label="Devices" value={devices.length} note={`${withDevice.length} of ${active.length} active workers`} onClick={() => { setFilter('with'); setTab('List'); }} active={filter === 'with'} />
-        <KpiLink icon={MapPin} label="Reporting a location" value={located} note="plotted on the map" onClick={() => setTab('Map')} active={tab === 'Map'} />
-        <KpiCard icon={WifiOff} label="No location" value={devices.length - located} tone={devices.length - located ? 'warn' : 'brand'} note="skipped by the sync" />
-        <KpiLink icon={UserX} label="Workers without a device" value={without.length} note="not in the MDM" onClick={() => { setFilter('without'); setTab('List'); }} active={filter === 'without'} />
-      </div>
-
-      <div className="eq-tools">
-        <div className="segmented" role="tablist" aria-label="View">
-          {['List', 'Map'].map((t) => <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}
+    <div className="dash wdevices">
+      <PageHeader eyebrow="Workers" title="Devices" subtitle="Last known location of each worker device." />
+      <section className="wd-card">
+        <div className="wd-tools">
+          <div className="segmented" role="tablist" aria-label="Workers filter">
+            {FILTERS.map(([id, label, n]) => (
+              <button key={id} type="button" role="tab" aria-selected={filter === id} className={filter === id ? 'on' : ''} onClick={() => setFilter(id)}>{label}<em>{n}</em></button>))}
+          </div>
+          <span className="wd-count">{devices.length} devices · {located} reporting a location</span>
+          <div className="segmented" role="tablist" aria-label="View">
+            {['List', 'Map'].map((t) => <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}
+          </div>
         </div>
-        <div className="segmented" role="tablist" aria-label="Workers filter">
-          {[['all', 'All workers', entries.length], ['with', 'Workers with devices', withDevice.length], ['without', 'Workers without a device', without.length]].map(([id, label, n]) => (
-            <button key={id} type="button" role="tab" aria-selected={filter === id} className={filter === id ? 'on' : ''} onClick={() => setFilter(id)}>{label}<em>{n}</em></button>))}
-        </div>
-      </div>
-
-      {tab === 'List'
-        ? <Card title="Devices by worker" flush><ResponsiveTable columns={columns} rows={shown} empty="No workers in this view" /></Card>
-        : <Card title="Device locations"><SchematicMap rows={withDevice.filter((e) => filter !== 'without').map((e) => ({ worker: e.worker, device: e.device }))} /></Card>}
+        {tab === 'List' ? (
+          shown.length === 0 ? <p className="wd-empty">No workers in this view.</p> : (
+            <div className="wd-wrap">
+              <table className="wd-table">
+                <caption className="sr-only">Devices</caption>
+                <thead><tr><th scope="col">Person</th><th scope="col">Device</th><th scope="col">Last seen</th><th scope="col">Location</th></tr></thead>
+                <tbody>
+                  {shown.map((e) => (
+                    <tr key={e.id}>
+                      <td data-label="Person" className="cell-primary"><strong>{e.worker.name}</strong><small>{company(e.worker.companyId)}</small></td>
+                      <td data-label="Device">{e.device ? <>{[e.device.model, e.device.os].filter(Boolean).join(' / ')}<small className="dv-serial">{e.device.serial}</small></> : <span className="muted">No device</span>}</td>
+                      <td data-label="Last seen">
+                        {!e.device ? '-' : e.device.seenAt ? fmtStamp(e.device.seenAt) : 'Never'}
+                        {e.device && isStale(e.device) && <span className="chip chip-amber wd-stale">Not seen for 24 h</span>}
+                      </td>
+                      <td data-label="Location">
+                        {!e.device ? '-' : hasLocation(e.device)
+                          ? <a href={osmLink(e.device)} target="_blank" rel="noopener noreferrer">{e.device.address || `${e.device.lat?.toFixed(4)}, ${e.device.lng?.toFixed(4)}`}</a>
+                          : <span className="muted">No location reported</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          <div className="wd-map"><SchematicMap rows={withDevice.filter(() => filter !== 'without').map((e) => ({ worker: e.worker, device: e.device }))} /></div>
+        )}
+      </section>
     </div>
   );
 }

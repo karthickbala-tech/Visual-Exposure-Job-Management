@@ -1,3 +1,5 @@
+/* Font: Raleway only, exactly as web/ (web/src/styles/tokens.css and global.css): weights 400, 600 and 700,
+   line height 1.5, Raleway's own numerals, and tabular figures only where numbers line up (timers, IDs). */
 /* ===========================================================================
    App-wide shadcn/ui look for the existing screens (loaded after App.css).
    One rule set for every module, so all screens match the redesigned Job details page:
@@ -146,7 +148,7 @@ button.kcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 .shift-text { display: grid; min-width: 0; }
 .shift-state { font-size: 15px; font-weight: 700; }
 .shift-sub { font-size: 13px; color: var(--muted); }
-.shift-timer { margin-left: auto; padding-left: 8px; font: 700 26px/1 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; letter-spacing: 0.02em; color: var(--brand-strong); font-variant-numeric: tabular-nums; }
+.shift-timer { margin-left: auto; padding-left: 8px; font: 700 26px/1 var(--font); letter-spacing: 0.03em; color: var(--brand-strong); font-variant-numeric: tabular-nums; }
 .shift-break .shift-timer { color: #9a6200; }
 .shift-actions { display: flex; gap: 8px; }
 .shift-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 20px; border: 1px solid transparent; border-radius: 8px; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: filter 0.15s, background 0.15s; }
@@ -180,7 +182,7 @@ input[type='checkbox'], input[type='radio'] { width: 16px; height: 16px; margin:
 .side-top .logo-img { min-width: 0; max-width: 150px; height: auto; }
 .icon-btn.side-collapse { color: #c9ccce; flex: none; }
 .icon-btn.side-collapse:hover { background: var(--side-hover); color: #fff; }
-.logo-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--brand); color: #fff; font-weight: 800; font-size: 13px; letter-spacing: 0.02em; }
+.logo-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--brand); color: #fff; font-weight: 700; font-size: 13px; letter-spacing: 0.02em; }
 .side-group-btn { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
 .side-group-btn .side-chev { margin-left: auto; transition: transform 0.15s; opacity: 0.7; }
 .side-group.open .side-chev { transform: rotate(180deg); }
@@ -214,14 +216,68 @@ html[data-font='large'] .page { zoom: 1.12; }
   .sidebar.collapsed .side-top { flex-direction: row; }
 }
 
-/* ---------- Side menu footer: settings, who is signed in, sign out ---------- */
-.side-foot { display: grid; gap: 2px; }
-.side-profile { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; padding: 10px 12px; border-radius: var(--radius); background: rgba(255, 255, 255, 0.06); }
-.side-avatar { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12.5px; font-weight: 800; }
-.side-who { display: grid; min-width: 0; line-height: 1.25; }
-.side-who strong { overflow: hidden; color: #fff; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.side-who small { color: #b9bdc0; font-size: 12.5px; }
-.side-signout { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
-.side-signout:hover { color: #fff; background: rgba(220, 38, 38, 0.22); }
-.sidebar.collapsed .side-profile { justify-content: center; padding: 8px 0; background: transparent; }
-@media (max-width: 900px) { .sidebar.collapsed .side-profile { justify-content: flex-start; padding: 10px 12px; } }
+/* ---------- Side menu footer: the signed-in person; click to open "Sign out" ---------- */
+.side-user-wrap { padding: 10px 8px 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.side-user { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.side-user:hover, .side-user[data-state='open'] { background: rgba(255, 255, 255, 0.08); }
+.side-user:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.side-avatar { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; }
+.side-who { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.25; }
+.side-who strong, .side-who small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-who strong { color: #fff; font-size: 13.5px; }
+.side-who small { color: #9bd47f; font-size: 12px; font-weight: 600; }
+.side-user-chev { flex: none; color: #c9ccce; transition: transform 0.15s; }
+.side-user[data-state='open'] .side-user-chev { transform: rotate(180deg); }
+.side-user-menu { width: var(--radix-dropdown-menu-trigger-width); min-width: 200px; padding: 6px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: #2f3336; color: #fff; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); }
+.side-user-menu .side-user-signout { gap: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; color: #ff9c94; cursor: pointer; }
+.side-user-menu .side-user-signout:focus, .side-user-menu .side-user-signout[data-highlighted] { background: rgba(255, 156, 148, 0.12); color: #ffb3ad; }
+.sidebar.collapsed .side-user-wrap { padding: 10px 6px; }
+.sidebar.collapsed .side-user { justify-content: center; padding: 6px 0; }
+.sidebar.collapsed .side-who, .sidebar.collapsed .side-user-chev { display: none; }
+@media (max-width: 900px) {
+  .sidebar.collapsed .side-user { justify-content: flex-start; padding: 8px; }
+  .sidebar.collapsed .side-who, .sidebar.collapsed .side-user-chev { display: flex; }
+}
+
+/* ---------- Side menu: no visible scrollbar (it still scrolls with the wheel, touch and keyboard) ---------- */
+.sidebar, .side-nav { scrollbar-width: none; -ms-overflow-style: none; }
+.sidebar::-webkit-scrollbar, .side-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.side-nav { overflow-x: hidden; }
+
+/* ---------- Company logo: wider in the open menu, the eye mark when collapsed ---------- */
+.side-top { min-height: 70px; padding: 16px 14px 14px 18px; }
+.side-top .logo-img { width: 190px; max-width: calc(100% - 44px); height: auto; }
+img.logo-mark { display: block; width: 40px; height: 40px; padding: 0; background: transparent; border-radius: 50%; }
+.sidebar.collapsed .side-top { gap: 10px; }
+
+/* ===========================================================================
+   Uppercase labels, as in web/ (web/src/styles/global.css). Loaded last so it wins over the sentence-case
+   rules above. Same sizes, weights and letter spacing as web. Content (job and task names, people, notes,
+   form fields, menus inside drawers) stays as typed.
+   =========================================================================== */
+/* Side menu */
+.side-link { font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.side-link.sub { font-size: 12px; }
+/* Page titles and eyebrows */
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-strong); }
+.page-header h1, .page-title { font-weight: 700; text-transform: uppercase; }
+/* Buttons (old and shadcn); link-style buttons stay as typed */
+.btn, .ui-btn:not(.underline-offset-4), .shift-btn { font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.btn-sm, .ui-btn.h-8:not(.underline-offset-4) { font-size: 11.5px; }
+/* Card titles and KPI labels */
+.card-head h2, .ui-scope h2.text-\[15px\] { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+/* Status chips */
+.chip, .ui-chip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+/* Table headers, field labels above filters */
+.rtable th, .ui-scope thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.filter-select > span { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+/* Segmented filters, saved views and tabs */
+.segmented button, .ui-toggle, .ui-tab, .tabs button { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+/* Calendar headings */
+.cal-label { font-size: 16px; font-weight: 700; text-transform: uppercase; }
+.cal-dow { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+/* Board columns and the check-in state line */
+.kcol h3, .dcol h3 { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.shift-state { font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.job-title { text-transform: uppercase; }

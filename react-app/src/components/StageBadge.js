@@ -19,7 +19,7 @@ const STAGE_TONE = {
 
 export function StageBadge({ stage, className }) {
   return (
-    <Badge variant="secondary" className={cn('whitespace-nowrap rounded-sm border-0 font-semibold shadow-none', TONE[STAGE_TONE[stage] || 'gray'], className)}>
+    <Badge variant="secondary" className={cn('ui-chip whitespace-nowrap rounded-sm border-0 font-semibold shadow-none', TONE[STAGE_TONE[stage] || 'gray'], className)}>
       {stage}
     </Badge>
   );

@@ -1,18 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Download, ExternalLink, FolderOpen, Plus } from 'lucide-react';
-import { Card } from '../components/ui-kit/card';
+import { AlertTriangle, Download, ExternalLink, FolderOpen, Plus, Search } from 'lucide-react';
 import { Button } from '../components/ui-kit/button';
 import { Checkbox } from '../components/ui-kit/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui-kit/dialog';
-import { StageBadge } from '../components/StageBadge';
-import { BulkBar, EmptyState, FilterPanel, FilterSelect, MiniBar, RowMenu, SavedViews, SearchBox } from '../components/ListKit';
+import { Chip } from '../components/ui';
+import { BulkBar, FilterPanel, FilterSelect, RowMenu } from '../components/ListKit';
 import { PageHeader } from '../components/ui';
 import { NewJobModal } from './PmDashboard';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, toKey, today } from '../lib/dates';
-import { JOB_TABS, filterJobs, matchesTab } from '../lib/jobs';
+import { JOB_TABS, filterJobs } from '../lib/jobs';
 import { cn } from '../lib/utils';
+import './JobsWeb.css';
 
 const STAGES = ['All', 'Preparation', 'In Progress', 'On Hold', 'Completed', 'Completed - Closed', 'Cancelled'];
 const SET_STAGES = ['Preparation', 'In Progress', 'On Hold'];
@@ -52,7 +52,6 @@ export default function JobsPage() {
   const pms = useMemo(() => [...new Set(jobs.map((j) => j.pm).filter(Boolean))].sort(), [jobs]);
   const fabManagers = useMemo(() => [...new Set(jobs.map((j) => j.fabManager).filter(Boolean))].sort(), [jobs]);
   const rows = filterJobs(jobs, { tab, person, stage, pm, fabManager, q });
-  const active = [stage, pm, fabManager].filter((v) => v !== 'All').length;
   const key = toKey(today());
   const late = (j) => OPEN(j) && j.finish && j.finish < key;
   const toggle = (id) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -65,26 +64,42 @@ export default function JobsPage() {
     { label: 'Open WorkDrive folder', icon: FolderOpen, onSelect: () => notify('Opens the WorkDrive folder (demo)') },
   ];
 
+  const tabs = JOB_TABS.map((t) => ({ id: t.id, label: t.label }));
+
   return (
-    <div className="ui-scope grid min-w-0 gap-4 font-sans [&>*]:min-w-0">
-      <PageHeader eyebrow="Jobs" title="All jobs" subtitle={`${rows.length} of ${jobs.length} shown`}>
-        {roleId !== 'viewer' && <Button onClick={() => setShowNew(true)}><Plus /> New job</Button>}
+    <div className="ui-scope wjobs grid min-w-0 gap-4 font-sans [&>*]:min-w-0">
+      <PageHeader eyebrow="Projects" title="Jobs" subtitle="Every job from deal to finished install.">
+        {roleId !== 'viewer' && <button type="button" className="wbtn" onClick={() => setShowNew(true)}><Plus size={16} aria-hidden="true" /> New job</button>}
       </PageHeader>
 
-      <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 border-b p-3 sm:p-4">
-          <SavedViews label="Job lists" value={tab} onChange={(v) => { setTab(v); setSelected([]); }}
-            views={JOB_TABS.map((t) => ({ id: t.id, label: t.label, count: jobs.filter((j) => matchesTab(j, t.id, person)).length }))} />
-          <SearchBox value={q} onChange={setQ} placeholder="Search name, number or company" label="Filter jobs" />
-          <FilterPanel active={active} onClear={() => { setStage('All'); setPm('All'); setFabManager('All'); }}>
-            <FilterSelect label="Stage" value={stage} onChange={setStage} options={STAGES} />
+      <section className="wcard">
+        <div className="wtabs-row">
+          <div className="wseg" role="tablist" aria-label="Job lists">
+            {tabs.map((t) => (
+              <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => { setTab(t.id); setSelected([]); }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="wfilters" role="group" aria-label="Filter jobs">
+          <label className="wsearch">
+            <Search size={16} aria-hidden="true" />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by name or deal" aria-label="Filter jobs" />
+          </label>
+          <label className="filter-select wfield">
+            <span>Stage</span>
+            <select value={stage} onChange={(e) => setStage(e.target.value)}>
+              {STAGES.map((x) => <option key={x} value={x}>{x === 'All' ? 'All stages' : x}</option>)}
+            </select>
+          </label>
+          <FilterPanel active={[pm, fabManager].filter((v) => v !== 'All').length} onClear={() => { setPm('All'); setFabManager('All'); }}>
             <FilterSelect label="PM" value={pm} onChange={setPm} options={['All', ...pms]} />
             <FilterSelect label="Fab manager" value={fabManager} onChange={setFabManager} options={['All', ...fabManagers]} />
           </FilterPanel>
         </div>
 
         {canManage && selected.length > 0 && (
-          <div className="px-3 pt-3 sm:px-4">
+          <div className="wbulk">
             <BulkBar count={selected.length} onClear={() => setSelected([])}>
               <Button size="sm" variant="outline" onClick={() => setBulkStage('In Progress')}>Change stage</Button>
               <Button size="sm" variant="outline" onClick={() => { exportCsv(picked); notify(`Exported ${picked.length} job${picked.length > 1 ? 's' : ''} to CSV`); }}><Download /> Export CSV</Button>
@@ -92,35 +107,40 @@ export default function JobsPage() {
           </div>
         )}
 
-        {rows.length === 0 && <EmptyState>{EMPTY[tab] || 'No jobs match. Try another view or clear the filters.'}</EmptyState>}
+        {rows.length === 0 && <p className="wempty">{q ? 'No jobs match that search.' : EMPTY[tab] || 'No jobs to show.'}</p>}
 
         {rows.length > 0 && (
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-collapse text-sm">
+          <div className="wtable-wrap">
+            <table className="wtable">
+              <caption className="sr-only">Jobs</caption>
               <thead>
-                <tr className="border-b text-left text-xs font-semibold text-muted-foreground">
-                  {canManage && <th className="w-10 py-2 pl-4"><Checkbox checked={allTicked} onCheckedChange={() => setSelected(allTicked ? [] : rows.map((j) => j.id))} aria-label="Select all jobs" /></th>}
-                  <th className={cn('py-2 pr-3', !canManage && 'pl-4')}>Job</th><th className="py-2 pr-3">Stage</th><th className="py-2 pr-3">PM / Fab manager</th>
-                  <th className="py-2 pr-3">Progress</th><th className="py-2 pr-3">Hours</th><th className="py-2 pr-3">Finish</th><th className="w-12 py-2 pr-4" aria-label="Actions" />
+                <tr>
+                  {canManage && <th className="wcheck"><Checkbox checked={allTicked} onCheckedChange={() => setSelected(allTicked ? [] : rows.map((j) => j.id))} aria-label="Select all jobs" /></th>}
+                  <th scope="col">Job</th><th scope="col">Stage</th><th scope="col">PM / Fab manager</th><th scope="col">Progress</th><th scope="col">Hours</th><th scope="col">Expected finish</th><th scope="col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((j) => {
                   const over = j.quoted && j.booked > j.quoted;
                   return (
-                    <tr key={j.id} className={cn('group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/40', selected.includes(j.id) && 'bg-accent/60')} onClick={() => navigate(`/jobs/${j.id}`)}>
-                      {canManage && <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}><Checkbox checked={selected.includes(j.id)} onCheckedChange={() => toggle(j.id)} aria-label={`Select ${j.name}`} /></td>}
-                      <td className={cn('py-3 pr-3', !canManage && 'pl-4')}>
-                        <Link className="job-link font-semibold text-foreground no-underline hover:underline" to={`/jobs/${j.id}`} onClick={(e) => e.stopPropagation()}>{j.name}</Link>
-                        <div className="text-xs text-muted-foreground">{j.id} · {j.client}</div>
-                        {j.risk && <div className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-destructive"><AlertTriangle className="h-3 w-3" /> {j.risk}</div>}
+                    <tr key={j.id} className={cn(selected.includes(j.id) && 'is-selected')} onClick={() => navigate(`/jobs/${j.id}`)}>
+                      {canManage && <td className="wcheck" data-label="Select" onClick={(e) => e.stopPropagation()}><Checkbox checked={selected.includes(j.id)} onCheckedChange={() => toggle(j.id)} aria-label={`Select ${j.name}`} /></td>}
+                      <td data-label="Job" className="cell-primary">
+                        <Link className="job-link" to={`/jobs/${j.id}`} onClick={(e) => e.stopPropagation()}>{j.name}</Link>
+                        <small>{j.id} · {j.client}</small>
+                        {j.risk && <small className="wrisk"><AlertTriangle size={12} aria-hidden="true" /> {j.risk}</small>}
                       </td>
-                      <td className="py-3 pr-3"><StageBadge stage={j.stage} /></td>
-                      <td className="py-3 pr-3"><div>{j.pm || '-'}</div><div className="text-xs text-muted-foreground">{j.fabManager || '-'}</div></td>
-                      <td className="py-3 pr-3"><MiniBar value={j.job} label="Job complete" /><div className="mt-1 text-[11px] text-muted-foreground">Fab {j.fab}% · Install {j.install}%</div></td>
-                      <td className={cn('py-3 pr-3 whitespace-nowrap', over && 'font-semibold text-destructive')}>{j.booked} / {j.quoted}h</td>
-                      <td className={cn('py-3 pr-3 whitespace-nowrap', late(j) && 'font-semibold text-destructive')}>{formatShort(j.finish)}</td>
-                      <td className="py-3 pr-4 text-right"><RowMenu label={`More for ${j.name}`} items={menu(j)} /></td>
+                      <td data-label="Stage"><Chip value={j.stage} /></td>
+                      <td data-label="PM / Fab manager"><span>{j.pm || '-'}</span><small>{j.fabManager || '-'}</small></td>
+                      <td data-label="Progress">
+                        <div className="wprogress" title={`Fab ${j.fab}% · Install ${j.install}%`}>
+                          <span className="wprogress-track"><span style={{ width: `${Math.min(100, j.job)}%` }} /></span>
+                          <span className="wprogress-value">{j.job}%</span>
+                        </div>
+                      </td>
+                      <td data-label="Hours" className={cn(over && 'is-over')}>{j.booked} / {j.quoted}h</td>
+                      <td data-label="Expected finish" className={cn(late(j) && 'is-over')}>{j.finish ? formatShort(j.finish) : '-'}</td>
+                      <td data-label="" className="wmenu" onClick={(e) => e.stopPropagation()}><RowMenu label={`More for ${j.name}`} items={menu(j)} /></td>
                     </tr>
                   );
                 })}
@@ -128,18 +148,7 @@ export default function JobsPage() {
             </table>
           </div>
         )}
-
-        <div className="grid gap-2 p-3 md:hidden">
-          {rows.map((j) => (
-            <Link key={j.id} to={`/jobs/${j.id}`} className="grid gap-2 rounded-lg border bg-card p-3 text-foreground no-underline">
-              <div className="flex items-start justify-between gap-2"><b className="text-sm">{j.name}</b><StageBadge stage={j.stage} /></div>
-              <p className="m-0 text-xs text-muted-foreground">{j.id} · {j.client} · finish <span className={cn(late(j) && 'font-bold text-destructive')}>{formatShort(j.finish)}</span></p>
-              <MiniBar value={j.job} label="Job complete" />
-              {j.risk && <p className="m-0 text-xs font-semibold text-destructive">{j.risk}</p>}
-            </Link>
-          ))}
-        </div>
-      </Card>
+      </section>
 
       {showNew && <NewJobModal onClose={() => setShowNew(false)} />}
       <Dialog open={!!bulkStage} onOpenChange={(o) => { if (!o) setBulkStage(null); }}>

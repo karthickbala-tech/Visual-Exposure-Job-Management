@@ -32,6 +32,7 @@ import ChecklistsPage from './pages/ChecklistsPage';
 import { NAV } from './navConfig';
 import './App.css';
 import './theme-modern.css'; // shadcn/ui look for every screen
+import './web-look.css'; // the web/ look on top: corners, colours, buttons, filters, tables
 
 // Sidebar paths that have a real screen. Anything else in NAV still shows a placeholder.
 const BUILT = ['/', '/jobs', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers', '/design', '/equipment', '/devices', '/calendar', '/compliance', '/admin', '/checklists'];

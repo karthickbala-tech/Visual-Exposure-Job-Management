@@ -48,7 +48,7 @@ export default function ChecklistsPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow="Field operations" title={worker ? 'My checklists' : 'Checklists'} subtitle={`${rows.length} checklist records`} />
+      <PageHeader eyebrow="Checklist" title={worker ? 'My checklists' : 'Checklists'} subtitle={`${rows.length} checklist records`} />
       <Card className="ui-scope overflow-hidden font-sans">
         <div className="flex flex-wrap items-center gap-2 border-b p-3 sm:p-4">
           <SavedViews label="Phase" value={phase} onChange={setPhase} views={PHASES.map((p) => ({ id: p.id, label: p.label, count: p.rows.length }))} />

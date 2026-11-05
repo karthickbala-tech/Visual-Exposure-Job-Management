@@ -1,0 +1,86 @@
+/* ===========================================================================
+   The web/ look for every screen (web/src/styles/tokens.css and global.css), loaded last.
+   Square 2 px corners, plain borders without shadows, web text colours, the light-green primary
+   button with off-white text, KPI tiles with a green top line, framed segmented filters with the
+   active one in pale green, grey table headers and filter strips. Layout and behaviour are unchanged.
+   =========================================================================== */
+:root {
+  --ink: #1b1b1e; --muted: #5f6368; --brand-strong: #3f7a2b; --radius: 2px; --ui-radius: 2px;
+  --ui-primary: 103.6 39.1% 49.6%; --ui-primary-foreground: 90 11.1% 96.5%;
+}
+:root[data-theme='dark'] { --ink: #e8eae8; --muted: #a3a9ae; --brand-strong: #86c96a; }
+
+/* Corners and shadows */
+.card, .kpi, .modal, .toast, .cal-grid, .kcard, .dcard, .mcard, .swms-item, .task-item, .set-sec, .shift,
+.ui-scope .rounded-xl, .ui-scope .rounded-lg, .ui-scope .rounded-md, .ui-scope .rounded-sm { border-radius: 2px !important; }
+.card, .kpi, .set-sec, .shift, .ui-scope .shadow, .ui-scope .shadow-sm { box-shadow: none !important; }
+.ui-scope .rounded-full { border-radius: 9999px !important; }
+
+/* Primary button: web green with off-white text; outline buttons as web btn-ghost */
+.btn-primary, .wbtn { background: var(--brand); color: #f6f7f5; }
+.btn-primary:hover, .wbtn:hover { background: #5a9a41; }
+.btn-ghost { background: var(--surface); border-color: var(--line-3); color: var(--ink-2); }
+.btn { min-height: 38px; height: auto; }
+.btn-sm { min-height: 30px; }
+
+/* KPI tiles: green line on top, as web */
+.kpi { border-top: 3px solid var(--brand); }
+.kpi-danger, .kpi-warn { border-top-color: var(--brand); }
+.kpi-value { font-size: 30px; }
+
+/* Segmented filters, saved views and toggle switches: one frame, active one pale green with a green ring */
+.segmented { padding: 3px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.segmented button { min-height: 30px; padding: 0 12px; border: 0 !important; border-radius: 2px; background: transparent; color: var(--muted); }
+.segmented button:hover { color: var(--ink); }
+.segmented button.on, .segmented button[aria-selected='true'] { background: var(--brand-soft); color: var(--ink); box-shadow: 0 0 0 1px var(--brand); }
+.ui-scope [role='group'].w-max { padding: 3px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.ui-scope .ui-toggle { border: 0 !important; border-radius: 2px !important; background: transparent; color: var(--muted); box-shadow: none; }
+.ui-scope .ui-toggle:hover { background: transparent; color: var(--ink); }
+.ui-scope .ui-toggle[data-state='on'] { background: var(--brand-soft) !important; color: var(--ink) !important; box-shadow: 0 0 0 1px var(--brand); }
+
+/* Tables: grey header strip, web padding, bold first column links */
+.rtable th, .ui-scope thead th { background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.rtable td { padding: 11px 20px; font-size: 13px; }
+.rtable th { padding: 10px 20px; }
+
+/* Cards: plain header with a bottom line */
+.card-head { padding: 14px 20px; border-bottom: 1px solid var(--line); }
+
+/* Chips square, as web */
+.chip, .ui-chip { border-radius: 2px !important; }
+
+/* Search boxes and filter fields */
+.search, .ui-scope label.h-9 { border-radius: 2px; }
+.form input, .form select, .form textarea, .filter-select select { border-radius: 2px; }
+
+/* Task lists (Design, Fabrication, Installation): the same frame as the Jobs list */
+.wtasklist > div:first-child { background: var(--surface-2); }
+.wtasklist thead th { padding-top: 10px; padding-bottom: 10px; color: var(--ink-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.wtasklist tbody td { font-size: 13px; color: var(--ink); }
+.wtasklist tbody td small, .wtasklist tbody .text-muted-foreground { color: var(--muted); }
+
+/* Devices, in the web layout */
+.wdevices .wd-card { overflow: hidden; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.wdevices .wd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.wdevices .wd-count { margin-left: auto; color: var(--muted); font-size: 13px; }
+.wdevices .wd-wrap { overflow-x: auto; }
+.wdevices .wd-table { width: 100%; border-collapse: collapse; }
+.wdevices .wd-table th { padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.wdevices .wd-table td { padding: 11px 20px; border-bottom: 1px solid var(--line-2); font-size: 13px; vertical-align: middle; }
+.wdevices .wd-table tbody tr:last-child td { border-bottom: 0; }
+.wdevices .wd-table tbody tr:hover { background: var(--surface-hover); }
+.wdevices .wd-table small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.wdevices .wd-table a { color: var(--link, var(--brand-strong)); }
+.wdevices .wd-stale { margin-left: 8px; }
+.wdevices .wd-empty { margin: 0; padding: 28px 20px; text-align: center; color: var(--muted); }
+.wdevices .wd-map { padding: 16px 20px; }
+@media (max-width: 760px) {
+  .wdevices .wd-count { width: 100%; margin-left: 0; }
+  .wdevices .wd-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .wdevices .wd-table, .wdevices .wd-table tbody, .wdevices .wd-table tr, .wdevices .wd-table td { display: block; width: 100%; }
+  .wdevices .wd-table tr { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .wdevices .wd-table td { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border: 0; text-align: right; }
+  .wdevices .wd-table td::before { content: attr(data-label); flex: none; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .wdevices .wd-table td.cell-primary { display: block; text-align: left; }
+  .wdevices .wd-table td.cell-primary::before { display: none; }
+}

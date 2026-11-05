@@ -100,7 +100,7 @@ export function IssuesBoard() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow="Safety and operations" title="Issues" subtitle="Report problems, track who owns them and what happens next.">
+      <PageHeader eyebrow="Safety and quality" title="Issues" subtitle="Problems found on site or in the workshop, routed to the right department.">
         {roleId !== 'viewer' && <button type="button" className="btn btn-primary" onClick={() => setReporting(true)}><Plus size={16} aria-hidden="true" /> Report an issue</button>}
       </PageHeader>
 

@@ -339,7 +339,7 @@ export function WorkersPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow="People" title={selfOnly ? "My tickets & inductions" : "Workers"} subtitle={selfOnly ? "Only your own compliance records are shown." : "Employees, subcontractors, tickets, inductions and company documents."}>
+      <PageHeader eyebrow="Team" title={selfOnly ? "My tickets & inductions" : "Workers"} subtitle={selfOnly ? "Only your own compliance records are shown." : "Staff and subcontractors who work on jobs. Employees, subcontractors, tickets, inductions and company documents."}>
         {!selfOnly && canManage && (<><button type="button" className="btn btn-primary" onClick={() => setAdding('worker')}><Plus size={16} aria-hidden="true" /> Add worker</button>
           <button type="button" className="btn btn-ghost" onClick={() => setAdding('company')}><Building2 size={16} aria-hidden="true" /> Add company</button></>)}
       </PageHeader>

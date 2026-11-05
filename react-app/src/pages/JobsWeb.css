@@ -1,0 +1,120 @@
+/* Jobs list in the web/ look (web/src/pages/Jobs.tsx + styles/global.css): square 2 px corners, a framed
+   segmented control with the active tab in pale green, a grey filter strip, a plain table with uppercase
+   headers, and the green "NEW JOB" button. The extra react-app features keep their own controls. */
+.wjobs .wbtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 18px; border: 1px solid transparent; border-radius: 2px; background: var(--brand); color: #fff; font: 600 12.5px var(--font); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.wjobs .wbtn:hover { background: #5a9a41; }
+.wjobs .wbtn:active { transform: translateY(1px); }
+.wjobs .wcard { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.wjobs .wtabs-row { padding: 18px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); overflow-x: auto; }
+.wjobs .wseg { display: inline-flex; flex-wrap: nowrap; padding: 3px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.wjobs .wseg button { min-height: 30px; padding: 0 12px; border: 0; border-radius: 2px; background: transparent; color: var(--muted); font: 600 11.5px var(--font); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.wjobs .wseg button:hover { color: var(--ink); }
+.wjobs .wseg button.on { background: var(--brand-soft); color: var(--ink); box-shadow: 0 0 0 1px var(--brand); }
+.wjobs .wfilters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.wjobs .wsearch { display: flex; flex: 1 1 280px; align-items: center; gap: 10px; max-width: 520px; height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--input-bg); color: var(--muted); }
+.wjobs .wsearch:focus-within { border-color: var(--brand-strong); box-shadow: 0 0 0 2px var(--brand-soft); }
+.wjobs .wsearch input { flex: 1; min-width: 0; height: auto; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 400 13px var(--font); }
+.wjobs .wfield { display: grid; gap: 4px; flex: 0 1 220px; }
+.wjobs .wfield > span, .wjobs .filter-select > span { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.wjobs .wfield select, .wjobs .filter-select select { height: 38px; min-width: 0; width: 100%; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--input-bg); color: var(--ink); font: 400 13px var(--font); }
+.wjobs .wfilters .ui-btn { height: 38px; border-radius: 2px; }
+.wjobs .wbulk { padding: 12px 20px 0; }
+.wjobs .wempty { margin: 0; padding: 28px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+.wjobs .wtable-wrap { overflow-x: auto; }
+.wjobs .wtable { width: 100%; border-collapse: collapse; }
+.wjobs .wtable th { padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.wjobs .wtable td { padding: 11px 20px; border-bottom: 1px solid var(--line-2); font-size: 13px; vertical-align: middle; }
+.wjobs .wtable td small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.wjobs .wtable tbody tr { cursor: pointer; }
+.wjobs .wtable tbody tr:last-child td { border-bottom: 0; }
+.wjobs .wtable tbody tr:hover { background: var(--surface-hover); }
+.wjobs .wtable tbody tr.is-selected { background: var(--brand-soft); }
+.wjobs .wtable .cell-primary a { font-weight: 700; color: var(--ink); text-decoration: none; }
+.wjobs .wtable .cell-primary a:hover { color: var(--brand-strong); text-decoration: underline; }
+.wjobs .wtable .wrisk { display: inline-flex !important; align-items: center; gap: 4px; color: var(--danger) !important; font-weight: 600; }
+.wjobs .wtable .is-over { color: var(--danger); font-weight: 700; }
+.wjobs .wtable .wcheck { width: 44px; padding-right: 0; }
+.wjobs .wtable .wmenu { width: 48px; text-align: right; }
+.wjobs .wprogress { display: grid; grid-template-columns: minmax(80px, 1fr) 40px; align-items: center; gap: 10px; min-width: 150px; font-size: 12px; }
+.wjobs .wprogress-track { height: 6px; overflow: hidden; border-radius: 2px; background: var(--track); }
+.wjobs .wprogress-track > span { display: block; height: 100%; background: var(--brand); }
+.wjobs .wprogress-value { text-align: right; color: var(--muted); }
+.wjobs .chip { border-radius: 2px; }
+
+@media (max-width: 760px) {
+  .wjobs .wtabs-row, .wjobs .wfilters { padding-left: 16px; padding-right: 16px; }
+  .wjobs .wsearch { max-width: none; }
+  .wjobs .wbtn { width: 100%; }
+  .wjobs .wtable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .wjobs .wtable, .wjobs .wtable tbody, .wjobs .wtable tr, .wjobs .wtable td { display: block; width: 100%; }
+  .wjobs .wtable tr { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .wjobs .wtable td { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 5px 0; border: 0; text-align: right; }
+  .wjobs .wtable td::before { content: attr(data-label); flex: none; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-align: left; text-transform: uppercase; }
+  .wjobs .wtable td.cell-primary { display: block; padding-bottom: 8px; text-align: left; }
+  .wjobs .wtable td.cell-primary::before, .wjobs .wtable td.wcheck::before, .wjobs .wtable td.wmenu::before { display: none; }
+  .wjobs .wtable td.wcheck { position: absolute; width: auto; }
+  .wjobs .wtable tr { position: relative; }
+  .wjobs .wtable td.wcheck + td.cell-primary { padding-left: 30px; }
+  .wjobs .wtable td.wmenu { position: absolute; top: 10px; right: 8px; width: auto; }
+  .wjobs .wprogress { width: 60%; min-width: 0; }
+}
+.wjobs .wtable .cell-primary { min-width: 240px; }
+.wjobs .wtable td[data-label='Hours'], .wjobs .wtable td[data-label='Expected finish'] { white-space: nowrap; }
+.wjobs .wfilters .ui-btn { box-shadow: none; border-color: var(--line-3); background: var(--surface); font-size: 12.5px; }
+@media (max-width: 760px) { .wjobs .wtable .cell-primary { min-width: 0; } }
+.wjobs .wtable .cell-primary { min-width: 210px; }
+.wjobs .wprogress { min-width: 120px; }
+.wjobs .wtable th, .wjobs .wtable td { padding-left: 14px; padding-right: 14px; }
+.wjobs .wtable th:first-child, .wjobs .wtable td:first-child { padding-left: 20px; }
+.wjobs .wtable .wmenu { width: 40px; padding-left: 0; padding-right: 12px; }
+
+/* Type exactly as web/ (measured side by side): same ink and muted greys, the darker web green for the
+   eyebrow, 13.5 px / 500 in the search and stage fields, bold percentages, web line heights. */
+.wjobs { --ink: #1b1b1e; --muted: #5f6368; --brand-strong: #3f7a2b; color: var(--ink); line-height: 1.5; }
+:root[data-theme='dark'] .wjobs { --ink: #e8eae8; --muted: #a3a9ae; --brand-strong: #86c96a; }
+.wjobs .page-header h1 { line-height: 1.12; }
+.wjobs .page-header .eyebrow { color: var(--brand-strong); }
+.wjobs .wsearch input, .wjobs .wfield select, .wjobs .filter-select select { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.wjobs .wsearch input::placeholder { color: var(--muted); font-weight: 500; }
+.wjobs .wprogress-value { font-weight: 700; color: var(--muted); }
+.wjobs .wbtn { line-height: 1.5; color: #f6f7f5; }
+.wjobs .wseg button { color: var(--muted); }
+.wjobs .wseg button.on { color: var(--ink); }
+.wjobs .wtable td { color: var(--ink); }
+.wjobs .wtable td small { color: var(--muted); }
+
+/* ===== Job details in the web/ look (web/src/pages/JobDetail.tsx): square cards with plain borders,
+   "JOB" eyebrow, uppercase title, stage chip and expected finish, discipline tiles with a green top
+   line, a Progress card with Fab / Install / Job bars. React actions and tabs are unchanged. ===== */
+.wjob .rounded-xl, .wjob .rounded-lg { border-radius: 2px; }
+.wjob .shadow, .wjob .shadow-sm { box-shadow: none; }
+.wjob > a[href='/jobs'] { font-weight: 600; color: var(--ink-2); }
+.wjob .wj-eyebrow { margin: 0 0 2px; color: var(--brand-strong); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.wjob .wj-title { margin: 0; font-size: 28px; font-weight: 700; line-height: 1.12; text-transform: uppercase; color: var(--ink); }
+.wjob .wj-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; font-size: 14px; color: var(--ink-2); }
+.wjob .wj-meta b { color: var(--ink); font-weight: 600; }
+.wjob .wj-meta .chip { border-radius: 2px; }
+.wjob .wj-dot::before { content: '·'; margin-right: 14px; color: var(--muted); }
+.wjob .wj-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.wjob .wj-kpi { display: grid; gap: 6px; padding: 16px 20px; border: 1px solid var(--line); border-top: 3px solid var(--brand); border-radius: 2px; background: var(--surface); }
+.wjob .wj-kpi-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.wjob .wj-kpi-value { font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--ink); }
+.wjob .wj-kpi-note { font-size: 13px; color: var(--muted); }
+.wjob .wj-late { padding: 0; border: 0; background: none; color: var(--danger); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.wjob .wj-card { border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.wjob .wj-card-head { margin: 0; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+.wjob .wj-progress { display: grid; gap: 14px; padding: 18px 20px; }
+.wjob .wj-progress-row { display: grid; grid-template-columns: 56px minmax(80px, 1fr) 40px; align-items: center; gap: 10px; max-width: 680px; font-size: 12px; }
+.wjob .wj-progress-label { font-weight: 700; color: var(--muted); }
+@media (max-width: 760px) {
+  .wjob .wj-kpis { grid-template-columns: 1fr; }
+  .wjob .wj-title { font-size: 22px; }
+}
+.wjob .wj-dot::before { content: none; }
+/* Saved views and sign filters as the web segmented control: framed, active tab pale green with a green ring */
+.wjob [role='group'].w-max { padding: 3px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.wjob .ui-toggle { border: 0 !important; border-radius: 2px !important; background: transparent; color: var(--muted); box-shadow: none; }
+.wjob .ui-toggle:hover { background: transparent; color: var(--ink); }
+.wjob .ui-toggle[data-state='on'] { background: var(--brand-soft) !important; color: var(--ink) !important; box-shadow: 0 0 0 1px var(--brand); }
+.wjob .ui-tab[data-state='active'] { color: var(--ink); }
+.wjob .ui-tab { color: var(--muted); }

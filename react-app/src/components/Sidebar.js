@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   AlertTriangle, Briefcase, CalendarDays, ChevronDown, ClipboardCheck, Clock, FolderKanban, Hammer, HardHat, LayoutDashboard,
-  ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, PenTool, Settings, ShieldCheck, Smartphone, SlidersHorizontal, Truck, Users, Wrench, X, Boxes,
+  ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, PenTool, Settings, ShieldCheck, Smartphone, Truck, Users, Wrench, X, Boxes,
 } from 'lucide-react';
 import { NAV } from '../navConfig';
 import { useDemo } from '../context/DemoContext';
 import { usePrefs } from '../context/PrefsContext';
 import { canAccess } from '../lib/access';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui-kit/dropdown-menu';
 import { useAuth } from '../context/AuthContext';
 
 const ICONS = {
@@ -16,7 +17,8 @@ const ICONS = {
 };
 
 // The menu in sections, so long role menus (Admin has 15 items) fold into 4 groups.
-// A section with only one page for this role shows that page directly.
+// Every role sees the same sections (with only the pages it may open), and one section is open at a time,
+// so the menu always fits on screen even though its scrollbar is hidden.
 export const NAV_GROUPS = [
   { id: 'work', label: 'Work', icon: FolderKanban, paths: ['/jobs', '/design', '/fabrication', '/installation', '/calendar'] },
   { id: 'field', label: 'Field and safety', icon: HardHat, paths: ['/swms', '/checklists', '/hours', '/issues'] },
@@ -35,9 +37,9 @@ export default function Sidebar({ open, onClose }) {
   const allowed = NAV.filter((item) => canAccess(roleId, item.path) && (item.home || !prefs.hidden.includes(item.path)));
   const byPath = Object.fromEntries(allowed.map((i) => [i.path, i]));
   const activeGroup = NAV_GROUPS.find((g) => g.paths.some((p) => pathname === p || pathname.startsWith(`${p}/`)))?.id;
-  const [openGroups, setOpenGroups] = useState(() => new Set(activeGroup ? [activeGroup] : []));
-  useEffect(() => { if (activeGroup) setOpenGroups((s) => new Set([...s, activeGroup])); }, [activeGroup]);
-  const toggleGroup = (id) => setOpenGroups((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const [openGroup, setOpenGroup] = useState(activeGroup || null);
+  useEffect(() => { if (activeGroup) setOpenGroup(activeGroup); }, [activeGroup]);
+  const toggleGroup = (id) => setOpenGroup((cur) => (cur === id ? null : id));
 
   const link = (item, sub = false) => {
     const Icon = ICONS[item.icon];
@@ -58,8 +60,7 @@ export default function Sidebar({ open, onClose }) {
     NAV_GROUPS.forEach((g) => {
       const kids = g.paths.map((p) => byPath[p]).filter(Boolean);
       if (kids.length === 0) return;
-      if (kids.length === 1) { items.push(link(kids[0])); return; }
-      const isOpen = openGroups.has(g.id);
+      const isOpen = openGroup === g.id;
       const hasActive = g.id === activeGroup;
       items.push(
         <div key={g.id} className={`side-group ${isOpen ? 'open' : ''}`}>
@@ -81,8 +82,8 @@ export default function Sidebar({ open, onClose }) {
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`} aria-label="Primary">
       <div className="side-top">
         {collapsed
-          ? <span className="logo-mark" role="img" aria-label="Visual Exposure">VE</span>
-          : <img className="logo-img" src={`${process.env.PUBLIC_URL}/logo.png`} alt="Visual Exposure" width="160" height="31" />}
+          ? <img className="logo-mark" src={`${process.env.PUBLIC_URL}/logo-mark.png`} alt="Visual Exposure" width="40" height="40" />
+          : <img className="logo-img" src={`${process.env.PUBLIC_URL}/logo.png`} alt="Visual Exposure" width="190" height="37" />}
         <button type="button" className="icon-btn side-collapse" aria-label={collapsed ? 'Expand menu' : 'Collapse menu'} title={collapsed ? 'Expand menu' : 'Collapse menu (wider page)'}
           onClick={() => setPref('sidebarCollapsed', (v) => !v)}>
           {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
@@ -92,24 +93,22 @@ export default function Sidebar({ open, onClose }) {
 
       <nav className="side-nav">{items}</nav>
 
-      <div className="side-foot">
-        <NavLink to="/settings" title={collapsed ? 'Settings' : undefined} aria-label={collapsed ? 'Settings' : undefined} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
-          <SlidersHorizontal size={17} aria-hidden="true" />
-          <span className="side-label">Settings</span>
-        </NavLink>
-        {user && (
-          <div className="side-profile" title={collapsed ? `${user.name}, ${role.label}` : undefined}>
-            <span className="side-avatar" aria-hidden="true">{user.initials}</span>
-            <span className="side-who side-label"><strong>{user.name}</strong><small>{role.label}</small></span>
-          </div>
-        )}
-        {user && (
-          <button type="button" className="side-link side-signout" onClick={signOut} title={collapsed ? 'Sign out' : undefined} aria-label={collapsed ? 'Sign out' : undefined}>
-            <LogOut size={17} aria-hidden="true" />
-            <span className="side-label">Sign out</span>
-          </button>
-        )}
-      </div>
+      {user && (
+        <div className="side-user-wrap">
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="side-user" aria-label={`${user.name}, ${role.label}. Account menu`} title={collapsed ? `${user.name}, ${role.label}` : undefined}>
+                <span className="side-avatar" aria-hidden="true">{user.initials}</span>
+                <span className="side-who"><strong>{user.name}</strong><small>{role.label}</small></span>
+                <ChevronDown size={18} className="side-user-chev" aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side={collapsed ? 'right' : 'top'} align={collapsed ? 'end' : 'start'} sideOffset={8} className="side-user-menu">
+              <DropdownMenuItem onSelect={signOut} className="side-user-signout"><LogOut size={18} aria-hidden="true" /> Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </aside>
   );
 }

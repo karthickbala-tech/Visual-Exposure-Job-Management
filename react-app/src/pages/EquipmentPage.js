@@ -7,7 +7,7 @@ import { EQUIPMENT_TYPES, CHEMICAL_UNITS } from '../data/equipmentSeed';
 import { EQUIPMENT_EDITORS } from '../lib/access';
 import { daysOverdue, isOverdue, isWebUrl, nextDue, nextToolId, sdsMissing, sdsReviewDue } from '../lib/equipment';
 import { crewOptions } from '../lib/people';
-import { formatLong, formatShort, fullDate, toKey, today } from '../lib/dates';
+import { formatLong, formatShort, toKey, today } from '../lib/dates';
 import './FabDashboard.css';
 import './EquipmentPage.css';
 
@@ -317,7 +317,7 @@ export default function EquipmentPage() {
   const canEdit = EQUIPMENT_EDITORS.includes(roleId);
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Equipment and Chemicals" subtitle={canEdit ? 'Registers, SDS links and workshop locations.' : 'View only. You can mark checks as done. A Fab Manager, PM or Workshop user edits the registers.'} />
+      <PageHeader eyebrow="Workshop" title="Equipment" subtitle={canEdit ? 'Equipment checks, chemicals and where things are kept.' : 'View only. You can mark checks as done. A Fab Manager, PM or Workshop user edits the registers.'} />
       <div className="segmented eq-tabs" role="tablist" aria-label="Section">
         {['Equipment', 'Chemicals', 'Workshop locations'].map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>))}

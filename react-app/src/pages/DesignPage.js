@@ -11,7 +11,7 @@ import { SavedViews } from '../components/ListKit';
 import { StageBadge } from '../components/StageBadge';
 import { AssignDesignerModal as AssignModal2, DeleteTaskModal, TaskEditModal } from '../components/TaskForms';
 import { useDemo } from '../context/DemoContext';
-import { formatShort, fullDate, toKey, today } from '../lib/dates';
+import { formatShort, toKey, today } from '../lib/dates';
 import { nextStep, stepTitle } from '../lib/checklists';
 import { shortName } from '../lib/people';
 import { MANAGER_ROLES } from '../lib/workflow';
@@ -81,7 +81,7 @@ export default function DesignPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Design" subtitle="Artwork, install plans, LED designs and sign-offs for every job.">
+      <PageHeader eyebrow="Projects" title="Design" subtitle="Artwork, install plans, LED designs and sign-offs for every job.">
         {isPm && <Link className="btn btn-primary" to="/jobs">Create from a job</Link>}
       </PageHeader>
 

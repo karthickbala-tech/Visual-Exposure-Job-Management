@@ -63,7 +63,7 @@ export default function FabDashboard({ variant = 'manager' }) {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title={variant === 'ic2' ? 'Fab 2IC Dashboard' : 'Fab Manager Dashboard'}>
+      <PageHeader eyebrow={variant === 'ic2' ? fullDate() : 'Projects'} title={variant === 'ic2' ? 'Fab 2IC Dashboard' : 'Fabrication'} subtitle={variant === 'ic2' ? undefined : 'Fabrication tasks, crews and the workshop calendar across all jobs.'}>
         {variant !== 'ic2' && <button type="button" className="btn btn-ghost" onClick={() => setWorkshopTask(true)}><Plus size={16} aria-hidden="true" /> New workshop task</button>}
         <Link className="btn btn-primary" to="/jobs">Create task from a job</Link>
       </PageHeader>

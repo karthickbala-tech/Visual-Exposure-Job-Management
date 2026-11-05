@@ -35,7 +35,7 @@ export default function CompliancePage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow="Admin" title="Compliance dashboard" subtitle={`Tickets, inductions and company documents. The warning window is ${days} days (change it in Admin, General).`}>
+      <PageHeader eyebrow="Workers and subcontractors" title="Compliance" subtitle={`Tickets, inductions and documents, with expiry dates and reminders. The warning window is ${days} days (change it in Admin, General).`}>
         <div className="segmented" role="group" aria-label="Which workers">
           <button type="button" className={activeOnly ? 'on' : ''} aria-pressed={activeOnly} onClick={() => setActiveOnly(true)}>Active only</button>
           <button type="button" className={!activeOnly ? 'on' : ''} aria-pressed={!activeOnly} onClick={() => setActiveOnly(false)}>All</button>

@@ -13,7 +13,7 @@ import { installTypeStyles } from '../data/mockData';
 import { fabTypeColors } from '../data/fabTypes';
 import { shortName } from '../lib/people';
 import { crewOf } from '../lib/checklists';
-import { fullDate, toKey, today } from '../lib/dates';
+import { toKey, today } from '../lib/dates';
 import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
 import './FabDashboard.css';
 
@@ -66,7 +66,7 @@ export default function InstallDashboard() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Installation" subtitle="Install tasks, site crews and SWMS status across all jobs.">
+      <PageHeader eyebrow="Projects" title="Installation" subtitle="Install tasks, site crews and SWMS status across all jobs.">
         {isPm && <Link className="btn btn-primary" to="/jobs">Create task from a job</Link>}
       </PageHeader>
 

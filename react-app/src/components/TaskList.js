@@ -112,7 +112,7 @@ export default function TaskList({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <Card className="ui-scope overflow-hidden font-sans">
+      <Card className="ui-scope wtasklist overflow-hidden font-sans">
         <div className="flex flex-wrap items-center gap-2 border-b p-3 sm:p-4">
           {title && <h2 className="m-0 mr-2 text-[15px] font-bold">{title}</h2>}
           <SavedViews label="Task filter" value={current.id} onChange={(v) => { onView(v); setSelected([]); }} views={views.map((v) => ({ id: v.id, label: v.label, count: v.rows.length }))} />

@@ -51,7 +51,7 @@ test('compliance dashboard: the active-only toggle is on by default and switches
   expect(byText('button', 'All').getAttribute('aria-pressed')).toBe('true');
 });
 
-test('admin: the expiry warning saved in Admin changes the Compliance dashboard', () => {
+test('admin: the expiry warning saved in Admin changes the Compliance screen', () => {
   as('admin');
   render(<><AdminPage /><CompliancePage /></>);
   const before = kpi('Within 30 days');
@@ -97,7 +97,7 @@ test('role homes: Admin, Install Coordinator, Designer and Viewer each get a rea
   expect(heading('admin')).toContain("Karen Wells's home");
   expect(heading('installCoordinator')).not.toContain('next screen to build');
   expect(heading('designer')).not.toContain('next screen to build');
-  expect(heading('viewer')).toBe('All jobs');
+  expect(heading('viewer')).toBe('Jobs'); // same title as the web app
   expect(byText('button', 'New job')).toBeUndefined();
 });
 

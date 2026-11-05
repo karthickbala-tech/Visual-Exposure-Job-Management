@@ -6,7 +6,6 @@ import { useDemo } from '../context/DemoContext';
 import { FAB_TYPES, fabTypeColors } from '../data/fabTypes';
 import { installTypeStyles } from '../data/mockData';
 import { calendarEvents } from '../lib/calendar';
-import { fullDate } from '../lib/dates';
 
 const TABS = [
   { id: 'unified', label: 'Unified' },
@@ -32,7 +31,7 @@ export default function CalendarPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Calendar" subtitle="Fabrication and installation work in one place. Click a task to open it, or a day to see that day." />
+      <PageHeader eyebrow="Schedule" title="Calendar" subtitle="Design, fabrication and install tasks by day. Click a task to open it, or a day to see that day." />
 
       <div className="ui-scope flex flex-wrap items-center gap-2 font-sans">
         <SavedViews label="Calendar" value={tab} onChange={pickTab} views={TABS} />
