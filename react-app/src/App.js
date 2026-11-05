@@ -3,6 +3,8 @@ import AppShell from './components/AppShell';
 import Guard from './components/Guard';
 import { DemoProvider, useDemo } from './context/DemoContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PrefsProvider } from './context/PrefsContext';
+import SettingsPage from './pages/SettingsPage';
 import { AuthProvider, RoleSync } from './context/AuthContext';
 import { PublicOnly, RequireAuth } from './components/RequireAuth';
 import SignInPage from './pages/auth/SignInPage';
@@ -47,6 +49,7 @@ function Home() {
 export default function App() {
   return (
     <ThemeProvider>
+    <PrefsProvider>
     <AuthProvider>
     <DemoProvider>
       <RoleSync />
@@ -76,6 +79,7 @@ export default function App() {
             <Route path="compliance" element={<CompliancePage />} />
             <Route path="checklists" element={<ChecklistsPage />} />
             <Route path="admin" element={<AdminPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="workers" element={<WorkersPage />} />
             <Route path="workers/:workerId" element={<WorkerDetail />} />
             <Route path="swms/:swmsId" element={<SwmsDetail />} />
@@ -90,6 +94,7 @@ export default function App() {
       </HashRouter>
     </DemoProvider>
     </AuthProvider>
+    </PrefsProvider>
     </ThemeProvider>
   );
 }

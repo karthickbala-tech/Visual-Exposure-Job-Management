@@ -154,5 +154,8 @@ test('guard and sidebar: Admin and Compliance show only for Admin, and others ar
   render(tree, '/admin');
   expect(box.textContent).toContain('ADMIN SCREEN');
   expect(byText('a', 'Admin')).toBeDefined();
+  // Compliance sits in the People section of the menu, which opens on click.
+  const people = [...box.querySelectorAll('button')].find((x) => x.textContent.trim() === 'People');
+  act(() => { people.click(); });
   expect(byText('a', 'Compliance')).toBeDefined();
 });

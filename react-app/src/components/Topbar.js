@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Bell, Menu, Moon, Search, Settings2, Sun } from 'lucide-react';
 import { ROLES } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
 import { useTheme } from '../context/ThemeContext';
@@ -48,6 +49,7 @@ export default function Topbar({ onMenu }) {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <button type="button" className="icon-btn bell" aria-label="Notifications"><Bell size={18} /><i /></button>
+        <Link to="/settings" className="icon-btn top-settings" aria-label="Display settings" title="Display settings"><Settings2 size={18} /></Link>
         <UserMenu />
       </div>
     </div>

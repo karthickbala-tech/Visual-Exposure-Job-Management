@@ -4,11 +4,13 @@ import { CheckCircle2 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useDemo } from '../context/DemoContext';
+import { usePrefs } from '../context/PrefsContext';
 
 export default function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
   const { pathname } = useLocation();
   const { toast, dismissToast } = useDemo();
+  const { prefs } = usePrefs();
 
   useEffect(() => setNavOpen(false), [pathname]);
 
@@ -19,7 +21,7 @@ export default function AppShell() {
   }, [toast, dismissToast]);
 
   return (
-    <div className="shell">
+    <div className={`shell ${prefs.sidebarCollapsed ? 'side-collapsed' : ''}`}>
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       {navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
       <div className="main-col">
