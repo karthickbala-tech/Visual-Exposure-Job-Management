@@ -1,114 +1,230 @@
-// Local mock of the API for UI work. Zero Catalyst requests: the free plan has a small monthly allowance (docs/REQUEST_BUDGET.md).
-// Run:  node dev/mock-api.mjs    (port 3100; `npm run dev` proxies /server to it)
-// Add ?role=installer to any page URL's API calls via the MOCK_ROLES env, e.g.  MOCK_ROLES=installer node dev/mock-api.mjs
+// Local mock of the API for UI work, with sample data for every module (see seed.mjs). Zero Catalyst requests: the free plan has a
+// small monthly allowance (docs/REQUEST_BUDGET.md). Changes you make live in memory only; restart to get the sample data back.
+// Run:  node dev/mock-api.mjs   (port 3100; `npm run dev` proxies /server to it)
+// See another role:  MOCK_ROLES=installer node dev/mock-api.mjs   (any of: admin, project_manager, fab_manager, install_coordinator,
+//   second_ic, installer, fab_worker, workshop, viewer; or several, comma separated)
 import http from 'node:http';
+import * as S from './seed.mjs';
 
+const { day } = S;
 const roles = (process.env.MOCK_ROLES || 'admin').split(',');
 const isManager = roles.some((r) => ['admin', 'project_manager', 'fab_manager', 'install_coordinator'].includes(r));
-const TODAY = new Date().toISOString().slice(0, 10);
-const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+const TODAY = day(0);
+// who you are in the sample data, by role
+const ME = { admin: '501', project_manager: '502', fab_manager: '504', install_coordinator: '510', second_ic: '506', installer: '508', fab_worker: '507', workshop: '509', viewer: '501' }[roles[0]] || '501';
+let nextId = 9000;
+const id = () => String(++nextId);
+const now = () => new Date().toISOString();
+const fullName = (p) => `${p.first_name} ${p.last_name || ''}`.trim();
+const jobById = (i) => S.jobs.find((j) => j.ROWID === String(i));
+const taskById = (i) => S.tasks.find((t) => t.ROWID === String(i));
 
-const jobs = [
-	{ ROWID: '1001', name: 'Harbour Wayfinding Package', stage: 'In Progress', crm_deal_id: '4590000000112', expected_finish: day(30), created_date: day(-40), percent_fab: 60, percent_install: 20, percent_job: 45 },
-	{ ROWID: '1002', name: 'Pylon Refresh: Sunshine West', stage: 'Preparation', crm_deal_id: '4590000000187', expected_finish: day(55), created_date: day(-5), percent_fab: 0, percent_install: 0, percent_job: 0 },
-	{ ROWID: '1003', name: 'A very long job name that keeps going to test how the table and the header cope with it in a narrow column', stage: 'On Hold', created_date: day(-90), percent_fab: 90, percent_install: 0, percent_job: 60 },
-	{ ROWID: '1004', name: 'Old Signage Removal', stage: 'Completed - Closed', created_date: day(-200), percent_fab: 100, percent_install: 100, percent_job: 100 },
-];
-const tasks = [
-	{ ROWID: '2001', job_id: '1001', task_type: 'design', name: 'Artwork approval', kind: null, stage: 'Completed', scheduled_date: day(-20), required_finish: day(-15), nextStages: [] },
-	{ ROWID: '2002', job_id: '1001', task_type: 'fabrication', name: 'Cut ACM panels', kind: 'CNC', stage: 'In Progress', scheduled_date: day(-1), required_finish: day(-2), nextStages: ['Manager Review', 'On Hold'] },
-	{ ROWID: '2003', job_id: '1001', task_type: 'fabrication', name: 'Paint frames', kind: 'Paint', stage: 'Scheduled', scheduled_date: day(2), required_finish: day(9), nextStages: ['In Progress'] },
-	{ ROWID: '2004', job_id: '1001', task_type: 'install', name: 'Install wayfinding totems', kind: 'VE Install', stage: 'Awaiting Scheduling', scheduled_date: null, required_finish: day(25), swms_id: '3001', nextStages: [] },
-	{ ROWID: '2005', job_id: '1003', task_type: 'fabrication', name: 'Weld brackets', kind: 'Metal', stage: 'Manager Review', scheduled_date: day(-6), required_finish: day(-3), nextStages: ['Approved & Completed', 'Rejected'] },
-];
-const issues = [
-	{ ROWID: '4001', subject: 'Wet floor at the loading bay', department: 'Install', issue_status: 'Open', issue_priority: 'High', CREATEDTIME: day(-2), nextStages: [], nextStatuses: ['In Progress', 'Resolved'] },
-	{ ROWID: '4002', subject: 'Billboard dispute with council', department: 'Civic Billboards', issue_status: 'In Progress', issue_priority: 'Normal', task_id: '2004', CREATEDTIME: day(-9), nextStatuses: ['Resolved'] },
-	{ ROWID: '4003', subject: 'Supplier sent the wrong vinyl colour, please check the order before we cut anything', department: 'Fabrication', issue_status: 'Resolved', issue_priority: 'Low', CREATEDTIME: day(-20), nextStatuses: ['Closed'] },
-];
-const people = [
-	{ ROWID: '501', first_name: 'Karthick', last_name: 'Bala', email: 'karthick@example.test', roles: JSON.stringify(['admin']), is_active: true, hourly_rate: 95 },
-	{ ROWID: '502', first_name: 'Rachel', last_name: 'Nguyen', email: 'rachel@example.test', roles: JSON.stringify(['project_manager']), is_active: true },
-	{ ROWID: '503', first_name: 'Sam', last_name: 'Okafor-Whittington-Smythe', email: 'sam.with.a.very.long.email.address@subcontractor-example.test', roles: JSON.stringify(['installer', 'fab_worker']), is_active: true },
-	{ ROWID: '504', first_name: 'Li', roles: JSON.stringify([]), is_active: false },
-];
-const swms = { id: '3001', jobId: '1001', status: 'PM Signed', pcbu: { Name: 'Visual Exposure Pty Ltd', Phone: '03 9311 5722' }, siteAddress: '1 Harbour Esplanade, Docklands', ppe: ['Hard hat', 'Hi-vis'], tasks: [{ task: 'Set out totem positions', responsible: 'Team leader' }], declarations: [{ personId: '503', name: 'Sam Okafor', at: day(-1) }], signoff: { pm: { name: 'Rachel Nguyen', at: day(-2) } } };
+const isOpen = (t) => !['Completed', 'Cancelled', 'Complete - Not Used', 'Approved & Completed'].includes(t.stage);
+const isLate = (t) => isOpen(t) && t.required_finish && t.required_finish < TODAY;
+const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: S.nextStages(t.stage) });
+const mine = (t) => t.assignees.some(([p]) => p === ME);
+const myTasks = () => S.tasks.filter((t) => isOpen(t) && (isManager ? mine(t) || false : mine(t)));
 
-const hourCell = (fab, install) => ({ fab, install, workshop: 0, design: 0, other: 0, unbilled: 0, final: fab + install });
-const week = () => {
-	const d = new Date(); const dow = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - dow);
-	return Array.from({ length: 7 }, (_, i) => new Date(d.getTime() + i * 864e5).toISOString().slice(0, 10));
+const kpisFor = (jobId) => {
+	const out = {};
+	for (const type of ['design', 'fabrication', 'install']) {
+		const list = S.tasks.filter((t) => t.job_id === jobId && t.task_type === type);
+		const done = list.filter((t) => !isOpen(t)).length;
+		out[type] = { total: list.length, open: list.length - done, overdue: list.filter(isLate).length, percent: list.length ? Math.round((done / list.length) * 100) : 0 };
+	}
+	return out;
 };
+
+const week = () => { const d = new Date(); const dow = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - dow); return Array.from({ length: 7 }, (_, i) => new Date(d.getTime() + i * 864e5).toISOString().slice(0, 10)); };
 const days = week();
-const hoursReport = () => ({
-	weekStart: days[0], days,
-	rows: [
-		{ personId: '503', name: 'Sam Okafor-Whittington-Smythe', days: { [days[0]]: hourCell(8, 0), [days[1]]: hourCell(0, 9.5), [days[2]]: hourCell(4, 4) }, totals: hourCell(12, 13.5), labourCost: 2300.5 },
-		{ personId: '502', name: 'Rachel Nguyen', days: { [days[0]]: hourCell(0, 7.5) }, totals: hourCell(0, 7.5), labourCost: 712.5 },
-	],
-	totals: hourCell(12, 21), truncated: false,
-});
+const cell = (fab = 0, install = 0, workshop = 0, design = 0, unbilled = 0) => ({ fab, install, workshop, design, other: 0, unbilled, final: fab + install + workshop + design });
+const sum = (cells) => cells.reduce((a, c) => ({ fab: a.fab + c.fab, install: a.install + c.install, workshop: a.workshop + c.workshop, design: a.design + c.design, other: 0, unbilled: a.unbilled + c.unbilled, final: a.final + c.final }), cell());
+const hoursRows = () => {
+	const rows = [
+		['506', { [days[0]]: cell(8), [days[1]]: cell(8.5), [days[2]]: cell(8, 0, 0, 0, 1) }, 62],
+		['507', { [days[0]]: cell(7.5), [days[1]]: cell(8), [days[3]]: cell(6) }, 55],
+		['508', { [days[0]]: cell(0, 9), [days[1]]: cell(0, 9.5), [days[2]]: cell(0, 4) }, 64],
+		['509', { [days[0]]: cell(0, 0, 8), [days[1]]: cell(0, 0, 8) }, 48],
+		['512', { [days[1]]: cell(0, 0, 0, 6) }, 70],
+	].map(([pid, d, rate]) => { const totals = sum(Object.values(d)); return { personId: pid, name: S.nameOf(pid), days: d, totals, labourCost: Math.round(totals.final * rate * 100) / 100 }; });
+	return isManager ? rows : rows.filter((r) => r.personId === ME).map(({ labourCost, ...r }) => r);
+};
+const hoursReport = () => { const rows = hoursRows(); return { weekStart: days[0], days, rows, totals: sum(rows.map((r) => r.totals)), truncated: false, period: { start: days[0], end: day(13 - ((new Date().getUTCDay() + 6) % 7)) } }; };
 
 const board = (type) => {
 	const stages = type === 'design' ? ['To be Assigned', 'In Progress', 'Manager Review', 'Completed'] : ['Awaiting Scheduling', 'Scheduled', 'In Progress', 'Manager Review', 'On Hold', 'Completed'];
-	return { type, truncated: false, columns: stages.map((stage) => { const items = tasks.filter((t) => t.task_type === type && t.stage === stage).map((t) => ({ ROWID: t.ROWID, name: t.name, job_id: t.job_id, kind: t.kind, scheduled_date: t.scheduled_date, required_finish: t.required_finish, overdue: !!t.required_finish && t.required_finish < TODAY && !['Completed', 'Cancelled'].includes(t.stage) })); return { stage, items, count: items.length, overdueCount: items.filter((i) => i.overdue).length }; }) };
+	const list = S.tasks.filter((t) => t.task_type === type && (isManager || mine(t)));
+	return { type, truncated: false, columns: stages.map((stage) => { const items = list.filter((t) => t.stage === stage).map((t) => ({ ROWID: t.ROWID, name: t.name, job_id: t.job_id, kind: t.kind, scheduled_date: t.scheduled_date, required_finish: t.required_finish, overdue: !!isLate(t) })); return { stage, items, count: items.length, overdueCount: items.filter((i) => i.overdue).length }; }) };
 };
 
-const tilesFor = (role) => ({
-	project_manager: [['My open jobs', 3], ['My open install tasks', 2], ['My open design tasks', 1], ['All open fab tasks', 5]],
-	fab_manager: [['Open fab tasks', 5], ['Awaiting scheduling', 2], ['Scheduled', 1], ['In progress', 1], ['Manager review', 1], ['Overdue fab tasks', 2]],
-	installer: [['My tasks today', 1], ['My open install tasks', 2]],
-	fab_worker: [['Hours not filled in', 3], ['Hours not filled (workshop)', 1], ['My tasks today', 2], ['My open fab tasks', 3]],
-	workshop: [['Open workshop tasks', 2], ['My open tasks', 3], ['Equipment overdue for checks', 1]],
-	install_coordinator: [['Open install tasks', 4], ['Awaiting scheduling', 2], ['Scheduled', 1], ['Overdue install tasks', 1]],
-}[role] ?? []).map(([label, value], i) => ({ key: `t${i}`, label, value }));
+const tilesFor = (role) => {
+	const open = S.tasks.filter(isOpen);
+	const fab = open.filter((t) => t.task_type === 'fabrication');
+	const inst = open.filter((t) => t.task_type === 'install' && t.kind !== 'External Install');
+	const by = (list, s) => list.filter((t) => t.stage === s).length;
+	const my = open.filter(mine);
+	const rows = {
+		project_manager: [['My open jobs', S.jobs.filter((j) => j.pm_id === ME && !j.stage.startsWith('Completed')).length], ['My open install tasks', my.filter((t) => t.task_type === 'install').length], ['My open design tasks', my.filter((t) => t.task_type === 'design').length], ['All open fab tasks', fab.length]],
+		fab_manager: [['Open fab tasks', fab.length], ['Awaiting scheduling', by(fab, 'Awaiting Scheduling')], ['Scheduled', by(fab, 'Scheduled')], ['In progress', by(fab, 'In Progress')], ['Manager review', by(fab, 'Manager Review')], ['Overdue fab tasks', fab.filter(isLate).length]],
+		install_coordinator: [['Open install tasks', inst.length], ['Awaiting scheduling', by(inst, 'Awaiting Scheduling')], ['Scheduled', by(inst, 'Scheduled')], ['Overdue install tasks', inst.filter(isLate).length]],
+		second_ic: [['My open fab tasks', my.filter((t) => t.task_type === 'fabrication').length], ['My tasks today', my.filter((t) => t.scheduled_date === TODAY).length], ['My hours last week', 41.5]],
+		installer: [['My tasks today', my.filter((t) => t.scheduled_date === TODAY).length], ['My open install tasks', my.filter((t) => t.task_type === 'install').length]],
+		fab_worker: [['Hours not filled in', 3], ['Hours not filled (workshop)', 1], ['My tasks today', my.filter((t) => t.scheduled_date === TODAY).length], ['My open fab tasks', my.filter((t) => t.task_type === 'fabrication').length]],
+		workshop: [['Open workshop tasks', open.filter((t) => t.kind === 'Workshop').length], ['My open tasks', my.length], ['Equipment overdue for checks', S.equipment.filter((e) => e.overdue).length]],
+	}[role] || [];
+	return rows.map(([label, value], i) => ({ key: ['hours_not_filled', 'hours_not_filled_workshop'][i] && role === 'fab_worker' ? ['hours_not_filled', 'hours_not_filled_workshop'][i] : `${role}_${i}`, label, value }));
+};
+
+const issueView = (i) => ({ ...i, nextStatuses: S.issueNext(i.issue_status) });
+const issueBoard = () => {
+	const departments = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
+	const counts = Object.fromEntries(departments.map((d) => { const l = S.issues.filter((i) => i.department === d); const c = (s) => l.filter((i) => i.issue_status === s).length; return [d, { Open: c('Open'), 'In Progress': c('In Progress'), Resolved: c('Resolved'), Closed: c('Closed'), openTotal: c('Open') + c('In Progress') }]; }));
+	return { departments, counts, truncated: false };
+};
+const issueHistory = [];
+
+const complianceView = (c) => {
+	const t = S.complianceTypes.find((x) => x.id === c.typeId);
+	const daysLeft = c.expiryDate ? Math.round((new Date(c.expiryDate) - new Date(TODAY)) / 864e5) : null;
+	const person = c.personId ? S.nameOf(c.personId) : null;
+	const company = c.companyId ? S.companies.find((x) => x.id === c.companyId) : null;
+	return { id: c.id, kind: t ? t.kind : 'ticket', typeId: c.typeId, typeName: t ? t.name : null, personId: c.personId, personName: person, companyId: c.companyId, companyName: company ? company.name : null, referenceNo: c.referenceNo || '', expiryDate: c.expiryDate, daysLeft, status: S.complianceStatus(c.expiryDate) };
+};
+const complianceDash = () => {
+	const counts = {};
+	for (const c of S.complianceItems) {
+		const v = complianceView(c); if (!v.expiryDate) continue;
+		const k = (counts[v.kind] = counts[v.kind] || { overdue: 0, today: 0, within30: 0 });
+		if (v.daysLeft < 0) k.overdue += 1; else if (v.daysLeft === 0) k.today += 1; else if (v.daysLeft <= 30) k.within30 += 1;
+	}
+	return { today: TODAY, activeOnly: true, counts, workers: { ve: S.people.filter((p) => p.is_active && p.person_kind === 'staff').length, other: S.people.filter((p) => p.is_active && p.person_kind !== 'staff').length }, truncated: false };
+};
+
+const swmsList = () => S.swms.map((s) => { const t = taskById(s.taskId); return { id: s.id, status: s.status, jobId: s.jobId, siteAddress: s.siteAddress, task: t ? { id: t.ROWID, name: t.name, stage: t.stage } : null }; });
+const swmsView = (s) => ({ id: s.id, jobId: s.jobId, status: s.status, pcbu: s.pcbu, siteAddress: s.siteAddress, ppe: s.ppe, tasks: s.tasks, declarations: s.declarations, signoff: s.signoff });
+
+const checklistView = (c) => {
+	const answered = Object.keys(c.answers).length;
+	const total = S.checklistDefinition.sections.flatMap((s) => s.questions).filter((q) => !q.showIf).length;
+	const next = S.checklistDefinition.sections.flatMap((s) => s.questions).find((q) => !q.showIf && c.answers[q.key] === undefined) || null;
+	return { checklist: { id: c.id, taskId: c.taskId, phase: c.phase, status: c.status, role: c.role, hours: c.hours }, definition: S.checklistDefinition, answers: c.answers, progress: { total, answered: Math.min(answered, total), percent: Math.round((Math.min(answered, total) / total) * 100), missing: [], issues: [], canComplete: answered >= total }, next };
+};
 
 const templates = ['issueRaised', 'issueUpdated', 'taskSentBack', 'jobClosed', 'equipmentOffHire', 'complianceDue', 'weeklyHours', 'weeklyIssues'].map((name) => ({ name, label: name.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()), placeholders: ['job', 'subject', 'link'], override: name === 'jobClosed' ? { intro: 'Well done team.' } : null }));
+let settings = { workshop_job_id: '1001', pay_period: { start_date: days[0], length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd', Address: '532 Somerville Road, Sunshine West VIC 3020', Phone: '03 9311 5722' }, hours_report_recipients: ['501', '502'], hours_cutoff_date: null };
 
-let settings = { workshop_job_id: '1001', pay_period: { start_date: day(-3), length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd' }, hours_report_recipients: ['502'], hours_cutoff_date: null };
+const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
+const matrix = () => Object.fromEntries(RESOURCES.map((r) => [r, Object.fromEntries(S.ROLE_KEYS.map((role) => [role, role === 'admin' ? { verbs: ['view', 'create', 'edit', 'delete'], scope: 'all' } : ['project_manager', 'fab_manager', 'install_coordinator'].includes(role) ? { verbs: ['view', 'create', 'edit'], scope: 'all' } : role === 'viewer' ? { verbs: ['view'], scope: 'all' } : { verbs: ['view'], scope: 'assigned' }]))]));
+
+const list = (items) => ({ items, count: items.length });
+const patch = (obj, body, keys) => { for (const k of keys) if (body[k] !== undefined) obj[k] = body[k]; return obj; };
 
 const routes = [
-	['GET', /^\/me$/, () => ({ user: { id: '1', email: 'karthick@example.test', firstName: 'Karthick', lastName: 'Bala' }, roles, permissions: { createJob: isManager, editJob: isManager, createTask: isManager, assignPeople: isManager }, person: { ROWID: isManager ? '501' : '503' } })],
-	['GET', /^\/jobs$/, (_, q) => { let items = jobs; const v = q.get('view'); if (v === 'preparation') items = jobs.filter((j) => j.stage === 'Preparation'); if (v === 'ongoing') items = jobs.filter((j) => ['In Progress', 'On Hold'].includes(j.stage)); if (v === 'completed') items = jobs.filter((j) => j.stage.startsWith('Completed')); if (q.get('stage')) items = items.filter((j) => j.stage === q.get('stage')); return { items, count: items.length }; }],
-	['GET', /^\/jobs\/(\d+)$/, (m) => ({ job: jobs.find((j) => j.ROWID === m[1]) ?? jobs[0], tasks: tasks.filter((t) => t.job_id === m[1]), progress: { fab: 60, install: 20, job: 45 }, kpis: { design: { total: 1, open: 0, overdue: 0, percent: 100 }, fabrication: { total: 2, open: 2, overdue: 1, percent: 40 }, install: { total: 1, open: 1, overdue: 0, percent: 0 } } })],
+	// who am I
+	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: { createJob: isManager, editJob: isManager, createTask: isManager, assignPeople: isManager }, person: { ROWID: ME } }; }],
+	// jobs
+	['GET', /^\/jobs$/, (_, q) => {
+		let items = S.jobs.filter((j) => isManager || S.tasks.some((t) => t.job_id === j.ROWID && mine(t)));
+		const v = q.get('view'); const done = (j) => j.stage.startsWith('Completed');
+		if (v === 'my_open') items = items.filter((j) => j.pm_id === ME && !done(j));
+		if (v === 'my_jobs') items = items.filter((j) => j.pm_id === ME || j.fab_manager_id === ME);
+		if (v === 'preparation') items = items.filter((j) => j.stage === 'Preparation');
+		if (v === 'ongoing') items = items.filter((j) => ['In Progress', 'On Hold'].includes(j.stage));
+		if (v === 'completed') items = items.filter(done);
+		if (q.get('stage')) items = items.filter((j) => j.stage === q.get('stage'));
+		return list(items.map(({ pm_id, fab_manager_id, ...j }) => ({ ...j, pm_name: S.nameOf(pm_id), fab_manager_name: S.nameOf(fab_manager_id) })));
+	}],
+	['POST', /^\/jobs$/, (_, __, b) => { const j = { ROWID: id(), name: b.name, stage: 'Preparation', crm_deal_id: '', pm_id: ME, fab_manager_id: null, expected_finish: b.expected_finish || null, created_date: TODAY, percent_fab: 0, percent_install: 0, percent_job: 0, server_path: '', description: b.description || '' }; S.jobs.unshift(j); return { job: j }; }],
+	['GET', /^\/jobs\/(\d+)\/signs$/, (m) => list(S.signs.filter((s) => s.jobId === m[1]))],
+	['GET', /^\/jobs\/(\d+)\/sign-groups$/, (m) => list(S.signGroups.filter((s) => s.jobId === m[1]))],
+	['POST', /^\/jobs\/(\d+)\/sync-quotes$/, (m) => ({ synced: S.signGroups.filter((s) => s.jobId === m[1]).length, items: S.signGroups.filter((s) => s.jobId === m[1]) })],
+	['POST', /^\/jobs\/(\d+)\/close$/, (m) => { const j = jobById(m[1]); if (j) j.stage = 'Completed - Closed'; return { job: j }; }],
+	['POST', /^\/jobs\/(\d+)\/tasks$/, (m, _, b) => { const t = { ROWID: id(), job_id: m[1], task_type: b.task_type, name: b.name, kind: b.kind || null, stage: b.task_type === 'design' ? 'To be Assigned' : 'Awaiting Scheduling', scheduled_date: b.scheduled_date || null, required_finish: b.required_finish || null, quoted_hours: b.quoted_hours || 0, booked_hours: 0, description: b.description || '', swms_id: undefined, assignees: [] }; S.tasks.push(t); return { task: taskView(t) }; }],
+	['GET', /^\/jobs\/(\d+)$/, (m) => { const job = jobById(m[1]) || S.jobs[0]; const tasks = S.tasks.filter((t) => t.job_id === job.ROWID); return { job, tasks: tasks.map(taskView), progress: { fab: job.percent_fab, install: job.percent_install, job: job.percent_job }, kpis: kpisFor(job.ROWID) }; }],
+	['PATCH', /^\/jobs\/(\d+)$/, (m, _, b) => { const j = jobById(m[1]); patch(j, b, ['name', 'description', 'expected_finish', 'server_path', 'crm_deal_id']); return { job: j }; }],
+	// tasks
 	['GET', /^\/tasks\/board$/, (_, q) => board(q.get('type') || 'fabrication')],
-	['GET', /^\/tasks\/(\d+)$/, (m) => ({ task: tasks.find((t) => t.ROWID === m[1]) ?? tasks[0], assignees: [{ linkId: '1', personId: '503', role: 'lead', name: 'Sam Okafor' }], nextStages: ['In Progress'] })],
-	['GET', /^\/tasks\/(\d+)\/checklist\/next$/, () => ({ phase: 'pre', action: 'start', checklistId: null, next: null })],
-	['GET', /^\/tasks\/(\d+)\/checklists$/, () => ({ items: [] })],
-	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: tasks.slice(1, 4), jobsByStage: { Preparation: 1, 'In Progress': 1, 'On Hold': 1, Completed: 1 }, overdueTasks: 2, openIssues: 2, swmsAwaiting: 1 } : { scope: 'mine', today: TODAY, myTasks: tasks.slice(1, 4) })],
-	['GET', /^\/dashboards\/(\w+)$/, (m) => ({ role: m[1], tiles: tilesFor(m[1]) })],
-	['GET', /^\/calendar$/, () => ({ items: tasks.filter((t) => t.scheduled_date).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) })],
-	['GET', /^\/issues$/, (_, q) => { const s = q.get('status'); const items = s ? issues.filter((i) => i.issue_status === s) : issues; return { items, count: items.length }; }],
-	['GET', /^\/issues\/(\d+)\/history$/, () => ({ items: [{ at: new Date().toISOString(), changes: [{ field: 'issue_status', from: 'Open', to: 'In Progress' }, { field: 'assigned_to_id', from: '', to: 'Rachel Nguyen' }] }] })],
-	['POST', /^\/jobs\/(\d+)\/close$/, () => ({ job: { stage: 'Completed - Closed' } })],
-	['GET', /^\/issues\/board$/, () => ({ departments: ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'], counts: { Management: { Open: 0, 'In Progress': 0, Resolved: 0, Closed: 0, openTotal: 0 }, Design: { Open: 0, 'In Progress': 0, Resolved: 1, Closed: 2, openTotal: 0 }, Fabrication: { Open: 1, 'In Progress': 1, Resolved: 0, Closed: 0, openTotal: 2 }, Install: { Open: 3, 'In Progress': 0, Resolved: 0, Closed: 1, openTotal: 3 }, 'Civic Billboards': { Open: 0, 'In Progress': 1, Resolved: 0, Closed: 0, openTotal: 1 } }, truncated: false })],
+	['POST', /^\/tasks\/workshop$/, (_, __, b) => { const t = { ROWID: id(), job_id: '1001', task_type: 'fabrication', name: b.name, kind: 'Workshop', stage: 'Awaiting Scheduling', scheduled_date: b.scheduled_date || null, required_finish: null, quoted_hours: 0, booked_hours: 0, description: '', assignees: [] }; S.tasks.push(t); return { task: taskView(t) }; }],
+	['GET', /^\/tasks\/(\d+)\/checklist\/next$/, (m) => { const t = taskById(m[1]); const my = S.checklists.filter((c) => c.taskId === m[1] && c.assigneeId === ME); const pre = my.find((c) => c.phase === 'pre'); const post = my.find((c) => c.phase === 'post'); const skip = t && t.kind === 'Workshop'; for (const [phase, c] of skip ? [['post', post]] : [['pre', pre], ['post', post]]) { if (c && c.status === 'Completed') continue; return c ? { phase, action: 'continue', checklistId: c.id, next: checklistView(c).next } : { phase, action: 'start', checklistId: null, next: null }; } return { phase: null, action: 'done', checklistId: null, next: null }; }],
+	['GET', /^\/tasks\/(\d+)\/checklists$/, (m) => ({ items: S.checklists.filter((c) => c.taskId === m[1]).map((c) => ({ id: c.id, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours })) })],
+	['POST', /^\/tasks\/(\d+)\/checklists$/, (m, _, b) => { const c = { id: id(), taskId: m[1], phase: b.phase, status: 'In Progress', assigneeId: ME, role: 'lead', hours: null, answers: {} }; S.checklists.push(c); return checklistView(c); }],
+	['POST', /^\/tasks\/(\d+)\/transition$/, (m, _, b) => { const t = taskById(m[1]); t.stage = b.to; return { task: taskView(t) }; }],
+	['POST', /^\/tasks\/(\d+)\/assignees$/, (m, _, b) => { const t = taskById(m[1]); t.assignees.push([b.person_id, b.role]); return { ok: true }; }],
+	['DELETE', /^\/tasks\/(\d+)\/assignees\/(\d+)$/, (m) => { const t = taskById(m[1]); t.assignees = t.assignees.filter(([p]) => p !== m[2]); return { removed: true }; }],
+	['POST', /^\/tasks\/(\d+)\/hours$/, (m, _, b) => { const t = taskById(m[1]); t.booked_hours = Number(t.booked_hours || 0) + Number(b.hours || 0); return { entry: { hours: b.hours }, task: { bookedHours: t.booked_hours } }; }],
+	['POST', /^\/tasks\/(\d+)\/ratings$/, () => ({ ok: true })],
+	['POST', /^\/tasks\/(\d+)\/subtasks$/, (m, _, b) => { const p = taskById(m[1]); const t = { ...p, ROWID: id(), name: b.name, stage: 'Awaiting Scheduling', assignees: [], swms_id: undefined }; S.tasks.push(t); return { task: taskView(t) }; }],
+	['GET', /^\/tasks\/(\d+)$/, (m) => { const t = taskById(m[1]) || S.tasks[0]; return { task: taskView(t), assignees: t.assignees.map(([p, role], i) => ({ linkId: `${t.ROWID}-${i}`, personId: p, role, name: S.nameOf(p) })), nextStages: S.nextStages(t.stage) }; }],
+	['PATCH', /^\/tasks\/(\d+)$/, (m, _, b) => { const t = taskById(m[1]); patch(t, b, ['scheduled_date', 'required_finish', 'quoted_hours', 'description', 'name']); return { task: taskView(t) }; }],
+	['GET', /^\/tasks$/, () => list(S.tasks.map(taskView))],
+	// checklists
+	['GET', /^\/checklists\/(\d+)$/, (m) => checklistView(S.checklists.find((c) => c.id === m[1]) || S.checklists[0])],
+	['PATCH', /^\/checklists\/(\d+)\/answers$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); Object.assign(c.answers, b.answers); return checklistView(c); }],
+	['POST', /^\/checklists\/(\d+)\/complete$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); c.status = 'Completed'; if (b.hours) c.hours = b.hours; return checklistView(c); }],
+	['GET', /^\/reports\/checklists$/, (_, q) => { let l = S.checklists; if (q.get('phase')) l = l.filter((c) => c.phase === q.get('phase')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); return list(l.map((c) => ({ id: c.id, taskId: c.taskId, taskName: (taskById(c.taskId) || {}).name || null, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours }))); }],
+	// dashboards and calendar
+	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: S.tasks.filter((t) => isOpen(t) && t.scheduled_date).slice(0, 5).map(taskView), jobsByStage: Object.fromEntries(['Preparation', 'In Progress', 'On Hold', 'Completed'].map((s) => [s, S.jobs.filter((j) => j.stage === s).length])), overdueTasks: S.tasks.filter(isLate).length, openIssues: S.issues.filter((i) => ['Open', 'In Progress'].includes(i.issue_status)).length, swmsAwaiting: S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status)).length } : { scope: 'mine', today: TODAY, myTasks: myTasks().map(taskView) })],
+	['GET', /^\/dashboards\/(\w+)$/, (m) => ({ role: m[1], today: TODAY, tiles: tilesFor(m[1]) })],
+	['GET', /^\/calendar$/, (_, q) => { const kind = q.get('kind'); return { items: S.tasks.filter((t) => t.scheduled_date && (isManager || mine(t)) && (!kind || kind === 'all' || (kind === 'install' ? t.task_type === 'install' && t.kind !== 'External Install' : t.task_type === 'fabrication'))).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) }; }],
+	// issues
+	['GET', /^\/issues\/board$/, () => issueBoard()],
+	['GET', /^\/issues\/(\d+)\/history$/, (m) => ({ items: [{ at: now(), changes: [{ field: 'issue_status', from: 'Open', to: (S.issues.find((i) => i.ROWID === m[1]) || {}).issue_status || 'Open' }, { field: 'assigned_to_id', from: '', to: 'Rachel Barnes' }] }, ...issueHistory.filter((h) => h.id === m[1])] })],
 	['POST', /^\/issues\/(\d+)\/crm-deal$/, () => ({ created: true, dealId: '4590000000999' })],
-	['GET', /^\/companies$/, () => ({ items: [{ id: '701', name: 'Crane Co', kind: 'subcontractor', state: 'VIC', contactName: '', phone: '', email: 'c@example.test', notes: '', isActive: true }], count: 1 })],
-	['GET', /^\/compliance\/types$/, () => ({ items: [{ id: '801', kind: 'ticket', name: 'White card', requiresExpiry: false, mandatory: true, offsets: [] }, { id: '802', kind: 'ticket', name: 'Working at heights', requiresExpiry: true, mandatory: true, offsets: [30, 7, 0] }, { id: '803', kind: 'company_document', name: 'Public liability insurance', requiresExpiry: true, mandatory: true, offsets: [30, 7, 0] }] })],
-	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2002', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2003', rating: 4, comment: '', ratedAt: null }], count: 2, average: 4.5 })],
-	['GET', /^\/people\/(\d+)$/, (m) => ({ person: people.find((p) => p.ROWID === m[1]) ?? people[0] })],
-	['GET', /^\/people$/, () => ({ items: people, count: people.length })],
-	['GET', /^\/roles$/, () => ({ items: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop', 'viewer'].map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
+	['GET', /^\/issues$/, (_, q) => { let l = S.issues; if (q.get('status')) l = l.filter((i) => i.issue_status === q.get('status')); return list(l.map(issueView)); }],
+	['POST', /^\/issues$/, (_, __, b) => { const i = { ROWID: id(), subject: b.subject, department: b.department || 'Management', issue_status: 'Open', issue_priority: b.issue_priority || 'Normal', description: b.description || '', task_id: '', reported_by_id: ME, CREATEDTIME: now() }; S.issues.unshift(i); return { issue: issueView(i) }; }],
+	['PATCH', /^\/issues\/(\d+)$/, (m, _, b) => { const i = S.issues.find((x) => x.ROWID === m[1]); if (b.issue_status) { issueHistory.push({ id: m[1], at: now(), changes: [{ field: 'issue_status', from: i.issue_status, to: b.issue_status }] }); i.issue_status = b.issue_status; } return { issue: issueView(i) }; }],
+	// swms
+	['GET', /^\/swms$/, (_, q) => { let l = swmsList(); const v = q.get('view'); if (v === 'open') l = l.filter((s) => ['Created', 'PM Signed'].includes(s.status)); if (v === 'completed') l = l.filter((s) => ['TL Signed', 'Not Required'].includes(s.status)); return list(l); }],
+	['GET', /^\/swms\/(\d+)$/, (m) => { const s = S.swms.find((x) => x.id === m[1]) || S.swms[0]; return { swms: swmsView(s), taskId: s.taskId }; }],
+	['PATCH', /^\/swms\/(\d+)$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); if (b.site_address !== undefined) s.siteAddress = b.site_address; if (b.ppe) s.ppe = [...new Set([...s.ppe, ...b.ppe])]; if (b.swms_tasks) s.tasks = b.swms_tasks; return { swms: swmsView(s) }; }],
+	['POST', /^\/swms\/(\d+)\/sign$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); const who = S.nameOf(ME); if (b.as === 'pm') { s.signoff.pm = { name: who, at: day(0) }; s.status = 'PM Signed'; } else { s.signoff.tl = { name: who, at: day(0) }; s.status = 'TL Signed'; } return { swms: swmsView(s) }; }],
+	['POST', /^\/swms\/(\d+)\/declare$/, (m) => { const s = S.swms.find((x) => x.id === m[1]); s.declarations.push({ personId: ME, name: S.nameOf(ME), at: day(0) }); return { swms: swmsView(s) }; }],
+	// hours
 	['GET', /^\/hours\/(weekly|pay-period)$/, () => hoursReport()],
-	['GET', /^\/hours\/not-filled$/, () => ({ personId: '501', workshop: 1, other: 2, total: 3 })],
-	['GET', /^\/swms$/, () => ({ items: [{ id: '3001', status: 'PM Signed', jobId: '1001', siteAddress: '1 Harbour Esplanade, Docklands', task: { id: '2004', name: 'Install wayfinding totems', stage: 'Awaiting Scheduling' } }, { id: '3002', status: 'Created', jobId: '1002', siteAddress: '', task: null }], count: 2 })],
-	['GET', /^\/swms\/(\d+)$/, () => ({ swms, taskId: '2004' })],
-	['GET', /^\/reports\/checklists$/, () => ({ items: [{ id: '6001', taskId: '2002', taskName: 'Cut ACM panels', phase: 'pre', status: 'Completed', assigneeId: '503', role: 'lead', hours: null }, { id: '6002', taskId: '2002', taskName: 'Cut ACM panels', phase: 'post', status: 'In Progress', assigneeId: '503', role: 'member', hours: 6.5 }], count: 2 })],
-	['GET', /^\/compliance\/dashboard$/, () => ({ today: TODAY, counts: { ticket: { overdue: 2, today: 0, within30: 3 }, induction: { overdue: 0, today: 1, within30: 2 }, company_document: { overdue: 1, today: 0, within30: 0 } }, workers: { ve: 8, other: 5 } })],
-	['GET', /^\/compliance\/types$/, () => ({ items: [{ id: '801', kind: 'ticket', name: 'White card', requiresExpiry: false, mandatory: true, offsets: [] }, { id: '802', kind: 'ticket', name: 'Working at heights', requiresExpiry: true, mandatory: true, offsets: [30, 7, 0] }] })],
-	['GET', /^\/compliance$/, () => ({ items: [{ id: '901', kind: 'ticket', typeName: 'Working at heights', personId: '503', personName: 'Sam Okafor', referenceNo: 'WAH-2291', expiryDate: day(-4), daysLeft: -4, status: 'Expired' }, { id: '902', kind: 'ticket', typeName: 'Forklift licence', personId: '502', personName: 'Rachel Nguyen', referenceNo: 'FL-77', expiryDate: day(12), daysLeft: 12, status: 'Expiring' }, { id: '903', kind: 'induction', typeName: 'Site induction', personId: '503', personName: 'Sam Okafor', referenceNo: '', expiryDate: null, daysLeft: null, status: 'No expiry' }], count: 3 })],
-	['GET', /^\/admin\/settings$/, () => ({ settings })],
-	['PUT', /^\/admin\/settings$/, (_, __, body) => { settings = { ...settings, ...body }; return { settings }; }],
+	['GET', /^\/hours\/not-filled$/, () => ({ personId: ME, workshop: 1, other: 2, total: 3 })],
+	// people
+	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
+	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2007', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2008', rating: 4, comment: '', ratedAt: null }, { taskId: '2003', rating: 5, comment: 'Great finish on the frames', ratedAt: null }], count: 3, average: 4.67 })],
+	['GET', /^\/people\/(\d+)$/, (m) => ({ person: personRow(S.people.find((p) => p.ROWID === m[1]) || S.people[0]) })],
+	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); if (b.roles) p.roles = b.roles; if (b.is_active !== undefined) p.is_active = b.is_active; return { person: personRow(p) }; }],
+	['GET', /^\/people$/, () => list(S.people.map(personRow))],
+	['POST', /^\/people$/, (_, __, b) => { const p = { ROWID: id(), first_name: b.first_name, last_name: b.last_name || '', email: b.email || '', phone: b.phone || '', person_kind: b.person_kind || 'staff', job_title: '', roles: b.roles || [], is_active: true, hourly_rate: 0 }; S.people.push(p); return { person: personRow(p) }; }],
+	// compliance
+	['GET', /^\/compliance\/dashboard$/, () => complianceDash()],
+	['GET', /^\/compliance\/types$/, () => ({ items: S.complianceTypes })],
+	['GET', /^\/compliance$/, (_, q) => { let l = S.complianceItems.map(complianceView); if (q.get('person_id')) l = l.filter((c) => c.personId === q.get('person_id')); if (q.get('company_id')) l = l.filter((c) => c.companyId === q.get('company_id')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); if (!isManager) l = l.filter((c) => c.personId === ME); l.sort((a, b) => (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999')); return list(l); }],
+	['POST', /^\/compliance$/, (_, __, b) => { const c = { id: id(), typeId: b.type_id, personId: b.person_id || null, companyId: b.company_id || null, referenceNo: b.reference_no || '', expiryDate: b.expiry_date || null }; S.complianceItems.push(c); return { item: complianceView(c) }; }],
+	// directory
+	['GET', /^\/companies$/, () => list(S.companies)],
+	['POST', /^\/companies$/, (_, __, b) => { const c = { id: id(), name: b.name, kind: b.kind || 'subcontractor', state: b.state || '', contactName: b.contact_name || '', phone: b.phone || '', email: b.email || '', notes: b.notes || '', isActive: true }; S.companies.push(c); return { item: c }; }],
+	['GET', /^\/sites$/, () => list(S.sites)],
+	['POST', /^\/sites$/, (_, __, b) => { const s = { id: id(), name: b.name, address: [b.street, b.suburb, b.state].filter(Boolean).join(', '), contactName: b.contact_name || '', phone: b.phone || '', isActive: true }; S.sites.push(s); return { item: s }; }],
+	['POST', /^\/signs$/, (_, __, b) => { const s = { id: id(), jobId: b.job_id, name: b.name, revision: b.revision || 'A', qty: b.qty || 1, medium: b.medium || '', finishing: b.finishing || '', installDate: null }; S.signs.push(s); return { item: s }; }],
+	// assets
+	['GET', /^\/equipment$/, () => list(S.equipment)],
+	['POST', /^\/equipment\/(\d+)\/checked$/, (m) => { const e = S.equipment.find((x) => x.id === m[1]); if (e) { e.lastChecked = TODAY; e.nextDue = e.frequencyDays ? day(e.frequencyDays) : null; e.overdue = false; e.daysOverdue = 0; } return { item: e }; }],
+	['POST', /^\/equipment$/, (_, __, b) => { const e = { id: id(), code: b.code || '', name: b.name, type: b.type || '', locationId: b.location_id || null, locationName: null, status: 'In service', offHireRequired: !!b.off_hire_required, frequencyDays: b.frequency_days || null, lastChecked: null, nextDue: null, overdue: false, daysOverdue: 0 }; S.equipment.push(e); return { item: e }; }],
+	['GET', /^\/chemicals$/, () => list(S.chemicals)],
+	['GET', /^\/locations$/, () => list(S.locations)],
+	['GET', /^\/devices$/, () => list(S.devices)],
+	['GET', /^\/files$/, (_, q) => list(S.files.filter((f) => f.entityType === q.get('entity_type') && f.entityId === q.get('entity_id')))],
+	// admin
+	['GET', /^\/admin\/settings$/, () => ({ settings, workshopJobName: (jobById(settings.workshop_job_id) || {}).name || null })],
+	['PUT', /^\/admin\/settings$/, (_, __, b) => { settings = { ...settings, ...b }; return { settings }; }],
 	['GET', /^\/admin\/mail-templates$/, () => ({ items: templates })],
-	['PUT', /^\/admin\/mail-templates\/(\w+)$/, (m, _, b) => ({ template: { ...templates.find((t) => t.name === m[1]), override: b } })],
-	['GET', /^\/admin\/mail-templates\/(\w+)\/preview$/, () => ({ subject: 'Preview', html: '<div style="font-family:Raleway,Arial,sans-serif"><h2>Preview</h2><p>This is how the email looks.</p></div>' })],
-	['GET', /^\/admin\/notifications$/, () => ({ items: [{ id: '1', event: 'issue.raised', status: 'sent', subject: 'Issue raised: Wet floor', recipients: ['a@x.test', 'b@x.test'], reason: null, at: new Date().toISOString() }, { id: '2', event: 'report.weekly_hours', status: 'failed', subject: 'Weekly hours report', recipients: ['a@x.test'], reason: 'failed', at: new Date().toISOString() }, { id: '3', event: 'job.closed', status: 'skipped', subject: 'Job closed', recipients: [], reason: 'no_sender', at: new Date().toISOString() }] })],
-	['POST', /^\/admin\/notifications\/\d+\/retry$/, () => ({ sent: false, reason: 'no_sender' })],
-	['POST', /^\/admin\/reports\/weekly-(hours|issues)$/, () => ({ ran: false, reason: 'No report recipients are set.' })],
-	['GET', /^\/admin\/authz$/, () => ({ matrix: {}, resources: [], roles: [] })],
-	['GET', /^\/admin\/outbox$/, () => ({ items: [], count: 0 })],
-	['GET', /^\/(equipment|chemicals|locations|devices|companies|sites|signs|files)$/, () => ({ items: [], count: 0 })],
+	['PUT', /^\/admin\/mail-templates\/(\w+)$/, (m, _, b) => { const t = templates.find((x) => x.name === m[1]); t.override = Object.values(b).some(Boolean) ? b : null; return { template: t }; }],
+	['GET', /^\/admin\/mail-templates\/(\w+)\/preview$/, () => ({ subject: 'Preview', html: '<div style="font-family:Raleway,Arial,sans-serif"><h2 style="margin:0 0 12px">Preview</h2><p>This is how the email looks, with sample data.</p><p><a href="#">Open in Visual Exposure</a></p></div>' })],
+	['GET', /^\/admin\/notifications$/, (_, q) => list(S.notifications.filter((n) => !q.get('status') || n.status === q.get('status')))],
+	['POST', /^\/admin\/notifications\/\d+\/retry$/, () => ({ sent: true, reason: null })],
+	['POST', /^\/admin\/reports\/weekly-(hours|issues)$/, () => ({ ran: true, sent: true })],
+	['GET', /^\/admin\/authz$/, () => ({ matrix: matrix(), customised: false, version: 1 })],
+	['GET', /^\/admin\/outbox$/, (_, q) => list(S.outbox.filter((o) => !q.get('status') || o.status === q.get('status')))],
+	['POST', /^\/admin\/outbox\/(\d+)\/retry$/, (m) => { const o = S.outbox.find((x) => x.id === m[1]); if (o) { o.status = 'Pending'; o.lastError = ''; } return { ok: true }; }],
+	['GET', /^\/admin\/integrations$/, () => ({ crm: { configured: true, ok: true, message: 'Connected.' }, workdrive: { configured: true, ok: true, message: 'Connected.' }, workdriveFolder: { configured: true, ok: true, message: 'Folder found: Visual Exposure Jobs' }, workdriveFolderSet: true })],
+	['POST', /^\/admin\/crm\/pull-won-deals$/, () => ({ checked: 4, created: 0, skipped: 4 })],
 ];
+
+function personRow(p) { return { ...p, roles: JSON.stringify(p.roles) }; }
 
 const server = http.createServer((req, res) => {
 	const url = new URL(req.url, 'http://x');
@@ -120,10 +236,12 @@ const server = http.createServer((req, res) => {
 		try { body = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { /* ignore */ }
 		const hit = routes.find(([m, re]) => m === req.method && re.test(path));
 		const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(status < 400 ? { success: true, data } : { success: false, error: data })); };
-		if (hit) return send(200, hit[2](path.match(hit[1]), url.searchParams, body));
+		if (hit) {
+			try { return send(200, hit[2](path.match(hit[1]), url.searchParams, body)); } catch (err) { console.log('mock error on', req.method, path, err.message); return send(500, { code: 'mock_error', message: err.message }); }
+		}
 		if (req.method !== 'GET') return send(200, { ok: true });
 		console.log('mock: no route for', req.method, path);
 		return send(200, { items: [], count: 0 });
 	});
 });
-server.listen(3100, () => console.log('Mock API on http://localhost:3100 (roles: ' + roles.join(', ') + ')'));
+server.listen(3100, () => console.log(`Mock API on http://localhost:3100 (roles: ${roles.join(', ')}; you are ${S.nameOf(ME)})`));
