@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Flag, Link2, Plus, Printer } from 'lucide-react';
-import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import { Card, Chip, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import KpiLink from '../components/KpiLink';
+import { FilterSelect, SavedViews } from '../components/ListKit';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui-kit/sheet';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui-kit/collapsible';
+import { Button } from '../components/ui-kit/button';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { DEPARTMENTS, DIRECTIONS, PEOPLE, PRIORITIES, SITES, STATUSES } from '../data/issuesSeed';
@@ -73,7 +78,11 @@ export function IssuesBoard() {
   const key = toKey(today());
   const me = role.name;
 
-  const scoped = issues.filter((i) => (scope === 'mine' ? i.reportedBy === me : scope === 'assigned' ? i.assignedTo === me : true));
+  const [done, setDone] = useState(false);
+  const [openId, setOpenId] = useState(null);
+  const scoped = issues.filter((i) => (scope === 'mine' ? i.reportedBy === me : scope === 'assigned' ? i.assignedTo === me
+    : scope === 'high' ? i.priority === 'High' && isOpen(i) : scope === 'overdue' ? isOpen(i) && i.dueDate && i.dueDate < key : true))
+    .filter((i) => !done || !isOpen(i));
   const shown = scoped.filter((i) => dept === 'All' || i.department === dept);
   const open = issues.filter(isOpen);
   const overdue = open.filter((i) => i.dueDate && i.dueDate < key);
@@ -81,7 +90,7 @@ export function IssuesBoard() {
 
   const list = [...shown].sort((a, b) => (isOpen(b) - isOpen(a)) || PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
   const columns = [
-    { key: 'subject', label: 'Issue', primary: true, render: (i) => <div className="stack"><Link className="job-link" to={`/issues/${i.id}`}>{i.subject}</Link><small>{i.id} · {i.department}</small></div> },
+    { key: 'subject', label: 'Issue', primary: true, render: (i) => <div className="stack"><button type="button" className="link-btn text-left" onClick={() => setOpenId(i.id)}>{i.subject}</button><small>{i.id} · {i.department}</small></div> },
     { key: 'priority', label: 'Priority', render: (i) => <Chip value={i.priority} tone={PRIORITY_TONE[i.priority]} /> },
     { key: 'status', label: 'Status', render: (i) => <Chip value={i.status} tone={STATUS_TONE[i.status]} /> },
     ...(see('assignedTo') ? [{ key: 'assignedTo', label: 'Assigned to' }] : []),
@@ -96,26 +105,22 @@ export function IssuesBoard() {
       </PageHeader>
 
       <div className="kpis">
-        <KpiCard icon={Flag} label="Open issues" value={open.length} note={`${issues.length} in total`} />
-        <KpiCard icon={AlertTriangle} label="High priority" value={open.filter((i) => i.priority === 'High').length} tone="danger" note="still open" />
-        {see('dueDate') && <KpiCard icon={Clock} label="Overdue" value={overdue.length} tone={overdue.length ? 'warn' : 'brand'} note="past their due date" />}
-        <KpiCard icon={CheckCircle2} label="Completed" value={issues.length - open.length} note="all time" />
+        <KpiLink icon={Flag} label="Open issues" value={open.length} note={`${issues.length} in total`} onClick={() => { setScope('all'); setDone(false); }} active={scope === 'all' && !done} />
+        <KpiLink icon={AlertTriangle} label="High priority" value={open.filter((i) => i.priority === 'High').length} tone="danger" note="still open" onClick={() => setScope('high')} active={scope === 'high'} />
+        {see('dueDate') && <KpiLink icon={Clock} label="Overdue" value={overdue.length} tone={overdue.length ? 'warn' : 'brand'} note="past their due date" onClick={() => setScope('overdue')} active={scope === 'overdue'} />}
+        <KpiLink icon={CheckCircle2} label="Completed" value={issues.length - open.length} note="all time" onClick={() => { setScope('all'); setView('list'); setDone(true); }} active={done} />
       </div>
 
-      <div className="is-tools">
-        <div className="segmented" role="tablist" aria-label="Department board">
-          {['All', ...DEPARTMENTS].map((d) => <button key={d} type="button" role="tab" aria-selected={dept === d} className={dept === d ? 'on' : ''} onClick={() => setDept(d)}>{d}<em>{deptCount(d)}</em></button>)}
-        </div>
-      </div>
-      <div className="is-tools">
-        <select value={scope} onChange={(e) => setScope(e.target.value)} aria-label="Whose issues">
-          <option value="all">All issues</option><option value="mine">Reported by me</option>{see('assignedTo') && <option value="assigned">Assigned to me</option>}
-        </select>
+      <div className="ui-scope flex flex-wrap items-end gap-2 font-sans">
+        <SavedViews label="Whose issues" value={scope} onChange={setScope} views={[
+          { id: 'all', label: 'All issues' }, { id: 'mine', label: 'Reported by me' },
+          ...(see('assignedTo') ? [{ id: 'assigned', label: 'Assigned to me' }] : []),
+          { id: 'high', label: 'High priority' },
+          ...(see('dueDate') ? [{ id: 'overdue', label: 'Overdue' }] : []),
+        ]} />
+        <FilterSelect label="Department" value={dept} onChange={setDept} options={['All', ...DEPARTMENTS].map((d) => ({ value: d, label: `${d} (${deptCount(d)})` }))} />
         <span className="grow" />
-        <div className="segmented" role="tablist" aria-label="View">
-          <button type="button" role="tab" aria-selected={view === 'board'} className={view === 'board' ? 'on' : ''} onClick={() => setView('board')}>Board</button>
-          <button type="button" role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}>List</button>
-        </div>
+        <SavedViews label="View" value={view} onChange={setView} views={[{ id: 'board', label: 'Board' }, { id: 'list', label: 'List' }]} />
       </div>
 
       {view === 'list' ? (
@@ -129,17 +134,57 @@ export function IssuesBoard() {
                 <h3>{st}<span>{col.length}</span></h3>
                 {col.length === 0 && <p className="kempty">Nothing here</p>}
                 {col.map((i) => (
-                  <Link key={i.id} to={`/issues/${i.id}`} className={`kcard ${i.priority.toLowerCase()}`}>
+                  <button type="button" key={i.id} onClick={() => setOpenId(i.id)} className={`kcard ${i.priority.toLowerCase()}`}>
                     <strong>{i.subject}</strong>
                     <div className="meta"><Chip value={i.department} tone="gray" /><Chip value={i.priority} tone={PRIORITY_TONE[i.priority]} /></div>
                     <small>{[see('assignedTo') && i.assignedTo, see('dueDate') && i.dueDate && `due ${formatShort(i.dueDate)}`].filter(Boolean).join(' · ')}</small>
-                  </Link>))}
+                  </button>))}
               </section>);
           })}
         </div>
       )}
       {reporting && <ReportModal onClose={() => setReporting(false)} />}
+      <IssueDrawer issue={issues.find((i) => i.id === openId) || null} onClose={() => setOpenId(null)} />
     </div>
+  );
+}
+
+// An issue opened from the board or list: the key facts, the latest step, and the update form for managers.
+// The full page (history, print layouts, CRM deal) is one link away.
+function IssueDrawer({ issue, onClose }) {
+  const { roleId } = useDemo();
+  const see = (field) => canSeeField(roleId, field);
+  const key = toKey(today());
+  if (!issue) return <Sheet open={false} onOpenChange={onClose} />;
+  const canManage = MANAGE_ROLES.includes(roleId);
+  const last = issue.history[issue.history.length - 1];
+  const late = isOpen(issue) && issue.dueDate && issue.dueDate < key;
+  return (
+    <Sheet open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto bg-background p-0 sm:max-w-[480px]" aria-describedby={undefined}>
+        <SheetHeader className="space-y-1 border-b bg-card p-5 pr-12 text-left">
+          <SheetDescription>{issue.id} · {issue.department}</SheetDescription>
+          <SheetTitle className="text-lg font-bold">{issue.subject}</SheetTitle>
+          <div className="flex flex-wrap gap-2"><Chip value={issue.priority} tone={PRIORITY_TONE[issue.priority]} /><Chip value={issue.status} tone={STATUS_TONE[issue.status]} /></div>
+        </SheetHeader>
+        <div className="grid gap-4 p-5 text-sm">
+          <p className="m-0">{issue.description}</p>
+          <dl className="m-0 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-2">
+            <dt className="text-muted-foreground">Reported by</dt><dd className="m-0">{issue.reportedBy}, {formatShort(issue.date)}</dd>
+            {see('assignedTo') && <><dt className="text-muted-foreground">Assigned to</dt><dd className="m-0">{issue.assignedTo}</dd></>}
+            {see('dueDate') && <><dt className="text-muted-foreground">Due</dt><dd className={`m-0 ${late ? 'font-semibold text-destructive' : ''}`}>{issue.dueDate ? formatShort(issue.dueDate) : 'Not set'}{late ? ' (overdue)' : ''}</dd></>}
+            {see('history') && last?.nextStep && <><dt className="text-muted-foreground">Next step</dt><dd className="m-0">{last.nextStep}</dd></>}
+          </dl>
+          {canManage && isOpen(issue) && (
+            <Collapsible>
+              <CollapsibleTrigger asChild><Button variant="outline" className="w-full">Add an update</Button></CollapsibleTrigger>
+              <CollapsibleContent className="pt-2"><UpdateForm issue={issue} /></CollapsibleContent>
+            </Collapsible>
+          )}
+          <Button asChild variant="link" className="justify-start p-0"><Link to={`/issues/${issue.id}`}>Open the full issue: history, print, CRM deal</Link></Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

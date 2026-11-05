@@ -30,7 +30,7 @@ test('Booked hours has pay-period buttons and opens on the period named in the l
   show(<HoursPage />, '/hours?period=lastPay');
   const periods = [...document.querySelectorAll('[aria-label="Period"] button')];
   expect(periods.map((b) => b.textContent.trim())).toEqual(['This week', 'Last week', 'Last 8 days', 'This pay period', 'Last pay period']);
-  expect(periods.find((b) => b.getAttribute('aria-selected') === 'true').textContent).toBe('Last pay period');
+  expect(periods.find((b) => b.getAttribute('data-state') === 'on').textContent).toBe('Last pay period');
 });
 
 test('the weekly roll-up shows daily hours, workshop in the total, and a total row', () => {

@@ -23,18 +23,25 @@ import EquipmentPage from './pages/EquipmentPage';
 import DevicesPage from './pages/DevicesPage';
 import CalendarPage from './pages/CalendarPage';
 import RoleHome from './pages/RoleHome';
+import ShiftClock from './components/ShiftClock';
 import AdminPage from './pages/AdminPage';
 import CompliancePage from './pages/CompliancePage';
 import ChecklistsPage from './pages/ChecklistsPage';
 import { NAV } from './navConfig';
 import './App.css';
+import './theme-modern.css'; // shadcn/ui look for every screen
 
 // Sidebar paths that have a real screen. Anything else in NAV still shows a placeholder.
 const BUILT = ['/', '/jobs', '/fabrication', '/installation', '/swms', '/hours', '/issues', '/workers', '/design', '/equipment', '/devices', '/calendar', '/compliance', '/admin', '/checklists'];
 
 function Home() {
   const { roleId } = useDemo();
-  return roleId === 'pm' ? <PmDashboard /> : <RoleHome />;
+  return (
+    <div className="home-wrap">
+      <ShiftClock />
+      {roleId === 'pm' ? <PmDashboard /> : <RoleHome />}
+    </div>
+  );
 }
 
 export default function App() {

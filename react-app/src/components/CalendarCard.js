@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from './ui';
+import { useDemo } from '../context/DemoContext';
+import TaskDrawer from './TaskDrawer';
+import { StageBadge } from './StageBadge';
+import { AssignDesignerModal, DeleteTaskModal, ScheduleModal, TaskEditModal } from './TaskForms';
+import { crewOf } from '../lib/checklists';
 import {
   DAY_NAMES, MONTH_NAMES, MONTH_SHORT, addDays, formatLong, startOfWeek, toKey, today,
 } from '../lib/dates';
@@ -10,6 +15,18 @@ import {
 export default function CalendarCard({ title, events, typeColors, defaultView = 'Month' }) {
   const [view, setView] = useState(defaultView);
   const [anchor, setAnchor] = useState(today());
+  const { tasks } = useDemo();
+  const [openId, setOpenId] = useState(null);
+  const [req, setReq] = useState(null);
+  const taskOf = (id) => tasks.find((t) => t.id === id);
+  const openDay = (d) => { setAnchor(d); setView('Day'); };
+  // Events open the task drawer when they are tasks.
+  const ev = (e, cls) => (
+    <button type="button" key={e.id} className={`${cls} cal-ev-btn`} title={`${e.title} (${e.type})`}
+      onClick={(x) => { x.stopPropagation(); if (taskOf(e.id)) setOpenId(e.id); }}>
+      <i className="dot" style={{ background: typeColors[e.type] || '#7b8794' }} /><span>{e.title}</span>
+    </button>
+  );
   const todayKey = toKey(today());
 
   const byDate = useMemo(() => {
@@ -71,7 +88,16 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
       {view === 'Day' && (
         <div className="cal-dayview" aria-label="Day schedule">
           {(byDate[toKey(anchor)] || []).length === 0 && <p className="muted pad">Nothing scheduled on this day.</p>}
-          {(byDate[toKey(anchor)] || []).map((e) => <div key={e.id} className="agenda-ev">{dot(e.type)}<span>{e.title}</span><small>{e.type}</small></div>)}
+          {(byDate[toKey(anchor)] || []).map((e) => {
+            const t = taskOf(e.id);
+            return (
+              <button type="button" key={e.id} className="day-row" onClick={() => t && setOpenId(e.id)}>
+                {dot(e.type)}
+                <span className="day-main"><strong>{e.title}</strong><small>{e.type}{t ? ` · ${t.jobId} · ${crewOf(t).join(', ') || 'no crew yet'}` : ''}</small></span>
+                {t && <StageBadge stage={t.stage} />}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -83,11 +109,9 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
           const outside = view === 'Month' && d.getMonth() !== anchor.getMonth();
           return (
             <div key={key} className={`cal-cell ${outside ? 'outside' : ''}`}>
-              <span className={`cal-num ${key === todayKey ? 'today' : ''}`}>{d.getDate()}</span>
-              {list.slice(0, 3).map((e) => (
-                <div key={e.id} className="cal-ev" title={`${e.title} (${e.type})`}>{dot(e.type)}<span>{e.title}</span></div>
-              ))}
-              {list.length > 3 && <span className="cal-more">+{list.length - 3} more</span>}
+              <button type="button" className={`cal-num ${key === todayKey ? 'today' : ''}`} aria-label={`Show ${formatLong(key)}`} onClick={() => openDay(d)}>{d.getDate()}</button>
+              {list.slice(0, 3).map((e) => ev(e, 'cal-ev'))}
+              {list.length > 3 && <button type="button" className="cal-more" onClick={() => openDay(d)}>+{list.length - 3} more</button>}
             </div>
           );
         })}
@@ -98,7 +122,7 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
         {agenda.map(({ key, list }) => (
           <div key={key} className="agenda-day">
             <h3 className={key === todayKey ? 'today' : ''}>{formatLong(key)}</h3>
-            {list.map((e) => <div key={e.id} className="agenda-ev">{dot(e.type)}<span>{e.title}</span><small>{e.type}</small></div>)}
+            {list.map((e) => ev(e, 'agenda-ev'))}
           </div>
         ))}
       </div>}
@@ -108,6 +132,11 @@ export default function CalendarCard({ title, events, typeColors, defaultView = 
           <span key={name}><i className="dot" style={{ background: color }} />{name}</span>
         ))}
       </div>
+      <TaskDrawer task={openId ? taskOf(openId) || null : null} onClose={() => setOpenId(null)} onRequest={(kind, task) => { setOpenId(null); setReq({ kind, task }); }} />
+      {req?.kind === 'edit' && <TaskEditModal task={taskOf(req.task.id) || req.task} onClose={() => setReq(null)} />}
+      {req?.kind === 'schedule' && <ScheduleModal task={taskOf(req.task.id) || req.task} onClose={() => setReq(null)} />}
+      {req?.kind === 'assign' && <AssignDesignerModal task={taskOf(req.task.id) || req.task} onClose={() => setReq(null)} />}
+      {req?.kind === 'delete' && <DeleteTaskModal task={req.task} onClose={() => setReq(null)} />}
     </Card>
   );
 }

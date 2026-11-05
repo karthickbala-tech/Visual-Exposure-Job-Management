@@ -3,7 +3,7 @@
 .job-kpi h2 { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
 .job-kpi dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
 .job-kpi dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.job-kpi dd { margin: 2px 0 0; font-size: 24px; font-weight: 800; }
+.job-kpi dd { margin: 2px 0 0; font-size: 24px; font-weight: 700; }
 .job-kpi dd.over { color: var(--danger); }
 .closed-note { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .filter-select { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
@@ -17,6 +17,10 @@
 .job-site-loc li > div { display: grid; gap: 2px; font-size: 14px; }
 .job-site-loc li span { color: var(--ink-2); }
 .site-map { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; font-weight: 600; }
+.sign-head-actions { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.sign-groups { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 12px 16px; list-style: none; border-bottom: 1px solid var(--line); }
+.sign-groups li { padding: 4px 10px; border-left: 3px solid var(--brand); background: var(--bg); font-size: 13px; color: var(--ink-2); }
+.sign-groups strong { color: var(--ink); }
 @media (max-width: 900px) { .job-site { grid-template-columns: 1fr; } }
 
 .job-task-actions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}.job-task-actions .btn{display:inline-flex;align-items:center;gap:6px}

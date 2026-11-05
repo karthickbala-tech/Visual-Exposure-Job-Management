@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MapPin, Smartphone, UserX, WifiOff } from 'lucide-react';
 import { Card, Chip, KpiCard, PageHeader, ResponsiveTable } from '../components/ui';
+import KpiLink from '../components/KpiLink';
 import { useDemo } from '../context/DemoContext';
 import { hasLocation, isStale, osmLink, toMapPoints } from '../lib/devices';
 import { fmtStamp, fullDate } from '../lib/dates';
@@ -72,10 +73,10 @@ export default function DevicesPage() {
     <div className="dash">
       <PageHeader eyebrow={fullDate()} title="Devices" subtitle="Device locations come from the MDM sync. Sample data in this demo." />
       <div className="kpis">
-        <KpiCard icon={Smartphone} label="Devices" value={devices.length} note={`${withDevice.length} of ${active.length} active workers`} />
-        <KpiCard icon={MapPin} label="Reporting a location" value={located} note="plotted on the map" />
+        <KpiLink icon={Smartphone} label="Devices" value={devices.length} note={`${withDevice.length} of ${active.length} active workers`} onClick={() => { setFilter('with'); setTab('List'); }} active={filter === 'with'} />
+        <KpiLink icon={MapPin} label="Reporting a location" value={located} note="plotted on the map" onClick={() => setTab('Map')} active={tab === 'Map'} />
         <KpiCard icon={WifiOff} label="No location" value={devices.length - located} tone={devices.length - located ? 'warn' : 'brand'} note="skipped by the sync" />
-        <KpiCard icon={UserX} label="Workers without a device" value={without.length} note="not in the MDM" />
+        <KpiLink icon={UserX} label="Workers without a device" value={without.length} note="not in the MDM" onClick={() => { setFilter('without'); setTab('List'); }} active={filter === 'without'} />
       </div>
 
       <div className="eq-tools">

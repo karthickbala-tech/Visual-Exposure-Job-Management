@@ -1,0 +1,157 @@
+/* ===========================================================================
+   App-wide shadcn/ui look for the existing screens (loaded after App.css).
+   One rule set for every module, so all screens match the redesigned Job details page:
+   sentence case instead of uppercase, 6 px corners, one dark-green primary button,
+   quiet outline secondary buttons, muted status chips, calmer tables and cards.
+   No layout or behaviour changes here; those are done module by module.
+   =========================================================================== */
+:root { --radius: 6px; }
+
+/* Headings and labels: sentence case, no letter spacing */
+.eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.page-header h1 { font-size: clamp(22px, 2.4vw, 28px); line-height: 1.15; text-transform: none; }
+.subtitle { margin-top: 4px; font-size: 14px; }
+.card-head h2, .mini-title, .kpi-label, .rtable th, .cal-dow, .cal-label, .segmented button,
+.repeat-fields legend, .filter-select, .job-kpi h2, .job-kpi dt, .kcol h3, .dcol h3 { letter-spacing: 0; text-transform: none; }
+
+/* Buttons: one primary (dark green, white text), outline secondary, plain links */
+.btn { height: 36px; padding: 0 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; transition: background 0.15s, border-color 0.15s; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-primary { background: hsl(var(--ui-primary)); color: hsl(var(--ui-primary-foreground)); }
+.btn-primary:hover { background: hsl(var(--ui-primary) / 0.9); }
+.btn-ghost { background: hsl(var(--ui-card)); border-color: hsl(var(--ui-input)); color: hsl(var(--ui-foreground)); }
+.btn-ghost:hover { background: hsl(var(--ui-accent)); }
+.btn-danger { background: hsl(var(--ui-destructive)); color: hsl(var(--ui-destructive-foreground)); }
+.btn:focus-visible, .icon-btn:focus-visible, .link-btn:focus-visible, .segmented button:focus-visible, .tabs button:focus-visible {
+  outline: 2px solid hsl(var(--ui-ring)); outline-offset: 2px;
+}
+.link-btn, .view-all { font-weight: 600; color: hsl(var(--ui-primary)); }
+.icon-btn { border-radius: var(--radius); }
+
+/* Cards and KPI tiles */
+.card { border-radius: 8px; box-shadow: 0 1px 2px rgba(16, 24, 16, 0.05); }
+.card-head { padding: 14px 20px; }
+.card-head h2 { font-size: 15px; font-weight: 700; }
+.card-body { padding: 16px 20px 20px; }
+.kpi { gap: 6px; padding: 14px 18px; border-top: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 2px rgba(16, 24, 16, 0.05); }
+.kpi-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.kpi-value { font-size: 30px; }
+.kpi-danger { border-top-color: var(--line); }
+.kpi-danger .kpi-label::before, .kpi-warn .kpi-label::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; vertical-align: 1px; background: var(--danger); }
+.kpi-warn .kpi-label::before { background: #e2a23b; }
+.kpi-note { font-size: 12.5px; }
+
+/* Status chips: muted, small radius */
+.chip { padding: 2px 9px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+/* Tables: quiet headers, more breathing room, clear hover */
+.rtable th { padding: 10px 16px; font-size: 12.5px; font-weight: 600; color: var(--muted); background: transparent; }
+.rtable td { padding: 12px 16px; }
+.rtable tbody tr:hover { background: hsl(var(--ui-muted) / 0.7); }
+
+/* Segmented filters look like the saved-view toggle group on Job details */
+.segmented { gap: 0; padding: 0; border: 1px solid hsl(var(--ui-input)); border-radius: var(--radius); overflow-x: auto; }
+.segmented button { padding: 6px 12px; border-radius: 0; font-size: 13px; font-weight: 600; color: var(--ink-2); border-left: 1px solid hsl(var(--ui-input)); }
+.segmented button:first-child { border-left: 0; }
+.segmented button.on { background: var(--ink); color: var(--surface); box-shadow: none; }
+.segmented button em, .segmented button span { opacity: 0.65; }
+
+/* Page tabs: underline in brand green */
+.tabs button { padding: 10px 14px; font-weight: 600; }
+.tabs button span { border-radius: 4px; }
+.tabs button.on { border-bottom-color: var(--brand); }
+
+/* Shell: search, role switch, side menu, toast */
+.search, .role-switch select, .filter-select select { border-radius: var(--radius); }
+.side-link { border-radius: var(--radius); border-left: 0; box-shadow: inset 3px 0 0 transparent; }
+.side-link.active { box-shadow: inset 3px 0 0 var(--brand); font-weight: 600; }
+.toast { border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
+
+/* Forms everywhere (dialogs already use these through ui.css) */
+.form label { font-weight: 600; }
+.form input, .form select, .form textarea { border-radius: var(--radius); }
+.form input:not([type='checkbox']):not([type='radio']):not([type='file']), .form select { height: 40px; }
+.form .check input { height: 18px; }
+.form-error { border-radius: var(--radius); }
+
+/* Calendar */
+.cal-label { font-size: 18px; }
+.cal-grid { border-radius: 8px; overflow: hidden; }
+.cal-ev { border-radius: 4px; }
+.cal-num.today { background: hsl(var(--ui-primary)); color: hsl(var(--ui-primary-foreground)); }
+
+/* Lists on dashboards */
+.task-item { border-radius: var(--radius); }
+.swms-item { border-radius: 8px; }
+.tags em { border-radius: 4px; }
+
+@media (max-width: 760px) {
+  .kpi { padding: 12px 14px; }
+  .kpi-label { font-size: 12px; }
+  .kpi-value { font-size: 26px; }
+  .page-header h1 { font-size: 22px; }
+  .btn { min-height: 40px; }
+}
+
+/* KPI tiles that open a saved view */
+.kpi-link { border: 0; background: transparent; cursor: pointer; }
+.kpi-link .kpi { height: 100%; }
+a.btn, a.btn:hover { text-decoration: none; }
+
+/* Calendar: tasks and day numbers are buttons (open the task, or that day) */
+.cal-ev-btn { width: 100%; border: 0; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.cal-ev.cal-ev-btn:hover { filter: brightness(0.96); box-shadow: inset 0 0 0 1px var(--line-3); }
+.agenda-ev.cal-ev-btn { background: transparent; padding: 8px 0; }
+button.cal-num { border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; }
+button.cal-num:hover { background: var(--bg); }
+button.cal-num.today { background: hsl(var(--ui-primary)); color: hsl(var(--ui-primary-foreground)); }
+button.cal-more { border: 0; background: transparent; cursor: pointer; text-align: left; color: hsl(var(--ui-primary)); font-weight: 600; }
+.cal-dayview { display: grid; gap: 0; padding: 0 22px 12px; }
+.day-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--line-2); background: transparent; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.day-row:hover { background: var(--surface-hover); }
+.day-row .day-main { display: grid; flex: 1; min-width: 0; }
+.day-row .day-main small { color: var(--muted); }
+.cal-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.type-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.type-chip.on { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+
+/* Issue board cards are buttons that open the issue drawer */
+button.kcard { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+
+/* A one-line bulk action above a list */
+.bulk-note { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 14px; border: 1px solid hsl(var(--ui-primary) / 0.3); border-radius: 8px; background: hsl(var(--ui-accent)); font-size: 14px; }
+
+/* Admin settings: collapsible sections */
+.set-sec { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 16, 0.05); }
+.set-sec > summary { display: flex; align-items: center; gap: 10px; padding: 14px 20px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 700; }
+.set-sec > summary::-webkit-details-marker { display: none; }
+.set-sec > summary::before { content: '›'; display: inline-block; font-size: 20px; line-height: 1; color: var(--muted); transition: transform 0.15s; }
+.set-sec[open] > summary::before { transform: rotate(90deg); }
+.set-sec > summary small { font-weight: 500; color: var(--muted); font-size: 13px; }
+.set-sec > .card { border: 0; box-shadow: none; border-top: 1px solid var(--line-2); border-radius: 0 0 8px 8px; }
+.set-sec > .card > .card-head { display: none; }
+
+/* ---------- Check in / out bar on every dashboard ---------- */
+.home-wrap { display: grid; gap: 16px; }
+.shift-clock { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 16px; border: 1px solid var(--line); border-left: 4px solid var(--line-3); border-radius: 8px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 16, 0.05); }
+.shift-clock.is-in { border-left-color: var(--brand); background: var(--brand-soft); }
+.shift-clock.is-break { border-left-color: #e2a23b; }
+.shift-icon { color: var(--muted); flex: none; }
+.shift-clock.is-in .shift-icon { color: var(--brand-strong); }
+.shift-text { display: grid; flex: 1 1 14rem; min-width: 0; }
+.shift-text strong { font-size: 15px; }
+.shift-text small { color: var(--muted); font-size: 13px; }
+.shift-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.shift-link { font-size: 13px; font-weight: 600; color: hsl(var(--ui-primary)); }
+@media (max-width: 560px) {
+  .shift-actions { width: 100%; }
+  .shift-actions .btn { flex: 1; min-height: 44px; }
+  .shift-link { width: 100%; text-align: center; }
+}
+
+/* ---------- Checkboxes: small, ticked in brand green (the 40 px field height is for text fields only) ---------- */
+input[type='checkbox'], input[type='radio'] { width: 16px; height: 16px; margin: 0; accent-color: hsl(var(--ui-primary)); flex: none; cursor: pointer; }
+.form input[type='checkbox'], .form input[type='radio'] { width: 16px; height: 16px; padding: 0; }
+.ad-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 12px; padding: 10px 14px 12px; }
+.ad-people .check-inline { display: flex; align-items: center; gap: 8px; min-height: 30px; margin: 0; padding: 0 6px; border-radius: 4px; font-size: 13.5px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.ad-people .check-inline:hover { background: var(--bg); }

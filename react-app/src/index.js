@@ -1,6 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// Raleway, the same font and weights as web/src/main.tsx.
+import '@fontsource/raleway/400.css';
+import '@fontsource/raleway/600.css';
+import '@fontsource/raleway/700.css';
 import './index.css';
+import './ui.css'; // Tailwind and the shadcn/ui theme
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

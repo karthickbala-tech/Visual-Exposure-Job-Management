@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ArrowUpRight, Briefcase, CheckCircle2, Clock, FileSignature, Gauge, Plus, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, Briefcase, Clock, Gauge, Plus, ShieldCheck } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
 import SignSwmsDialog from '../components/SignSwmsDialog';
-import { Card, Chip, KpiCard, Modal, PageHeader, ProgressBar, ResponsiveTable } from '../components/ui';
+import { Card, KpiCard, Modal, PageHeader } from '../components/ui';
+import KpiLink from '../components/KpiLink';
+import ToDoList from '../components/ToDoList';
+import TaskList from '../components/TaskList';
+import TaskDrawer from '../components/TaskDrawer';
+import { MiniBar, SavedViews } from '../components/ListKit';
+import { StageBadge } from '../components/StageBadge';
+import { AssignDesignerModal, DeleteTaskModal, ScheduleModal, TaskEditModal } from '../components/TaskForms';
 import { useDemo } from '../context/DemoContext';
+import { useNavigate } from 'react-router-dom';
+import { CLOSED_STAGES } from '../lib/workflow';
 import { CLIENTS, installTypeStyles } from '../data/mockData';
-import { fmtStamp, formatShort, fullDate, toKey, today } from '../lib/dates';
+import { formatShort, fullDate, toKey, today } from '../lib/dates';
 
 const todayKey = () => toKey(today());
 
@@ -46,61 +55,47 @@ export function NewJobModal({ onClose }) {
   );
 }
 
+// PM home: what needs the PM now (one button each), then their open jobs, then hours, calendar and
+// install tasks one tab away. Everything that was on this page is still here.
 export default function PmDashboard() {
   const { jobs, swms, tasks, role, signSwms } = useDemo();
+  const navigate = useNavigate();
   const [signing, setSigning] = useState(null);
-  const designTasks = tasks.filter((t) => t.kind === 'design');
-  const installTasks = tasks.filter((t) => t.kind === 'install');
   const [showNew, setShowNew] = useState(false);
+  const [openId, setOpenId] = useState(null);
+  const [req, setReq] = useState(null);
+  const [more, setMore] = useState('hours');
+  const [installView, setInstallView] = useState('all');
 
   const key = todayKey();
-  const overdue = designTasks.filter((t) => t.date < key && t.stage !== 'Completed');
+  const me = role.name;
+  const isOpen = (t) => !CLOSED_STAGES.includes(t.stage);
+  const myJobs = jobs.filter((j) => j.pm === me && !['Completed', 'Completed - Closed', 'Cancelled'].includes(j.stage));
+  const mineIds = new Set(myJobs.map((j) => j.id));
+  const designTasks = tasks.filter((t) => t.kind === 'design');
+  const installTasks = tasks.filter((t) => t.kind === 'install');
+  const overdueDesign = designTasks.filter((t) => isOpen(t) && t.date < key);
   const awaiting = swms.filter((s) => s.status === 'Created');
-  const open = swms.filter((s) => s.status !== 'Completed');
-  const atRisk = jobs.filter((j) => j.risk).length;
+  const review = tasks.filter((t) => t.stage === 'Manager Review' && mineIds.has(t.jobId));
+  const unscheduled = installTasks.filter((t) => t.stage === 'Awaiting Scheduling' && mineIds.has(t.jobId));
+  const atRisk = jobs.filter((j) => j.risk);
   const booked = jobs.reduce((n, j) => n + j.booked, 0);
   const quoted = jobs.reduce((n, j) => n + j.quoted, 0);
   const pct = quoted ? Math.round((booked / quoted) * 100) : 0;
-  const designList = [...designTasks].filter((t) => t.stage !== 'Completed').sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+  const jobName = (id) => jobs.find((j) => j.id === id)?.name || id;
+
+  const todo = [
+    ...awaiting.map((s) => ({ id: `sw-${s.id}`, tone: 'danger', title: `Sign SWMS: ${s.title}`, detail: `${s.jobId} · on site ${formatShort(s.onSite)} · ${s.hazards.join(', ')}`, action: { label: 'Sign as PM', onClick: () => setSigning(s) } })),
+    ...review.map((t) => ({ id: `rv-${t.id}`, tone: 'warn', title: `Review: ${t.name}`, detail: `${t.jobId} · ${jobName(t.jobId)} · ready for approval`, action: { label: 'Review', onClick: () => setOpenId(t.id) } })),
+    ...unscheduled.map((t) => ({ id: `sc-${t.id}`, tone: 'info', title: `Schedule: ${t.name}`, detail: `${t.jobId} · install ${formatShort(t.date)} · needs a crew`, action: { label: 'Schedule', onClick: () => setReq({ kind: 'schedule', task: t }) } })),
+    ...overdueDesign.map((t) => ({ id: `ds-${t.id}`, tone: 'danger', title: `Overdue design: ${t.name}`, detail: `${t.jobId} · ${t.owner || 'no designer'} · due ${formatShort(t.date)}`, action: { label: 'Open', onClick: () => setOpenId(t.id) } })),
+    ...atRisk.filter((j) => j.pm === me).map((j) => ({ id: `jr-${j.id}`, tone: 'warn', title: `${j.name}: ${j.risk}`, detail: `${j.id} · finish ${formatShort(j.finish)}`, action: { label: 'Open job', to: `/jobs/${j.id}` } })),
+  ];
 
   const events = installTasks.map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type }));
   const hoursJobs = jobs.filter((j) => j.quoted > 0);
-
-  const jobColumns = [
-    {
-      key: 'name', label: 'Job', primary: true,
-      render: (j) => (
-        <div className="stack">
-          <strong>{j.name}</strong>
-          <small>{j.id} · {j.client}{j.risk && <span className="risk"> <AlertTriangle size={12} aria-hidden="true" /> {j.risk}</span>}</small>
-        </div>
-      ),
-    },
-    { key: 'stage', label: 'Stage', render: (j) => <Chip value={j.stage} tone="gray" /> },
-    { key: 'fab', label: '% Fab', render: (j) => <ProgressBar value={j.fab} label="Fab complete" /> },
-    { key: 'install', label: '% Install', render: (j) => <ProgressBar value={j.install} tone="blue" label="Install complete" /> },
-    { key: 'job', label: '% Job', render: (j) => <ProgressBar value={j.job} tone="ink" label="Job complete" /> },
-    { key: 'finish', label: 'Expected finish', render: (j) => formatShort(j.finish) },
-  ];
-
-  const swmsFor = (t) => (t.swms === 'Created' ? (swms.find((s) => s.jobId === t.jobId)?.status ?? t.swms) : t.swms);
-  const taskColumns = [
-    {
-      key: 'name', label: 'Task', primary: true,
-      render: (t) => (
-        <div className="stack">
-          <strong><i className="dot" style={{ background: installTypeStyles[t.type] }} /> {t.name}</strong>
-          <small>{t.jobId} · {t.type}</small>
-        </div>
-      ),
-    },
-    { key: 'date', label: 'Install date', render: (t) => formatShort(t.date) },
-    { key: 'leader', label: 'Team leader' },
-    { key: 'member', label: 'Team member', render: (t) => t.member || '-' },
-    { key: 'swms', label: 'SWMS', render: (t) => <Chip value={swmsFor(t)} /> },
-    { key: 'quoted', label: 'Quoted', render: (t) => `${t.quoted}h` },
-    { key: 'booked', label: 'Booked', render: (t) => <span className={t.booked > t.quoted ? 'over' : ''}>{t.booked}h</span> },
-  ];
+  const openInstall = installTasks.filter(isOpen).sort((a, b) => a.date.localeCompare(b.date));
+  const fresh = (t) => tasks.find((x) => x.id === t.id) || t;
 
   return (
     <div className="dash">
@@ -109,62 +104,32 @@ export default function PmDashboard() {
       </PageHeader>
 
       <div className="kpis">
-        <KpiCard icon={Briefcase} label="Open jobs" value={jobs.length} note={`${atRisk} flagged at risk`} />
-        <KpiCard icon={Clock} label="Overdue design tasks" value={overdue.length} tone="danger" note={`of ${designTasks.length} open`} />
-        <KpiCard icon={ShieldCheck} label="SWMS awaiting your signature" value={awaiting.length} tone="warn" note="before crews go on site" />
-        <KpiCard icon={Gauge} label="Booked vs quoted" value={`${pct}%`} tone={pct > 100 ? 'danger' : 'brand'} note={`${booked} / ${quoted} hrs`}>
-          <ProgressBar value={Math.min(pct, 100)} tone={pct > 100 ? 'red' : 'brand'} label="Booked versus quoted hours" />
-        </KpiCard>
+        <KpiLink icon={Briefcase} label="Open jobs" value={jobs.length} note={`${atRisk.length} flagged at risk`} onClick={() => navigate('/jobs')} />
+        <KpiLink icon={Clock} label="Overdue design tasks" value={overdueDesign.length} tone="danger" note={`of ${designTasks.length} design tasks`} onClick={() => navigate('/design')} />
+        <KpiLink icon={ShieldCheck} label="SWMS awaiting your signature" value={awaiting.length} tone="warn" note="before crews go on site" onClick={() => navigate('/swms')} />
+        <KpiCard icon={Gauge} label="Booked vs quoted" value={`${pct}%`} tone={pct > 100 ? 'danger' : 'brand'} note={`${booked} / ${quoted} hrs`} />
       </div>
 
+      <ToDoList items={todo} />
+
       <Card title="My open jobs" flush action={<Link className="view-all" to="/jobs">View all <ArrowUpRight size={13} aria-hidden="true" /></Link>}>
-        <ResponsiveTable columns={jobColumns} rows={jobs} empty="No open jobs" />
+        <ul className="ui-scope m-0 list-none p-0 font-sans">
+          {(myJobs.length ? myJobs : jobs).slice(0, 6).map((j) => (
+            <li key={j.id} className="grid grid-cols-1 items-center gap-x-4 gap-y-1 border-b px-5 py-3 last:border-0 sm:grid-cols-[minmax(0,1fr)_auto_10rem_5rem]">
+              <div className="min-w-0"><Link className="font-semibold text-foreground no-underline hover:underline" to={`/jobs/${j.id}`}>{j.name}</Link>
+                <div className="text-xs text-muted-foreground">{j.id} · {j.client}{j.risk && <span className="font-semibold text-destructive"> · {j.risk}</span>}</div></div>
+              <StageBadge stage={j.stage} className="w-fit" />
+              <MiniBar value={j.job} label="Job complete" />
+              <span className={`text-sm ${j.finish < key ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>{formatShort(j.finish)}</span>
+            </li>
+          ))}
+        </ul>
       </Card>
 
-      <div className="triple">
-        <Card title="Overdue design tasks">
-          {designList.length === 0 && <p className="muted">Nothing open.</p>}
-          <ul className="task-list">
-            {designList.map((t) => {
-              const late = t.date < key;
-              return (
-                <li key={t.id} className={`task-item ${late ? 'late' : ''}`}>
-                  <strong>{t.name}</strong>
-                  <small>{t.jobId} · {t.owner} · {t.stage}</small>
-                  <span className={`due ${late ? 'risk' : ''}`}>{late ? 'Due ' : ''}{formatShort(t.date)}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-
-        <Card title="SWMS awaiting signature">
-          {open.length === 0 && <p className="muted">All SWMS signed.</p>}
-          <ul className="swms-list">
-            {open.map((s) => (
-              <li key={s.id} className="swms-item">
-                <div className="swms-top">
-                  <div className="stack"><strong>{s.title}</strong><small>{s.id} · {s.jobId} · on site {formatShort(s.onSite)}</small></div>
-                  <Chip value={s.status} />
-                </div>
-                <div className="swms-foot">
-                  <span className="tags">{s.hazards.map((h) => <em key={h}>{h}</em>)}</span>
-                  {s.status === 'Created' && (
-                    <button type="button" className="link-btn" onClick={() => setSigning(s)}><FileSignature size={15} aria-hidden="true" /> Sign as PM</button>
-                  )}
-                </div>
-                {s.pmSignature && (
-                  <div className="signed-note">
-                    <CheckCircle2 size={14} aria-hidden="true" />
-                    <span>Signed by <b>{s.pmSignature.name}</b> ({s.pmSignature.role}) · {fmtStamp(s.pmSignature.signedAt)}</span>
-                  </div>
-                )}
-                {s.status === 'PM Signed' && <small>Awaiting team leader signature</small>}
-              </li>
-            ))}
-          </ul>
-        </Card>
-
+      <div className="ui-scope font-sans">
+        <SavedViews label="More" value={more} onChange={setMore} views={[{ id: 'hours', label: 'Booked vs quoted hours' }, { id: 'calendar', label: 'Install calendar' }, { id: 'install', label: 'Open install tasks' }]} />
+      </div>
+      {more === 'hours' && (
         <Card title="Booked vs quoted hours">
           <ul className="hours">
             {hoursJobs.map((j) => {
@@ -172,7 +137,7 @@ export default function PmDashboard() {
               const over = j.booked > j.quoted;
               return (
                 <li key={j.id} title={j.name}>
-                  <div className="hours-top"><strong>{j.id}</strong><span className={over ? 'over' : ''}>{j.booked} / {j.quoted} hrs</span></div>
+                  <div className="hours-top"><strong>{j.id} · {j.name}</strong><span className={over ? 'over' : ''}>{j.booked} / {j.quoted} hrs</span></div>
                   <div className="hours-bar" aria-hidden="true">
                     <div className="hours-quote" style={{ width: `${(j.quoted / max) * 100}%` }} />
                     <div className={`hours-fill ${over ? 'bar-red' : 'bar-brand'}`} style={{ width: `${(j.booked / max) * 100}%` }} />
@@ -183,14 +148,18 @@ export default function PmDashboard() {
           </ul>
           <p className="legend-note"><i className="sq sq-brand" /> Booked <i className="sq sq-red" /> Over quote <i className="tick" /> Quoted</p>
         </Card>
-      </div>
+      )}
+      {more === 'calendar' && <CalendarCard title="Install calendar" events={events} typeColors={installTypeStyles} />}
+      {more === 'install' && (
+        <TaskList title="Open install tasks" views={[{ id: 'all', label: 'All open', rows: openInstall }, { id: 'mine', label: 'My jobs', rows: openInstall.filter((t) => mineIds.has(t.jobId)) }]}
+          view={installView} onView={setInstallView} typeColors={installTypeStyles} jobName={jobName} />
+      )}
 
-      <CalendarCard title="Install calendar" events={events} typeColors={installTypeStyles} />
-
-      <Card title="My open install tasks" flush>
-        <ResponsiveTable columns={taskColumns} rows={installTasks.filter((t) => t.stage !== 'Completed')} />
-      </Card>
-
+      <TaskDrawer task={tasks.find((t) => t.id === openId) || null} onClose={() => setOpenId(null)} onRequest={(kind, task) => { setOpenId(null); setReq({ kind, task }); }} />
+      {req?.kind === 'schedule' && <ScheduleModal task={fresh(req.task)} onClose={() => setReq(null)} />}
+      {req?.kind === 'edit' && <TaskEditModal task={fresh(req.task)} onClose={() => setReq(null)} />}
+      {req?.kind === 'assign' && <AssignDesignerModal task={fresh(req.task)} onClose={() => setReq(null)} />}
+      {req?.kind === 'delete' && <DeleteTaskModal task={req.task} onClose={() => setReq(null)} />}
       {signing && (
         <SignSwmsDialog record={signing} signer={role} onClose={() => setSigning(null)}
           onSigned={(signer) => { signSwms(signing.id, signer); setSigning(null); }} />

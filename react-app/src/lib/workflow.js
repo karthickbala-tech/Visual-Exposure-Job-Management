@@ -1,4 +1,5 @@
-// The approval lifecycle shared by Design, Fab and Install tasks (from the Creator record buttons).
+// The approval lifecycle shared by Fab and Install tasks (from the Creator record buttons).
+// Design tasks have their own flow (WORKFLOWS section 6), below.
 export const STEPS = ['Scheduled', 'In Progress', 'Manager Review', 'Completed'];
 
 const POS = { 'Awaiting Scheduling': -1, 'Not Started': -1, Scheduled: 0, 'In Progress': 1, Rejected: 1, Reopen: 1, 'Manager Review': 2, Completed: 3 };
@@ -9,8 +10,7 @@ export const TRANSITIONS = {
   'Awaiting Scheduling': [{ action: 'Schedule', to: 'Scheduled' }],
   'Not Started': [{ action: 'Start', to: 'In Progress' }],
   Scheduled: [{ action: 'Start', to: 'In Progress' }],
-  'In Progress': [{ action: 'Submit for approval', to: 'Manager Review' }, { action: 'Complete design work', to: 'Awaiting Submission' }],
-  'Awaiting Submission': [{ action: 'Submit for approval', to: 'Manager Review' }],
+  'In Progress': [{ action: 'Submit for approval', to: 'Manager Review' }],
   'Manager Review': [
     { action: 'Approve', to: 'Completed', manager: true },
     { action: 'Reject', to: 'Rejected', manager: true, comment: true, danger: true },
@@ -19,6 +19,30 @@ export const TRANSITIONS = {
   Completed: [{ action: 'Reopen', to: 'Reopen', manager: true, comment: true }],
   Reopen: [{ action: 'Start', to: 'In Progress' }],
 };
+
+// WORKFLOWS section 6 (DES-1). In Progress -> Open and Open -> Awaiting Submission are moved by the designer's
+// pre-job and post-job checklists, not by a button. A rejection keeps the pre-job checklist and clears the post-job one,
+// so from Reopen the designer redoes the post-job checklist, which sends the task back to Awaiting Submission.
+export const DESIGN_STEPS = ['Assigned', 'In Progress', 'Open', 'Awaiting Submission', 'Manager Review', 'Approved & Completed'];
+const DESIGN_POS = { 'To be Assigned': -1, Assigned: 0, 'In Progress': 1, 'Client Review': 1, 'On Hold': 1, Open: 2, Reopen: 2, 'Awaiting Submission': 3, 'Manager Review': 4, 'Approved & Completed': 5 };
+
+export const DESIGN_TRANSITIONS = {
+  'To be Assigned': [{ action: 'Assign', to: 'Assigned', manager: true, assign: true }],
+  Assigned: [{ action: 'Start', to: 'In Progress' }],
+  'In Progress': [{ action: 'Send to client', to: 'Client Review', comment: true }],
+  'Client Review': [{ action: 'Client replied', to: 'In Progress' }],
+  'Awaiting Submission': [{ action: 'Submit for approval', to: 'Manager Review' }],
+  'Manager Review': [
+    { action: 'Approve', to: 'Approved & Completed', manager: true },
+    { action: 'Reject', to: 'Reopen', manager: true, comment: true, danger: true },
+  ],
+};
+
+export const transitionsFor = (task) => ((task && task.kind === 'design' ? DESIGN_TRANSITIONS : TRANSITIONS)[task && task.stage] || []);
+export const stepsFor = (task) => (task && task.kind === 'design' ? DESIGN_STEPS : STEPS);
+export const stepIndexFor = (task) => (task && task.kind === 'design'
+  ? (task.stage in DESIGN_POS ? DESIGN_POS[task.stage] : -1)
+  : stepIndex(task && task.stage));
 
 export const MANAGER_ROLES = ['admin', 'pm', 'fabManager'];
 

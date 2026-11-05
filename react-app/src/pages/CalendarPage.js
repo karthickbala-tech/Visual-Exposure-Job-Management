@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import CalendarCard from '../components/CalendarCard';
 import { PageHeader } from '../components/ui';
+import { FilterPanel, SavedViews } from '../components/ListKit';
 import { useDemo } from '../context/DemoContext';
 import { FAB_TYPES, fabTypeColors } from '../data/fabTypes';
 import { installTypeStyles } from '../data/mockData';
@@ -31,24 +32,23 @@ export default function CalendarPage() {
 
   return (
     <div className="dash">
-      <PageHeader eyebrow={fullDate()} title="Calendar" subtitle="Fabrication and installation work on one calendar. Filter by type, switch between month, week and day." />
+      <PageHeader eyebrow={fullDate()} title="Calendar" subtitle="Fabrication and installation work in one place. Click a task to open it, or a day to see that day." />
 
-      <div className="tabs" role="tablist" aria-label="Calendar">
-        {TABS.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => pickTab(t.id)}>{t.label}</button>
-        ))}
-      </div>
-
-      <div className="cal-filters" aria-label="Type filter">
-        {typeList.map((t) => (
-          <button key={t} type="button" aria-pressed={types.includes(t)} className={`type-chip ${types.includes(t) ? 'on' : ''}`} onClick={() => toggle(t)}>
-            <i className="dot" style={{ background: colors[t] }} />{t}
-          </button>
-        ))}
-        {types.length > 0 && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTypes([])}>Show all types</button>}
-        {tab !== 'fab' && (
-          <label className="check-inline"><input type="checkbox" checked={includeAll} onChange={(e) => setIncludeAll(e.target.checked)} />Include External and Print Only</label>
-        )}
+      <div className="ui-scope flex flex-wrap items-center gap-2 font-sans">
+        <SavedViews label="Calendar" value={tab} onChange={pickTab} views={TABS} />
+        <FilterPanel active={types.length + (includeAll ? 1 : 0)} onClear={() => { setTypes([]); setIncludeAll(false); }}>
+          <div className="cal-filters" aria-label="Type filter">
+            {typeList.map((t) => (
+              <button key={t} type="button" aria-pressed={types.includes(t)} className={`type-chip ${types.includes(t) ? 'on' : ''}`} onClick={() => toggle(t)}>
+                <i className="dot" style={{ background: colors[t] }} />{t}
+              </button>
+            ))}
+          </div>
+          {tab !== 'fab' && (
+            <label className="check-inline flex items-center gap-2 text-sm"><input type="checkbox" checked={includeAll} onChange={(e) => setIncludeAll(e.target.checked)} />Include External and Print Only</label>
+          )}
+        </FilterPanel>
+        {types.length > 0 && <span className="text-sm text-muted-foreground">Showing {types.join(', ')}</span>}
       </div>
 
       <CalendarCard key={tab} title={`${TABS.find((t) => t.id === tab).label} calendar`} events={events} typeColors={shown} defaultView="Month" />

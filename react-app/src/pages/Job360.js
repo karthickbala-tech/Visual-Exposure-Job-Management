@@ -1,147 +1,497 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, FolderOpen, Lock, Pencil, Plus } from 'lucide-react';
-import ApprovalPanel from '../components/ApprovalPanel';
-import JobSitePanel from '../components/JobSitePanel';
-import { Card, Chip, Modal, ResponsiveTable } from '../components/ui';
+import {
+  AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, ChevronRight, CircleCheck, Copy, ExternalLink, FolderOpen, Lock,
+  MoreHorizontal, Pencil, Plus, RefreshCw, Trash2, UserPlus,
+} from 'lucide-react';
+import { Button } from '../components/ui-kit/button';
+import { Card } from '../components/ui-kit/card';
+import { Checkbox } from '../components/ui-kit/checkbox';
+import { Progress } from '../components/ui-kit/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui-kit/tabs';
+import { ToggleGroup, ToggleGroupItem } from '../components/ui-kit/toggle-group';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui-kit/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui-kit/accordion';
+import { Avatar, AvatarFallback } from '../components/ui-kit/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui-kit/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui-kit/dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '../components/ui-kit/dropdown-menu';
+import { StageBadge } from '../components/StageBadge';
+import TaskDrawer from '../components/TaskDrawer';
+import BulkDialog from '../components/BulkTaskDialog';
+import AddTaskWizard, { KINDS } from '../components/AddTaskWizard';
+import { AssignDesignerModal, DeleteTaskModal, ScheduleModal, TaskEditModal } from '../components/TaskForms';
+import { SIGN_STAGES, SignModal } from '../components/JobSitePanel';
+import { Modal } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, toKey, today } from '../lib/dates';
 import { KPI_GROUPS, canCloseJob, isClosedJob, jobStats } from '../lib/jobs';
-import './Job360.css';
+import { addressLine, locationsForJob, mapsUrl, signGroups } from '../lib/jobSites';
+import { crewOf } from '../lib/checklists';
+import { formatSize } from '../lib/attachments';
+import { CLOSED_STAGES, MANAGER_ROLES } from '../lib/workflow';
+import { shortName } from '../lib/people';
+import { seedQuotes } from '../data/quotesSeed';
+import { cn } from '../lib/utils';
 
-const TABS = [{ id: 'design', label: 'Design' }, { id: 'fab', label: 'Fab' }, { id: 'install', label: 'Install' }];
+const GROUP_LABEL = { design: 'Design', fab: 'Fabrication', install: 'Installation' };
+const DONE = [...CLOSED_STAGES];
+const initials = (n) => String(n).split(' ').map((p) => p[0]).join('').replace('.', '').slice(0, 2).toUpperCase();
+const money = (n) => Number(n || 0).toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 });
+const serverPath = (job) => job.serverPath || `\\\\VE-SERVER\\Jobs\\${job.id}`;
 
 function Ring({ value }) {
-  const r = 34;
-  const c = 2 * Math.PI * r;
   return (
-    <svg className="ring" viewBox="0 0 88 88" role="img" aria-label={`${value}% complete`}>
-      <circle cx="44" cy="44" r={r} fill="none" stroke="var(--track)" strokeWidth="9" />
-      <circle cx="44" cy="44" r={r} fill="none" stroke="var(--brand)" strokeWidth="9" strokeLinecap="round"
-        strokeDasharray={`${(value / 100) * c} ${c}`} transform="rotate(-90 44 44)" />
-      <text x="44" y="50" textAnchor="middle" className="ring-text">{value}%</text>
-    </svg>
+    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(hsl(var(--ui-brand)) ${value}%, hsl(var(--ui-track)) 0)` }} role="img" aria-label={`${value}% complete`}>
+      <div className="grid h-12 w-12 place-items-center rounded-full bg-card text-sm font-bold">{value}%</div>
+    </div>
   );
 }
 
+function Crew({ names }) {
+  if (!names.length) return <span className="text-sm text-muted-foreground">Not scheduled</span>;
+  return (
+    <div className="flex -space-x-2">
+      {names.map((n) => (
+        <Tooltip key={n}>
+          <TooltipTrigger asChild>
+            <Avatar className="h-7 w-7 border-2 border-card"><AvatarFallback className="bg-secondary text-[10px] font-bold">{initials(n)}</AvatarFallback></Avatar>
+          </TooltipTrigger>
+          <TooltipContent>{n}</TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
+
+function HoursBar({ t, wide }) {
+  const pct = t.quoted ? Math.min(100, ((t.booked || 0) / t.quoted) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <Progress value={pct} className={cn('h-1.5 bg-track [&>div]:bg-brand', wide ? 'flex-1' : 'w-20')} aria-label={`${t.booked || 0} of ${t.quoted || 0} hours booked`} />
+      {t.booked || 0} / {t.quoted || 0}h
+    </div>
+  );
+}
+
+// Signs as a 4-step progress: deal, artwork, manufacturing, install. 2 = done, 1 = under way, 0 = not started.
+const STEP_LEVEL = (k, v) => SIGN_STAGES[k].indexOf(v) === SIGN_STAGES[k].length - 1 ? 2 : SIGN_STAGES[k].indexOf(v) > 0 ? 1 : (k === 'deal' && v === 'Quoted' ? 1 : 0);
+const signNow = (g) => (g.install === 'Installed' ? 'Installed' : g.install === 'Scheduled' ? 'Install scheduled' : g.manufacturing !== 'Not started' ? g.manufacturing : g.artwork !== 'Not started' ? g.artwork : g.deal);
+
 export default function Job360() {
   const { jobId } = useParams();
-  const { allJobs: jobs, tasks, notify, roleId, closeJob, updateJob, addTask, addInstallTask, addDesignTask, workers } = useDemo();
-  const [tab, setTab] = useState('design');
-  const [selectedId, setSelectedId] = useState(null);
-  const [closing, setClosing] = useState(false);
+  const demo = useDemo();
+  const { allJobs: jobs, tasks, notify, roleId, role, closeJob, updateJob, sites, signs, addSign, updateSign, attachments, workers, runTaskAction, scheduleTask } = demo;
+  const [tab, setTab] = useState('tasks');
+  const [view, setView] = useState('all');
+  const [selected, setSelected] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [modal, setModal] = useState(null); // { kind, task }
+  const [adding, setAdding] = useState('');
   const [editing, setEditing] = useState(false);
-  const [creating, setCreating] = useState('');
+  const [closing, setClosing] = useState(false);
+  const [bulk, setBulk] = useState(null); // 'schedule' | 'hold' | 'cancel'
+  const [signFilter, setSignFilter] = useState('all');
+  const [editingSign, setEditingSign] = useState(null);
 
   const job = jobs.find((j) => j.id === jobId);
+  const todayKey = toKey(today());
+  const jobTasks = useMemo(() => tasks.filter((t) => job && t.jobId === job.id), [tasks, job]);
   if (!job) return <PlaceholderPage title="Job not found" blurb="That job does not exist in the demo data." />;
 
-  const jobTasks = tasks.filter((t) => t.jobId === job.id);
-  const stats = jobStats(jobTasks, toKey(today()));
+  const stats = jobStats(jobTasks, todayKey);
   const closeCheck = canCloseJob(job, roleId);
   const closed = isClosedJob(job);
-  const inReview = jobTasks.filter((t) => t.stage === 'Manager Review').length;
-  const tabTasks = jobTasks.filter((t) => t.kind === tab);
-  const selected = tabTasks.find((t) => t.id === selectedId) || tabTasks[0];
-  const canSeeProfit = roleId === 'admin';
-  const canCreateTasks = ['admin','pm','fabManager'].includes(roleId);
-  const people = (t) => t.owner || [t.leader, t.member].filter(Boolean).join(', ') || '-';
-
-  const columns = [
-    { key: 'name', label: 'Task', primary: true, render: (t) => (
-      <button type="button" className={`task-pick ${selected && selected.id === t.id ? 'on' : ''}`} onClick={() => setSelectedId(t.id)}>
-        <strong>{t.name}</strong><small>{t.type || t.kind}</small>
-      </button>) },
-    { key: 'date', label: tab === 'design' ? 'Due' : 'Date', render: (t) => formatShort(t.date) },
-    { key: 'people', label: 'People', render: people },
-    { key: 'stage', label: 'Stage', render: (t) => <Chip value={t.stage} /> },
-    { key: 'hours', label: 'Quoted / proposed / booked', render: (t) => `${t.quoted || 0}h / ${t.proposed || 0}h / ${t.booked || 0}h` },
-    { key: 'cost', label: 'Labour cost', render: (t) => { const person = workers.find(w => w.name === (t.owner || t.leader) || w.name.startsWith(String(t.owner || t.leader || '').split(' ')[0] + ' ')); const rate = Number(person?.hourlyRate || person?.hourly_rate || t.hourlyRate || 0); return rate ? `$${((t.booked || 0) * rate).toFixed(2)}` : 'Rate not set'; } },
-    ...(roleId === 'admin' ? [{ key: 'rate', label: 'Hourly rate', render: (t) => { const person = workers.find(w => w.name === (t.owner || t.leader) || w.name.startsWith(String(t.owner || t.leader || '').split(' ')[0] + ' ')); const rate = person?.hourlyRate || person?.hourly_rate || t.hourlyRate; return rate ? `$${Number(rate).toFixed(2)}/h` : 'Not set'; } }] : []),
+  const canManage = MANAGER_ROLES.includes(roleId);
+  const canEditJob = roleId === 'admin' || roleId === 'pm';
+  const canCreate = canManage && !closed;
+  const me = shortName(role.name);
+  const isDone = (t) => DONE.includes(t.stage);
+  const late = (t) => !isDone(t) && t.date && t.date < todayKey;
+  const needsMe = (t) => (canManage
+    ? ['Manager Review', 'Awaiting Scheduling', 'To be Assigned'].includes(t.stage)
+    : !isDone(t) && crewOf(t).includes(me));
+  const VIEWS = [
+    ['all', 'All', () => true],
+    ['mine', 'Needs my action', needsMe],
+    ['late', 'Overdue', late],
+    ['review', 'In review', (t) => ['Manager Review', 'Awaiting Submission'].includes(t.stage)],
+    ['done', 'Done', isDone],
   ];
+  const viewFn = VIEWS.find((v) => v[0] === view)[2];
+  const shown = jobTasks.filter(viewFn);
+  const groups = ['design', 'fab', 'install'].map((k) => ({ k, rows: shown.filter((t) => t.kind === k) })).filter((g) => g.rows.length);
+  const inReview = jobTasks.filter((t) => t.stage === 'Manager Review').length;
+  const toApprove = canManage ? inReview : 0;
+  const openTask = jobTasks.find((t) => t.id === openId) || null;
+  const selectedTasks = jobTasks.filter((t) => selected.includes(t.id));
+  const places = locationsForJob(job.id, sites, signs);
+  const jobSigns = places.flatMap((p) => p.signs);
+  const sGroups = signGroups(jobSigns);
+  const quotes = seedQuotes.filter((q) => q.jobId === job.id);
+  const jobFiles = attachments.filter((a) => jobTasks.some((t) => t.id === a.taskId));
+  const activity = jobTasks.flatMap((t) => (t.history || []).map((h, i) => ({ ...h, task: t.name, key: `${t.id}-${i}` })));
+
+  const request = (kind, task) => { setOpenId(null); setModal({ kind, task }); };
+  const toggle = (id) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const rowAction = (t) => {
+    if (!canManage) return null;
+    if (t.stage === 'Awaiting Scheduling') return ['Schedule', () => request('schedule', t)];
+    if (t.stage === 'To be Assigned') return ['Assign', () => request('assign', t)];
+    if (t.stage === 'Manager Review') return ['Review', () => setOpenId(t.id)];
+    return null;
+  };
+  const copyPath = () => { try { navigator.clipboard?.writeText(serverPath(job)); } catch (e) { /* not available */ } notify('Server path copied'); };
+
+  const RowMenu = ({ t }) => canManage && (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" aria-label={`More for ${t.name}`} onClick={(e) => e.stopPropagation()}><MoreHorizontal /></Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onSelect={() => setOpenId(t.id)}>Open</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => request('edit', t)}><Pencil /> Edit task</DropdownMenuItem>
+        {['fab', 'install'].includes(t.kind) && !isDone(t) && <DropdownMenuItem onSelect={() => request('schedule', t)}><CalendarDays /> {t.leader ? 'Change date or crew' : 'Schedule'}</DropdownMenuItem>}
+        {t.kind === 'design' && ['To be Assigned', 'Assigned'].includes(t.stage) && <DropdownMenuItem onSelect={() => request('assign', t)}><UserPlus /> {t.owner ? 'Change designer' : 'Assign designer'}</DropdownMenuItem>}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => request('delete', t)}><Trash2 /> Delete task</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
-    <div className="dash">
-      <Link to="/jobs" className="back-link"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
+    <TooltipProvider delayDuration={200}>
+      <div className="ui-scope grid min-w-0 gap-4 font-sans [&>*]:min-w-0">
+        <Link to="/jobs" className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground"><ArrowLeft className="h-4 w-4" /> All jobs</Link>
 
-      <section className="job-head card">
-        <Ring value={job.job} />
-        <div className="job-head-main">
-          <p className="eyebrow">{job.id} · {job.client}</p>
-          <h1>{job.name}</h1>
-          <div className="job-meta">
-            <Chip value={job.stage} />
-            <span>Expected finish <strong>{formatShort(job.finish)}</strong></span>
-            <span className="mono"><FolderOpen size={14} aria-hidden="true" /> {`\\\\VE-SERVER\\Jobs\\${job.id}`}</span>
+        {/* 1. Header: one main button, the rest in More */}
+        <Card className="overflow-hidden">
+          <div className="flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-center">
+            <div className="flex min-w-0 items-center gap-4">
+              <Ring value={job.job} />
+              <div className="min-w-0">
+                <p className="m-0 text-xs text-muted-foreground">{job.id} · {job.client}</p>
+                <h1 className="m-0 flex flex-wrap items-center gap-2 text-xl font-bold leading-tight sm:text-2xl">{job.name} <StageBadge stage={job.stage} /></h1>
+                <p className="m-0 mt-1 text-sm text-muted-foreground">
+                  Finish <b className="text-foreground">{formatShort(job.finish)}</b>
+                  {job.pm && <> · PM <b className="text-foreground">{job.pm}</b></>}
+                  {job.fabManager && <> · Fab manager <b className="text-foreground">{job.fabManager}</b></>}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 md:ml-auto">
+              {closed && <span className="inline-flex items-center gap-1.5 self-center text-sm font-semibold text-muted-foreground"><Lock className="h-4 w-4" /> Closed {job.closedAt ? formatShort(job.closedAt) : ''}</span>}
+              {canEditJob && <Button variant="outline" className="hidden sm:inline-flex" onClick={() => setEditing(true)}><Pencil /> Edit job</Button>}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild><Button variant="outline" aria-label="More job actions"><MoreHorizontal /> More</Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  {canEditJob && <DropdownMenuItem className="sm:hidden" onSelect={() => setEditing(true)}><Pencil /> Edit job</DropdownMenuItem>}
+                  <DropdownMenuItem onSelect={() => notify('Opens the Zoho CRM deal (demo)')}><ExternalLink /> Go to CRM deal</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => notify('Opens the WorkDrive folder (demo)')}><FolderOpen /> Open WorkDrive folder</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={copyPath}><Copy /> Copy server path</DropdownMenuItem>
+                  {!closed && !(closeCheck.ok && canCreate) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem disabled={!closeCheck.ok} onSelect={() => setClosing(true)} className="flex-col items-start gap-0">
+                        <span className="flex items-center gap-2"><CircleCheck className="h-4 w-4" /> Close job</span>
+                        {!closeCheck.ok && <span className="pl-6 text-xs">{closeCheck.reason}</span>}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {!closed && closeCheck.ok && canCreate && <Button className="flex-1 sm:flex-none" onClick={() => setClosing(true)}><CircleCheck /> Close job</Button>}
+              {canCreate && (
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild><Button variant={closeCheck.ok ? 'outline' : 'default'} className="flex-1 sm:flex-none"><Plus /> Add task <ChevronDown className="opacity-70" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-60">
+                      <DropdownMenuLabel>Add a task to this job</DropdownMenuLabel>
+                      {KINDS.map(({ id, label, icon: Icon }) => <DropdownMenuItem key={id} onSelect={() => setAdding(id)}><Icon /> {label}</DropdownMenuItem>)}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+            </div>
           </div>
-          <div className="job-meta">
-            <span>Fab finish required <strong>{job.fabRequired ? formatShort(job.fabRequired) : '-'}</strong></span>
-            <span>Fab finish agreed <strong>{job.fabAgreed ? formatShort(job.fabAgreed) : 'not agreed yet'}</strong></span>
-            {job.pm && <span>PM <strong>{job.pm}</strong></span>}
-            {job.fabManager && <span>Fab manager <strong>{job.fabManager}</strong></span>}
-          </div>
-          {job.risk && <p className="risk">{job.risk}</p>}
-        </div>
-        <div className="job-head-actions">
-          {(roleId === 'admin' || roleId === 'pm') && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}><Pencil size={14} /> Edit job</button>}
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => notify('Opens the Zoho CRM deal (demo)')}><ExternalLink size={14} aria-hidden="true" /> Go to deal</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => notify('Opens the WorkDrive folder (demo)')}><ExternalLink size={14} aria-hidden="true" /> Go to WorkDrive</button>
-          {closed
-            ? <span className="closed-note"><Lock size={14} aria-hidden="true" /> Closed {job.closedAt ? formatShort(job.closedAt) : ''}{job.closedBy ? ` by ${job.closedBy}` : ''}</span>
-            : <button type="button" className="btn btn-primary btn-sm" disabled={!closeCheck.ok} title={closeCheck.ok ? '' : closeCheck.reason} onClick={() => setClosing(true)}>Close job</button>}
-        </div>
-      </section>
 
-      <section className="job-kpis" aria-label="Job KPIs">
-        {KPI_GROUPS.map((g) => {
-          const k = stats[g.kind];
-          return (
-            <div key={g.kind} className="job-kpi card">
-              <h2>{g.label}</h2>
-              <dl>
-                <div><dt>Total</dt><dd>{k.total}</dd></div>
-                <div><dt>Open</dt><dd>{k.open}</dd></div>
-                <div><dt>Overdue</dt><dd className={k.overdue > 0 ? 'over' : ''}>{k.overdue}</dd></div>
-                <div><dt>Complete</dt><dd>{k.pct}%</dd></div>
+          {(toApprove > 0 || job.risk) && !closed && (
+            <div className="mx-4 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-warn-line bg-warn px-3 py-2 text-sm text-warn-ink sm:mx-5" role="status">
+              <AlertTriangle className="h-4 w-4" />
+              {toApprove > 0 && <><span><b>{toApprove} task{toApprove > 1 ? 's' : ''}</b> waiting for your approval</span>
+                <Button variant="link" className="h-auto p-0 text-warn-ink underline" onClick={() => { setTab('tasks'); setView('review'); }}>Review</Button></>}
+              {toApprove > 0 && job.risk && <span aria-hidden="true">·</span>}
+              {job.risk && <span>{job.risk}</span>}
+            </div>
+          )}
+
+          {/* 2. Details on demand */}
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center gap-2 border-t px-5 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted/60">
+              <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+              <b className="text-foreground">Job details</b><span className="hidden sm:inline">server path, fab finish dates, CRM deal, created date</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <dl className="m-0 grid gap-3 px-5 pb-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+                {[['Server path', serverPath(job)], ['Fab finish required', job.fabRequired ? formatShort(job.fabRequired) : '-'], ['Fab finish agreed', job.fabAgreed ? formatShort(job.fabAgreed) : 'not agreed yet'], ['CRM deal', job.dealId || 'linked (demo)'], ['Created', job.createdAt ? formatShort(job.createdAt) : '-']].map(([k, v]) => (
+                  <div key={k}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="m-0 break-all font-semibold">{v}</dd></div>
+                ))}
               </dl>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* 3. Progress strip */}
+        <Card className="grid overflow-hidden sm:grid-cols-3" aria-label="Progress by discipline">
+          {KPI_GROUPS.map((g, i) => {
+            const k = stats[g.kind];
+            return (
+              <div key={g.kind} className={cn('px-5 py-3', i < 2 && 'border-b sm:border-b-0 sm:border-r')}>
+                <div className="flex justify-between text-sm"><b>{GROUP_LABEL[g.kind]}</b><span className="text-muted-foreground">{k.pct}%</span></div>
+                <Progress value={Math.max(k.pct, 2)} className="my-2 h-1.5 bg-track [&>div]:bg-brand" aria-label={`${GROUP_LABEL[g.kind]} ${k.pct}% complete`} />
+                <p className="m-0 text-xs text-muted-foreground">
+                  {k.total === 0 ? 'No tasks yet' : <>{k.open} open · {k.overdue > 0
+                    ? <Button variant="link" className="h-auto p-0 text-xs font-bold text-destructive" onClick={() => { setTab('tasks'); setView('late'); }}>{k.overdue} overdue</Button>
+                    : 'nothing overdue'}</>}
+                </p>
+              </div>
+            );
+          })}
+        </Card>
+
+        {/* 4. Page tabs */}
+        <Card className="overflow-hidden">
+          <Tabs value={tab} onValueChange={setTab}>
+            <div className="overflow-x-auto border-b px-2 pt-2 sm:px-3">
+              <TabsList className="h-10 w-max justify-start rounded-none bg-transparent p-0">
+                {[['tasks', 'Tasks', jobTasks.length], ['signs', 'Signs & site', jobSigns.length], ['quotes', 'Quotes', quotes.length], ['files', 'Files', jobFiles.length], ['activity', 'Activity', 0], ...(roleId === 'admin' ? [['profit', 'Profit', 0]] : [])].map(([v, l, n]) => (
+                  <TabsTrigger key={v} value={v} className="h-10 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 font-semibold data-[state=active]:border-brand data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                    {l}{n > 0 && <span className="ml-1.5 rounded-sm bg-secondary px-1.5 text-[11px]">{n}</span>}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </div>
-          );
-        })}
-      </section>
 
-      {canSeeProfit && <section className="card"><div className="card-head"><h2>Profitability (Admin only)</h2></div><div className="card-body job-meta"><span>Revenue <strong>${Number(job.revenue || 0).toLocaleString()}</strong></span><span>Purchases <strong>${Number(job.purchases || 0).toLocaleString()}</strong></span><span>Profit <strong>${Number(job.profit || 0).toLocaleString()}</strong></span><span>Profit % <strong>{job.revenue ? Math.round((job.profit || 0) / job.revenue * 100) : 0}%</strong></span></div></section>}
-      <JobSitePanel jobId={job.id} />
+            {/* 5. Tasks: saved views, bulk actions, one list grouped by discipline */}
+            <TabsContent value="tasks" className="mt-0">
+              <div className="overflow-x-auto px-3 py-3 sm:px-4">
+                <ToggleGroup type="single" value={view} onValueChange={(v) => { if (v) { setView(v); setSelected([]); } }} variant="outline" size="sm" className="w-max justify-start gap-0" aria-label="Saved views">
+                  {VIEWS.map(([v, l, fn]) => (
+                    <ToggleGroupItem key={v} value={v} className="whitespace-nowrap rounded-none px-3 first:rounded-l-md last:rounded-r-md data-[state=on]:bg-foreground data-[state=on]:text-background">
+                      {l} <span className="opacity-60">{jobTasks.filter(fn).length}</span>
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
 
-      {canCreateTasks && <div className="job-task-actions" aria-label="Create task in this job">{[['design','Add Design Task'],['fab','Add Fabrication Task'],['install','Add Install Task'],['minor','Add Minor Install Task']].map(([id,label]) => <button key={id} type="button" className="btn btn-primary btn-sm" disabled={closed} onClick={() => setCreating(id)}><Plus size={14}/> {label}</button>)}</div>}
-      <div className="tabs" role="tablist">
-        {TABS.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''}
-            onClick={() => { setTab(t.id); setSelectedId(null); }}>
-            {t.label} <span>{jobTasks.filter((x) => x.kind === t.id).length}</span>
-          </button>
-        ))}
+              {selected.length > 0 && (
+                <div className="mx-3 mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-accent px-3 py-2 text-sm font-semibold sm:mx-4" role="region" aria-label="Bulk actions">
+                  <Checkbox checked onCheckedChange={() => setSelected([])} aria-label="Clear selection" /> {selected.length} selected
+                  <Button size="sm" variant="outline" onClick={() => setBulk('schedule')}><CalendarDays /> Schedule crew and date</Button>
+                  <Button size="sm" variant="outline" onClick={() => setBulk('hold')}>Put on hold</Button>
+                  <Button size="sm" variant="outline" className="text-destructive" onClick={() => setBulk('cancel')}>Cancel tasks</Button>
+                  <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setSelected([])}>Clear</Button>
+                </div>
+              )}
+
+              {groups.length === 0 && <p className="m-0 px-4 pb-6 text-sm text-muted-foreground">{jobTasks.length === 0 ? 'No tasks on this job yet. Use "Add task" to create the first one.' : 'No tasks in this view.'}</p>}
+
+              {groups.length > 0 && (
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs font-semibold text-muted-foreground">
+                        <th className="w-10 py-2 pl-4" aria-label="Select" /><th className="py-2 pr-3">Task</th><th className="py-2 pr-3">Date</th><th className="py-2 pr-3">People</th><th className="py-2 pr-3">Stage</th><th className="py-2 pr-3">Hours</th><th className="w-44 py-2 pr-4" aria-label="Actions" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groups.map((g) => [
+                        <tr key={g.k} className="bg-muted/70"><td /><td colSpan={6} className="py-1.5 text-xs font-bold text-muted-foreground">{GROUP_LABEL[g.k]} · {g.rows.length}</td></tr>,
+                        ...g.rows.map((t) => {
+                          const act = rowAction(t);
+                          return (
+                            <tr key={t.id} className={cn('group cursor-pointer border-b transition-colors hover:bg-muted/40', selected.includes(t.id) && 'bg-accent/60')} onClick={() => setOpenId(t.id)}>
+                              <td className="py-2.5 pl-4" onClick={(e) => e.stopPropagation()}>
+                                {canManage && <Checkbox checked={selected.includes(t.id)} onCheckedChange={() => toggle(t.id)} aria-label={`Select ${t.name}`} />}
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                <button type="button" className="text-left font-semibold hover:underline" onClick={(e) => { e.stopPropagation(); setOpenId(t.id); }}>{t.name}</button>
+                                <div className="text-xs text-muted-foreground">{t.type || GROUP_LABEL[t.kind]}{t.kind === 'install' && t.swms && !['Completed', 'Not Required'].includes(t.swms) ? ` · SWMS ${t.swms.toLowerCase()}` : ''}{t.parentId ? ' · subtask' : ''}</div>
+                              </td>
+                              <td className={cn('py-2.5 pr-3', late(t) && 'font-bold text-destructive')}>{t.date ? formatShort(t.date) : '-'}</td>
+                              <td className="py-2.5 pr-3"><Crew names={crewOf(t)} /></td>
+                              <td className="py-2.5 pr-3"><StageBadge stage={t.stage} /></td>
+                              <td className="py-2.5 pr-3"><HoursBar t={t} /></td>
+                              <td className="py-2.5 pr-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1">
+                                  {act && <Button size="sm" variant="outline" onClick={act[1]}>{act[0]}</Button>}
+                                  <RowMenu t={t} />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }),
+                      ])}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Phone: cards with one 44 px action */}
+              <div className="grid gap-2 px-3 pb-3 md:hidden">
+                {groups.flatMap((g) => g.rows).map((t) => {
+                  const act = rowAction(t);
+                  return (
+                    <Card key={t.id} className="grid gap-2 p-3" onClick={() => setOpenId(t.id)} role="button" tabIndex={0} aria-label={`Open ${t.name}`}>
+                      <div className="flex items-start justify-between gap-2"><b className="text-sm">{t.name}</b><StageBadge stage={t.stage} /></div>
+                      <p className="m-0 text-xs text-muted-foreground">{t.type || GROUP_LABEL[t.kind]} · <span className={cn(late(t) && 'font-bold text-destructive')}>{t.date ? formatShort(t.date) : '-'}</span> · {crewOf(t).join(', ') || 'not scheduled'}</p>
+                      {(t.quoted || 0) > 0 && <HoursBar t={t} wide />}
+                      {act && <Button variant="outline" className="h-11" onClick={(e) => { e.stopPropagation(); act[1](); }}>{act[0]}</Button>}
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+
+            {/* Signs and site */}
+            <TabsContent value="signs" className="mt-0">
+              {places.length === 0 ? <p className="m-0 p-4 text-sm text-muted-foreground">No site is linked to this job yet. Sites come from the CRM deal; add one there and it appears here.</p> : (
+                <>
+                  <div className="flex flex-wrap items-start gap-4 border-b px-4 py-3 text-sm">
+                    {places.map(({ site }) => (
+                      <div key={site.id}><b>{site.name}</b><div className="text-muted-foreground">{addressLine(site)}</div>
+                        <a className="text-xs font-semibold text-primary" href={mapsUrl(site)} target="_blank" rel="noopener noreferrer">Open in maps <ExternalLink className="inline h-3 w-3" /></a></div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+                    <ToggleGroup type="single" value={signFilter} onValueChange={(v) => v && setSignFilter(v)} variant="outline" size="sm" className="gap-0" aria-label="Sign groups">
+                      {[['all', `All ${jobSigns.length}`], ...sGroups.map((g) => [g.name, `${g.name} ${g.signs}`])].map(([v, l]) => (
+                        <ToggleGroupItem key={v} value={v} className="rounded-none px-3 first:rounded-l-md last:rounded-r-md data-[state=on]:bg-foreground data-[state=on]:text-background">{l}</ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                    {canCreate && <Button size="sm" className="ml-auto" onClick={() => setEditingSign('new')}><Plus /> Add sign</Button>}
+                  </div>
+                  <Accordion type="single" collapsible className="px-4 pb-3">
+                    {jobSigns.filter((g) => signFilter === 'all' || g.group === signFilter).map((g) => (
+                      <AccordionItem key={g.id} value={g.id}>
+                        <AccordionTrigger className="py-3 hover:no-underline">
+                          <div className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-1 pr-2 text-left">
+                            <div className="min-w-[14rem]"><div className="font-semibold">{g.name}</div><div className="text-xs font-normal text-muted-foreground">Rev {g.rev} · {g.group} · Qty {g.qty}</div></div>
+                            <div className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground" aria-label={`Deal ${g.deal}, artwork ${g.artwork}, manufacturing ${g.manufacturing}, install ${g.install}`}>
+                              {['deal', 'artwork', 'manufacturing', 'install'].map((k) => { const lv = STEP_LEVEL(k, g[k]); return <span key={k} title={`${k}: ${g[k]}`} className={cn('h-2 w-8 rounded-full', lv === 2 ? 'bg-brand' : lv === 1 ? 'bg-[#e9b44c]' : 'bg-track')} />; })}
+                              <span className="ml-1">{signNow(g)}</span>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>Deal {g.deal} · Artwork {g.artwork} · Manufacturing {g.manufacturing} · Install {g.install}<br />{[g.medium, g.finishing].filter(Boolean).join(' · ') || 'No medium or finish recorded'}</span>
+                          {canCreate && <Button size="sm" variant="outline" onClick={() => setEditingSign(g)} aria-label={`Edit ${g.name}`}><Pencil /> Edit sign</Button>}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </>
+              )}
+            </TabsContent>
+
+            {/* Quotes from CRM (as in the web app) */}
+            <TabsContent value="quotes" className="mt-0">
+              <div className="flex items-center gap-2 px-4 py-3">
+                <span className="text-sm text-muted-foreground">{quotes.length ? `Last synced ${quotes[0].synced}` : 'No quotes saved yet.'}</span>
+                {canManage && <Button size="sm" variant="outline" className="ml-auto" onClick={() => notify('Quotes synced from the CRM deal (demo)')}><RefreshCw /> Sync from CRM</Button>}
+              </div>
+              {quotes.map((q) => {
+                const sub = q.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
+                return (
+                  <div key={q.id} className="overflow-x-auto border-t">
+                    <div className="flex flex-wrap items-center gap-2 px-4 py-2 text-sm"><b>{q.name}</b><span className="rounded-sm bg-secondary px-1.5 text-xs font-semibold">{q.stage}</span><span className="text-muted-foreground">{q.id} · total {money(sub + q.tax)}</span></div>
+                    <table className="w-full border-collapse text-sm">
+                      <thead><tr className="border-b text-left text-xs font-semibold text-muted-foreground"><th className="px-4 py-2">Item</th><th className="py-2 pr-3">Qty</th><th className="py-2 pr-3">Unit price</th><th className="py-2 pr-4 text-right">Line total</th></tr></thead>
+                      <tbody>{q.lines.map((l) => <tr key={l.product} className="border-b"><td className="px-4 py-2"><b>{l.product}</b><div className="text-xs text-muted-foreground">{l.description}</div></td><td className="py-2 pr-3">{l.qty}</td><td className="py-2 pr-3">{money(l.unitPrice)}</td><td className="py-2 pr-4 text-right font-semibold">{money(l.qty * l.unitPrice)}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </TabsContent>
+
+            <TabsContent value="files" className="mt-0">
+              {jobFiles.length === 0 ? <p className="m-0 p-4 text-sm text-muted-foreground">No files yet. Files are added on each task.</p> : (
+                <ul className="m-0 grid list-none p-0">
+                  {jobFiles.map((a) => { const t = jobTasks.find((x) => x.id === a.taskId); return (
+                    <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-3 text-sm">
+                      <b>{a.name}</b><span className="text-muted-foreground">{formatSize(a.size)} · {a.by} · {a.at}</span>
+                      <Button size="sm" variant="link" className="ml-auto h-auto p-0" onClick={() => setOpenId(a.taskId)}>{t?.name}</Button>
+                    </li>); })}
+                </ul>
+              )}
+            </TabsContent>
+
+            <TabsContent value="activity" className="mt-0">
+              {activity.length === 0 ? <p className="m-0 p-4 text-sm text-muted-foreground">No activity yet.</p> : (
+                <ul className="m-0 grid list-none gap-3 p-4 text-sm">
+                  {activity.slice(0, 60).map((h) => (
+                    <li key={h.key} className={cn('border-l-2 pl-3', h.to && 'border-brand')}>
+                      {h.to ? <><b>{h.from} → {h.to}</b> by {h.who}</> : <><b>{h.who}</b> {h.text}</>}
+                      <div className="text-xs text-muted-foreground">{h.task} · {h.at}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TabsContent>
+
+            {roleId === 'admin' && (
+              <TabsContent value="profit" className="mt-0">
+                <dl className="m-0 grid gap-3 border-b p-4 text-sm sm:grid-cols-3">
+                  {[['Revenue', job.revenue], ['Purchases', job.purchases], ['Profit', job.profit]].map(([k, v]) => <div key={k}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="m-0 text-lg font-bold">{money(v)}</dd></div>)}
+                </dl>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead><tr className="border-b text-left text-xs font-semibold text-muted-foreground"><th className="px-4 py-2">Task</th><th className="py-2 pr-3">Booked</th><th className="py-2 pr-3">Hourly rate</th><th className="py-2 pr-4 text-right">Labour cost</th></tr></thead>
+                    <tbody>
+                      {jobTasks.map((t) => {
+                        const who = t.owner || t.leader || '';
+                        const person = workers.find((w) => shortName(w.name) === who || w.name === who);
+                        const rate = Number(person?.hourlyRate || 0);
+                        return <tr key={t.id} className="border-b"><td className="px-4 py-2">{t.name}</td><td className="py-2 pr-3">{t.booked || 0}h</td><td className="py-2 pr-3">{rate ? `$${rate.toFixed(2)}/h` : 'Not set'}</td><td className="py-2 pr-4 text-right font-semibold">{rate ? `$${((t.booked || 0) * rate).toFixed(2)}` : '-'}</td></tr>;
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+        </Card>
+
+        <TaskDrawer task={openTask} onClose={() => setOpenId(null)} onRequest={request} />
+
+        {adding && <AddTaskWizard job={job} kind={adding} groups={sGroups.map((g) => g.name)} onClose={() => setAdding('')} />}
+        {modal?.kind === 'edit' && <TaskEditModal task={jobTasks.find((t) => t.id === modal.task.id) || modal.task} onClose={() => setModal(null)} />}
+        {modal?.kind === 'schedule' && <ScheduleModal task={jobTasks.find((t) => t.id === modal.task.id) || modal.task} onClose={() => setModal(null)} />}
+        {modal?.kind === 'assign' && <AssignDesignerModal task={jobTasks.find((t) => t.id === modal.task.id) || modal.task} onClose={() => setModal(null)} />}
+        {modal?.kind === 'delete' && <DeleteTaskModal task={modal.task} onClose={() => setModal(null)} />}
+        {editing && <Modal title="Edit job details" onClose={() => setEditing(false)}><JobEditForm job={job} roleId={roleId} onSave={(patch) => { updateJob(job.id, patch); setEditing(false); }} onCancel={() => setEditing(false)} /></Modal>}
+        {editingSign && (
+          <SignModal sign={editingSign === 'new' ? null : editingSign} jobId={job.id} places={places} groups={sGroups.map((g) => g.name)}
+            onSave={(rec) => (editingSign === 'new' ? addSign(rec) : updateSign(editingSign.id, rec))} onClose={() => setEditingSign(null)} />
+        )}
+
+        <Dialog open={closing} onOpenChange={setClosing}>
+          <DialogContent className="sm:max-w-[480px]">
+            <DialogHeader><DialogTitle>Close this job?</DialogTitle><DialogDescription>{job.name}</DialogDescription></DialogHeader>
+            <ul className="m-0 grid list-none gap-2 p-0 text-sm">
+              <li className="flex gap-2"><CircleCheck className="h-4 w-4 text-primary" /> {job.job}% complete</li>
+              <li className={cn('flex gap-2', inReview > 0 && 'text-destructive')}><AlertTriangle className="h-4 w-4" /> {inReview > 0 ? `${inReview} task${inReview > 1 ? 's are' : ' is'} still in Manager Review. Closing will not wait for approval.` : 'No tasks waiting for approval'}</li>
+              <li className="flex gap-2"><CircleCheck className="h-4 w-4 text-primary" /> Sends the closure report email once and updates the CRM deal (demo)</li>
+              <li className="flex gap-2"><Lock className="h-4 w-4" /> No more tasks can be added afterwards</li>
+            </ul>
+            <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setClosing(false)}>Cancel</Button><Button onClick={() => { closeJob(job.id); setClosing(false); }}>Close job</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {bulk && <BulkDialog kind={bulk} tasks={selectedTasks} onClose={() => setBulk(null)} onDone={() => { setBulk(null); setSelected([]); }} runTaskAction={runTaskAction} scheduleTask={scheduleTask} notify={notify} />}
       </div>
-
-      <div className="split">
-        <Card flush><ResponsiveTable columns={columns} rows={tabTasks} empty={`No ${tab} tasks for this job yet`} /></Card>
-        <Card title="Approval">{selected ? <><ApprovalPanel key={selected.id} task={selected} />{selected.kind==='fab' && selected.spec && <div className="task-spec"><h3>{selected.type} specification</h3><pre>{JSON.stringify(selected.spec, null, 2)}</pre></div>}</> : <p className="muted">Select a task to see its progress and actions.</p>}</Card>
-      </div>
-      {editing && <Modal title="Edit job details" onClose={() => setEditing(false)}><JobEditForm job={job} roleId={roleId} onSave={(patch) => { updateJob(job.id, patch); setEditing(false); }} onCancel={() => setEditing(false)} /></Modal>}
-      {creating && <JobTaskForm kind={creating} job={job} onClose={() => setCreating('')} create={{ addTask, addInstallTask, addDesignTask }} />}
-      {closing && (
-        <Modal title="Close this job?" onClose={() => setClosing(false)}>
-          <div className="form">
-            <p>{job.name} is {job.job}% complete. Closing sets the stage to Completed - Closed, sends the closure report email once and updates the CRM deal (demo). No more tasks can be added after that.</p>
-            {inReview > 0 && <p className="form-error">{inReview} task{inReview > 1 ? 's are' : ' is'} still in Manager Review. Closing now will not wait for approval.</p>}
-            <div className="form-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setClosing(false)}>Cancel</button>
-              <button type="button" className="btn btn-primary" onClick={() => { closeJob(job.id); setClosing(false); }}>Close job</button>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -149,4 +499,3 @@ function JobEditForm({ job, roleId, onSave, onCancel }) {
  const [f,setF]=useState({name:job.name||'',finish:job.finish||'',stage:job.stage||'',serverPath:job.serverPath||`\\VE-SERVER\\Jobs\\${job.id}`,dealId:job.dealId||'',createdAt:job.createdAt||new Date().toISOString().slice(0,10)}); const set=k=>e=>setF(x=>({...x,[k]:e.target.value})); const [err,setErr]=useState('');
  return <form className="form" onSubmit={e=>{e.preventDefault();if(!f.name.trim()||!f.finish||!f.stage||!f.serverPath.trim())return setErr('Please fill the mandatory fields');onSave({...f,name:f.name.trim()});}}><label>Job subject *<input value={f.name} onChange={set('name')} disabled={roleId!=='admin'} /></label><div className="form-row"><label>Expected job finish *<input type="date" value={f.finish} onChange={set('finish')}/></label><label>Stage *<select value={f.stage} onChange={set('stage')}>{['Preparation','In Progress','On Hold','Completed','Completed - Closed','Cancelled'].map(x=><option key={x}>{x}</option>)}</select></label></div><label>File location on VE server *<input value={f.serverPath} onChange={set('serverPath')}/></label>{roleId==='admin'&&<div className="form-row"><label>CRM Deal link / ID<input value={f.dealId} onChange={set('dealId')}/></label><label>Job created date<input type="date" value={f.createdAt} onChange={set('createdAt')}/></label></div>}<small>Completion, hours and cost rollups are read-only.</small>{err&&<p className="form-error">{err}</p>}<div className="form-actions"><button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button><button className="btn btn-primary">Save changes</button></div></form>
 }
-function JobTaskForm({kind,job,onClose,create}) { const [f,setF]=useState({name:'',date:'',type:kind==='fab'?'CCV':kind==='install'?'VE Install':kind==='minor'?'Minor Task':'Artwork Sign Off',quoted:'',proposed:'',width:'',height:'',qty:'',vinyl:'',material:'',thickness:'',returnHeight:'',description:''});const [err,setErr]=useState('');const set=k=>e=>setF(x=>({...x,[k]:e.target.value}));const title={design:'Design',fab:'Fabrication',install:'Install',minor:'Minor Install'}[kind];return <Modal title={`Add ${title} task to ${job.id}`} onClose={onClose}><form className="form" onSubmit={e=>{e.preventDefault();if(!f.name.trim()||!f.date)return setErr('Please fill the mandatory fields');const common={name:f.name.trim(),jobId:job.id,date:f.date,quoted:Number(f.quoted)||0,proposed:Number(f.proposed)||0};let ok;if(kind==='design')ok=create.addDesignTask({...common,type:f.type,due:f.date,description:f.description});else if(kind==='fab')ok=create.addTask({...common,type:f.type,spec:{ccv:{width:Number(f.width)||0,height:Number(f.height)||0,qty:Number(f.qty)||0,vinyl:f.vinyl},cnc:{material:f.material,thickness:Number(f.thickness)||0},clb:{material:f.material,return_height:Number(f.returnHeight)||0}}});else ok=create.addInstallTask({...common,type:kind==='minor'?'Minor Task':f.type});if(ok!==false)onClose();}}><label>Task name *<input autoFocus value={f.name} onChange={set('name')}/></label><div className="form-row"><label>Required / scheduled date *<input type="date" value={f.date} onChange={set('date')}/></label>{kind!=='minor'&&<label>{kind==='fab'?'Fab type':kind==='install'?'Install type':'Design type'}<select value={f.type} onChange={set('type')}>{(kind==='fab'?['CCV','CNC Laser','CNC Router','CLB','General','Metal','Paint','LED','Pack','Workshop','Maintenance']:kind==='install'?['VE Install','VE Subtask','Minor Task','External Install','Print Only']:['Artwork Sign Off','Install Plan','LED Design','Manufacturing Sign Off','Proof Of Posting','Project Management']).map(x=><option key={x}>{x}</option>)}</select></label>}</div><div className="form-row"><label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')}/></label><label>Proposed hours<input type="number" min="0" step="0.5" value={f.proposed} onChange={set('proposed')}/></label></div>{kind==='fab'&&(['CCV'].includes(f.type)?<fieldset><legend>CCV specification</legend><div className="form-row"><label>Width<input type="number" value={f.width} onChange={set('width')}/></label><label>Height<input type="number" value={f.height} onChange={set('height')}/></label><label>Quantity<input type="number" value={f.qty} onChange={set('qty')}/></label></div><label>Vinyl brand / colour<input value={f.vinyl} onChange={set('vinyl')}/></label></fieldset>:['CNC Laser','CNC Router'].includes(f.type)?<fieldset><legend>CNC specification</legend><label>Material<input value={f.material} onChange={set('material')}/></label><label>Thickness<input type="number" value={f.thickness} onChange={set('thickness')}/></label></fieldset>:f.type==='CLB'?<fieldset><legend>CLB specification</legend><label>Material<input value={f.material} onChange={set('material')}/></label><label>Return height<input type="number" value={f.returnHeight} onChange={set('returnHeight')}/></label></fieldset>:null)}{kind==='design'&&<label>Description<textarea value={f.description} onChange={set('description')}/></label>}{err&&<p className="form-error">{err}</p>}<small>Tasks can only be created from their parent job. Closed jobs cannot accept new tasks.</small><div className="form-actions"><button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary">Create task</button></div></form></Modal> }

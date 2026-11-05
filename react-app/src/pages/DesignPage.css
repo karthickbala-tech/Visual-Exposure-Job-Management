@@ -7,7 +7,10 @@
 .dcard{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--line));border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none}
 .dcard:hover{border-color:var(--brand-strong)}
 .dcard strong{font-size:14px;line-height:1.3}.dcard small{color:var(--muted)}
-.dcard.late{box-shadow:inset 0 0 0 1px #d64545}
+.dcard.late{border-color:var(--danger);border-left-color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--surface))}
+.dcard.late small:last-of-type{color:var(--danger);font-weight:600}
+.dcard-title{color:inherit;text-decoration:none}.dcard-title:hover{text-decoration:underline}
+.dcard .row-actions{margin-top:4px}
 .dempty{color:var(--muted);font-size:13px;padding:6px 2px}
 .type-tag{display:inline-flex;align-items:center;gap:6px}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}

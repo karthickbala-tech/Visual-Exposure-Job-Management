@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Pencil, Trash2 } from 'lucide-react';
 import { Chip, Modal } from './ui';
 import Attachments from './Attachments';
 import { useDemo } from '../context/DemoContext';
-import { MANAGER_ROLES, STEPS, TRANSITIONS, stepIndex } from '../lib/workflow';
+import { MANAGER_ROLES, stepIndexFor, stepsFor, transitionsFor } from '../lib/workflow';
+import { AssignDesignerModal, DeleteTaskModal, TaskEditModal } from './TaskForms';
 import { checklistPlan, crewOf, stepOrder, stepTitle } from '../lib/checklists';
 import { availableActions } from '../lib/taskActions';
 import './ApprovalPanel.css';
@@ -16,11 +17,14 @@ export default function ApprovalPanel({ task }) {
   const [comment, setComment] = useState('');
   const [review, setReview] = useState({ ohs: 'No', mgmtReview: false, tlRating: '' });
   const [error, setError] = useState('');
+  const [modal, setModal] = useState('');
 
-  const idx = stepIndex(task.stage);
-  const transitions = TRANSITIONS[task.stage] || [];
+  const steps = stepsFor(task);
+  const idx = stepIndexFor(task);
+  const transitions = transitionsFor(task);
   const canManage = MANAGER_ROLES.includes(roleId);
   const extras = canManage ? availableActions(task) : [];
+  const finalStage = steps[steps.length - 1];
   const canSub = canManage && ['install', 'fab'].includes(task.kind) && !['Cancelled', 'Complete - Not Used'].includes(task.stage);
   const plan = checklistPlan(task);
   const crew = crewOf(task);
@@ -30,7 +34,8 @@ export default function ApprovalPanel({ task }) {
 
   const open = (step, kind) => { setPending({ ...step, kind }); setComment(''); setError(''); setReview({ ohs: 'No', mgmtReview: flagged, tlRating: '' }); };
   const run = (step) => {
-    if (step.action === 'Approve') open(step, 'review');
+    if (step.assign) setModal('assign');
+    else if (step.action === 'Approve') open(step, 'review');
     else if (step.comment) open(step, 'transition');
     else actOnTask(task.id, step.action);
   };
@@ -61,14 +66,15 @@ export default function ApprovalPanel({ task }) {
         <Chip value={task.stage} />
       </div>
 
-      <ol className="stepper" aria-label="Task progress">
-        {STEPS.map((s, i) => {
-          const state = task.stage === 'Completed' || i < idx ? 'done' : i === idx ? 'current' : '';
+      <ol className="stepper" aria-label="Task progress" style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}>
+        {steps.map((s, i) => {
+          const state = task.stage === finalStage || i < idx ? 'done' : i === idx ? 'current' : '';
           return <li key={s} className={state}><span>{state === 'done' ? <Check size={13} aria-hidden="true" /> : i + 1}</span>{s}</li>;
         })}
       </ol>
       {(task.stage === 'Rejected' || task.stage === 'Reopen') && <p className="form-error">This task was sent back. See the history for the reason.</p>}
-      {task.stage === 'On Hold' && <p className="muted">This task is on hold. Take it off hold to schedule it again.</p>}
+      {task.stage === 'On Hold' && <p className="muted">This task is on hold. Take it off hold to carry on.</p>}
+      {task.kind === 'design' && <p className="muted">Designer: <strong>{task.owner || 'not assigned yet'}</strong></p>}
 
       <div className="approval-actions">
         {transitions.map((step) => {
@@ -93,6 +99,17 @@ export default function ApprovalPanel({ task }) {
         </div>
       )}
 
+      {canManage && (
+        <div className="approval-actions" aria-label="Edit task">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal('edit')}><Pencil size={14} aria-hidden="true" /> Edit task</button>
+          {task.kind === 'design' && task.stage === 'Assigned' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal('assign')}>Change designer</button>}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal('delete')}><Trash2 size={14} aria-hidden="true" /> Delete task</button>
+        </div>
+      )}
+      {modal === 'edit' && <TaskEditModal task={task} onClose={() => setModal('')} />}
+      {modal === 'assign' && <AssignDesignerModal task={task} onClose={() => setModal('')} />}
+      {modal === 'delete' && <DeleteTaskModal task={task} onClose={() => setModal('')} />}
+
       {task.pmReview && (
         <>
           <h3 className="mini-title">PM review</h3>
@@ -112,7 +129,7 @@ export default function ApprovalPanel({ task }) {
                 const rec = lists.find((c) => c.person === p);
                 return (
                   <li key={p}>
-                    <strong>{p}</strong> {p === task.leader ? '(team leader)' : '(team member)'}
+                    <strong>{p}</strong> {task.kind === 'design' ? '(designer)' : p === task.leader ? '(team leader)' : '(team member)'}
                     {stepOrder(task).map((k) => ` ${stepTitle(task, k)}: ${rec?.steps[k] ? 'done' : 'open'}`).join(' · ')}
                     {rec?.steps.post2 && <small>{rec.steps.post2.hours}h worked{rec.steps.post2.unbilled ? `, ${rec.steps.post2.unbilled}h unbilled` : ''}{rec.steps.post2.rating ? `, briefing rated ${rec.steps.post2.rating}/10` : ''}{rec.steps.post2.reviewFlag ? ', review flagged' : ''}</small>}
                   </li>

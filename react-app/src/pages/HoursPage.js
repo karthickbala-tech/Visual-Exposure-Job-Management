@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { FilterSelect, SavedViews } from '../components/ListKit';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui-kit/collapsible';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Clock, Coffee, Download, LogIn, LogOut, Plus, Timer, Wallet } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
@@ -81,18 +83,24 @@ function BookedHours({ viewAll, me, initialPeriod }) {
         <KpiCard icon={Timer} label="Unbilled hours" value={fmtH(unbilled)} tone={unbilled ? 'warn' : 'brand'} note="not charged to a job" />
         <KpiCard icon={Clock} label={viewAll ? 'Workers who booked' : 'Days worked'} value={viewAll ? byWorker.length : new Set(inRange.map((h) => h.date)).size} note="in this period" />
       </div>
-      <div className="hp-tools">
-        <div className="segmented" role="tablist" aria-label="Period">
-          {PERIODS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={period === id} className={period === id ? 'on' : ''} onClick={() => setPeriod(id)}>{label}</button>)}
-        </div>
-        {viewAll && (
-          <select value={worker} onChange={(e) => setWorker(e.target.value)} aria-label="Worker">
-            <option value="all">All workers</option>{workers.map((w) => <option key={w}>{w}</option>)}
-          </select>)}
+      <div className="ui-scope flex flex-wrap items-end gap-2 font-sans">
+        <SavedViews label="Period" value={period} onChange={setPeriod} views={PERIODS.map(([id, label]) => ({ id, label }))} />
+        {viewAll && <FilterSelect label="Worker" value={worker} onChange={setWorker} options={[{ value: 'all', label: 'All workers' }, ...workers.map((w) => ({ value: w, label: w }))]} />}
+        <span className="text-sm text-muted-foreground">{formatShort(from)} to {formatShort(to)}</span>
       </div>
       {viewAll && <Card title="Hours by worker" flush><ResponsiveTable columns={cols} rows={byWorker} empty="No hours booked in this period" /></Card>}
       <div style={{ height: 16 }} />
-      <Card title="Entries" flush><ResponsiveTable columns={entryCols} rows={[...inRange].sort((a, b) => b.date.localeCompare(a.date))} empty="No hours booked in this period" /></Card>
+      {viewAll ? (
+        <Collapsible className="ui-scope font-sans">
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border bg-card px-4 py-3 text-left text-sm font-semibold hover:bg-muted/50">
+            <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" /> Every entry in this period
+            <span className="font-normal text-muted-foreground">{inRange.length} entries</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <Card title="Entries" flush><ResponsiveTable columns={entryCols} rows={[...inRange].sort((a, b) => b.date.localeCompare(a.date))} empty="No hours booked in this period" /></Card>
+          </CollapsibleContent>
+        </Collapsible>
+      ) : <Card title="Entries" flush><ResponsiveTable columns={entryCols} rows={[...inRange].sort((a, b) => b.date.localeCompare(a.date))} empty="No hours booked in this period" /></Card>}
       <p className="muted pad">Hours are added when a worker books them on a task, and later come from the post-job checklist.</p>
     </>
   );
@@ -265,12 +273,8 @@ export default function HoursPage() {
   return (
     <div className="dash">
       <PageHeader eyebrow="Time" title="Booked hours" subtitle={viewAll ? 'Hours booked by every worker, and staff timesheets.' : 'Your booked hours and your timesheet.'} />
-      <div className="hp-tabs">
-        <div className="segmented" role="tablist" aria-label="Hours view">
-          <button type="button" role="tab" aria-selected={tab === 'hours'} className={tab === 'hours' ? 'on' : ''} onClick={() => setTab('hours')}>Booked hours</button>
-          <button type="button" role="tab" aria-selected={tab === 'weekly'} className={tab === 'weekly' ? 'on' : ''} onClick={() => setTab('weekly')}>Weekly roll-up</button>
-          <button type="button" role="tab" aria-selected={tab === 'timesheet'} className={tab === 'timesheet' ? 'on' : ''} onClick={() => setTab('timesheet')}>Timesheet</button>
-        </div>
+      <div className="ui-scope font-sans">
+        <SavedViews label="Hours view" value={tab} onChange={setTab} views={[{ id: 'hours', label: 'Booked hours' }, { id: 'weekly', label: 'Weekly roll-up' }, { id: 'timesheet', label: 'Timesheet' }]} />
       </div>
       {tab === 'hours' && <BookedHours viewAll={viewAll} me={me} initialPeriod={initialPeriod} />}
       {tab === 'weekly' && <WeeklyRollup viewAll={viewAll} me={me} />}

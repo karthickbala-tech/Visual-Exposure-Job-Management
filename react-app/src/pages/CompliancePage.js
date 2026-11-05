@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CalendarClock, HardHat, Hourglass, Users } from 'lucide-react';
 import { Card, Chip, KpiCard, PageHeader, ResponsiveTable } from '../components/ui';
+import KpiLink from '../components/KpiLink';
 import { useDemo } from '../context/DemoContext';
 import { VE_NAME, inductionTypes, ticketTypes } from '../data/workersSeed';
 import { expiryText } from '../lib/compliance';
@@ -44,9 +45,9 @@ export default function CompliancePage() {
       <div className="kpis" aria-label="Compliance totals">
         <KpiCard icon={Users} label="VE workers" value={sum.workers.ve} note={`${scope} Visual Exposure workers`} />
         <KpiCard icon={HardHat} label="Non-VE workers" value={sum.workers.nonVe} note={`${scope} subcontractors`} />
-        <KpiCard icon={AlertTriangle} label="Past expiry" value={sum.counts.past} tone="danger" note="tickets, inductions and documents" />
-        <KpiCard icon={CalendarClock} label="Expires today" value={sum.counts.today} tone="warn" note="renew today" />
-        <KpiCard icon={Hourglass} label={`Within ${days} days`} value={sum.counts.soon} tone="warn" note={`${sum.counts.missing} not filled in yet`} />
+        <KpiLink icon={AlertTriangle} label="Past expiry" value={sum.counts.past} tone="danger" note="tickets, inductions and documents" onClick={() => setFilter('past')} active={filter === 'past'} />
+        <KpiLink icon={CalendarClock} label="Expires today" value={sum.counts.today} tone="warn" note="renew today" onClick={() => setFilter('today')} active={filter === 'today'} />
+        <KpiLink icon={Hourglass} label={`Within ${days} days`} value={sum.counts.soon} tone="warn" note={`${sum.counts.missing} not filled in yet`} onClick={() => setFilter('soon')} active={filter === 'soon'} />
       </div>
 
       <div className="segmented" role="tablist" aria-label="Expiry filter">
@@ -55,6 +56,7 @@ export default function CompliancePage() {
         ))}
       </div>
 
+      {filter !== 'attention' && <p className="muted">Showing {FILTERS.find((f) => f.id === filter).label.toLowerCase()} only. <button type="button" className="link-btn" onClick={() => setFilter('attention')}>Show everything that needs attention</button></p>}
       <Card title={`Tickets (${applyFilter(sum.tickets, filter).length})`} flush><ResponsiveTable columns={cols(true)} rows={applyFilter(sum.tickets, filter)} empty={empty} /></Card>
       <Card title={`Inductions (${applyFilter(sum.inductions, filter).length})`} flush><ResponsiveTable columns={cols(true)} rows={applyFilter(sum.inductions, filter)} empty={empty} /></Card>
       <Card title={`Company documents (${applyFilter(sum.docs, filter).length})`} flush><ResponsiveTable columns={cols(false)} rows={applyFilter(sum.docs, filter)} empty={empty} /></Card>

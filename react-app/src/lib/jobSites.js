@@ -28,3 +28,15 @@ export function signSummary(signs) {
     installed: signs.filter((g) => g.install === 'Installed').length,
   };
 }
+
+// Sign groups on a job, in first-seen order, with their sign and piece counts.
+export function signGroups(signs) {
+  const out = [];
+  signs.forEach((g) => {
+    let row = out.find((r) => r.name === g.group);
+    if (!row) { row = { name: g.group, signs: 0, pieces: 0 }; out.push(row); }
+    row.signs += 1;
+    row.pieces += Number(g.qty) || 0;
+  });
+  return out;
+}

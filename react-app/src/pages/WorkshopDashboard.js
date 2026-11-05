@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ClipboardList, Plus, Search, Wrench } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Plus, Wrench } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
 import RepeatFields from '../components/RepeatFields';
 import { repeatLabel, validateRepeat } from '../lib/repeat';
 import HoursNotFilled from '../components/HoursNotFilled';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import KpiLink from '../components/KpiLink';
+import ToDoList from '../components/ToDoList';
+import { SavedViews, SearchBox } from '../components/ListKit';
 import { useDemo } from '../context/DemoContext';
 import { fabTypeColors } from '../data/fabTypes';
-import { FAB_CREW, shortName } from '../lib/people';
+import { crewOptions, shortName } from '../lib/people';
+import { crewOf } from '../lib/checklists';
 import { daysOverdue, isOverdue, nextDue } from '../lib/equipment';
 import { WORKSHOP_TASK_TYPES } from '../lib/config';
-import { CLOSED_STAGES, TRANSITIONS } from '../lib/workflow';
+import { CLOSED_STAGES, transitionsFor } from '../lib/workflow';
 import { formatShort, fullDate, toKey, today } from '../lib/dates';
 import './FabDashboard.css';
 
@@ -19,7 +23,7 @@ const CLOSED = CLOSED_STAGES;
 
 // Workshop tasks use the workshop job from settings, never a hard-coded id in the screen (FSD FAB-5).
 export function NewWorkshopTaskModal({ onClose }) {
-  const { allJobs, addTask, settings } = useDemo();
+  const { allJobs, addTask, settings, workers } = useDemo();
   const WORKSHOP_JOB_ID = settings.workshopJobId; // set in Admin, settings
   const job = allJobs.find((j) => j.id === WORKSHOP_JOB_ID);
   const [f, setF] = useState({ name: '', type: WORKSHOP_TASK_TYPES[0], date: toKey(today()), leader: '', quoted: '', repeat: { count: '', unit: 'Weeks' } });
@@ -44,7 +48,7 @@ export function NewWorkshopTaskModal({ onClose }) {
           <label>Date<input type="date" value={f.date} onChange={set('date')} /></label>
         </div>
         <div className="form-row">
-          <label>Team leader<select value={f.leader} onChange={set('leader')}><option value="">Not assigned yet</option>{FAB_CREW.map((c) => <option key={c}>{c}</option>)}</select></label>
+          <label>Team leader<select value={f.leader} onChange={set('leader')}><option value="">Not assigned yet</option>{crewOptions(workers, 'fab').map((c) => <option key={c}>{c}</option>)}</select></label>
           <label>Quoted hours<input type="number" min="0" step="0.5" value={f.quoted} onChange={set('quoted')} /></label>
         </div>
         {f.type === 'Workshop' && <RepeatFields value={f.repeat} onChange={(repeat) => setF((x) => ({ ...x, repeat }))} />}
@@ -65,13 +69,14 @@ export default function WorkshopDashboard() {
   const [status, setStatus] = useState('All');
   const [q, setQ] = useState('');
   const [creating, setCreating] = useState(false);
+  const [section, setSection] = useState('tasks');
 
   const me = shortName(role.name);
   const key = toKey(today());
 
   const workshop = tasks.filter((t) => t.kind === 'fab' && WORKSHOP_TASK_TYPES.includes(t.type));
   const open = workshop.filter((t) => !CLOSED.includes(t.stage));
-  const mine = open.filter((t) => [t.leader, t.member].includes(me));
+  const mine = open.filter((t) => crewOf(t).includes(me));
   const rows = [...(taskView === 'mine' ? mine : open)].sort((a, b) => a.date.localeCompare(b.date));
 
   const overdueAll = equipment.filter((e) => isOverdue(e, key));
@@ -84,7 +89,7 @@ export default function WorkshopDashboard() {
   const events = workshop.filter((t) => t.stage !== 'Cancelled').map((t) => ({ id: t.id, date: t.date, title: t.name, type: t.type }));
 
   // The next plain action for this task. Approvals and reject/reopen stay with managers on the job page.
-  const nextStep = (t) => (TRANSITIONS[t.stage] || []).find((a) => !a.manager && !a.comment && a.action !== 'Schedule');
+  const nextStep = (t) => transitionsFor(t).find((a) => !a.manager && !a.comment && a.action !== 'Schedule');
 
   const taskColumns = [
     { key: 'name', label: 'Task', primary: true, render: (t) => <div className="stack"><strong>{t.name}</strong><small>{t.id}{t.repeat ? ` · repeats: ${repeatLabel(t.repeat).toLowerCase()}` : ''}</small></div> },
@@ -118,6 +123,11 @@ export default function WorkshopDashboard() {
     { key: 'who', label: 'Responsible', render: (e) => e.responsible },
   ];
 
+  const todo = [
+    ...myOverdue.map((e) => ({ id: `eq-${e.id}`, tone: 'danger', title: `Check ${e.id}: ${e.name}`, detail: `${e.location} · was due ${formatShort(nextDue(e))}, ${daysOverdue(e, key)} days late`, action: { label: 'Mark checked', onClick: () => completeEquipmentCheck(e.id) } })),
+    ...mine.filter((t) => nextStep(t)).map((t) => ({ id: `tk-${t.id}`, tone: t.date < key ? 'danger' : 'info', title: t.name, detail: `${t.type} · ${formatShort(t.date)} · ${t.stage}`, action: { label: nextStep(t).action, onClick: () => actOnTask(t.id, nextStep(t).action) } })),
+  ];
+
   return (
     <div className="dash">
       <PageHeader eyebrow={fullDate()} title="Workshop Dashboard" subtitle="Workshop tasks, equipment checks and the equipment register.">
@@ -125,44 +135,41 @@ export default function WorkshopDashboard() {
       </PageHeader>
 
       <div className="kpis">
-        <KpiCard icon={ClipboardList} label="Open workshop tasks" value={open.length} note={`${mine.length} assigned to you`} />
+        <KpiLink icon={ClipboardList} label="Open workshop tasks" value={open.length} note={`${mine.length} assigned to you`} onClick={() => { setSection('tasks'); setTaskView('all'); }} active={section === 'tasks'} />
         <KpiCard icon={AlertTriangle} label="My overdue equipment checks" value={myOverdue.length} tone={myOverdue.length ? 'danger' : 'brand'} note={`${overdueAll.length} overdue in the whole workshop`} />
-        <KpiCard icon={Wrench} label="Equipment in service" value={inService} note={`${equipment.length} items in the register`} />
+        <KpiLink icon={Wrench} label="Equipment in service" value={inService} note={`${equipment.length} items in the register`} onClick={() => setSection('register')} active={section === 'register'} />
       </div>
+
+      <ToDoList items={todo} empty="Nothing needs you right now. Your equipment checks are up to date." />
 
       <HoursNotFilled person={me} />
 
-      <CalendarCard title="Workshop calendar" events={events} typeColors={fabTypeColors} defaultView="Week" />
-
-      <div className="fab-filters">
-        <div className="segmented" role="tablist" aria-label="Task filter">
-          {[['all', 'All open', open.length], ['mine', 'My open', mine.length]].map(([id, label, n]) => (
-            <button key={id} type="button" role="tab" aria-selected={taskView === id} className={taskView === id ? 'on' : ''} onClick={() => setTaskView(id)}>{label}<em>{n}</em></button>
-          ))}
-        </div>
+      <div className="ui-scope font-sans">
+        <SavedViews label="Show" value={section} onChange={setSection} views={[{ id: 'tasks', label: 'Workshop tasks' }, { id: 'calendar', label: 'Calendar' }, { id: 'register', label: 'Equipment register' }]} />
       </div>
-      <Card title="Workshop tasks" flush>
-        <ResponsiveTable columns={taskColumns} rows={rows} empty="No workshop tasks in this view" />
-      </Card>
 
-      <div className="fab-filters" />
-      <Card title="My overdue equipment checks" flush>
-        <ResponsiveTable columns={dueColumns} rows={myOverdue} empty="Nothing overdue. Your equipment checks are up to date." />
-      </Card>
+      {section === 'calendar' && <CalendarCard title="Workshop calendar" events={events} typeColors={fabTypeColors} defaultView="Week" />}
 
-      <div className="fab-filters">
-        <label className="search"><Search size={16} aria-hidden="true" />
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by tool ID, name or location" aria-label="Filter equipment" />
-        </label>
-        <div className="segmented" role="tablist" aria-label="Equipment status">
-          {['All', 'In service', 'Off hire'].map((s) => (
-            <button key={s} type="button" role="tab" aria-selected={status === s} className={status === s ? 'on' : ''} onClick={() => setStatus(s)}>{s}</button>
-          ))}
-        </div>
-      </div>
-      <Card title="Register of equipment" flush>
-        <ResponsiveTable columns={registerColumns} rows={register} empty="No equipment matches" />
-      </Card>
+      {section === 'tasks' && (
+        <Card title="Workshop tasks" flush action={<div className="ui-scope font-sans"><SavedViews label="Task filter" value={taskView} onChange={setTaskView} views={[{ id: 'all', label: 'All open', count: open.length }, { id: 'mine', label: 'My open', count: mine.length }]} /></div>}>
+          <ResponsiveTable columns={taskColumns} rows={rows} empty="No workshop tasks in this view" />
+        </Card>
+      )}
+
+      {section === 'register' && (
+        <>
+          <div className="ui-scope flex flex-wrap items-center gap-2 font-sans">
+            <SearchBox value={q} onChange={setQ} placeholder="Filter by tool ID, name or location" label="Filter equipment" />
+            <SavedViews label="Equipment status" value={status} onChange={setStatus} views={['All', 'In service', 'Off hire'].map((x) => ({ id: x, label: x }))} />
+          </div>
+          <Card title="Register of equipment" flush>
+            <ResponsiveTable columns={registerColumns} rows={register} empty="No equipment matches" />
+          </Card>
+          <Card title="My overdue equipment checks" flush>
+            <ResponsiveTable columns={dueColumns} rows={myOverdue} empty="Nothing overdue. Your equipment checks are up to date." />
+          </Card>
+        </>
+      )}
       <p className="muted"><Link to="/equipment">Manage equipment, chemicals and locations</Link> · <Link to="/fabrication">Fab tasks for jobs are on the Fabrication page</Link></p>
 
       {creating && <NewWorkshopTaskModal onClose={() => setCreating(false)} />}

@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui-kit/dialog';
+import { cn } from '../lib/utils';
 
 const TONES = {
   // job + task stages (names from the Creator export)
-  Preparation: 'gray', 'In Progress': 'blue', 'On Hold': 'amber', Completed: 'green',
-  'Completed - Closed': 'green', Cancelled: 'red', 'Complete - Not Used': 'gray',
-  'Awaiting Scheduling': 'gray', Scheduled: 'blue', 'Manager Review': 'purple', Rejected: 'red', Reopen: 'amber',
-  'Not Started': 'gray', 'Client Review': 'purple', 'Awaiting Submission': 'amber', 'Approved & Completed': 'green',
+  // Same colours as StageBadge: grey not started, blue scheduled, amber in progress, purple in review, green done.
+  Preparation: 'gray', 'In Progress': 'amber', 'On Hold': 'gray', Completed: 'green',
+  'Completed - Closed': 'green', Cancelled: 'gray', 'Complete - Not Used': 'gray',
+  'Awaiting Scheduling': 'gray', Scheduled: 'blue', 'Manager Review': 'purple', Rejected: 'red', Reopen: 'red',
+  'Not Started': 'gray', 'Client Review': 'amber', 'Awaiting Submission': 'amber', 'Approved & Completed': 'green',
+  'To be Assigned': 'gray', Assigned: 'blue', Open: 'blue',
   // SWMS
   Created: 'red', 'PM Signed': 'amber', 'TL Signed': 'amber', Closed: 'gray', 'Not Required': 'gray',
 };
@@ -90,22 +92,26 @@ export function ResponsiveTable({ columns, rows, empty = 'Nothing to show' }) {
   );
 }
 
-export function Modal({ title, onClose, children }) {
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
+// Every pop-up form in the app. Built on the shadcn/ui Dialog (Radix): focus stays inside, Esc and the
+// backdrop close it, and screen readers announce the title. The "modal" class is kept for existing tests.
+export function Modal({ title, onClose, children, wide = false }) {
   return (
-    <div className="modal-scrim" onMouseDown={onClose}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2 id="modal-title">{title}</h2>
-          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}><X size={18} /></button>
-        </div>
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent
+        className={cn('modal max-h-[92vh] gap-0 overflow-y-auto p-0', wide ? 'sm:max-w-2xl' : 'sm:max-w-[520px]')}
+        aria-describedby={undefined}
+        onOpenAutoFocus={(e) => {
+          // Keep the field a form marks autoFocus; otherwise focus the dialog itself rather than its first button.
+          e.preventDefault();
+          const box = e.currentTarget;
+          requestAnimationFrame(() => { if (box && !box.contains(document.activeElement)) box.focus(); });
+        }}
+      >
+        <DialogHeader className="px-5 pb-1 pr-12 pt-5 text-left">
+          <DialogTitle id="modal-title" className="text-lg font-bold leading-snug">{title}</DialogTitle>
+        </DialogHeader>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

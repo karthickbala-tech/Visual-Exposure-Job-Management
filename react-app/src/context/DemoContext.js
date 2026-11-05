@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ROLES, designTasks, fabTasks, installTasks, seedJobs, seedSwms } from '../data/mockData';
-import { TRANSITIONS } from '../lib/workflow';
+import { transitionsFor } from '../lib/workflow';
 import { crewOf, roleOf, stepTitle, submitBlockReason, taskSwmsStatus, validateStep } from '../lib/checklists';
 import { applyAction, subtaskDraft } from '../lib/taskActions';
 import { seedChecklistRecords, seedHoursLog, seedTimesheets } from '../data/hoursSeed';
@@ -9,7 +9,8 @@ import { seedIssues } from '../data/issuesSeed';
 import { setExpiryDays } from '../lib/compliance';
 import { VE_NAME, docTypes, inductionTypes, seedCompanies, seedCompanyDocs, seedInductions, seedTickets, seedWorkers, ticketTypes } from '../data/workersSeed';
 import { ZERO_PAY, calcPay } from '../lib/payRules';
-import { shortName } from '../lib/people';
+import { crewFields, membersOf, shortName } from '../lib/people';
+import { seedSigns, seedSites } from '../data/jobSitesSeed';
 import { seedChemicals, seedDevices, seedEquipment, seedLocations } from '../data/equipmentSeed';
 import { nextToolId, offHireOnFinish } from '../lib/equipment';
 import { toKey, today } from '../lib/dates';
@@ -25,6 +26,10 @@ const pad = (n) => String(n).padStart(2, '0');
 const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 
 const CLOSED_JOB_MSG = 'This job is closed, so tasks cannot be added to it.';
+
+// Fields a task edit may change (TSK-6). Stage, hours booked and history only change through actions.
+const EDITABLE = ['name', 'date', 'type', 'quoted', 'proposed', 'spec', 'description', 'signGroup', 'hiredEquipment', 'owner'];
+const sameList = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
 
 // TSK-5 sample attachments. Demo only: names and sizes, no file contents.
 const seedAttachments = [
@@ -72,6 +77,8 @@ export function DemoProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [attachments, setAttachments] = useState(seedAttachments);
   const [notifications, setNotifications] = useState(SEED_NOTIFICATIONS);
+  const [sites] = useState(seedSites);
+  const [signs, setSigns] = useState(seedSigns);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const [toast, setToast] = useState(null);
@@ -121,9 +128,9 @@ export function DemoProvider({ children }) {
   const actOnTask = useCallback((id, action, comment = '', extra = null) => {
     const who = ROLES[roleId].name;
     const task = tasks.find((t) => t.id === id);
-    const step = task && (TRANSITIONS[task.stage] || []).find((a) => a.action === action);
-    if (!step) return false;
-    if (task.kind === 'design' && action === 'Complete design work' && !(task.booked > 0)) { notify('Book hours before completing a design task.'); return false; }
+    const step = task && transitionsFor(task).find((a) => a.action === action);
+    if (!step || step.assign) return false; // Assign needs a designer: assignDesign
+    if (step.comment && !String(comment).trim()) { notify('A comment is required.'); return false; }
     if (action === 'Submit for approval') {
       if (task.kind === 'design' && !(task.booked > 0)) { notify('Book hours before submitting a design task.'); return false; }
       const why = submitBlockReason(task, checklists);
@@ -131,9 +138,9 @@ export function DemoProvider({ children }) {
     }
     const text = comment ? `${action}: ${comment}` : action;
     setTasks((prev) => prev.map((t) => (t.id !== id ? t : {
-      ...t, ...(extra || {}), stage: (t.kind === 'design' && action === 'Approve') ? 'Approved & Completed' : step.to,
+      ...t, ...(extra || {}), stage: step.to,
       ...(action === 'Reject' && t.kind === 'install' ? { subStage: 'On Site' } : {}),
-      history: [{ at: stamp(), who, text, from: t.stage, to: (t.kind === 'design' && action === 'Approve') ? 'Approved & Completed' : step.to }, ...(t.history || [])],
+      history: [{ at: stamp(), who, text, from: t.stage, to: step.to }, ...(t.history || [])],
     })));
     if (action === 'Reject') {
       setChecklists((prev) => prev.map((c) => {
@@ -145,7 +152,7 @@ export function DemoProvider({ children }) {
     const jobPm = jobs.find((j) => j.id === task.jobId)?.pm || '';
     const typeLabel = { install: 'Install', fab: 'Fabrication', design: 'Design' }[task.kind];
     if (action === 'Submit for approval') logNotify('task.submitted', { type: typeLabel, kind: task.kind, pm: jobPm, ref: task.id });
-    if (action === 'Reject') logNotify('task.rejected', { type: typeLabel, task: task.name, assignees: [task.leader, task.member].filter(Boolean), ref: task.id });
+    if (action === 'Reject') logNotify('task.rejected', { type: typeLabel, task: task.name, assignees: crewOf(task), ref: task.id });
     const flagged = extra?.pmReview && (extra.pmReview.ohs === 'Yes' || extra.pmReview.mgmtReview);
     notify(flagged ? 'Approved. The installation manager and the inform-also list would be emailed (demo)' : `${action} done`);
     return true;
@@ -188,7 +195,7 @@ export function DemoProvider({ children }) {
     setTasks((prev) => {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'fab').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
-        id: `F${n}`, kind: 'fab', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '', spec: t.spec || {}, parentId: t.parentId || null,
+        id: `F${n}`, kind: 'fab', name: t.name, jobId: t.jobId, type: t.type, date: t.date, ...crewFields(t.leader, t.members || [t.member]), spec: t.spec || {}, parentId: t.parentId || null, signGroup: t.signGroup || '',
         stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0,
         ...(t.type === 'Workshop' && cleanRepeat(t.repeat) ? { repeat: cleanRepeat(t.repeat) } : {}),
         history: [{ at: stamp(), who, text: 'Task created' }],
@@ -198,12 +205,78 @@ export function DemoProvider({ children }) {
     return true;
   }, [roleId, jobs, notify]);
 
-  const scheduleTask = useCallback((id, { date, leader, member }) => {
+  // TSK-3: team leader, crew and date move the task to Scheduled. Checklists of people taken off the crew are removed,
+  // and everyone still on it keeps theirs, so running it twice changes nothing.
+  const scheduleTask = useCallback((id, { date, leader, members, member }) => {
     const who = ROLES[roleId].name;
+    const crew = crewFields(leader, members || [member]);
+    const keep = [crew.leader, ...crew.members];
     setTasks((prev) => prev.map((t) => (t.id === id
-      ? { ...t, date, leader, member: member || '', stage: 'Scheduled', history: [{ at: stamp(), who, text: `Scheduled for ${leader}` }, ...(t.history || [])] } : t)));
+      ? {
+        ...t, date, ...crew, stage: t.stage === 'Awaiting Scheduling' ? 'Scheduled' : t.stage,
+        history: [{ at: stamp(), who, text: `Scheduled for ${keep.join(', ')} on ${date}`, ...(t.stage === 'Awaiting Scheduling' ? { from: t.stage, to: 'Scheduled' } : {}) }, ...(t.history || [])],
+      } : t)));
+    setChecklists((prev) => prev.filter((c) => c.taskId !== id || keep.includes(c.person)));
     notify('Task scheduled');
   }, [roleId, notify]);
+
+  // TSK-6: edit a task's details. Crew changes follow the same rule as scheduling.
+  const updateTask = useCallback((id, patch) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return false;
+    const who = ROLES[roleId].name;
+    const clean = Object.fromEntries(Object.entries(patch).filter(([k]) => EDITABLE.includes(k)));
+    let crew = null;
+    if (task.kind !== 'design' && ('leader' in patch || 'members' in patch)) {
+      crew = crewFields(patch.leader ?? task.leader, patch.members ?? membersOf(task));
+      if (crew.leader === task.leader && sameList(crew.members, membersOf(task))) crew = null;
+    }
+    const changed = Object.keys(clean).filter((k) => JSON.stringify(clean[k] ?? '') !== JSON.stringify(task[k] ?? ''));
+    if (changed.length === 0 && !crew) { notify('Nothing changed'); return true; }
+    const notes = [...changed, ...(crew ? ['crew'] : [])].join(', ');
+    setTasks((prev) => prev.map((t) => (t.id !== id ? t : {
+      ...t, ...clean, ...(crew || {}),
+      ...(crew && !crew.leader && t.stage === 'Scheduled' ? { stage: 'Awaiting Scheduling' } : {}),
+      ...(crew && crew.leader && t.stage === 'Awaiting Scheduling' ? { stage: 'Scheduled' } : {}),
+      ...(t.kind === 'design' && 'date' in clean ? { due: clean.date } : {}),
+      history: [{ at: stamp(), who, text: `Updated ${notes}` }, ...(t.history || [])],
+    })));
+    if (crew) {
+      const keep = [crew.leader, ...crew.members];
+      setChecklists((prev) => prev.filter((c) => c.taskId !== id || keep.includes(c.person)));
+    }
+    notify('Task saved');
+    return true;
+  }, [tasks, roleId, notify]);
+
+  // FSD 4.4: a task with booked hours can only be deleted by an admin. Deletes are soft, so hours and history stay for audit.
+  const deleteTask = useCallback((id, reason = '') => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return false;
+    if (!['admin', 'pm', 'fabManager'].includes(roleId)) { notify('Only a manager can delete a task.'); return false; }
+    if ((task.booked || 0) > 0 && roleId !== 'admin') { notify('Only an admin can delete a task that has booked hours.'); return false; }
+    const who = ROLES[roleId].name;
+    setTasks((prev) => prev.map((t) => (t.id === id
+      ? { ...t, deleted: true, deletedAt: toKey(today()), deletedBy: who, history: [{ at: stamp(), who, text: reason ? `Deleted: ${reason}` : 'Deleted' }, ...(t.history || [])] } : t)));
+    notify(`${task.name} deleted. Its WorkDrive folder is renamed "(DELETED)" (demo)`);
+    return true;
+  }, [tasks, roleId, notify]);
+
+  // DES-1: the PM assigns a designer. To be Assigned moves to Assigned; on an Assigned task it changes the designer.
+  const assignDesign = useCallback((id, owner) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task || task.kind !== 'design' || !owner) return false;
+    if (!['To be Assigned', 'Assigned'].includes(task.stage)) { notify('The designer can only be changed before work starts.'); return false; }
+    const who = ROLES[roleId].name;
+    setTasks((prev) => prev.map((t) => (t.id === id ? {
+      ...t, owner, stage: 'Assigned',
+      history: [{ at: stamp(), who, text: `Assigned to ${owner}`, ...(t.stage !== 'Assigned' ? { from: t.stage, to: 'Assigned' } : {}) }, ...(t.history || [])],
+    } : t)));
+    if (task.owner && task.owner !== owner) setChecklists((prev) => prev.filter((c) => c.taskId !== id));
+    notify(`${task.name} assigned to ${owner}`);
+    return true;
+  }, [tasks, roleId, notify]);
+
 
   const addInstallTask = useCallback((t) => {
     if (isClosedJob(jobs.find((j) => j.id === t.jobId))) { notify(CLOSED_JOB_MSG); return false; }
@@ -212,7 +285,7 @@ export function DemoProvider({ children }) {
     setTasks((prev) => {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'install').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
-        id: `I${n}`, kind: 'install', name: t.name, jobId: t.jobId, type: t.type, date: t.date, leader: t.leader || '', member: t.member || '', spec: t.spec || {}, parentId: t.parentId || null,
+        id: `I${n}`, kind: 'install', name: t.name, jobId: t.jobId, type: t.type, date: t.date, ...crewFields(t.leader, t.members || [t.member]), spec: t.spec || {}, parentId: t.parentId || null, signGroup: t.signGroup || '',
         stage: t.leader ? 'Scheduled' : 'Awaiting Scheduling', swms: needsSwms ? 'Created' : 'Not Required', quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0, hiredEquipment: t.hiredEquipment || [],
         history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
@@ -339,6 +412,36 @@ export function DemoProvider({ children }) {
     return id;
   }, [companies, workers, notify]);
 
+  // JOB-3: signs on a job. Sign edits go to the CRM Assets module in the Catalyst build.
+  const addSign = useCallback((sign) => {
+    setSigns((prev) => {
+      const n = Math.max(0, ...prev.map((x) => Number(String(x.id).slice(3)) || 0)) + 1;
+      return [...prev, { deal: 'Won', artwork: 'Not started', manufacturing: 'Not started', install: 'Not started', rev: 'A', qty: 1, ...sign, id: `SG-${n}` }];
+    });
+    notify(`Sign added: ${sign.name}. CRM Assets updated (demo)`);
+  }, [notify]);
+
+  const updateSign = useCallback((id, patch) => {
+    setSigns((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    notify('Sign saved. CRM Assets updated (demo)');
+  }, [notify]);
+
+  // Edit a worker's profile. The hourly rate is admin only (PII, FSD section 10).
+  const updateWorker = useCallback((id, patch) => {
+    const clean = { ...patch };
+    if (roleId !== 'admin') delete clean.hourlyRate;
+    setWorkers((prev) => prev.map((w) => (w.id === id ? { ...w, ...clean } : w)));
+    notify('Worker saved');
+  }, [roleId, notify]);
+
+  // Add a ticket or induction the worker was not given automatically (for example a site-specific induction).
+  const addComplianceItem = useCallback((kind, rec) => {
+    const set = kind === 'ticket' ? setTickets : setInductions;
+    const prefix = kind === 'ticket' ? 'TK' : 'IN';
+    set((prev) => [{ ref: '', issue: '', expiry: '', ...rec, id: `${prefix}-${Date.now()}` }, ...prev]);
+    notify(kind === 'ticket' ? 'Ticket added' : 'Induction added');
+  }, [notify]);
+
   const addCompany = useCallback((c) => {
     const id = `C-${Math.max(0, ...companies.map((x) => Number(x.id.slice(2)) || 0)) + 1}`;
     const need = docTypes.filter((d) => d.required);
@@ -359,11 +462,11 @@ export function DemoProvider({ children }) {
     setTasks((prev) => {
       const n = Math.max(0, ...prev.filter((x) => x.kind === 'design').map((x) => Number(String(x.id).slice(1)) || 0)) + 1;
       return [{
-        id: `D${n}`, kind: 'design', name: t.name, jobId: t.jobId, type: t.type, owner: t.owner, stage: 'Not Started', due: t.due, date: t.due,
+        id: `D${n}`, kind: 'design', name: t.name, jobId: t.jobId, type: t.type, owner: t.owner || '', stage: t.owner ? 'Assigned' : 'To be Assigned', due: t.due, date: t.due,
         quoted: t.quoted || 0, proposed: t.proposed || 0, booked: 0, description: t.description || '', history: [{ at: stamp(), who, text: 'Task created' }],
       }, ...prev];
     });
-    notify(`Design task created for ${t.owner}. Folder created (demo).`);
+    notify(t.owner ? `Design task created for ${t.owner}. Folder created (demo).` : 'Design task created. Assign a designer to start it. Folder created (demo).');
     return true;
   }, [roleId, jobs, notify]);
 
@@ -450,9 +553,14 @@ export function DemoProvider({ children }) {
     });
     const log = (text) => ({ at: stamp(), who, text });
     const startNow = task.stage === 'Scheduled' && role === 'TL';
+    // WORKFLOWS section 6: the designer's pre-job checklist opens the task; the post-job checklist sends it for submission.
+    let designTo = null;
+    if (task.kind === 'design' && key === 'pre1' && task.stage === 'In Progress') designTo = 'Open';
+    if (task.kind === 'design' && key === 'post2' && ['Open', 'Reopen'].includes(task.stage)) designTo = 'Awaiting Submission';
+    const moveTo = startNow ? 'In Progress' : designTo;
     setTasks((prev) => prev.map((t) => (t.id !== taskId ? t : {
-      ...t, ...(startNow ? { stage: 'In Progress' } : {}),
-      history: [log(`${person} completed ${title}`), ...(startNow ? [{ ...log('Start'), from: 'Scheduled', to: 'In Progress' }] : []), ...(t.history || [])],
+      ...t, ...(moveTo ? { stage: moveTo } : {}),
+      history: [log(`${person} completed ${title}`), ...(moveTo ? [{ ...log(startNow ? 'Start' : title), from: t.stage, to: moveTo }] : []), ...(t.history || [])],
     })));
 
     if (key === 'post2') bookHours(taskId, Number(data.hours), Number(data.unbilled) || 0);
@@ -460,7 +568,7 @@ export function DemoProvider({ children }) {
     if (data.ohsConcern === 'Yes') {
       addIssue({
         subject: `${task.kind === 'install' ? 'WHS' : 'OH&S'} concern: ${task.name}`, description: data.ohsDetail.trim(),
-        department: task.kind === 'install' ? 'Install' : 'Workshop', priority: 'High', taskId,
+        department: task.kind === 'install' ? 'Install' : task.kind === 'design' ? 'Management' : 'Workshop', priority: 'High', taskId,
         review: task.kind === 'install' ? 'WHS Reported' : 'OH&S Reported',
       });
     }
@@ -509,7 +617,7 @@ export function DemoProvider({ children }) {
   const lastSig = useRef(null);
   useEffect(() => {
     const sigs = {};
-    tasks.forEach((t) => { sigs[t.jobId] = `${sigs[t.jobId] || ''}|${t.id}:${t.stage}:${t.quoted || 0}`; });
+    tasks.forEach((t) => { sigs[t.jobId] = `${sigs[t.jobId] || ''}|${t.id}:${t.stage}:${t.quoted || 0}:${t.deleted ? 'x' : ''}`; });
     const before = lastSig.current;
     lastSig.current = sigs;
     if (!before) return;
@@ -517,7 +625,7 @@ export function DemoProvider({ children }) {
     if (changed.length === 0) return;
     setJobs((prev) => prev.map((j) => {
       if (!changed.includes(j.id) || j.internal) return j;
-      const patch = rollup(j, tasks.filter((t) => t.jobId === j.id));
+      const patch = rollup(j, tasks.filter((t) => t.jobId === j.id && !t.deleted));
       return patch ? { ...j, ...patch } : j;
     }));
   }, [tasks]);
@@ -595,10 +703,13 @@ export function DemoProvider({ children }) {
   }, [tasks, checklists, bookHours]);
 
   const clientJobs = useMemo(() => jobs.filter((j) => !j.internal), [jobs]);
+  const liveTasks = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
 
   const value = useMemo(() => ({
-    roleId, role: ROLES[roleId], changeRole, updateJob, notifications, retryNotification, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
-  }), [roleId, changeRole, updateJob, notifications, retryNotification, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast]);
+    roleId, role: ROLES[roleId], changeRole, updateJob, notifications, retryNotification, jobs: clientJobs, allJobs: jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, tasks: liveTasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+    updateTask, deleteTask, assignDesign, sites, signs, addSign, updateSign, updateWorker, addComplianceItem,
+  }), [roleId, changeRole, updateJob, notifications, retryNotification, clientJobs, jobs, equipment, completeEquipmentCheck, chemicals, locations, devices, addEquipment, updateEquipment, setEquipmentStatus, addChemical, updateChemical, addLocation, updateLocation, deleteLocation, checklists, completeChecklistStep, runTaskAction, createSubtask, closeJob, attachments, addAttachments, deleteAttachment, settings, updateSettings, fillHours, swms, liveTasks, addJob, signSwms, actOnTask, setSubStage, bookHours, addTask, scheduleTask, addInstallTask, signSwmsTL, updateSwms, addCrewSignature, hoursLog, timesheets, checkIn, startBreak, endBreak, checkOut, addTimesheet, issues, addIssue, addIssueUpdate, createCrmDeal, workers, companies, tickets, inductions, companyDocs, addWorker, addCompany, updateCompliance, addDesignTask, notify, toast, dismissToast,
+    updateTask, deleteTask, assignDesign, sites, signs, addSign, updateSign, updateWorker, addComplianceItem]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

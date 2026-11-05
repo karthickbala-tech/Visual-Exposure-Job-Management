@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui-kit/collapsible';
 import { CalendarDays, CheckCircle2, Clock, Hourglass, ListChecks, MapPin, Users } from 'lucide-react';
 import CalendarCard from '../components/CalendarCard';
 import ChecklistDialog from '../components/ChecklistDialog';
@@ -9,8 +11,8 @@ import { fabTypeColors } from '../data/fabTypes';
 import { installTypeStyles } from '../data/mockData';
 import { useDemo } from '../context/DemoContext';
 import { formatShort, fullDate, greeting, toKey, today } from '../lib/dates';
-import { CLOSED_STAGES, MAX_ENTRY_HOURS, SUBSTAGES, TRANSITIONS } from '../lib/workflow';
-import { WARN_HOURS, checklistPlan, needsHoursConfirm, nextStep, stepTitle, submitBlockReason } from '../lib/checklists';
+import { CLOSED_STAGES, MAX_ENTRY_HOURS, SUBSTAGES, transitionsFor } from '../lib/workflow';
+import { WARN_HOURS, checklistPlan, crewOf, needsHoursConfirm, nextStep, stepTitle, submitBlockReason } from '../lib/checklists';
 import './MyDay.css';
 
 // Fab Worker and Installer home: "my" tasks only, big touch targets, one clear next step.
@@ -35,8 +37,13 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
   const mine = checklists.find((c) => c.taskId === task.id && c.person === me);
   const next = nextStep(task, mine);
   // Pre-job steps start the task, so Start is only offered when there is no pre-job checklist.
-  const steps = (TRANSITIONS[task.stage] || []).filter((s) => !s.manager && !(s.action === 'Start' && plan.pre));
+  const steps = transitionsFor(task).filter((s) => !s.manager && !(s.action === 'Start' && plan.pre));
   const sentBack = task.stage === 'Rejected' || task.stage === 'Reopen';
+  // One plain sentence telling the crew member what to do now.
+  const nextLine = next.step && ['Scheduled', 'In Progress', 'Rejected', 'Reopen'].includes(task.stage)
+    ? `fill in the ${stepTitle(task, next.step).toLowerCase()}.`
+    : task.stage === 'Manager Review' ? 'nothing, the manager is reviewing your work.'
+      : steps[0] ? `${steps[0].action.toLowerCase()}.` : '';
 
   const blocked = (step) => {
     if (step.action !== 'Submit for approval') return '';
@@ -70,12 +77,13 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
 
       <div className="mtask-meta">
         <span><CalendarDays size={14} aria-hidden="true" /> {formatShort(task.date)}</span>
-        <span><Users size={14} aria-hidden="true" /> {[task.leader, task.member].filter(Boolean).join(', ') || 'Unassigned'}</span>
+        <span><Users size={14} aria-hidden="true" /> {crewOf(task).join(', ') || 'Unassigned'}</span>
         {task.type && <span><MapPin size={14} aria-hidden="true" /> {task.type}</span>}
         <span><Clock size={14} aria-hidden="true" /> {task.booked || 0}h of {task.quoted}h</span>
         {isInstall && <span>SWMS <Chip value={swmsStatus} /></span>}
       </div>
 
+      {nextLine && <p className="mtask-next"><b>Next:</b> {nextLine}</p>}
       {sentBack && <p className="mtask-note" role="status">Sent back by the manager: {task.history?.[0]?.text || 'see the history'}</p>}
       {isInstall && swmsStatus === 'Created' && <p className="mtask-note warn">The SWMS has not been signed by the PM yet. Check before going on site.</p>}
 
@@ -93,7 +101,7 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
           const why = blocked(step);
           return (
             <button key={step.action} type="button" disabled={Boolean(why)} title={why}
-              className={`btn ${step.action === 'Submit for approval' ? 'btn-primary' : 'btn-ghost'}`}
+              className={`btn ${step.action === 'Submit for approval' && !(next.step && ['Scheduled', 'In Progress', 'Rejected', 'Reopen'].includes(task.stage)) ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => actOnTask(task.id, step.action)}>{step.action}</button>
           );
         })}
@@ -103,7 +111,7 @@ function TaskCard({ task, jobName, swmsStatus, late }) {
 
       {!next.step && next.message && (plan.pre || plan.post) && <small className="muted">{next.message}</small>}
       {plan.post && task.stage !== 'Scheduled' && (
-        <small className="muted">Closure: {[task.leader, task.member].filter(Boolean).map((p) => `${p} ${checklists.find((c) => c.taskId === task.id && c.person === p)?.steps.post2 ? 'done' : 'open'}`).join(', ')}</small>
+        <small className="muted">Closure: {crewOf(task).map((p) => `${p} ${checklists.find((c) => c.taskId === task.id && c.person === p)?.steps.post2 ? 'done' : 'open'}`).join(', ')}</small>
       )}
       {dialog && <ChecklistDialog task={task} person={me} step={dialog} swmsStatus={swmsStatus} onClose={() => setDialog(null)} />}
 
@@ -125,10 +133,10 @@ export default function MyDay() {
   const me = shortName(role.name);
   const key = toKey(today());
 
-  const mine = tasks.filter((t) => t.kind === kind && [t.leader, t.member].includes(me));
+  const mine = tasks.filter((t) => t.kind === kind && crewOf(t).includes(me));
   const open = mine.filter((t) => !CLOSED_STAGES.includes(t.stage) && t.stage !== 'On Hold');
   const groups = [
-    { id: 'late', title: 'Earlier and still open', list: open.filter((t) => t.date < key) },
+    { id: 'late', title: 'Overdue, still open', list: open.filter((t) => t.date < key) },
     { id: 'today', title: 'Today', list: open.filter((t) => t.date === key) },
     { id: 'soon', title: 'Coming up', list: open.filter((t) => t.date > key).sort((a, b) => a.date.localeCompare(b.date)) },
   ];
@@ -163,7 +171,6 @@ export default function MyDay() {
 
       {kind === 'fab' && <HoursNotFilled person={me} />}
 
-      <CalendarCard title="My calendar" events={events} typeColors={kind === 'install' ? installTypeStyles : fabTypeColors} defaultView="Week" />
 
       {groups.map((g) => (
         <section key={g.id} className={`myday-group ${g.id === 'late' ? 'late' : ''}`} aria-label={g.title}>
@@ -173,7 +180,24 @@ export default function MyDay() {
             : <div className="myday-cols">{g.list.map((t) => <TaskCard key={t.id} task={t} jobName={jobName(t.jobId)} swmsStatus={swmsFor(t)} late={g.id === 'late'} />)}</div>}
         </section>
       ))}
-      {post.length > 0 && <Card title="My post-job checklists" flush><ResponsiveTable columns={postCols} rows={post} /></Card>}
+      <div className="ui-scope grid gap-3 font-sans">
+        <Collapsible>
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border bg-card px-4 py-3 text-left text-sm font-semibold hover:bg-muted/50">
+            <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" /> My calendar
+            <span className="font-normal text-muted-foreground">this week and next</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3"><CalendarCard title="My calendar" events={events} typeColors={kind === 'install' ? installTypeStyles : fabTypeColors} defaultView="Week" /></CollapsibleContent>
+        </Collapsible>
+        {post.length > 0 && (
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border bg-card px-4 py-3 text-left text-sm font-semibold hover:bg-muted/50">
+              <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" /> My post-job checklists
+              <span className="font-normal text-muted-foreground">{post.filter((r) => !r.rec).length} open</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3"><Card flush><ResponsiveTable columns={postCols} rows={post} /></Card></CollapsibleContent>
+          </Collapsible>
+        )}
+      </div>
     </div>
   );
 }

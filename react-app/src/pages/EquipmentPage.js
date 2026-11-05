@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AlertTriangle, Boxes, FlaskConical, Plus, Search, Wrench } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import KpiLink from '../components/KpiLink';
 import { useDemo } from '../context/DemoContext';
 import { EQUIPMENT_TYPES, CHEMICAL_UNITS } from '../data/equipmentSeed';
 import { EQUIPMENT_EDITORS } from '../lib/access';
 import { daysOverdue, isOverdue, isWebUrl, nextDue, nextToolId, sdsMissing, sdsReviewDue } from '../lib/equipment';
-import { FAB_CREW } from '../lib/people';
+import { crewOptions } from '../lib/people';
 import { formatLong, formatShort, fullDate, toKey, today } from '../lib/dates';
 import './FabDashboard.css';
 import './EquipmentPage.css';
@@ -14,7 +15,8 @@ const field = (set) => (k) => (e) => set((x) => ({ ...x, [k]: e.target.value }))
 
 /* ---------- Equipment (EQP-1) ---------- */
 function EquipmentModal({ onClose }) {
-  const { equipment, locations, addEquipment } = useDemo();
+  const { equipment, locations, addEquipment, workers } = useDemo();
+  const FAB_CREW = crewOptions(workers, 'fab');
   const [f, setF] = useState({ name: '', type: EQUIPMENT_TYPES[0], location: locations[0]?.name || '', status: 'In service', intervalDays: '30', responsible: FAB_CREW[0], offHireRequired: false });
   const [error, setError] = useState('');
   const set = field(setF);
@@ -52,7 +54,8 @@ function EquipmentModal({ onClose }) {
 }
 
 function EquipmentDetail({ item, canEdit, onClose }) {
-  const { locations, updateEquipment } = useDemo();
+  const { locations, updateEquipment, workers } = useDemo();
+  const FAB_CREW = crewOptions(workers, 'fab', [item.responsible]);
   const [f, setF] = useState({ location: item.location, intervalDays: String(item.intervalDays), responsible: item.responsible, offHireRequired: !!item.offHireRequired });
   const [error, setError] = useState('');
   const set = field(setF);
@@ -118,7 +121,7 @@ function EquipmentTab({ canEdit }) {
     { key: 'who', label: 'Responsible', render: (e) => e.responsible },
     { key: 'action', label: 'Action', render: (e) => (
       <div className="row-actions">
-        {e.status === 'In service' && <button type="button" className="btn btn-primary btn-sm" onClick={() => completeEquipmentCheck(e.id)}>Mark checked</button>}
+        {e.status === 'In service' && <button type="button" className={`btn btn-sm ${isOverdue(e, key) ? 'btn-primary' : 'btn-ghost'}`} onClick={() => completeEquipmentCheck(e.id)}>Mark checked</button>}
         {canEdit && (e.status === 'In service'
           ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEquipmentStatus(e.id, 'Off hire')}>Off hire</button>
           : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEquipmentStatus(e.id, 'In service')}>Back in service</button>)}
@@ -130,8 +133,8 @@ function EquipmentTab({ canEdit }) {
     <>
       <div className="kpis">
         <KpiCard icon={Boxes} label="Equipment" value={equipment.length} note="in the register" />
-        <KpiCard icon={Wrench} label="In service" value={equipment.filter((e) => e.status === 'In service').length} note={`${equipment.filter((e) => e.status === 'Off hire').length} off hire`} />
-        <KpiCard icon={AlertTriangle} label="Overdue checks" value={overdue.length} tone={overdue.length ? 'danger' : 'brand'} note="in service and past their date" />
+        <KpiLink icon={Wrench} label="In service" value={equipment.filter((e) => e.status === 'In service').length} note={`${equipment.filter((e) => e.status === 'Off hire').length} off hire`} onClick={() => setStatus('In service')} active={status === 'In service'} />
+        <KpiLink icon={AlertTriangle} label="Overdue checks" value={overdue.length} tone={overdue.length ? 'danger' : 'brand'} note="in service and past their date" onClick={() => setStatus('Overdue')} active={status === 'Overdue'} />
       </div>
       <div className="eq-tools">
         <label className="search"><Search size={16} aria-hidden="true" />
@@ -145,6 +148,12 @@ function EquipmentTab({ canEdit }) {
         <span className="grow" />
         {canEdit && <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" /> Add equipment</button>}
       </div>
+      {status === 'Overdue' && rows.length > 1 && (
+        <div className="bulk-note" role="region" aria-label="Bulk actions">
+          <span><strong>{rows.length} overdue checks</strong> in this view.</span>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => { rows.forEach((e) => completeEquipmentCheck(e.id)); setStatus('All'); }}>Mark all {rows.length} checked</button>
+        </div>
+      )}
       <Card title="Equipment register" flush><ResponsiveTable columns={columns} rows={rows} empty="No equipment matches" /></Card>
       {adding && <EquipmentModal onClose={() => setAdding(false)} />}
       {shown && <EquipmentDetail item={shown} canEdit={canEdit} onClose={() => setOpen(null)} />}
@@ -245,7 +254,8 @@ function ChemicalsTab({ canEdit }) {
 
 /* ---------- Workshop locations (EQP-5) ---------- */
 function LocationModal({ item, onClose }) {
-  const { locations, addLocation, updateLocation } = useDemo();
+  const { locations, addLocation, updateLocation, workers } = useDemo();
+  const FAB_CREW = crewOptions(workers, 'fab', [item?.supervisor]);
   const [f, setF] = useState(item || { name: '', supervisor: FAB_CREW[0], notes: '' });
   const [error, setError] = useState('');
   const set = field(setF);

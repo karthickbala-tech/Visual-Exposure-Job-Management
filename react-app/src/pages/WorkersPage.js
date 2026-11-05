@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Building2, Clock, FileWarning, Plus, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Building2, Clock, FileWarning, Pencil, Plus, Users } from 'lucide-react';
 import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
 import PlaceholderPage from './PlaceholderPage';
+import KpiLink from '../components/KpiLink';
+import { SearchBox } from '../components/ListKit';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui-kit/sheet';
+import { Button } from '../components/ui-kit/button';
 import { useDemo } from '../context/DemoContext';
 import { COMPANY_TYPES, VE_NAME, WORKER_TYPES, docTypes, inductionTypes, ticketTypes } from '../data/workersSeed';
 import { STATUS_TONE, bucketOf, complianceSummary, expiryText, statusOf, worst } from '../lib/compliance';
@@ -90,6 +94,103 @@ function AddWorkerModal({ onClose }) {
   );
 }
 
+// Edit a worker's profile. Admin sets the hourly rate; anyone who manages workers can change the rest.
+function EditWorkerModal({ worker, onClose }) {
+  const { companies, updateWorker, settings, roleId } = useDemo();
+  const [f, setF] = useState({
+    name: worker.name, type: worker.type, primaryRole: worker.primaryRole || '', phone: worker.phone || '', email: worker.email || '',
+    start: worker.start || '', skills: worker.skills || '', hourlyRate: worker.hourlyRate ?? '', active: worker.active !== false,
+  });
+  const [error, setError] = useState('');
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const isVe = companies.find((c) => c.id === worker.companyId)?.name === VE_NAME;
+  const isAdmin = roleId === 'admin';
+  const submit = (e) => {
+    e.preventDefault();
+    if (!f.name.trim()) return setError('The worker\'s name is required.');
+    if (isVe && !f.primaryRole) return setError('Choose a primary role for a Visual Exposure worker.');
+    if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) return setError('Enter a valid email address.');
+    if (isAdmin && f.hourlyRate !== '' && (Number.isNaN(Number(f.hourlyRate)) || Number(f.hourlyRate) < 0)) return setError('The hourly rate must be zero or more.');
+    const patch = { ...f, name: f.name.trim(), primaryRole: isVe ? f.primaryRole : '' };
+    if (isAdmin) patch.hourlyRate = f.hourlyRate === '' ? undefined : Number(f.hourlyRate);
+    else delete patch.hourlyRate;
+    updateWorker(worker.id, patch);
+    return onClose();
+  };
+  return (
+    <Modal title={`Edit worker: ${worker.name}`} onClose={onClose}>
+      <form className="form" onSubmit={submit} noValidate>
+        <label>Full name<input autoFocus value={f.name} onChange={set('name')} /></label>
+        <div className="form-row">
+          <label>Worker type<select value={f.type} onChange={set('type')}>{[...new Set([f.type, ...WORKER_TYPES])].map((t) => <option key={t}>{t}</option>)}</select></label>
+          {isVe && <label>Primary role<select value={f.primaryRole} onChange={set('primaryRole')}><option value="">Choose…</option>{[...new Set([f.primaryRole, ...settings.primaryRoles].filter(Boolean))].map((r) => <option key={r}>{r}</option>)}</select></label>}
+        </div>
+        <div className="form-row">
+          <label>Phone<input value={f.phone} onChange={set('phone')} /></label>
+          <label>Email<input type="email" value={f.email} onChange={set('email')} /></label>
+        </div>
+        <div className="form-row">
+          <label>Start date<input type="date" value={f.start} onChange={set('start')} /></label>
+          {isAdmin && <label>Hourly rate ($)<input type="number" min="0" step="0.5" value={f.hourlyRate} onChange={set('hourlyRate')} /></label>}
+        </div>
+        <label>Skills<input value={f.skills} onChange={set('skills')} /></label>
+        <label className="check"><input type="checkbox" checked={f.active} onChange={(e) => setF((x) => ({ ...x, active: e.target.checked }))} />Active (untick when the worker leaves; their records are kept)</label>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <div className="form-actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary">Save worker</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// Add a ticket or induction the worker was not given automatically, for example a site induction for one job.
+function AddItemModal({ worker, kind, have, onClose }) {
+  const { addComplianceItem } = useDemo();
+  const types = kind === 'ticket' ? ticketTypes : inductionTypes;
+  const free = types.filter((t) => !have.includes(t.id));
+  const [f, setF] = useState({ typeId: free[0]?.id || '', ref: '', issue: '', expiry: '' });
+  const [error, setError] = useState('');
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const years = types.find((t) => t.id === f.typeId)?.years;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!f.typeId) return setError(`Choose a ${kind} type.`);
+    if (f.issue && f.expiry && f.expiry <= f.issue) return setError('The expiry date must be after the issue date.');
+    addComplianceItem(kind, { ...f, workerId: worker.id });
+    return onClose();
+  };
+  const suggest = () => {
+    if (!f.issue || !years) return;
+    const d = fromKey(f.issue);
+    setF((x) => ({ ...x, expiry: toKey(new Date(d.getFullYear() + years, d.getMonth(), d.getDate())) }));
+  };
+  return (
+    <Modal title={`Add ${kind === 'ticket' ? 'a ticket' : 'an induction'}: ${worker.name}`} onClose={onClose}>
+      <form className="form" onSubmit={submit} noValidate>
+        {free.length === 0 ? <p className="muted">{worker.name} already has every {kind} type. Add a new type in Admin first.</p> : (
+          <>
+            <label>{kind === 'ticket' ? 'Ticket' : 'Induction'}<select autoFocus value={f.typeId} onChange={set('typeId')}>{free.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+            <label>Reference number<input value={f.ref} onChange={set('ref')} /></label>
+            <div className="form-row">
+              <label>Issue date<input type="date" max={toKey(today())} value={f.issue} onChange={set('issue')} /></label>
+              <label>Expiry date<input type="date" value={f.expiry} onChange={set('expiry')} /></label>
+            </div>
+            {years > 0 && <button type="button" className="btn btn-ghost btn-sm" onClick={suggest} disabled={!f.issue}>Set expiry {years} years after issue</button>}
+            <small>No login details are stored for training portals (CMP-5).</small>
+          </>
+        )}
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <div className="form-actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          {free.length > 0 && <button type="submit" className="btn btn-primary">Add</button>}
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function AddCompanyModal({ onClose }) {
   const { addCompany } = useDemo();
   const [f, setF] = useState({ name: '', type: COMPANY_TYPES[0], phone: '', email: '', suburb: '', state: 'VIC' });
@@ -131,6 +232,46 @@ const itemsFor = (workerId, tickets, inductions) => [
   ...inductions.filter((t) => t.workerId === workerId).map((t) => ({ ...t, kind: 'induction', name: typeName(inductionTypes, t.typeId) })),
 ];
 
+// A worker opened from the list: contact details, compliance status and what needs doing, with the full profile one link away.
+function WorkerDrawer({ worker, company, onClose }) {
+  const { tickets, inductions } = useDemo();
+  if (!worker) return <Sheet open={false} onOpenChange={onClose} />;
+  const items = itemsFor(worker.id, tickets, inductions);
+  const todo = items.filter((i) => statusOf(i.expiry) !== 'Current');
+  const overall = worst(items.map((i) => i.expiry));
+  return (
+    <Sheet open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto bg-background p-0 sm:max-w-[440px]" aria-describedby={undefined}>
+        <SheetHeader className="space-y-1 border-b bg-card p-5 pr-12 text-left">
+          <SheetDescription>{worker.type}</SheetDescription>
+          <SheetTitle className="text-lg font-bold">{worker.name}</SheetTitle>
+          <div className="flex flex-wrap items-center gap-2 text-sm"><Chip value={overall} tone={STATUS_TONE[overall]} />{worker.active === false && <Chip value="Inactive" tone="gray" />}</div>
+        </SheetHeader>
+        <div className="grid gap-4 p-5 text-sm">
+          <dl className="m-0 grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2">
+            <dt className="text-muted-foreground">Company</dt><dd className="m-0">{company(worker.companyId)}</dd>
+            {worker.primaryRole && <><dt className="text-muted-foreground">Primary role</dt><dd className="m-0">{worker.primaryRole}</dd></>}
+            <dt className="text-muted-foreground">Phone</dt><dd className="m-0">{worker.phone ? <a href={`tel:${worker.phone}`}>{worker.phone}</a> : '-'}</dd>
+            <dt className="text-muted-foreground">Email</dt><dd className="m-0 break-all">{worker.email ? <a href={`mailto:${worker.email}`}>{worker.email}</a> : '-'}</dd>
+          </dl>
+          <div>
+            <h3 className="m-0 mb-2 text-sm font-bold">{todo.length ? `${todo.length} item${todo.length > 1 ? 's' : ''} to action` : 'All tickets and inductions are current'}</h3>
+            <ul className="m-0 grid list-none gap-2 p-0">
+              {todo.map((i) => (
+                <li key={i.id} className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2">
+                  <span><b>{i.name}</b><small className="block text-muted-foreground">{i.kind === 'ticket' ? 'Ticket' : 'Induction'} · {i.expiry ? `${formatShort(i.expiry)} (${expiryText(i.expiry)})` : 'not filled in'}</small></span>
+                  <StatusChip expiry={i.expiry} />
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Button asChild variant="outline"><Link to={`/workers/${worker.id}`} className="no-underline">Open full profile</Link></Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function WorkersPage() {
   const { workers, companies, tickets, inductions, companyDocs, roleId, role } = useDemo();
   const [tab, setTab] = useState('ve');
@@ -138,6 +279,8 @@ export function WorkersPage() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState('');
+  const [q, setQ] = useState('');
+  const [openId, setOpenId] = useState(null);
   const canManage = ['admin', 'pm'].includes(roleId);
   const selfOnly = ['installer','fabWorker','workshop','designer','contractor'].includes(roleId);
   const myWorker = workers.find((w) => w.name === role.name || w.name === role.name.replace(/\s+([A-Z]).*$/, ' $1.'));
@@ -147,13 +290,15 @@ export function WorkersPage() {
   const worker = (id) => workers.find((w) => w.id === id);
 
   const sum = complianceSummary({ workers: selfOnly ? workers.filter(w => w.id === myWorker?.id) : workers, companies, tickets: scopedTickets, inductions: scopedInductions, companyDocs: selfOnly ? [] : companyDocs, veName: VE_NAME, activeOnly: selfOnly ? false : activeOnly });
-  const veWorkers = sum.shownWorkers.filter((w) => company(w.companyId) === VE_NAME);
-  const subWorkers = sum.shownWorkers.filter((w) => company(w.companyId) !== VE_NAME);
+  const needle = q.trim().toLowerCase();
+  const hit = (text) => !needle || String(text || '').toLowerCase().includes(needle);
+  const veWorkers = sum.shownWorkers.filter((w) => company(w.companyId) === VE_NAME && hit(`${w.name} ${w.primaryRole} ${w.phone}`));
+  const subWorkers = sum.shownWorkers.filter((w) => company(w.companyId) !== VE_NAME && hit(`${w.name} ${company(w.companyId)}`));
   const all = [
     ...sum.tickets.map((t) => ({ ...t, kind: 'ticket', name: typeName(ticketTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId, years: ticketTypes.find((x) => x.id === t.typeId)?.years })),
     ...sum.inductions.map((t) => ({ ...t, kind: 'induction', name: typeName(inductionTypes, t.typeId), owner: worker(t.workerId)?.name, ownerId: t.workerId })),
   ];
-  const rows = all.filter((x) => filter === 'all' || bucketOf(x.expiry) === filter)
+  const rows = all.filter((x) => (filter === 'all' || bucketOf(x.expiry) === filter) && hit(`${x.owner} ${x.name} ${x.ref}`))
     .sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'));
   const b = sum.buckets;
   const split = (k) => `${b[k].tickets} tickets, ${b[k].inductions} inductions, ${b[k].docs} documents`;
@@ -161,7 +306,7 @@ export function WorkersPage() {
   const openItems = (w) => itemsFor(w.id, tickets, inductions).filter((i) => statusOf(i.expiry) !== 'Current').length;
 
   const workerCols = [
-    { key: 'name', label: 'Worker', primary: true, render: (w) => <div className="stack"><Link className="job-link" to={`/workers/${w.id}`}>{w.name}</Link><small>{w.type}{w.active ? '' : ' · Inactive'}</small></div> },
+    { key: 'name', label: 'Worker', primary: true, render: (w) => <div className="stack"><button type="button" className="link-btn text-left" onClick={() => setOpenId(w.id)}>{w.name}</button><small>{w.type}{w.active ? '' : ' · Inactive'}</small></div> },
     { key: 'role', label: 'Primary role', render: (w) => w.primaryRole || company(w.companyId) },
     { key: 'phone', label: 'Phone', render: (w) => w.phone || '-' },
     { key: 'status', label: 'Compliance', render: (w) => { const s = workerStatus(w); return <Chip value={s} tone={STATUS_TONE[s]} />; } },
@@ -208,13 +353,14 @@ export function WorkersPage() {
       {!selfOnly && <div className="kpis" aria-label="Compliance summary">
         <KpiCard icon={Users} label={activeOnly ? 'Active VE workers' : 'VE workers'} value={sum.workers.ve} note="employees" />
         <KpiCard icon={Users} label={activeOnly ? 'Active non-VE workers' : 'Non-VE workers'} value={sum.workers.nonVe} note="subcontractors" />
-        <KpiCard icon={AlertTriangle} label="Expired" value={b.Expired.total} tone={b.Expired.total ? 'danger' : 'brand'} note={split('Expired')} />
-        <KpiCard icon={Clock} label="Expires today" value={b.Today.total} tone={b.Today.total ? 'danger' : 'brand'} note={split('Today')} />
-        <KpiCard icon={Clock} label="Within 30 days" value={b.Soon.total} tone={b.Soon.total ? 'warn' : 'brand'} note={split('Soon')} />
-        <KpiCard icon={FileWarning} label="Not filled in" value={b.Incomplete.total} note="waiting for details" />
+        <KpiLink icon={AlertTriangle} label="Expired" value={b.Expired.total} tone={b.Expired.total ? 'danger' : 'brand'} note={split('Expired')} onClick={() => { setTab('compliance'); setFilter('Expired'); }} active={tab === 'compliance' && filter === 'Expired'} />
+        <KpiLink icon={Clock} label="Expires today" value={b.Today.total} tone={b.Today.total ? 'danger' : 'brand'} note={split('Today')} onClick={() => { setTab('compliance'); setFilter('Today'); }} active={tab === 'compliance' && filter === 'Today'} />
+        <KpiLink icon={Clock} label="Within 30 days" value={b.Soon.total} tone={b.Soon.total ? 'warn' : 'brand'} note={split('Soon')} onClick={() => { setTab('compliance'); setFilter('Soon'); }} active={tab === 'compliance' && filter === 'Soon'} />
+        <KpiLink icon={FileWarning} label="Not filled in" value={b.Incomplete.total} note="waiting for details" onClick={() => { setTab('compliance'); setFilter('Incomplete'); }} active={tab === 'compliance' && filter === 'Incomplete'} />
       </div>}
 
-      {!selfOnly && <div className="wk-tools">
+      {!selfOnly && <div className="wk-tools ui-scope font-sans">
+        <SearchBox value={q} onChange={setQ} placeholder="Search name, role, company or ticket" label="Search workers" />
         <div className="segmented" role="tablist" aria-label="Workers view">
           {TABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>)}
         </div>
@@ -241,6 +387,7 @@ export function WorkersPage() {
       {!selfOnly && tab === 'docs' && <Card flush><ResponsiveTable columns={docCols} rows={[...sum.docs].sort((a, b) => (a.expiry || '0000').localeCompare(b.expiry || '0000'))} empty="No company documents" /></Card>}
 
       {editing && <EditItemModal {...editing} onClose={() => setEditing(null)} />}
+      <WorkerDrawer worker={workers.find((w) => w.id === openId) || null} company={company} onClose={() => setOpenId(null)} />
       {adding === 'worker' && <AddWorkerModal onClose={() => setAdding('')} />}
       {adding === 'company' && <AddCompanyModal onClose={() => setAdding('')} />}
     </div>
@@ -251,6 +398,7 @@ export function WorkerDetail() {
   const { workerId } = useParams();
   const { workers, companies, tickets, inductions, role, roleId } = useDemo();
   const [editing, setEditing] = useState(null);
+  const [modal, setModal] = useState('');
   const w = workers.find((x) => x.id === workerId);
   if (!w) return <PlaceholderPage title="Worker not found" blurb="That worker does not exist in the demo data." />;
 
@@ -272,8 +420,9 @@ export function WorkerDetail() {
   return (
     <div className="dash">
       <Link to="/workers" className="back-link"><ArrowLeft size={16} aria-hidden="true" /> All workers</Link>
-      <PageHeader eyebrow={w.type} title={w.name} subtitle={`${company}${w.primaryRole ? ` · ${w.primaryRole}` : ''}`}>
+      <PageHeader eyebrow={w.type} title={w.name} subtitle={`${company}${w.primaryRole ? ` · ${w.primaryRole}` : ''}${w.active === false ? ' · inactive' : ''}`}>
         <Chip value={overall} tone={STATUS_TONE[overall]} />
+        {MANAGE_ROLES.includes(roleId) && <button type="button" className="btn btn-ghost" onClick={() => setModal('edit')}><Pencil size={16} aria-hidden="true" /> Edit worker</button>}
       </PageHeader>
       <Card title="Profile">
         <dl className="wk-profile">
@@ -285,13 +434,22 @@ export function WorkerDetail() {
         </dl>
       </Card>
       <div className="wk-gap" />
-      <Card title="Tickets" flush><ResponsiveTable columns={cols('ticket')} rows={items.filter((i) => i.kind === 'ticket')} empty="No tickets required" /></Card>
+      <Card title="Tickets" flush action={canEdit && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal('ticket')}><Plus size={14} aria-hidden="true" /> Add ticket</button>}>
+        <ResponsiveTable columns={cols('ticket')} rows={items.filter((i) => i.kind === 'ticket')} empty="No tickets yet" />
+      </Card>
       <div className="wk-gap" />
-      <Card title="Inductions" flush><ResponsiveTable columns={cols('induction')} rows={items.filter((i) => i.kind === 'induction')} empty="No inductions required" /></Card>
+      <Card title="Inductions" flush action={canEdit && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal('induction')}><Plus size={14} aria-hidden="true" /> Add induction</button>}>
+        <ResponsiveTable columns={cols('induction')} rows={items.filter((i) => i.kind === 'induction')} empty="No inductions yet" />
+      </Card>
       {w.ratings.length > 0 && (<><div className="wk-gap" /><Card title="Task ratings" flush>
         <ResponsiveTable columns={[{ key: 'task', label: 'Task', primary: true }, { key: 'type', label: 'Type' }, { key: 'role', label: 'Role' }, { key: 'rating', label: 'Rating', render: (r) => `${r.rating} / 5` }]}
           rows={w.ratings.map((r, i) => ({ ...r, id: i }))} empty="" /></Card></>)}
       {editing && <EditItemModal {...editing} onClose={() => setEditing(null)} />}
+      {modal === 'edit' && <EditWorkerModal worker={w} onClose={() => setModal('')} />}
+      {(modal === 'ticket' || modal === 'induction') && (
+        <AddItemModal worker={w} kind={modal} onClose={() => setModal('')}
+          have={(modal === 'ticket' ? tickets : inductions).filter((x) => x.workerId === w.id).map((x) => x.typeId)} />
+      )}
     </div>
   );
 }

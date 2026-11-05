@@ -39,7 +39,7 @@ export const designTasks = [
   { id: 'D1', name: 'Pylon panel artwork rev C', jobId: 'J-1042', owner: 'Anitha R.', stage: 'In Progress', due: day(-6) },
   { id: 'D2', name: 'Hoarding print files', jobId: 'J-1051', owner: 'Marco D.', stage: 'Manager Review', due: day(-3) },
   { id: 'D3', name: 'Façade lightbox shop drawings', jobId: 'J-1053', owner: 'Anitha R.', stage: 'In Progress', due: day(-2) },
-  { id: 'D4', name: 'Summit pylon concept', jobId: 'J-1060', owner: 'Priya S.', stage: 'Not Started', due: day(5) },
+  { id: 'D4', name: 'Summit pylon concept', jobId: 'J-1060', owner: 'Priya S.', stage: 'Assigned', due: day(5) },
 ];
 
 export const seedSwms = [

@@ -2,54 +2,87 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, FileSignature, Printer, ShieldCheck, Users } from 'lucide-react';
 import SignSwmsDialog from '../components/SignSwmsDialog';
-import { Card, Chip, KpiCard, Modal, PageHeader, ResponsiveTable } from '../components/ui';
+import { Card, Chip, Modal, PageHeader } from '../components/ui';
+import KpiLink from '../components/KpiLink';
+import { Button } from '../components/ui-kit/button';
+import { Card as UiCard } from '../components/ui-kit/card';
+import { EmptyState, SavedViews, SearchBox } from '../components/ListKit';
+import { cn } from '../lib/utils';
 import PlaceholderPage from './PlaceholderPage';
 import { useDemo } from '../context/DemoContext';
 import { fmtStamp, formatShort } from '../lib/dates';
 import { HAZARD_LABEL, HIGH_RISK, PPE_LIST, PPE_RULES, TASK_TEMPLATES, ppeFor } from '../lib/swmsRules';
+import { shortName } from '../lib/people';
+import { crewOf } from '../lib/checklists';
 import './SwmsPage.css';
 
+const SIGNED = ['TL Signed', 'Completed', 'Closed'];
+// SW-4: all, my open and my completed, plus the signing queues. "Mine" means I am the job's PM or on the install crew.
 const FILTERS = [
   ['all', 'All', () => true],
+  ['myOpen', 'My open', (s, mine) => mine(s) && !SIGNED.includes(s.status) && s.status !== 'Not Required'],
+  ['myDone', 'My completed', (s, mine) => mine(s) && SIGNED.includes(s.status)],
   ['pm', 'Awaiting PM', (s) => s.status === 'Created'],
   ['tl', 'Awaiting team leader', (s) => s.status === 'PM Signed'],
   ['signed', 'Fully signed', (s) => ['TL Signed', 'Completed', 'Closed'].includes(s.status)],
 ];
 
 export function SwmsList() {
-  const { swms, jobs } = useDemo();
+  const { swms, jobs, allJobs, tasks, role } = useDemo();
   const [filter, setFilter] = useState('all');
   const jobName = (id) => jobs.find((j) => j.id === id)?.name || id;
-  const rows = swms.filter(FILTERS.find((f) => f[0] === filter)[2]);
-  const count = (id) => swms.filter(FILTERS.find((f) => f[0] === id)[2]).length;
+  const me = shortName(role.name);
+  const mine = (s) => (allJobs || jobs).find((j) => j.id === s.jobId)?.pm === role.name
+    || tasks.some((t) => t.kind === 'install' && t.jobId === s.jobId && (t.name === s.title || t.swmsId === s.id) && crewOf(t).includes(me));
+  const pick = (id) => (x) => FILTERS.find((f) => f[0] === id)[2](x, mine);
+  const rows = swms.filter(pick(filter));
+  const count = (id) => swms.filter(pick(id)).length;
 
-  const columns = [
-    { key: 'title', label: 'SWMS', primary: true, render: (s) => (
-      <div className="stack"><Link className="job-link" to={`/swms/${s.id}`}>{s.title}</Link><small>{s.id} · {s.jobId} · {jobName(s.jobId)}</small></div>) },
-    { key: 'onSite', label: 'On site', render: (s) => formatShort(s.onSite) },
-    { key: 'hazards', label: 'High-risk work', render: (s) => (s.hazards.length
-      ? <span className="tags">{s.hazards.slice(0, 3).map((h) => <em key={h}>{h}</em>)}{s.hazards.length > 3 && <em>+{s.hazards.length - 3}</em>}</span> : '-') },
-    { key: 'status', label: 'Status', render: (s) => <Chip value={s.status} /> },
-    { key: 'pm', label: 'PM signed', render: (s) => (s.pmSignature ? `${s.pmSignature.name}, ${formatShort(s.pmSignature.signedAt.slice(0, 10))}` : '-') },
-    { key: 'tl', label: 'Team leader', render: (s) => (s.tlSignature ? s.tlSignature.name : '-') },
-    { key: 'open', label: '', render: (s) => <Link className="btn btn-ghost btn-sm" to={`/swms/${s.id}`}>Open</Link> },
-  ];
+  const [q, setQ] = useState('');
+  const [signing, setSigning] = useState(null);
+  const { roleId, signSwms } = useDemo();
+  const needle = q.trim().toLowerCase();
+  const shown = rows.filter((s) => !needle || `${s.title} ${s.id} ${s.jobId} ${jobName(s.jobId)}`.toLowerCase().includes(needle));
+  // Signing runs PM -> team leader -> crew; the bar shows how far each SWMS has got.
+  const stepsDone = (s) => (s.pmSignature ? 1 : 0) + (s.tlSignature ? 1 : 0) + ((s.crew || []).length ? 1 : 0);
 
   return (
     <div className="dash">
       <PageHeader eyebrow="Safety" title="SWMS" subtitle="Safe Work Method Statements. One per install task, signed by the PM and then the team leader before crews go on site." />
       <div className="kpis">
-        <KpiCard icon={FileSignature} label="All SWMS" value={swms.length} note="across open jobs" />
-        <KpiCard icon={ShieldCheck} label="Awaiting PM" value={count('pm')} tone="danger" note="created, not yet signed" />
-        <KpiCard icon={Users} label="Awaiting team leader" value={count('tl')} tone="warn" note="sign at the job briefing" />
-        <KpiCard icon={CheckCircle2} label="Fully signed" value={count('signed')} note="ready for the crew" />
+        <KpiLink icon={FileSignature} label="All SWMS" value={swms.length} note="across open jobs" onClick={() => setFilter('all')} active={filter === 'all'} />
+        <KpiLink icon={ShieldCheck} label="Awaiting PM" value={count('pm')} tone="danger" note="created, not yet signed" onClick={() => setFilter('pm')} active={filter === 'pm'} />
+        <KpiLink icon={Users} label="Awaiting team leader" value={count('tl')} tone="warn" note="sign at the job briefing" onClick={() => setFilter('tl')} active={filter === 'tl'} />
+        <KpiLink icon={CheckCircle2} label="Fully signed" value={count('signed')} note="ready for the crew" onClick={() => setFilter('signed')} active={filter === 'signed'} />
       </div>
-      <div className="filters">
-        <div className="segmented" role="tablist" aria-label="SWMS filter">
-          {FILTERS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={filter === id} className={filter === id ? 'on' : ''} onClick={() => setFilter(id)}>{label} ({count(id)})</button>)}
+      <Card flush className="ui-scope overflow-hidden font-sans">
+        <div className="flex flex-wrap items-center gap-2 border-b p-3 sm:p-4">
+          <SavedViews label="SWMS filter" value={filter} onChange={setFilter} views={FILTERS.map(([id, label]) => ({ id, label, count: count(id) }))} />
+          <SearchBox value={q} onChange={setQ} placeholder="Search SWMS, task or job" />
         </div>
-      </div>
-      <Card flush><ResponsiveTable columns={columns} rows={rows} empty="No SWMS in this view" /></Card>
+        {shown.length === 0 && <EmptyState>No SWMS in this view</EmptyState>}
+        <ul className="m-0 list-none p-0">
+          {shown.map((s) => (
+            <li key={s.id} className="grid grid-cols-1 items-center gap-x-4 gap-y-2 border-b px-4 py-3 last:border-0 sm:grid-cols-[minmax(0,1fr)_7rem_11rem_auto] sm:px-5">
+              <div className="min-w-0">
+                <Link className="font-semibold text-foreground no-underline hover:underline" to={`/swms/${s.id}`}>{s.title}</Link>
+                <div className="text-xs text-muted-foreground">{s.id} · {s.jobId} · {jobName(s.jobId)}{s.hazards.length ? ` · ${s.hazards.slice(0, 3).join(', ')}${s.hazards.length > 3 ? ` +${s.hazards.length - 3}` : ''}` : ''}</div>
+              </div>
+              <span className="text-sm text-muted-foreground">On site {formatShort(s.onSite)}</span>
+              <div aria-label={`Signed: PM ${s.pmSignature ? 'yes' : 'no'}, team leader ${s.tlSignature ? 'yes' : 'no'}, crew ${(s.crew || []).length}`}>
+                <div className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className={cn('h-1.5 flex-1 rounded-full', i < stepsDone(s) ? 'bg-brand' : 'bg-track')} />)}</div>
+                <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span>PM · Team leader · Crew</span><Chip value={s.status} /></div>
+              </div>
+              <div className="flex gap-2 sm:justify-end">
+                {roleId === 'pm' && s.status === 'Created'
+                  ? <Button size="sm" onClick={() => setSigning(s)}><FileSignature /> Sign as PM</Button>
+                  : <Button asChild size="sm" variant="outline"><Link to={`/swms/${s.id}`} className="no-underline">Open</Link></Button>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      {signing && <SignSwmsDialog record={signing} signer={role} onClose={() => setSigning(null)} onSigned={(sg) => { signSwms(signing.id, sg); setSigning(null); }} />}
     </div>
   );
 }
@@ -102,6 +135,33 @@ function CrewDialog({ record, defaultName, onClose, onSigned }) {
   );
 }
 
+// The three signatures as clear steps, with the one button the signed-in person can press.
+function SigningSteps({ rec, task, actions }) {
+  const steps = [
+    { key: 'pm', title: 'PM signs', who: rec.pmSignature ? `${rec.pmSignature.name}, ${fmtStamp(rec.pmSignature.signedAt)}` : 'Project Manager', done: Boolean(rec.pmSignature), label: 'Sign as PM' },
+    { key: 'tl', title: 'Team leader signs at the briefing', who: rec.tlSignature ? `${rec.tlSignature.name}, ${fmtStamp(rec.tlSignature.signedAt)}` : task?.leader || 'Team leader', done: Boolean(rec.tlSignature), label: 'Sign as team leader' },
+    { key: 'crew', title: 'Crew sign the declaration', who: `${(rec.crew || []).length} signed`, done: (rec.crew || []).length > 0, label: 'Sign the declaration' },
+  ];
+  const current = steps.findIndex((x) => !x.done);
+  return (
+    <UiCard className="ui-scope swms-noprint overflow-hidden font-sans" role="region" aria-label="Signing steps">
+      <ol className="m-0 grid list-none gap-0 p-0 sm:grid-cols-3">
+        {steps.map((x, i) => (
+          <li key={x.key} className={cn('flex items-start gap-3 border-b p-4 last:border-0 sm:border-b-0 sm:border-r sm:last:border-r-0', i === current && 'bg-accent/50')}>
+            <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 text-xs font-bold', x.done ? 'border-primary bg-primary text-primary-foreground' : i === current ? 'border-primary text-primary' : 'border-input text-muted-foreground')}>{x.done ? '✓' : i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">{x.title}</div>
+              <div className="text-xs text-muted-foreground">{x.who}</div>
+              {i === current && actions[x.key] && <Button size="sm" className="mt-2" onClick={actions[x.key]}>{x.label}</Button>}
+              {i === current && !actions[x.key] && <div className="mt-1 text-xs font-semibold text-muted-foreground">Waiting for this step</div>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </UiCard>
+  );
+}
+
 export function SwmsDetail() {
   const { swmsId } = useParams();
   const { swms, jobs, tasks, role, roleId, signSwms, signSwmsTL, updateSwms, addCrewSignature } = useDemo();
@@ -147,6 +207,8 @@ export function SwmsDetail() {
         <Chip value={rec.status} />
         <button type="button" className="btn btn-ghost swms-noprint" onClick={() => window.print()}><Printer size={16} aria-hidden="true" /> Print or save as PDF</button>
       </PageHeader>
+
+      <SigningSteps rec={rec} task={task} actions={{ pm: canSignPm && (() => setDialog('pm')), tl: canSignTl && (() => setDialog('tl')), crew: canCrewSign && (() => setDialog('crew')) }} />
 
       <div className="swms-sheet">
         <section className="sw-sec"><h2>Prepared by (Project Manager)</h2>

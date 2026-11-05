@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Modal } from './ui';
 import { useDemo } from '../context/DemoContext';
-import { MAX_HOURS, WARN_HOURS, roleOf, stepTitle, swmsReady, validateStep } from '../lib/checklists';
+import { Camera, Check as Tick, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui-kit/collapsible';
+import { MAX_HOURS, WARN_HOURS, roleOf, stepOrder, stepTitle, swmsReady, validateStep } from '../lib/checklists';
+import { cn } from '../lib/utils';
 
 const Check = ({ checked, onChange, children }) => (
   <label className="check"><input type="checkbox" checked={Boolean(checked)} onChange={(e) => onChange(e.target.checked)} />{children}</label>
@@ -9,9 +12,13 @@ const Check = ({ checked, onChange, children }) => (
 
 // One checklist step for one crew member. The questions depend on the step, the person's role (team leader or member) and the task kind.
 export default function ChecklistDialog({ task, person, step, swmsStatus, onClose }) {
-  const { completeChecklistStep } = useDemo();
+  const { completeChecklistStep, checklists } = useDemo();
+  const rec = checklists.find((c) => c.taskId === task.id && c.person === person);
+  const order = stepOrder(task);
+  const at = order.indexOf(step);
   const role = roleOf(task, person);
   const isFab = task.kind === 'fab';
+  const isDesign = task.kind === 'design';
   const [d, setD] = useState({ ohsConcern: 'No', ohsDetail: '', hours: '', unbilled: '', rating: '', photos: [] });
   const [error, setError] = useState('');
   const put = (k) => (v) => setD((x) => ({ ...x, [k]: v }));
@@ -32,7 +39,29 @@ export default function ChecklistDialog({ task, person, step, swmsStatus, onClos
   return (
     <Modal title={`${stepTitle(task, step)}: ${task.name}`} onClose={onClose}>
       <form className="form" onSubmit={submit} noValidate>
-        <small>{person} · {role === 'TL' ? 'Team leader' : 'Team member'}</small>
+        <small>{person} · {isDesign ? 'Designer' : role === 'TL' ? 'Team leader' : 'Team member'}{at >= 0 ? ` · step ${at + 1} of ${order.length}` : ''}</small>
+        {order.length > 1 && (
+          <ol className="m-0 flex list-none gap-1 p-0" aria-label="Checklist steps">
+            {order.map((k, i) => {
+              const done = Boolean(rec?.steps?.[k]);
+              return (
+                <li key={k} className={cn('flex flex-1 flex-col gap-1 text-[11px] font-semibold text-muted-foreground', k === step && 'text-foreground')}>
+                  <span className={cn('h-1.5 rounded-full', done ? 'bg-primary' : k === step ? 'bg-brand' : 'bg-track')} />
+                  <span className="flex items-center gap-1">{done && <Tick className="h-3 w-3 text-primary" aria-hidden="true" />}{stepTitle(task, k)}</span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        <p className="m-0 text-xs font-semibold text-muted-foreground">Tick each line that is true</p>
+
+        {step === 'pre1' && isDesign && (
+          <>
+            <Check checked={d.briefRead} onChange={put('briefRead')}>I read the brief, the quote and the sign schedule</Check>
+            <Check checked={d.filesChecked} onChange={put('filesChecked')}>I checked the source files, site photos and measurements</Check>
+            <Check checked={d.questionsRaised} onChange={put('questionsRaised')}>I raised any open questions with the PM</Check>
+          </>
+        )}
 
         {step === 'pre1' && isFab && (
           <>
@@ -41,7 +70,7 @@ export default function ChecklistDialog({ task, person, step, swmsStatus, onClos
             <Check checked={d.equipmentChecked} onChange={put('equipmentChecked')}>I checked the equipment I will use</Check>
           </>
         )}
-        {step === 'pre1' && !isFab && role === 'TL' && (
+        {step === 'pre1' && !isFab && !isDesign && role === 'TL' && (
           <>
             <Check checked={d.briefed} onChange={put('briefed')}>I briefed the crew on the job, the hazards and the SWMS</Check>
             {task.type === 'VE Install' && (
@@ -51,7 +80,7 @@ export default function ChecklistDialog({ task, person, step, swmsStatus, onClos
             )}
           </>
         )}
-        {step === 'pre1' && !isFab && role === 'TM' && (
+        {step === 'pre1' && !isFab && !isDesign && role === 'TM' && (
           <Check checked={d.understood} onChange={put('understood')}>I was briefed and I understand the SWMS</Check>
         )}
         {step === 'pre2' && <Check checked={d.arrived} onChange={put('arrived')}>The crew has arrived on site</Check>}
@@ -63,6 +92,12 @@ export default function ChecklistDialog({ task, person, step, swmsStatus, onClos
         )}
         {step === 'post2' && (
           <>
+            {isDesign && (
+              <>
+                <Check checked={d.filesSaved} onChange={put('filesSaved')}>Final files are saved to the job folder</Check>
+                <Check checked={d.proofSent} onChange={put('proofSent')}>The proof or drawing is ready for the PM to review</Check>
+              </>
+            )}
             <div className="form-row">
               <label>Hours worked<input type="number" step="0.5" min="0" value={d.hours} onChange={text('hours')} /></label>
               <label>Unbilled hours<input type="number" step="0.5" min="0" max={MAX_HOURS} value={d.unbilled} onChange={text('unbilled')} placeholder="0" /></label>
@@ -76,15 +111,31 @@ export default function ChecklistDialog({ task, person, step, swmsStatus, onClos
         )}
 
         {['pre2', 'post1'].includes(step) && (
-          <label>Photos (optional)
-            <input type="file" accept="image/*" multiple onChange={(e) => put('photos')([...e.target.files].map((f) => f.name))} />
-            <small>Demo: only the file names are kept. Real uploads need the backend.</small>
-          </label>
+          <Collapsible>
+            <CollapsibleTrigger className="group flex items-center gap-2 text-sm font-semibold text-primary">
+              <Camera className="h-4 w-4" aria-hidden="true" /> Add photos (optional){d.photos.length ? ` · ${d.photos.length} chosen` : ''}
+              <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <label>Photos
+                <input type="file" accept="image/*" multiple onChange={(e) => put('photos')([...e.target.files].map((f) => f.name))} />
+                <small>Demo: only the file names are kept. Real uploads need the backend.</small>
+              </label>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
-        <label>Any OH&S or WHS concern?
-          <select value={d.ohsConcern} onChange={text('ohsConcern')}><option>No</option><option>Yes</option></select>
-        </label>
+        <div className="grid gap-1.5">
+          <span className="text-[13px] font-semibold" id={`ohs-${task.id}`}>Any OH&amp;S or WHS concern?</span>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby={`ohs-${task.id}`}>
+            {['No', 'Yes'].map((v) => (
+              <button key={v} type="button" role="radio" aria-checked={d.ohsConcern === v} onClick={() => put('ohsConcern')(v)}
+                className={cn('h-11 rounded-md border text-sm font-semibold', d.ohsConcern === v ? (v === 'Yes' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-primary bg-accent text-primary') : 'border-input bg-card text-foreground')}>
+                {v === 'No' ? 'No concern' : 'Yes, report it'}
+              </button>
+            ))}
+          </div>
+        </div>
         {d.ohsConcern === 'Yes' && (
           <label>What happened?<textarea rows={3} value={d.ohsDetail} onChange={text('ohsDetail')} placeholder="An issue is raised for the department manager" /></label>
         )}

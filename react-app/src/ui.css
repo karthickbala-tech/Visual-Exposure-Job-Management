@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* shadcn/ui theme. Names are prefixed --ui- because App.css already uses --muted, --radius and others.
+   Values follow the Visual Exposure tokens (web/src/styles/tokens.css). Tailwind runs without its reset
+   (preflight is off in tailwind.config.js) so the existing screens are untouched. */
+:root {
+  --ui-radius: 0.375rem;
+  --ui-background: 90.0 11.1% 96.5%;
+  --ui-foreground: 240.0 5.3% 11.2%;
+  --ui-card: 0.0 0.0% 100.0%;
+  --ui-card-foreground: 240.0 5.3% 11.2%;
+  --ui-popover: 0.0 0.0% 100.0%;
+  --ui-popover-foreground: 240.0 5.3% 11.2%;
+  --ui-primary: 104.8 47.9% 32.4%;
+  --ui-primary-foreground: 0.0 0.0% 100.0%;
+  --ui-secondary: 80.0 8.6% 93.1%;
+  --ui-secondary-foreground: 240.0 5.3% 11.2%;
+  --ui-muted: 80.0 13.0% 95.5%;
+  --ui-muted-foreground: 213.3 4.5% 39.0%;
+  --ui-accent: 97.5 38.1% 91.8%;
+  --ui-accent-foreground: 240.0 5.3% 11.2%;
+  --ui-destructive: 0.0 75.2% 51.0%;
+  --ui-destructive-foreground: 0.0 0.0% 100.0%;
+  --ui-border: 80.0 4.9% 88.0%;
+  --ui-input: 108.0 5.2% 81.0%;
+  --ui-ring: 103.6 39.1% 49.6%;
+  --ui-brand: 103.6 39.1% 49.6%;
+  --ui-track: 90.0 8.0% 90.2%;
+  --ui-warn-bg: 39.1 100.0% 95.5%;
+  --ui-warn-line: 40.8 70.6% 80.0%;
+  --ui-warn-ink: 37.0 100.0% 21.0%;
+}
+:root[data-theme='dark'] {
+  --ui-background: 210.0 8.3% 9.4%;
+  --ui-foreground: 120.0 4.5% 91.4%;
+  --ui-card: 210.0 9.1% 12.9%;
+  --ui-card-foreground: 120.0 4.5% 91.4%;
+  --ui-popover: 210.0 10.5% 14.9%;
+  --ui-popover-foreground: 120.0 4.5% 91.4%;
+  --ui-primary: 104.3 44.4% 47.3%;
+  --ui-primary-foreground: 104.0 40.5% 7.3%;
+  --ui-secondary: 210.0 8.7% 18.0%;
+  --ui-secondary-foreground: 120.0 4.5% 91.4%;
+  --ui-muted: 205.7 9.1% 15.1%;
+  --ui-muted-foreground: 207.3 6.4% 66.1%;
+  --ui-accent: 100.9 27.5% 15.7%;
+  --ui-accent-foreground: 120.0 4.5% 91.4%;
+  --ui-destructive: 2.8 100.0% 66.1%;
+  --ui-destructive-foreground: 3.8 44.4% 7.1%;
+  --ui-border: 206.7 8.1% 21.8%;
+  --ui-input: 207.3 7.8% 27.6%;
+  --ui-ring: 102.3 46.8% 60.2%;
+  --ui-brand: 101.9 50.4% 54.9%;
+  --ui-track: 206.7 8.1% 21.8%;
+  --ui-warn-bg: 40.0 54.5% 12.9%;
+  --ui-warn-line: 40.6 60.7% 22.0%;
+  --ui-warn-ink: 39.4 81.4% 68.4%;
+}
+
+/* The one part of the Tailwind reset shadcn needs: borders are solid and 0 wide until a border class sets them.
+   Scoped to the redesigned screens and the menus, drawers and dialogs they open. */
+:where(.ui-scope, .ui-scope *, .ui-scope ::before, .ui-scope ::after) { border-width: 0; border-style: solid; border-color: hsl(var(--ui-border)); }
+:where(.ui-scope) :where(button) { background-color: transparent; padding: 0; }
+/* :where() keeps these at zero specificity, so every Tailwind class still wins. */
+:where(.ui-scope) :where(h1, h2, h3) { text-transform: none; letter-spacing: normal; }
+.ui-scope .form input:not([type='checkbox']):not([type='radio']), .ui-scope .form select, .ui-scope .form textarea { border: 1px solid var(--line-3); }
+.ui-scope .form fieldset { margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: var(--ui-radius); }
+.ui-scope .form legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
+
+/* The existing forms (class "form") inside shadcn dialogs and drawers: same fields and buttons, shadcn look. */
+.ui-scope .form label { font-weight: 600; }
+.ui-scope .form input:not([type='checkbox']):not([type='radio']):not([type='file']), .ui-scope .form select { height: 40px; }
+.ui-scope .form input, .ui-scope .form select, .ui-scope .form textarea { border-radius: var(--ui-radius); background: hsl(var(--ui-card)); }
+.ui-scope .form input:focus, .ui-scope .form select:focus, .ui-scope .form textarea:focus { border-color: hsl(var(--ui-ring)); box-shadow: 0 0 0 3px hsl(var(--ui-ring) / 0.25); }
+.ui-scope .form .check input { height: 18px; }
+.ui-scope .btn { height: 36px; padding: 0 16px; border-radius: var(--ui-radius); font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.ui-scope .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.ui-scope .btn-primary { background: hsl(var(--ui-primary)); color: hsl(var(--ui-primary-foreground)); }
+.ui-scope .btn-primary:hover { background: hsl(var(--ui-primary) / 0.9); }
+.ui-scope .btn-ghost { background: hsl(var(--ui-card)); border: 1px solid hsl(var(--ui-input)); color: hsl(var(--ui-foreground)); }
+.ui-scope .btn-ghost:hover { background: hsl(var(--ui-accent)); }
+.ui-scope .btn-danger { background: hsl(var(--ui-destructive)); color: hsl(var(--ui-destructive-foreground)); }
+.ui-scope .form-error { border-radius: var(--ui-radius); }

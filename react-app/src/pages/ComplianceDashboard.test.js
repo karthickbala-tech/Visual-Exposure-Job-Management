@@ -19,7 +19,7 @@ const value = (label) => tile(label).querySelector('.kpi-value').textContent;
 test('the compliance summary shows VE and non-VE counts, expired, expires today and within 30 days', () => {
   act(() => root.render(<DemoProvider><MemoryRouter><WorkersPage /></MemoryRouter></DemoProvider>));
   ['Active VE workers', 'Active non-VE workers', 'Expired', 'Expires today', 'Within 30 days', 'Not filled in'].forEach((l) => expect(tile(l)).toBeTruthy());
-  expect(value('Active VE workers')).toBe('7');
+  expect(value('Active VE workers')).toBe('8'); // includes the designer, Anitha Rao
   expect(value('Active non-VE workers')).toBe('3'); // Pat Nguyen is inactive
 });
 

@@ -118,8 +118,16 @@ describe('task actions (TSK-2)', () => {
     expect(applyAction(t, 'close').patch.stage).toBe('Completed');
     expect(availableActions(install()).some((a) => a.id === 'close')).toBe(false);
   });
-  test('design tasks have no extra actions', () => {
-    expect(availableActions({ kind: 'design', stage: 'In Progress' })).toEqual([]);
+  test('design tasks: hold while working, not used and cancel before work starts (WORKFLOWS 6)', () => {
+    const ids = (stage) => availableActions({ kind: 'design', stage }).map((a) => a.id);
+    expect(ids('To be Assigned')).toEqual(['notUsed', 'cancel']);
+    expect(ids('Assigned')).toEqual(['hold', 'cancel', 'reset']);
+    expect(ids('In Progress')).toEqual(['hold']);
+    expect(ids('Manager Review')).toEqual([]);
+    expect(applyAction({ kind: 'design', stage: 'On Hold', heldFrom: 'Assigned' }, 'release').patch.stage).toBe('Assigned');
+    expect(applyAction({ kind: 'design', stage: 'On Hold', heldFrom: 'Open' }, 'release').patch.stage).toBe('Open');
+    expect(applyAction({ kind: 'design', stage: 'On Hold' }, 'release').patch.stage).toBe('In Progress');
+    expect(applyAction({ kind: 'design', stage: 'Assigned', owner: 'Anitha R.' }, 'reset').patch).toMatchObject({ stage: 'To be Assigned', owner: '' });
   });
   test('a subtask hangs off the root parent and starts unscheduled', () => {
     const root = install({ id: 'I1', name: 'Wayfinding', swms: 'Completed' });

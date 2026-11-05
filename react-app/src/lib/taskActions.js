@@ -9,6 +9,7 @@ export const isCloseOnly = (task) => task.kind === 'install' && ['External Insta
 // Each action: label, the stages it is allowed from, the stage it moves to, and whether a reason is required.
 // Fab tasks may be cancelled from Scheduled too (WORKFLOWS section 5). Install tasks only from Awaiting Scheduling (section 4.1).
 export function availableActions(task) {
+  if (task.kind === 'design') return designActions(task);
   if (!['install', 'fab'].includes(task.kind)) return [];
   const s = task.stage;
   const out = [];
@@ -23,12 +24,32 @@ export function availableActions(task) {
   return out;
 }
 
+// WORKFLOWS section 6: hold from any working stage and back to the stage it was held from;
+// not used and cancel only before work starts. Change designer while the task is assigned but not started.
+function designActions(task) {
+  const s = task.stage;
+  const out = [];
+  if (['Assigned', 'In Progress', 'Open'].includes(s)) out.push({ id: 'hold', label: 'Put on hold', to: 'On Hold', comment: true });
+  if (s === 'On Hold') out.push({ id: 'release', label: 'Take off hold', to: ['Assigned', 'Open'].includes(task.heldFrom) ? task.heldFrom : 'In Progress', comment: false });
+  if (s === 'To be Assigned') out.push({ id: 'notUsed', label: 'Mark complete - not used', to: 'Complete - Not Used', comment: true });
+  if (['To be Assigned', 'Assigned'].includes(s)) out.push({ id: 'cancel', label: 'Cancel task', to: 'Cancelled', comment: true, danger: true });
+  if (s === 'Assigned') out.push({ id: 'reset', label: 'Unassign designer', to: 'To be Assigned', comment: true });
+  return out;
+}
+
 // The change each action makes to the task. Cancel and not-used clear the assignees (WORKFLOWS section 5).
 export function applyAction(task, id) {
   const a = availableActions(task).find((x) => x.id === id);
   if (!a) return null;
   const patch = { stage: a.to };
-  if (['cancel', 'notUsed', 'reset'].includes(id)) { patch.leader = ''; patch.member = ''; patch.subStage = ''; }
+  if (task.kind === 'design') {
+    if (id === 'hold') patch.heldFrom = task.stage;
+    if (id === 'release') patch.heldFrom = '';
+    if (['cancel', 'notUsed', 'reset'].includes(id)) patch.owner = '';
+    if (id === 'cancel') patch.quoted = 0;
+    return { action: a, patch, dropChecklists: ['notUsed', 'reset', 'cancel'].includes(id) };
+  }
+  if (['cancel', 'notUsed', 'reset'].includes(id)) { patch.leader = ''; patch.member = ''; patch.members = []; patch.subStage = ''; }
   if (id === 'cancel') patch.quoted = 0;
   if (id === 'close') patch.subStage = '';
   return { action: a, patch, dropChecklists: ['notUsed', 'reset'].includes(id) };
@@ -42,7 +63,7 @@ export function subtaskDraft(task, allTasks, job) {
   const root = allTasks.find((t) => t.id === rootId) || task;
   const base = {
     kind: task.kind, name: `${root.name} - Subtask`, jobId: task.jobId, parentId: rootId, date: task.date,
-    leader: '', member: '', stage: 'Awaiting Scheduling', quoted: 0, booked: 0, subStage: '',
+    leader: '', member: '', members: [], stage: 'Awaiting Scheduling', quoted: 0, booked: 0, subStage: '',
   };
   if (task.kind === 'install') return { draft: { ...base, type: 'VE Subtask', swms: root.swms || 'Not Required' } };
   return { draft: { ...base, type: task.type } };

@@ -5,6 +5,7 @@ import { DemoProvider, useDemo } from '../context/DemoContext';
 import Job360 from './Job360';
 import JobsPage from './JobsPage';
 import ApprovalPanel from '../components/ApprovalPanel';
+import { byLabel, dialog, menuItem, openMenu, pickTab, tab } from '../testUi';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -24,28 +25,30 @@ const renderJob = (id) => act(() => root.render(
   <DemoProvider><Probe /><MemoryRouter initialEntries={[`/jobs/${id}`]}><Routes><Route path="/jobs/:jobId" element={<Job360 />} /></Routes></MemoryRouter></DemoProvider>));
 const renderJobs = () => act(() => root.render(<DemoProvider><Probe /><MemoryRouter><JobsPage /></MemoryRouter></DemoProvider>));
 
-test('Job Details shows KPI blocks and the fab finish dates', () => {
+test('Job Details shows the progress strip, and the fab finish dates under Job details', () => {
   renderJob('J-1042');
-  const kpis = document.querySelector('[aria-label="Job KPIs"]');
-  expect(kpis.textContent).toContain('Management and design');
-  expect(kpis.textContent).toContain('Fabrication');
-  expect(kpis.textContent).toContain('Installation');
+  const strip = byLabel('Progress by discipline');
+  ['Design', 'Fabrication', 'Installation'].forEach((k) => expect(strip.textContent).toContain(k));
+  expect(strip.textContent).toContain('3 open'); // F1, F2, F3
+  expect(document.body.textContent).not.toContain('Fab finish required'); // collapsed until asked for
+  click(btn('Job details'));
   expect(document.body.textContent).toContain('Fab finish required');
   expect(document.body.textContent).toContain('Fab finish agreed');
-  const fab = [...kpis.querySelectorAll('.job-kpi')].find((n) => n.textContent.includes('Fabrication'));
-  expect(fab.textContent).toContain('Total3'); // F1, F2, F3
 });
 
 test('Close job is disabled below 100% and works at 100% for a Project Manager', () => {
   renderJob('J-1042');
-  expect(btn('Close job').disabled).toBe(true);
+  expect(btn('Close job')).toBeUndefined(); // below 100% it sits in the More menu
+  openMenu(byLabel('More job actions'));
+  expect(menuItem('Close job').getAttribute('aria-disabled')).toBe('true');
+  expect(menuItem('Close job').textContent).toContain('Available at 100%');
   act(() => root.unmount()); root = createRoot(box);
 
   renderJob('J-1039');
   const close = btn('Close job');
   expect(close.disabled).toBe(false);
   click(close);
-  click([...document.querySelectorAll('.modal button')].find((b) => b.textContent.trim() === 'Close job'));
+  click([...dialog().querySelectorAll('button')].find((b) => b.textContent.trim() === 'Close job'));
   expect(jobOf('J-1039').stage).toBe('Completed - Closed');
   expect(jobOf('J-1039').closureEmailSent).toBe(true);
   expect(document.body.textContent).toContain('Closed');
@@ -55,7 +58,9 @@ test('Close job is disabled below 100% and works at 100% for a Project Manager',
 test('only a Project Manager can close a job', () => {
   localStorage.setItem('ve-role', 'fabManager');
   renderJob('J-1039');
-  expect(btn('Close job').disabled).toBe(true);
+  expect(btn('Close job')).toBeUndefined();
+  openMenu(byLabel('More job actions'));
+  expect(menuItem('Close job').getAttribute('aria-disabled')).toBe('true');
   act(() => { api.closeJob('J-1039'); });
   expect(jobOf('J-1039').stage).toBe('Completed');
 });
@@ -89,8 +94,8 @@ test('end to end: finishing the last open tasks completes the job, then the PM c
   expect(jobOf('J-1051').job).toBe(100);
   expect(btn('Close job').disabled).toBe(false);
   click(btn('Close job'));
-  expect(document.querySelector('.modal').textContent).toContain('1 task is still in Manager Review');
-  click([...document.querySelectorAll('.modal button')].find((b) => b.textContent.trim() === 'Cancel'));
+  expect(dialog().textContent).toContain('1 task is still in Manager Review');
+  click([...dialog().querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cancel'));
   act(() => { api.actOnTask('D2', 'Approve', ''); });
   expect(jobOf('J-1051')).toMatchObject({ stage: 'Completed', job: 100, install: 100 });
   act(() => { api.closeJob('J-1051'); });
@@ -156,18 +161,25 @@ test('an installer can delete only their own attachments', () => {
 
 test('Job Details shows the location and the signs with their four stages', () => {
   renderJob('J-1042');
-  const panel = document.querySelector('[aria-label="Location and signs"]');
+  expect(tab('Signs & site').textContent).toContain('3');
+  pickTab(tab('Signs & site'));
+  const panel = document.querySelector('[role="tabpanel"][data-state="active"]');
   expect(panel.textContent).toContain('Northgate Shopping Centre');
-  expect(panel.textContent).toContain('Signs (3)');
   expect(panel.textContent).toContain('Main pylon, north entry');
-  ['Deal', 'Artwork', 'Manufacturing', 'Install'].forEach((h) => expect(panel.textContent).toContain(h));
-  expect(panel.querySelector('a.site-map').getAttribute('href')).toContain('google.com/maps');
+  const stages = panel.querySelector('[aria-label^="Deal "]').getAttribute('aria-label');
+  ['Deal', 'artwork', 'manufacturing', 'install'].forEach((h) => expect(stages).toContain(h));
+  expect(panel.querySelector('a[href*="google.com/maps"]')).not.toBeNull();
 });
 
 test('a job with two sites lists both, and a job with none says so', () => {
   renderJob('J-1058');
-  expect(document.querySelector('[aria-label="Location and signs"]').textContent).toContain('Locations (2)');
+  pickTab(tab('Signs & site'));
+  const names = api.sites.filter((x) => x.jobId === 'J-1058').map((x) => x.name);
+  expect(names).toHaveLength(2);
+  const panel = () => document.querySelector('[role="tabpanel"][data-state="active"]');
+  names.forEach((n) => expect(panel().textContent).toContain(n));
   act(() => root.unmount()); root = createRoot(box);
   renderJob('J-0000');
-  expect(document.querySelector('[aria-label="Location and signs"]').textContent).toContain('No site or signs are linked');
+  pickTab(tab('Signs & site'));
+  expect(panel().textContent).toContain('No site is linked to this job yet');
 });

@@ -1,3 +1,4 @@
+import { membersOf } from './people';
 // Checklist rules from FSD CHK-1 to CHK-8 and INS-2 to INS-4, WORKFLOWS sections 4.2 and 5.1.
 // Pure functions only, so they are easy to test and easy to change when the client answers FSD section 14.
 
@@ -19,7 +20,8 @@ export const STEP_TITLES = {
   post2: 'Closure and hours',
 };
 export const FAB_STEP_TITLES = { pre1: 'Pre-job check', post2: 'Post-job check and hours' };
-export const stepTitle = (task, key) => (task.kind === 'fab' ? FAB_STEP_TITLES[key] : STEP_TITLES[key]) || key;
+export const DESIGN_STEP_TITLES = { pre1: 'Design brief check', post2: 'Design hand-off and hours' };
+export const stepTitle = (task, key) => (task.kind === 'fab' ? FAB_STEP_TITLES[key] : task.kind === 'design' ? DESIGN_STEP_TITLES[key] : STEP_TITLES[key]) || key;
 
 // INS-1 and CHK-4: which checklists a task needs.
 export const checklistPlan = (task) => {
@@ -29,6 +31,7 @@ export const checklistPlan = (task) => {
     return { pre: false, post: false }; // External Install, Print Only: closed by the PM (INS-6)
   }
   if (task.kind === 'fab') return { pre: !(WORKSHOP_SKIPS_PRE_JOB && task.type === 'Workshop'), post: true };
+  if (task.kind === 'design') return { pre: true, post: true }; // CHK-1, WORKFLOWS section 6: the designer's own checklists
   return { pre: false, post: false };
 };
 
@@ -38,8 +41,9 @@ export const stepOrder = (task) => {
   return keys.filter((k) => (k.startsWith('pre') ? plan.pre : plan.post));
 };
 
-export const crewOf = (task) => [task.leader, task.member].filter(Boolean);
-export const roleOf = (task, person) => (task.leader === person ? 'TL' : 'TM');
+// Design tasks have one owner (the designer). Fab and install tasks have a team leader and any number of members.
+export const crewOf = (task) => (task.kind === 'design' ? [task.owner].filter(Boolean) : [task.leader, ...membersOf(task)].filter(Boolean));
+export const roleOf = (task, person) => (task.kind === 'design' || task.leader === person ? 'TL' : 'TM');
 
 const isDone = (rec, key) => Boolean(rec && rec.steps && rec.steps[key]);
 
@@ -52,8 +56,10 @@ export function nextStep(task, rec) {
     const post = order.filter((k) => k.startsWith('post')).find((k) => !isDone(rec, k));
     return post ? { step: post, message: '' } : { step: null, message: 'Your checklists are complete.' };
   }
-  if (!['Scheduled', 'In Progress'].includes(task.stage)) {
-    return { step: null, message: task.stage === 'Manager Review' || task.stage === 'Completed' ? 'Your checklists are complete.' : 'No checklist is open at this stage.' };
+  const openStages = task.kind === 'design' ? ['In Progress', 'Open'] : ['Scheduled', 'In Progress'];
+  if (!openStages.includes(task.stage)) {
+    if (task.kind === 'design' && task.stage === 'Assigned') return { step: null, message: 'Start the task to open its checklist.' };
+    return { step: null, message: ['Manager Review', 'Completed', 'Approved & Completed', 'Awaiting Submission'].includes(task.stage) ? 'Your checklists are complete.' : 'No checklist is open at this stage.' };
   }
 
   const sub = task.subStage || '';
@@ -97,6 +103,10 @@ export function validateStep(key, role, d, ctx = {}) {
       if (!d.areaSafe || !d.ppeChecked) return 'Confirm the work area and PPE checks.';
       return '';
     }
+    if (ctx.kind === 'design') {
+      if (!d.briefRead || !d.filesChecked) return 'Confirm you read the brief and checked the source files.';
+      return '';
+    }
     if (role === 'TL') {
       if (!d.briefed) return 'Confirm you briefed the crew on the job and the SWMS.';
       if (ctx.swmsStatus !== undefined && !swmsReady(ctx.swmsStatus)) return 'The SWMS must be signed by the PM and the team leader before the pre-job checklist can be finished.';
@@ -106,6 +116,7 @@ export function validateStep(key, role, d, ctx = {}) {
   if (key === 'pre2') return d.arrived ? '' : 'Confirm you have arrived on site.';
   if (key === 'post1') return d.workComplete ? '' : 'Confirm the on-site work is complete.';
   if (key === 'post2') {
+    if (ctx.kind === 'design' && (!d.filesSaved || !d.proofSent)) return 'Confirm the files are saved and the proof is ready for review.';
     const h = Number(d.hours);
     const u = d.unbilled === '' || d.unbilled === undefined ? 0 : Number(d.unbilled);
     if (!(h > 0)) return 'Enter the hours you worked.';

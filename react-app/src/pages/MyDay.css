@@ -24,3 +24,6 @@
 .hours-form .btn{min-height:44px}
 .hours-form small{margin-left:auto}
 .myday-empty{padding:18px;border:1px dashed var(--line);border-radius:var(--radius);color:var(--muted);text-align:center}
+
+.mtask-next{margin:0;padding:8px 10px;border-radius:var(--radius);font-size:13.5px;background:var(--brand-soft);color:var(--ink)}
+.mtask-next b{color:var(--brand-strong)}

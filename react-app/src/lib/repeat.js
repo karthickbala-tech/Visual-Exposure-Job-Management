@@ -1,3 +1,4 @@
+import { membersOf } from './people';
 // FAB-3: repeating workshop tasks. When one is completed, the next one is created for previous date + the interval.
 // WORKFLOWS section 10: Days = count, Weeks x 7, Months x 30. Pure functions.
 import { addDays, fromKey, toKey } from './dates';
@@ -29,7 +30,7 @@ export const shouldRepeat = (task) => task.type === 'Workshop' && !!task.repeat 
 export function nextRepeatTask(task, id, at) {
   return {
     id, kind: 'fab', name: task.name, jobId: task.jobId, type: task.type, date: nextRepeatDate(task.date, task.repeat),
-    leader: task.leader || '', member: task.member || '', stage: task.leader ? 'Scheduled' : 'Awaiting Scheduling',
+    leader: task.leader || '', member: task.member || '', members: membersOf(task), stage: task.leader ? 'Scheduled' : 'Awaiting Scheduling',
     quoted: task.quoted || 0, booked: 0, repeat: task.repeat, repeatOf: task.id,
     history: [{ at, who: 'System', text: `Created by repeat of ${task.id}` }],
   };

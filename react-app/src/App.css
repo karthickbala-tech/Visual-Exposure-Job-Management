@@ -1,10 +1,11 @@
 /* Visual Exposure Projects: one stylesheet, ordered base -> components -> responsive.
-   Fonts and colours follow the approved Lovable prototype and the visualexposure.com.au brand. */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Raleway:wght@500;600;700;800&display=swap');
+   Colours follow the approved Lovable prototype and the visualexposure.com.au brand.
+   Font: Raleway only, the same as web/ (web/src/styles/tokens.css). It is bundled from @fontsource/raleway
+   (weights 400, 600 and 700, imported in index.js), so no Google Fonts request is made. */
 
 :root {
-  --font: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+  --font: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font); /* one family, as in web/ */
   --brand: #75cb33;          /* Visual Exposure lime */
   --brand-strong: #3f8a1c;   /* readable green for text */
   --brand-soft: #eaf7de;
@@ -105,10 +106,10 @@ small { color: var(--muted); font-size: 12.5px; }
 .logo-img { display: block; width: 156px; height: auto; }
 .icon-btn.side-close { display: none; color: #fff; }
 .side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; padding: 12px 8px; overflow-y: auto; }
-.side-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-left: 3px solid transparent; border-radius: 2px; color: #d3d4d5; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background 0.12s; }
+.side-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-left: 3px solid transparent; border-radius: 2px; color: #d3d4d5; font-size: 14px; font-weight: 400; text-decoration: none; white-space: nowrap; transition: background 0.12s; }
 .side-link:hover { background: var(--side-hover); color: #fff; }
 .side-link.active { background: var(--side-active); color: #fff; font-weight: 700; border-left-color: var(--brand); }
-.avatar { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: var(--on-brand); font-weight: 800; font-size: 13px; }
+.avatar { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: var(--on-brand); font-weight: 700; font-size: 13px; }
 
 .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px clamp(16px, 2.6vw, 36px); background: var(--surface); border-bottom: 1px solid var(--line); }
 .icon-btn.menu-btn { display: none; }
@@ -129,10 +130,10 @@ small { color: var(--muted); font-size: 12.5px; }
 .dash { display: grid; gap: 20px; }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 2px; }
 .eyebrow { margin-bottom: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-strong); }
-.page-header h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 800; line-height: 1.08; text-transform: uppercase; }
+.page-header h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 700; line-height: 1.08; text-transform: uppercase; }
 .subtitle { margin-top: 6px; color: var(--muted); }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 18px; border: 1px solid transparent; border-radius: 2px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 18px; border: 1px solid transparent; border-radius: 2px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary { background: var(--brand); color: var(--on-brand); }
@@ -151,7 +152,7 @@ small { color: var(--muted); font-size: 12.5px; }
 .kpi-danger { border-top-color: var(--danger); }
 .kpi-icon { display: none; }
 .kpi-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
-.kpi-value { font-size: 38px; font-weight: 800; line-height: 1.05; }
+.kpi-value { font-size: 38px; font-weight: 700; line-height: 1.05; }
 .kpi-danger .kpi-value { color: var(--danger); }
 .kpi-warn .kpi-value { color: var(--warn-ink); }
 .kpi-note { font-size: 13px; color: var(--muted); }
@@ -207,7 +208,7 @@ small { color: var(--muted); font-size: 12.5px; }
 .swms-foot .tags { flex: 1; min-width: 0; }
 .swms-foot .link-btn { flex: none; white-space: nowrap; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tags em { padding: 3px 9px; border-radius: 2px; background: var(--tag-bg); font-style: normal; font-size: 12.5px; font-weight: 500; color: var(--ink-2); }
+.tags em { padding: 3px 9px; border-radius: 2px; background: var(--tag-bg); font-style: normal; font-size: 12.5px; font-weight: 400; color: var(--ink-2); }
 .tags-lg { padding-top: 8px; }
 
 .hours { display: grid; gap: 18px; }
@@ -249,19 +250,17 @@ small { color: var(--muted); font-size: 12.5px; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 14px 22px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
 .cal-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .agenda-day { padding: 12px 22px; border-top: 1px solid var(--line-2); }
-.agenda-day h3 { margin-bottom: 8px; font-size: 13px; font-weight: 800; }
+.agenda-day h3 { margin-bottom: 8px; font-size: 13px; font-weight: 700; }
 .agenda-day h3.today { color: var(--brand-strong); }
 .agenda-ev { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-weight: 600; }
 .agenda-ev small { margin-left: auto; }
 
 /* ---------- Modal and forms ---------- */
-.modal-scrim { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgba(25, 27, 29, 0.55); }
-.modal { width: min(480px, 100%); background: var(--surface); border-radius: 2px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 6px; }
-.modal-head h2 { font-size: 20px; font-weight: 800; }
+.modal-head h2 { font-size: 20px; font-weight: 700; }
 .form { display: grid; gap: 14px; padding: 12px 20px 20px; }
 .form label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
-.form input, .form select, .form textarea { padding: 0 12px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--input-bg); font-weight: 500; }
+.form input, .form select, .form textarea { padding: 0 12px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--input-bg); font-weight: 400; }
 .form input, .form select { height: 44px; }
 .form textarea { padding: 10px 12px; resize: vertical; }
 .form input:focus, .form select:focus, .form textarea:focus { outline: 0; border-color: var(--brand-strong); box-shadow: 0 0 0 2px var(--brand-soft); }
@@ -278,12 +277,12 @@ small { color: var(--muted); font-size: 12.5px; }
 .back-link:hover { color: var(--ink); }
 .job-head { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; padding: 22px 24px; }
 .job-head-main { flex: 1; min-width: 240px; }
-.job-head h1 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; line-height: 1.1; text-transform: uppercase; }
+.job-head h1 { font-size: clamp(24px, 3vw, 32px); font-weight: 700; line-height: 1.1; text-transform: uppercase; }
 .job-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; color: var(--ink-2); }
 .mono { display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--muted); }
 .job-head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ring { flex: none; width: 92px; height: 92px; }
-.ring-text { font-family: var(--font-display); font-weight: 800; font-size: 19px; fill: var(--ink); }
+.ring-text { font-family: var(--font-display); font-weight: 700; font-size: 19px; fill: var(--ink); }
 .tabs { display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--line); }
 .tabs button { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; background: transparent; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .tabs button span { margin-left: 6px; padding: 1px 8px; border-radius: 2px; background: var(--chip-gray-bg); font-size: 12px; }
@@ -315,9 +314,23 @@ small { color: var(--muted); font-size: 12.5px; }
 .signed-note { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 6px 10px; border-radius: 2px; background: var(--brand-soft); color: var(--brand-soft-ink); font-size: 12.5px; }
 .toast { left: auto; right: 24px; transform: none; display: flex; align-items: center; gap: 8px; }
 .toast-icon { color: var(--brand); }
-.form .check { display: flex; align-items: flex-start; gap: 10px; font-weight: 500; }
+.form .check { display: flex; align-items: flex-start; gap: 10px; font-weight: 400; }
 .form .check input { flex: none; width: 18px; height: 18px; margin-top: 2px; padding: 0; accent-color: var(--brand-strong); }
 .sign-summary { display: grid; gap: 6px; padding: 12px 14px; background: var(--bg); border-left: 3px solid var(--brand); }
+
+.crew-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 2px; }
+.crew-pick legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
+.crew-pick legend small { font-weight: 400; color: var(--muted); }
+.form .crew-pick .check { min-height: 32px; align-items: center; }
+.form .crew-pick .check input { margin-top: 0; }
+.group-head td { background: var(--bg); font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.deleted-note { padding: 10px 14px; border-left: 3px solid var(--danger, #c0392b); background: var(--bg); }
+
+/* Grid children default to min-width: auto, so one wide row (tabs, a kanban, a segmented filter) used to stretch the
+   whole page past the phone screen. Keep every page section inside the column and let wide strips scroll on their own. */
+.dash, .dash > * { min-width: 0; }
+.segmented { max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+.segmented button { flex: none; white-space: nowrap; }
 
 /* ---------- Responsive (keep last so it wins over everything above) ---------- */
 @media (max-width: 900px) {
@@ -332,10 +345,20 @@ small { color: var(--muted); font-size: 12.5px; }
 @media (max-width: 760px) {
   .search kbd, .role-switch span { display: none; }
   .topbar { gap: 8px; }
+  .topbar .search { flex: 1 1 auto; min-width: 0; }
+  .topbar .search input { min-width: 0; width: 100%; }
+  .topbar-right { gap: 6px; flex: none; min-width: 0; }
+  .role-switch select { max-width: 116px; }
+  .icon-btn.bell { display: none; }
   .search { max-width: none; }
   .page-header { align-items: stretch; }
   .page-actions .btn { width: 100%; }
-  .kpi-value { font-size: 34px; }
+  .kpi-value { font-size: 28px; }
+  /* Two tiles per row on phones so the numbers are on screen without scrolling past five full-width cards. */
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpi { padding: 12px 14px; gap: 4px; }
+  .kpi-label { font-size: 10.5px; letter-spacing: 0.08em; }
+  .kpi-note { font-size: 12px; }
   .card-head, .card-body, .cal-toolbar, .agenda-day, .cal-legend { padding-left: 16px; padding-right: 16px; }
   .triple { grid-template-columns: minmax(0, 1fr); }
   .job-head { padding: 18px 16px; }
@@ -364,7 +387,6 @@ small { color: var(--muted); font-size: 12.5px; }
 .theme-toggle svg { transition: transform 0.25s ease; }
 .theme-toggle:hover svg { transform: rotate(20deg); }
 :root[data-theme='dark'] .logo-img { filter: brightness(1.05); }
-:root[data-theme='dark'] .modal { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6); }
 :root[data-theme='dark'] .btn-ghost:hover { background: var(--surface-hover); }
 
 .cal-dayview { display: grid; gap: 8px; padding: 16px 20px; }

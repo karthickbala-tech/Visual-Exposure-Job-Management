@@ -63,6 +63,7 @@ function GeneralTab() {
 
   return (
     <form className="form ad-form" onSubmit={save} noValidate>
+      <details className="set-sec" open><summary>Pay period and hours <small>{preview ? `now ${formatShort(preview.from)} to ${formatShort(preview.to)}` : ""}</small></summary>
       <Card title="Pay period and hours">
         <div className="form-row">
           <label>Pay period start date<input type="date" value={d.anchor} onChange={set('anchor')} /></label>
@@ -72,6 +73,8 @@ function GeneralTab() {
         <label>Hours-not-filled cutoff date<input type="date" value={d.cutoff} onChange={set('cutoff')} /></label>
         <small className="muted">Checklists for tasks scheduled before this date are not counted as hours not filled (question 19).</small>
       </Card>
+      </details>
+      <details className="set-sec"><summary>Compliance and workshop <small>warn {d.expiryDays} days ahead · workshop job {d.workshopJobId}</small></summary>
       <Card title="Compliance and workshop">
         <label>Expiry warning (days)<input inputMode="numeric" value={d.expiryDays} onChange={set('expiryDays')} /></label>
         <small className="muted">Tickets, inductions and documents expiring within this many days show as Expiring.</small>
@@ -80,6 +83,8 @@ function GeneralTab() {
         </select></label>
         <small className="muted">The Create workshop task button adds tasks to this job.</small>
       </Card>
+      </details>
+      <details className="set-sec"><summary>SWMS defaults (PCBU) <small>{d.pcbuName}</small></summary>
       <Card title="SWMS defaults (PCBU)">
         <label>PCBU name<input value={d.pcbuName} onChange={set('pcbuName')} /></label>
         <div className="form-row">
@@ -88,6 +93,7 @@ function GeneralTab() {
         </div>
         <small className="muted">New SWMS documents start with these details. The SWMS PDF will read them once the backend exists.</small>
       </Card>
+      </details>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="form-actions"><button type="submit" className="btn btn-primary">Save settings</button></div>
     </form>
