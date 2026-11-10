@@ -1,6 +1,6 @@
 # What was taken from `react-app/` (and what is still to take)
 
-Three read-only audits compared the colleague's demo (`react-app/`) with our app on 2026-11-10. This file is the single list of everything in her demo that is better than ours, with the exact rules, so `react-app/` can be moved to `backup-files/` without losing any idea. Status: **done** / **todo**. Value: H / M / L. FE = front-end only, BE = needs a backend change.
+Three read-only audits compared the colleague's demo (`backup-files/react-app/`) with our app on 2026-11-10. This file is the single list of everything in her demo that is better than ours, with the exact rules, so `react-app/` can be moved to `backup-files/` without losing any idea. Status: **done** / **todo**. Value: H / M / L. FE = front-end only, BE = needs a backend change.
 
 ## People and compliance
 | # | Item | Rules from her demo | Value | Status |

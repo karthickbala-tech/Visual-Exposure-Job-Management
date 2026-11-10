@@ -10,3 +10,10 @@ Nothing was deleted: move a file back to its old place to restore it.
 | `playwright-mcp-output/` | `.playwright-mcp/` | screenshots and logs from the browser test tool (already git-ignored). |
 
 Also tidied (moved, not backed up): `Architecture Flow/` and `MIGRATION_SETUP_GUIDE.md` now live in `docs/reference/`.
+
+## react-app/ (moved 2026-11-10)
+
+The colleague's front-end demo (Create React App, Tailwind, in-memory sample data). It is not used by the app, the tests or the deploy.
+Everything in it that was better than ours is listed in `docs/REACT_APP_EXTRACTION.md`: what was already taken, and what is still to take with the exact rules.
+To run it again: `cd backup-files/react-app`, `npm install`, `npm start`.
+If she keeps pushing to `react-app/` on GitHub, her changes will reappear at the old path; agree a new path with her first.
