@@ -93,6 +93,7 @@ const COLS: Col[] = [
 	{ key: 'pm', label: 'Project Manager', width: 150, value: (j) => j.pm_name ?? '', cell: (j) => j.pm_name ?? '' },
 	{ key: 'fabm', label: 'Fab Manager', width: 150, value: (j) => j.fab_manager_name ?? '', cell: (j) => j.fab_manager_name ?? '' },
 	{ key: 'created', label: 'Job Created Date', width: 215, value: (j) => fmtStamp(j.CREATEDTIME ?? j.created_date), cell: (j) => fmtStamp(j.CREATEDTIME ?? j.created_date) },
+	{ key: 'description', label: 'Description', width: 300, value: (j) => j.description ?? '', cell: (j) => j.description ?? '' },
 	{ key: 'completed_date', label: 'Job Completed Date', width: 170, value: (j) => fmtStamp(j.completed_date, false), cell: (j) => fmtStamp(j.completed_date, false) },
 	{ key: 'wd', label: 'Workdrive Link', width: 150, value: (j) => j.workdrive_url ?? '', cell: (j) => (j.workdrive_url ? <a href={j.workdrive_url} target="_blank" rel="noreferrer">Workdrive Folder <ExternalLink size={12} aria-hidden="true" /></a> : '') },
 	{ key: 'dh', label: 'Design Hours Booked', width: 150, right: true, value: (j) => hours(j.design_hours_booked), cell: (j) => hours(j.design_hours_booked) },

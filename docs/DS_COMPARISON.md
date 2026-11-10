@@ -778,3 +778,40 @@ Mail is limited to 100 a month on the demo plan (`REQUEST_BUDGET.md`), so the fo
 ### Done in this batch
 
 - Issues list: a "Date Completed" column (the date was stored but never shown).
+
+---
+
+## 15. Reports (186 definitions)
+
+Full list by form, with type, filter and column count: `docs/DS_REPORTS.md` (generated from the DS file). Types: 164 lists, 10 calendars, 4 kanban boards, 1 timeline, 1 summary, 1 map, 3 pivot charts and 2 pivot tables. By form: Fabrication_Job1 37, Design_Task 32, Jobs 15, Install_Job 10, SWMS 10, Issues 10, the checklists 15, and a few each for people, compliance, devices, sites and signs.
+
+Most lists are the same list filtered a different way (by stage, by role, by "my" tasks). The app covers these with saved views and role-based scoping instead of one report per filter, as the UI plan decided.
+
+| DS report type | App | Result |
+|---|---|---|
+| Lists (164) | lists with tabs, filters, saved views, column choice and CSV (Jobs, tasks, Issues, SWMS, People, Compliance, Equipment, Devices) | NONE for the lists compared in sections 1 to 12. The per-filter variants (for example Open Jobs PM, Open Jobs TL) are covered by "My" views and role scoping. |
+| Calendars (10: install, fab by stage, fab by type, my install, my fab, day views) | Calendar with month, week and agenda, unified, fabrication and installation tabs and a type filter | NONE |
+| Kanban (4: Design Kanban, by PM, by TL and TM) | Task board | NONE |
+| Timeline (Fabrication WIP) | none | DEC: a timeline view of fabrication work in progress. The calendar and board cover scheduling; decide whether a timeline is needed. |
+| Map (Device Locations) | Devices list with a map link per device | DEC: a map of all devices was left out of the UI plan (phase 9). |
+| Pivot charts and tables (Job Overview, Jobs Overview PM, Fabrication Task Variance, and two test reports) | dashboard figures and job risk lines (hours against quoted) | DEC: variance by task and job overview charts are not built. The two "Test" reports look like drafts. |
+| Summary (All Setups) | Admin settings | NONE |
+
+### 15.1 Jobs report columns against the app grid
+
+The 15 DS Jobs reports use these columns that the app grid did not have:
+
+| DS column | Reports | Result |
+|---|---|---|
+| Description | 6 | Done: a Description column was added to the jobs grid. |
+| Job Owner | 10 | DEC: schema field not approved, and the DS puts Job Owner under "Not Needed or not visible?". |
+| Manufacturing Owner | 7 | DEC: same section of the DS. |
+| Fab, Install Labour Cost - Parent and - Fab | 2 each | DEC: definitions needed. |
+| Added Time | 3 | NONE: duplicates Job Created Date. |
+| View Record, Edit Record, Set Mandatory | 7, 2, 4 | SYS: Creator links and flags. |
+
+All other columns in the 15 Jobs reports already exist in the app grid.
+
+### 15.2 Other forms' report columns
+
+Report column lists for the task, Issues, SWMS and checklist forms were not compared column by column. The forms' fields were compared in sections 2 to 13, and every report column is a field of its form, so the field gaps listed there are the report gaps.
