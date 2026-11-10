@@ -52,6 +52,7 @@ function listColumns(nameOf: (id?: string | null) => string, onOpen: (id: string
 		{ key: 'status', label: 'Status', width: 140, cell: (i) => <Chip status={i.issue_status} /> },
 		{ key: 'due', label: 'Due', width: 120, cell: (i) => (i.due_date ? <span className={isOverdue(i) ? 'text-danger' : undefined}>{fmtDate(i.due_date)}</span> : '-') },
 		{ key: 'assigned', label: 'Assigned', width: 170, cell: (i) => nameOf(i.assigned_to_id) || '-' },
+		{ key: 'completed', label: 'Date Completed', width: 140, cell: (i) => (i.completed_at ? fmtDate(i.completed_at) : '-') },
 	];
 }
 const LIST_WIDTHS = gridWidths(listColumns(() => '', () => {}));

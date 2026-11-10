@@ -243,7 +243,7 @@ App side read: `web/src/pages/NewIssue.tsx` (raise an issue), `web/src/pages/Iss
 | Person_Responsible | Person Responsible (picklist) | only Assigned to | DEC: the DS has both. Is "Person Responsible" a second person or the same role? |
 | Reported_Email | Reported Email | none | DEC: needed for a reply to the reporter? |
 | Manager_Email, Inform_Also_1, Inform_Also_2 | Manager Email, Inform Also 1 and 2 | covered by the issue routing setting (a manager and an inform-also list per department, `appSettings.js`). CORRECTION: an earlier version of this row said "none". | NONE per department. Per-issue overrides are not needed. One mail per event, as the request budget requires. |
-| Date_Completed | Date Completed | none found | BE: set it when the status moves to Completed (the jobs service already does this for completed dates) |
+| Date_Completed | Date Completed | stored as `completed_at` when the status moves to Completed (`issues.js:170`). CORRECTION: an earlier version said "none found". It was stored but not shown. | NONE. A "Date Completed" column was added to the issues list. |
 | Edit_in_Management | Edit in Management (checkbox) | none | SYS |
 | Issue_Management_History_Subform | Issue Management History (grid) | the history panel | NONE (see 3.3) |
 | Issue_Management_History fields: Staff Member*, Date-Time*, Person Responsible, Status, Next Step, Work Completed*, Due Date | | history rows with field changes (`diffIssue`) | NONE for the data; confirm the history shows who made each change, when, and the work completed |
@@ -486,7 +486,7 @@ Not done, and why:
 - **Labour cost Parent and Fab fields:** the definitions are not in the DS or the app.
 - **Job Owner, Owner Email, Manufacturing Owner:** the DS puts these under "Not Needed or not visible?", so they stay hidden.
 - **Issue notification recipients and Person Responsible:** need new stored fields, which I can't create without a schema change.
-- **Issue Date Completed:** needs a stored column.
+- **Issue Date Completed:** corrected. It was already stored (`completed_at`) and is now shown (section 14).
 - **SWMS Completed and Closed statuses:** change the stored status set.
 - **Hours rating scale and role, shift start, end and break times:** need stored fields, and the rating scale is the owner's decision.
 - **Install kit lists, vehicles and site contact:** need a decision on where the data lives.
@@ -722,3 +722,59 @@ Findings:
 - The DS has pre-job checklists for design tasks. The app has none, by an earlier decision (DES-2).
 
 Required action: **DEC.** Template content is the owner's to confirm: which questions are for the team leader and which for the member, and which answers raise an issue. Not changed in code, because turning the DS question list into templates without the role and condition rules would put guesses into safety checklists. `docs/DS_CHECKLISTS.md` is the starting list for that review.
+
+---
+
+## 14. Workflows (423 blocks in the DS file)
+
+Full list with event, phase and the first lines of each script: `docs/DS_WORKFLOWS.md` (generated from the DS file). Counts: 423 workflow blocks, 86 inactive, 337 active. Of the active ones, 146 only change the form on screen (hide, disable, validate), and 61 send mail (many are inactive). The largest groups are on Fabrication_Job1 (49), Install_Job (48), SWMS (36), Design_Task (29), the install post-job checklist (26) and Jobs (24).
+
+Reports: the DS has about 200 report definitions. They are list views and calendars on the same forms and are covered by the app's lists and calendar. They have not been compared one by one.
+
+### 14.1 Active workflows that send mail, against the app
+
+The app has 8 notifications: new issue, issue updated, ticket or document expiring, task sent back, job closed, weekly hours report, weekly open issues, hired equipment off hire.
+
+| DS workflow | App | Result |
+|---|---|---|
+| Issues: Update History, Update Email Addresses, Send Mail for Issue Completed | issue raised, issue updated (routing by department) | NONE |
+| send_email_for_worker_ticket, _worker_induction, _companies_document | expiry reminders (CMP-3) | NONE |
+| Jobs: send email on job completion | job closed | NONE |
+| K_VE_Hours_Report_Schedule, K_VE_Issues_Report_Schedule | weekly hours and open issues reports | NONE |
+| Install_Job: Email Install Man - Equipment off hire | hired equipment off hire | NONE |
+| Reject and reopen forms: Update the Task Stage | task sent back | NONE |
+| Jobs: VE_Email_For_FabManager (on add) | none | DEC: email the Fab Manager when a job is created |
+| Install_Post_Job_Checklists: Send Email to PM (Finished On Site) | none | DEC: email the PM when an install finishes on site |
+| Fabrication_Post_Job_Checklists: Send Email to Fab Manager | none | DEC: email the Fab Manager after the fab post-job checklist |
+| Design_Task_Creation_Stage_Email, designjob_send_email | none | DEC: design task emails |
+
+Mail is limited to 100 a month on the demo plan (`REQUEST_BUDGET.md`), so the four missing emails each need an owner decision on volume before they are built.
+
+### 14.2 Active workflows for calculations and the CRM, against the app
+
+| DS workflow | App | Result |
+|---|---|---|
+| Jobs: Update Completion Percentages | job rollup (`rollup.js`) | NONE |
+| Fabrication_Post_Job_Checklists: Calculate Labour Costs | labour cost from hours and pay rules | NONE |
+| Jobs: FI B Sync Jobs to CRM, Completed_crm_job_update | CRM deal update on close | NONE (the CRM connection is built, not yet run on live data) |
+| Signs and Sites: Update Record in Zoho CRM (Sign and Site modules) | none | DEC/BE: the app does not push signs or sites to the CRM |
+| Create and Update File to Workdrive (Install, Design) | WorkDrive folder and file copy | NONE |
+| Install_Job: update workdrive folder name | none | DEC: rename the folder when the task name changes |
+| Update the Status on Deleted Task (design, fab, install) | tasks are cancelled, not deleted | NONE |
+| SWMS: swmspdf | SWMS PDF (SW-4) | NONE |
+
+### 14.3 Issues rules confirmed from the workflows
+
+- A completed issue needs a completion date and completion notes. The app requires the notes ("work completed") and stores the completion time. NONE.
+- A Civic Billboards issue needs a location and a billboard face. The app requires both. NONE.
+- Setting Person Responsible adds a history row. DEC (the app has no separate Person Responsible, see 3.2).
+
+### 14.4 Not done
+
+- The four emails and the sign, site and workdrive-rename actions above (decisions on mail volume and the CRM).
+- The checklist visibility rules (who sees which question). They sit in the 146 on-screen workflows and the checklist workflows. `docs/DS_WORKFLOWS.md` is the source for that review (see section 13).
+- A report-by-report comparison.
+
+### Done in this batch
+
+- Issues list: a "Date Completed" column (the date was stored but never shown).

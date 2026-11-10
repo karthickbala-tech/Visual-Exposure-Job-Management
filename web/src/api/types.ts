@@ -152,6 +152,7 @@ export interface Issue {
 	billboard_face?: string;
 	review_needed?: string;
 	crm_deal_id?: string;
+	completed_at?: string | null;
 	CREATEDTIME?: string;
 	nextStatuses?: string[];
 }
