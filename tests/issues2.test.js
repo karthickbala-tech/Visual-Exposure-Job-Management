@@ -118,6 +118,8 @@ test('update email: one message with old and new values, to the right people, no
 test('routing: a department can have its own manager and inform-also list; others fall back to project managers', async () => {
 	const w = setup();
 	await rejects(appSettings.updateSettings(w.ctx, { issue_routing: { Nowhere: { manager_id: STAFF } } }), 400);
+	// Every issue department can be routed, including Workshop and VT/Digital Screens (DS_COMPARISON section 3).
+	await appSettings.updateSettings(w.ctx, { issue_routing: { Workshop: { manager_id: STAFF }, 'VT/Digital Screens': { manager_id: STAFF } } });
 	await appSettings.updateSettings(w.ctx, { issue_routing: { 'Civic Billboards': { manager_id: STAFF, inform_also: [ME] } } });
 	assert.equal((await appSettings.getSettings(w.ctx)).settings.issue_routing['Civic Billboards'].manager_id, STAFF);
 

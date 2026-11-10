@@ -242,7 +242,7 @@ App side read: `web/src/pages/NewIssue.tsx` (raise an issue), `web/src/pages/Iss
 | Images | Images (image) | none. Photo attachments were left out in UI phase 7 (`UI_MERGE_PLAN.md`). | BE/UI: file_asset with entity_type issue |
 | Person_Responsible | Person Responsible (picklist) | only Assigned to | DEC: the DS has both. Is "Person Responsible" a second person or the same role? |
 | Reported_Email | Reported Email | none | DEC: needed for a reply to the reporter? |
-| Manager_Email, Inform_Also_1, Inform_Also_2 | Manager Email, Inform Also 1 and 2 | none | DEC/BE: who is told when an issue is raised. Email is limited to 100 a month (`REQUEST_BUDGET.md`), so one message per event with every recipient in `to`. |
+| Manager_Email, Inform_Also_1, Inform_Also_2 | Manager Email, Inform Also 1 and 2 | covered by the issue routing setting (a manager and an inform-also list per department, `appSettings.js`). CORRECTION: an earlier version of this row said "none". | NONE per department. Per-issue overrides are not needed. One mail per event, as the request budget requires. |
 | Date_Completed | Date Completed | none found | BE: set it when the status moves to Completed (the jobs service already does this for completed dates) |
 | Edit_in_Management | Edit in Management (checkbox) | none | SYS |
 | Issue_Management_History_Subform | Issue Management History (grid) | the history panel | NONE (see 3.3) |
@@ -668,3 +668,30 @@ App side read: `lib/services/directory.js` (company, site and sign schemas and s
 - The sign stage lists match the DS exactly (sign stages were the work already done under the Creator names).
 - The site state field is a free text box (`web/src/pages/Directory.tsx:217`). The DS uses full state names, so this stays a decision.
 - No code change was made in this section, for the reasons in 11.2.
+
+---
+
+## 12. Settings and small forms (Setup, Mail_Templates, Primary_Role_Master, Task_Template, Workshop_Locations, Declaration, Task, Fab_and_Install_Task, Line_Items_SF, Companies_OLD)
+
+App side read: `lib/services/appSettings.js`, `lib/services/notifications.js`, `lib/services/registers.js` (locations), `web/src/pages/AdminMore.tsx`. Settings are stored as one JSON row, so a new setting key does not need a table change.
+
+| DS form and field | DS label | App | Required action |
+|---|---|---|---|
+| Setup: Fabrication, Installation, Office, VT, Civic Manager | a manager for each department | issue routing: a manager per department | NONE. Done in this batch: the backend accepted only Management, Design, Fabrication, Install and Civic Billboards, while the Admin screen offers all five issue departments. Saving a Workshop or VT/Digital Screens route failed. The backend now allows every issue department (and keeps Design and Fabrication), with a test. |
+| Setup: Notify Also, Inform Also, Inform Also 2 (per department) | extra people told about issues | the inform-also list per department | NONE |
+| Setup: Install Hours Report, Fab Hours Report | recipients of the hours reports | one list: hours_report_recipients | DEC: the DS has two lists (install and fab). The app has one weekly report list. |
+| Setup: Office Manager | Office Manager | no Office department in the issue list | DEC: the DS has Office Manager and VT Manager, the app issue departments are Install, Civic Billboards, Workshop, Management, VT/Digital Screens. Confirm which maps to Office. |
+| Setup: Tickets, Inductions, Companies: days before and after expiry | six numbers | one list of days before expiry (expiry_reminder_days), for types that set none of their own | BE: per-kind lists and days after expiry. The settings are JSON, so no table change, but the reminder job must read them. Not done: changing the reminder job is a behaviour change. |
+| Mail_Templates: Template_Name, Message_Content | email templates | `template.<key>` settings (Admin emails tab) | NONE |
+| Primary_Role_Master | roles | 11 fixed roles | NONE (decided in the plan) |
+| Task_Template: name, tasks involved, hazards and risks, controls | SWMS task templates | none (work steps only) | DEC/UI: templates could live in settings JSON. Decide whether the owner wants them. |
+| Task (SWMS rows): Task Template, Tasks Involved, Hazards and Risks, Controls, Person Responsible | the SWMS task grid | work steps (one per line) | DEC: see 4.2 |
+| Workshop_Locations: Location Name, Description, Area Supervisor, Image | workshop locations | name, description, supervisor | NONE. Image: BE/UI (decision, with the equipment image). |
+| Declaration: Name, Other Employee Name, Signature, Date-Time | SWMS declaration rows | declarations with typed name and tick | NONE (typed signature, per the UI plan). "Other Employee Name" (a person not in the staff list): DEC. |
+| Fab_and_Install_Task: name, date, type (Install or Fab), team leader, members, task links | combined add-task form | the Add Task form (type, name, finish) and crew assignment on the task | NONE. The DS form adds date and crew at creation; the app does this on the task page. |
+| Line_Items_SF: product, qty, cost, margin, sell price, total | quote line items | none | BE/finance: part of the sign group cost build-up (11.2). Decision. |
+| Companies_OLD | retired company form | none | NONE: retired. No reference found in the app. |
+
+### Done in this section
+
+- Backend fix: issue routing can be saved for Workshop and VT/Digital Screens (`lib/services/appSettings.js`), with a test (`tests/issues2.test.js`). 298 of 298 backend tests pass.
