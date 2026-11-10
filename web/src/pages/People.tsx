@@ -31,6 +31,13 @@ const TABS: { key: Tab; label: string }[] = [
 	{ key: 'tickets', label: 'Tickets and inductions' },
 	{ key: 'docs', label: 'Company documents' },
 ];
+/** Years after the issue date that the expiry is set to, for the types that have a rule (REACT_APP_EXTRACTION P2). Matched by type name. */
+const EXPIRY_YEARS: Record<string, number> = { 'Working at Heights': 2, 'Elevated Work Platform (EWP) licence': 5, 'Public liability insurance': 1 };
+/** Issue date plus whole years, as YYYY-MM-DD. 29 February rolls to 1 March in a non-leap year. */
+const addYears = (iso: string, years: number) => {
+	const [y, m, d] = iso.split('-').map(Number);
+	return new Date(Date.UTC(y + years, m - 1, d)).toISOString().slice(0, 10);
+};
 const STATUS_OPTIONS: [string, string][] = [['Expired', 'Expired'], ['Today', 'Expires today'], ['Expiring', 'Within 30 days'], ['Valid', 'Valid'], ['No expiry', 'No expiry']];
 
 /** The search and filter values of the people lists. The panel edits a draft; Search applies it. */
@@ -115,6 +122,7 @@ function AddRecord({ onClose }: { onClose: () => void }) {
 			<label><span className="toolbar__label">Reference</span><input value={f.reference_no} maxLength={100} onChange={(e) => setF({ ...f, reference_no: e.target.value })} /></label>
 			<label><span className="toolbar__label">Issued</span><input type="date" max={todayIso()} value={f.issue_date} onChange={(e) => setF({ ...f, issue_date: e.target.value })} /></label>
 			<label><span className="toolbar__label">Expires{type?.requiresExpiry ? ' *' : ''}</span><input type="date" value={f.expiry_date} required={!!type?.requiresExpiry} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></label>
+			{(type ? EXPIRY_YEARS[type.name] : undefined) && f.issue_date && (<button type="button" className="btn btn-ghost btn-sm" onClick={() => setF({ ...f, expiry_date: addYears(f.issue_date, EXPIRY_YEARS[type!.name]) })}>Set expiry {EXPIRY_YEARS[type!.name]} years after issue</button>)}
 			<button className="btn" disabled={create.isPending || !!problem}>{create.isPending ? 'Saving…' : 'Save'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{problem && <p role="alert">{problem}</p>}

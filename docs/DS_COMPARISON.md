@@ -492,3 +492,63 @@ Not done, and why:
 - **Install kit lists, vehicles and site contact:** need a decision on where the data lives.
 - **Fabrication CCV and CNC spec labels and types:** the DS types for some spec fields are text, not numbers. Changing them would change how saved specs are validated, so they are unchanged.
 - **Checklists, compliance, equipment, people, directory, sites and signs, settings, and the reports and workflows:** not yet compared.
+
+---
+
+## 9. Compliance and people (Workers_Tickets, Workers_Inductions, Worker_Ticket_Types, Workers_Inductions_Type, Employee_Database)
+
+App side read: `lib/services/compliance.js`, `lib/seed/complianceTypes.js`, `lib/services/people.js`, `web/src/pages/People.tsx`, `web/src/pages/Compliance.tsx`.
+
+### 9.1 Matches
+
+| DS field | DS label | App | Result |
+|---|---|---|---|
+| Active_Ticket | Active Ticket? | is_active on the compliance item | NONE |
+| Company, Worker | Add New (company or worker) | person or company (one of the two) | NONE |
+| Ticket_Types, Workers_Inductions Induction_Types | ticket and induction types | compliance types, with kind ticket, induction or document | NONE |
+| Reference_Number | Reference Number | reference_no | NONE |
+| Issue_Date, Expiry_Date | Issue Date, Expiry Date | issue_date, expiry_date | NONE |
+| Name (Ticket Name) | Ticket Name | type name | NONE |
+| Active (worker) | Active / Not Active | is_active (person) | NONE |
+| Employer_new | Employer | company_id | NONE |
+| Hourly_Rate | Hourly Rate (required) | hourly_rate, admin only, 0 to 1000 | NONE |
+| Role / Primary_Role_Lookup | Project Manager, Trade Staff, Fab Manager, Install Coordinator | roles (11 app roles) | Partly: see 9.2 |
+| In_MDM | In MDM | mdm_enabled | NONE |
+| Employee_Rating_Subform | Employee Rating | ratings (section 5) | NONE |
+| Phone_Number, Personal_Email_Address | phone and email | phone, email | NONE |
+
+### 9.2 Gaps
+
+| DS field | DS label | App | Required action |
+|---|---|---|---|
+| Description_and_notes | Description and notes | none | BE: a notes column on the compliance item (schema). Decision needed. |
+| Image_of_Ticket_Card, _2, Image_of_card, _2 | ticket card photos | the file store has a ticket_image kind | confirm the compliance form attaches the card photos |
+| Training_Authority | Training Authority | none | BE: schema column (decision) |
+| Normal_Years_before_expiry | Normal years before expiry | not stored on the type | BE: schema column. The P2 rule is in the UI (below). |
+| Prefered_Trainer, Course_Training_duration, Training_Costs | trainer, duration and cost | none | BE: schema columns (decision). Training costs are sensitive, so role-gate them if stored. |
+| Description (ticket types) | Description | none on the type | BE: schema column (decision) |
+| Required_for_VE_Workers, Required_for_non_VE_Workers, Required_for_VE_Worker (inductions) | required-for flags | is_mandatory_type (one flag, not split by VE and non-VE) | DEC: split the flag, or keep one. |
+| Centre (inductions) | Centre | none | BE: schema column (decision) |
+| Induction_Name picklist (Crown, FED Square, JLL, Melbourne Museum, OCEANA GLASS, Vicinity) | site picklist | the sites directory | NONE for the link. Confirm the seed list matches the sites in use. |
+| Sites_Lookup (list) | Locations | a site or several | confirm inductions can link more than one site |
+| Do_not_contact_Worker_about_this, Do_not_contact_Manager_about_this, _worker_ | do not contact flags | none | DEC: these stop reminder emails for one item. Needs a stored flag and a check in the reminder job. |
+| Login, Password (tickets and inductions) | portal login and password | none | NOT COPIED. The DS stores passwords as plain text. Do not add. Ask the owner whether the portal login is needed at all. |
+| Edit, Edit_From_URL, Check_the_Edit, z_w_id, Worked_App_ID | Creator navigation and IDs | none | SYS |
+| Address, Date of Birth, Sex, Emergency Contact, Skills, Photo, Start Date, Cessation Date | personal and employment details | none | DEC/BE: sensitive personal data. Each needs a schema decision and a privacy check (Sex, Emergency Contact). |
+| Zoho_CRM_User_ID | CRM user id | none | SYS (integration; the CRM connection is separate) |
+| Trades_Person (checkbox) | Trades Person | roles | DEC: map to a role, or leave out |
+| Project_Manager, Fabrication_Manager, Fabrication_2IC (checkboxes) | manager flags | roles | NONE (confirm the roles cover the 2IC) |
+| Name prefix (title) | Name | first and last name | DEC: add a title field if needed |
+| Worker_Type (for example Employee - FT Installer) | worker type | person_kind (staff or subcontractor) | DEC: the DS has a finer type list |
+| Employer (old) | Employer_OLD | none | SYS (retired, check nothing refers to it) |
+
+### 9.3 Expiry rule (P2)
+
+- The add-ticket form on the People page already checks: the issue date is not in the future, and the expiry is after the issue date.
+- Added in this batch: a "Set expiry N years after issue" button for the three types that have a rule in the UI plan (`REACT_APP_EXTRACTION.md`, P2): Working at Heights 2 years, Elevated Work Platform (EWP) licence 5 years, Public liability insurance 1 year. The rule is matched by type name, so it stops working if a type is renamed.
+- Not added: the plan's other years (First Aid 3, Dogging 5, WorkCover 1, subcontractor agreement 3). These types are not in the app's seed list, so there is nothing to attach the rule to.
+- The years should be stored on the type, not in the code. That needs a schema change (see 9.2 "Normal years before expiry").
+
+### 9.4 Login and password
+
+The DS stores a login and a password on each ticket and induction. This app does not copy them. Storing passwords in plain text is a security risk, and the owner should confirm whether this data is needed at all.
