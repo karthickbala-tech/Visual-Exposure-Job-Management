@@ -1,10 +1,13 @@
-import { AlertTriangle, Briefcase, Building2, CalendarDays, ClipboardList, Clock, FileCheck2, KanbanSquare, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
+import { AlertTriangle, Briefcase, Hammer, PenTool, Truck, Building2, CalendarDays, ClipboardList, Clock, FileCheck2, KanbanSquare, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /** Roles that may open each screen. Only for showing menus and a friendly "No access" page: the server enforces access regardless. */
 export const MANAGERS = ['admin', 'project_manager', 'fab_manager', 'install_coordinator'];
 const OFFICE = [...MANAGERS, 'second_ic'];
 export const ROUTE_ROLES: Record<string, string[] | undefined> = {
+	design: [...OFFICE, 'viewer'],
+	fabrication: [...OFFICE, 'fab_worker', 'workshop', 'viewer'],
+	installation: [...OFFICE, 'installer', 'viewer'],
 	hours: [...OFFICE, 'installer', 'fab_worker', 'workshop'],
 	swms: [...OFFICE, 'installer'],
 	checklists: MANAGERS,
@@ -40,6 +43,9 @@ export const NAV: NavEntry[] = [
 		icon: Briefcase,
 		items: [
 			{ to: '/jobs', label: 'Jobs', icon: Briefcase },
+			{ to: '/design', label: 'Design', icon: PenTool, roles: ROUTE_ROLES.design },
+			{ to: '/fabrication', label: 'Fabrication', icon: Hammer, roles: ROUTE_ROLES.fabrication },
+			{ to: '/installation', label: 'Installation', icon: Truck, roles: ROUTE_ROLES.installation },
 			{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
 			{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
 		],

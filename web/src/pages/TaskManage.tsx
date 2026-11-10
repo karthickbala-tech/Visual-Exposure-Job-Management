@@ -179,3 +179,68 @@ export function RatingPanel({ taskId, assignees }: { taskId: string; assignees: 
 		</Card>
 	);
 }
+
+const APPROVE_TO = ['Completed', 'Approved & Completed'];
+const NEEDS_COMMENT = ['Rejected', 'Reopen'];
+type Mover = ReturnType<typeof import('../api/queries').useTransitionTask>;
+
+/**
+ * Move a task to its next stage. Approving from Manager Review asks the PM-review questions (OH&S incident, needs management review);
+ * sending back or reopening needs a reason. Everything else is one click. The server checks each move again.
+ */
+export function StageActions({ taskId, stage, nextStages, move, onDone }: { taskId: string; stage: string; nextStages: string[]; move: Mover; onDone: (to: string) => void }) {
+	const [ask, setAsk] = useState<string | null>(null);
+	const [comment, setComment] = useState('');
+	const [ohs, setOhs] = useState<'Yes' | 'No'>('No');
+	const [review, setReview] = useState(false);
+	const { notify } = useToast();
+	const approving = !!ask && stage === 'Manager Review' && APPROVE_TO.includes(ask);
+	const go = (to: string, extra: { comment?: string; ohs?: 'Yes' | 'No'; management_review?: boolean } = {}) =>
+		move.mutate({ taskId, to, ...extra }, { onSuccess: () => { setAsk(null); setComment(''); onDone(to); }, onError: (e) => notify(errText(e), 'error') });
+
+	return (
+		<Card title="Move this task">
+			<div className="actions">
+				{nextStages.map((s) => (
+					<button key={s} className={'btn ' + (APPROVE_TO.includes(s) && stage === 'Manager Review' ? '' : 'btn-ghost')} aria-pressed={ask === s} disabled={move.isPending} onClick={() => (NEEDS_COMMENT.includes(s) || (stage === 'Manager Review' && APPROVE_TO.includes(s)) ? setAsk(ask === s ? null : s) : go(s))}>
+						{stage === 'Manager Review' && APPROVE_TO.includes(s) ? 'Approve' : s}
+					</button>
+				))}
+			</div>
+			{ask && (
+				<form
+					className="stage-form"
+					onSubmit={(e) => {
+						e.preventDefault();
+						go(ask, approving ? { comment: comment.trim() || undefined, ohs, management_review: review } : { comment: comment.trim() });
+					}}
+				>
+					{approving && (
+						<>
+							<fieldset className="q">
+								<legend className="q__label">Was there an OH&amp;S incident or concern on this task?</legend>
+								<div className="q__choices">
+									{(['No', 'Yes'] as const).map((v) => (
+										<label key={v} className={'q__choice' + (ohs === v ? ' q__choice--on' : '')}>
+											<input type="radio" name="ohs" checked={ohs === v} onChange={() => setOhs(v)} /> {v}
+										</label>
+									))}
+								</div>
+							</fieldset>
+							<label className="check"><input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} /> Needs a management review</label>
+						</>
+					)}
+					<label>
+						<span className="toolbar__label">{approving ? 'Comment (optional)' : NEEDS_COMMENT.includes(ask) ? `Why? (needed to ${ask === 'Rejected' ? 'send it back' : 'reopen'})` : 'Comment'}</span>
+						<textarea rows={2} value={comment} maxLength={2000} onChange={(e) => setComment(e.target.value)} required={NEEDS_COMMENT.includes(ask)} />
+					</label>
+					<div className="actions">
+						<button className="btn" disabled={move.isPending}>{move.isPending ? 'Saving…' : approving ? 'Approve task' : `Confirm: ${ask}`}</button>
+						<button type="button" className="btn btn-ghost" onClick={() => setAsk(null)}>Cancel</button>
+					</div>
+				</form>
+			)}
+			{move.isError && !ask && <p role="alert" style={{ marginTop: 12 }}>{move.error.message}</p>}
+		</Card>
+	);
+}

@@ -57,7 +57,10 @@ export const useCreateTask = (jobId: string) => {
 export const useTransitionTask = (jobId: string) => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { taskId: string; to: string }) => api('/tasks/' + v.taskId + '/transition', json('POST', { to: v.to })),
+		mutationFn: (v: { taskId: string; to: string; comment?: string; ohs?: 'Yes' | 'No'; management_review?: boolean }) => {
+			const { taskId, ...body } = v;
+			return api('/tasks/' + taskId + '/transition', json('POST', body));
+		},
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['job', jobId] });
 			qc.invalidateQueries({ queryKey: ['jobs'] });

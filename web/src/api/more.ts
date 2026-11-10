@@ -143,6 +143,27 @@ export const useCreatePerson = () => {
 	});
 };
 
+// ---- work lists (design, fabrication, installation) ----
+export interface WorkTask {
+	ROWID: string;
+	job_id: string;
+	job_name: string | null;
+	parent_id?: string | null;
+	task_type: 'design' | 'fabrication' | 'install';
+	name: string;
+	kind?: string | null;
+	stage: string;
+	scheduled_date?: string | null;
+	required_finish?: string | null;
+	quoted_hours?: string | number;
+	booked_hours?: string | number;
+	swms_id?: string | null;
+	swms_status?: string | null;
+	crew?: { personId: string; name: string | null; role: string }[];
+}
+/** One request gives the whole screen: the tasks with job name, crew and SWMS status. Views, counts and search are worked out here. */
+export const useWorkTasks = (type: 'design' | 'fabrication' | 'install') => useGet<{ items: WorkTask[]; count: number }>(['work', type], `/tasks?type=${type}&detail=true&limit=120`, true, 30_000);
+
 // ---- manager's "to do now" ----
 export interface TodoItem { id: string; tone: 'danger' | 'warn' | 'info'; title: string; detail: string; to: string; action: string }
 export const useTodo = () => useGet<{ today: string; total: number; items: TodoItem[] }>(['todo'], '/dashboard/todo', true, 60_000);

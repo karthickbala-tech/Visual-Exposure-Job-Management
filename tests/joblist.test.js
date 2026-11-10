@@ -53,3 +53,19 @@ test('the jobs list carries names, hours, risk and tab counts, and filters work 
 	assert.equal((await jobs.listJobs(w.ctx, { limit: 1 })).items.length, 1);
 	assert.equal((await jobs.listJobs(w.ctx, { limit: 1 })).total, 2, 'total is the full match, count is this page');
 });
+
+test('the task list can carry the job name, the crew and the SWMS status in three extra queries', async () => {
+	const w = makeWorld();
+	const me = String(w.ctx.actor.person.ROWID);
+	const job = (await jobs.createJob(w.ctx, { name: 'Pylon Refresh' })).job;
+	const t = (await tasks.createTask(w.ctx, String(job.ROWID), { task_type: 'install', name: 'Fit', kind: 'VE Install' })).task;
+	await tasks.addAssignee(w.ctx, String(t.ROWID), { person_id: me, role: 'lead' });
+	const plain = await tasks.listTasks(w.ctx, { type: 'install' });
+	assert.equal(plain.items[0].crew, undefined, 'only when asked for');
+	const out = await tasks.listTasks(w.ctx, { type: 'install', detail: 'true' });
+	const row = out.items[0];
+	assert.equal(row.job_name, 'Pylon Refresh');
+	assert.deepEqual(row.crew, [{ personId: me, name: 'Test User', role: 'lead' }]);
+	assert.equal(row.swms_status, 'Created');
+	assert.equal((await tasks.listTasks(w.ctx, { type: 'design', detail: 'true' })).items.length, 0);
+});

@@ -8,7 +8,7 @@ import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
-import { HoursPanel, ManagePanel, RatingPanel } from './TaskManage';
+import { HoursPanel, ManagePanel, RatingPanel, StageActions } from './TaskManage';
 import { NextStepCard } from '../components/CrewCards';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
@@ -73,22 +73,7 @@ export function TaskDetail() {
 				</dl>
 			</Card>
 
-			{nextStages.length > 0 && (
-				<Card title="Move this task">
-					<div className="actions">
-						{nextStages.map((s) => (
-							<button key={s} className="btn btn-ghost" disabled={move.isPending} onClick={() => move.mutate({ taskId: task.ROWID, to: s }, { onSuccess: () => notify(`Moved to ${s}`) })}>
-								{s}
-							</button>
-						))}
-					</div>
-					{move.isError && (
-						<p role="alert" style={{ marginTop: 12 }}>
-							{move.error.message}
-						</p>
-					)}
-				</Card>
-			)}
+			{nextStages.length > 0 && <StageActions taskId={task.ROWID} stage={task.stage} nextStages={nextStages} move={move} onDone={(to) => notify(`Moved to ${to}`)} />}
 
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
 				<ManagePanel taskId={task.ROWID} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} isFab={task.task_type === 'fabrication'} />

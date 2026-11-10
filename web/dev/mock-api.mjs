@@ -175,7 +175,11 @@ const routes = [
 	['POST', /^\/tasks\/(\d+)\/subtasks$/, (m, _, b) => { const p = taskById(m[1]); const t = { ...p, ROWID: id(), name: b.name, stage: 'Awaiting Scheduling', assignees: [], swms_id: undefined }; S.tasks.push(t); return { task: taskView(t) }; }],
 	['GET', /^\/tasks\/(\d+)$/, (m) => { const t = taskById(m[1]) || S.tasks[0]; return { task: taskView(t), assignees: t.assignees.map(([p, role], i) => ({ linkId: `${t.ROWID}-${i}`, personId: p, role, name: S.nameOf(p) })), nextStages: S.nextStages(t.stage) }; }],
 	['PATCH', /^\/tasks\/(\d+)$/, (m, _, b) => { const t = taskById(m[1]); patch(t, b, ['scheduled_date', 'required_finish', 'quoted_hours', 'description', 'name']); return { task: taskView(t) }; }],
-	['GET', /^\/tasks$/, () => list(S.tasks.map(taskView))],
+	['GET', /^\/tasks$/, (_, q) => {
+		let l = S.tasks.filter((t) => isManager || mine(t));
+		if (q.get('type')) l = l.filter((t) => t.task_type === q.get('type'));
+		return list(l.map((t) => (q.get('detail') ? { ...taskView(t), job_name: (jobById(t.job_id) || {}).name || null, swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, crew: t.assignees.map(([p, role]) => ({ personId: p, name: S.nameOf(p), role })) } : taskView(t))));
+	}],
 	// checklists
 	['GET', /^\/checklists\/(\d+)$/, (m) => checklistView(S.checklists.find((c) => c.id === m[1]) || S.checklists[0])],
 	['PATCH', /^\/checklists\/(\d+)\/answers$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); Object.assign(c.answers, b.answers); return checklistView(c); }],

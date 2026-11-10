@@ -139,6 +139,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		assignees: {
 			listForTask: async (taskId) => db.links.filter((l) => String(l.task_id) === String(taskId)).map(clone),
 			listForPerson: async (personId) => db.links.filter((l) => String(l.person_id) === String(personId)).map(clone),
+			listForTasks: async (taskIds) => db.links.filter((l) => taskIds.map(String).includes(String(l.task_id))).map(clone),
 			add: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.links.push(r);
@@ -249,6 +250,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		},
 		swms: {
 			findById: async (id) => clone(db.swms.find((s) => String(s.ROWID) === String(id))),
+			listByIds: async (ids) => db.swms.filter((s) => ids.map(String).includes(String(s.ROWID))).map(clone),
 			list: async ({ statuses } = {}) => db.swms.filter((s) => !statuses || !statuses.length || statuses.includes(s.swms_status)).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };

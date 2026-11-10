@@ -491,3 +491,18 @@ body { overscroll-behavior-y: auto; }
 .mini-bar span { display: block; height: 100%; background: var(--brand); }
 .over { color: var(--danger); font-weight: 700; }
 @media (max-width: 760px) { .list-toolbar, .bulk-bar { padding-left: 16px; padding-right: 16px; } .list-toolbar .search { max-width: none !important; } .col-check { width: auto; } }
+.stage-form { display: grid; gap: 14px; max-width: 560px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* ---------- Work lists (merge phase 4) ---------- */
+.kpi-btn { text-align: left; cursor: pointer; font: inherit; }
+.kpi-btn[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--brand); }
+.kpi-btn:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: 2px; }
+.avatars { display: inline-flex; }
+.mini-avatar { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-left: -6px; border: 2px solid var(--surface); border-radius: 50%; background: var(--brand); color: var(--on-brand); font-size: 10px; font-weight: 700; }
+.avatars .mini-avatar:first-child { margin-left: 0; }
+.mini-avatar.more { background: var(--chip-gray-bg); color: var(--chip-gray-ink); }
+.group-row td { padding: 8px 20px; background: var(--surface-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.group-row a { color: var(--ink-2); }
+.mini-bar .over-fill { background: var(--danger); }
+.board-inline { padding: 16px 20px; }
+@media (max-width: 760px) { .board-inline { padding: 12px 16px; } .group-row td { padding-left: 16px; } }
