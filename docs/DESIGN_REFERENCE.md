@@ -59,3 +59,7 @@ Raleway is a Google Font. The site's secondary light face (DIN Next) is licensed
 - Contrast AA minimum; green `#68B04D` on white is about 2.7:1, so **never use green for small text on white**. Use it for bars, fills (with white text at 16 px bold or larger), borders and icons only. Use `--ink` for text on light backgrounds.
 - Focus outlines visible; reduced-motion respected; keyboard operable tables and dialogs.
 - Every screen checked with the installed `web-design-guidelines` skill before it is called done, and designed with the `frontend-design` skill's direction: commit to this brand, avoid generic templates.
+
+## Re-check against the live site (2026-11-10)
+
+Measured again from the site's own theme variables. Font: Raleway (bold for headings, regular for body 14 px at line-height 1.4; the light DIN Next face is licensed and not used). Palette: ink `#1B1B1E`, greys `#545456` `#5D5D61` `#8D8D8F` `#C6C6C7`, sidebar slate `#42484D`, brand green `#68B04D` (the site's button border), red `#ED1C24`, blue `#0088CB`, yellow `#FFCB05`, link indigo `#4E5AC3`. The app's light theme now uses these exact neutral greys (the earlier greys had a green tint), the site's red for danger and its blue for info, body line-height 1.4, and the short green bar above each page title. The dark theme keeps its own darker values.

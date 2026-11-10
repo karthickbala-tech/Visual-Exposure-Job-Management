@@ -12,21 +12,22 @@
 	--link: #4e5ac3;
 
 	/* Surfaces and text */
-	--bg: #f6f7f5;
+	/* Neutral greys measured from the site: #1B1B1E ink, #545456, #5D5D61, #8D8D8F, #C6C6C7, #FAFAFA. No green tint. */
+	--bg: #f4f4f5;
 	--surface: #ffffff;
-	--surface-2: #fafbf9;
-	--surface-3: #f4f5f2;
-	--surface-hover: #f9faf8;
+	--surface-2: #fafafa;
+	--surface-3: #f2f2f3;
+	--surface-hover: #f8f8f9;
 	--ink: #1b1b1e;
-	--ink-2: #44484c;
-	--muted: #5f6368;
-	--line: #e1e2df;
-	--line-2: #eceeea;
-	--line-3: #cdd1cc;
-	--track: #e6e8e4;
-	--tag-bg: #eeefec;
+	--ink-2: #545456;
+	--muted: #5d5d61;
+	--line: #e3e3e4;
+	--line-2: #ededee;
+	--line-3: #c6c6c7;
+	--track: #e5e5e6;
+	--tag-bg: #ededee;
 	--input-bg: #ffffff;
-	--cal-out: #b5b9bd;
+	--cal-out: #b0b0b0;
 
 	/* Sidebar stays dark in both themes */
 	--side: #42484d;
@@ -34,10 +35,10 @@
 	--side-active: #545b61;
 
 	/* Status */
-	--danger: #e02424;
+	--danger: #ed1c24; /* the site's red */
 	--warn-ink: #7a4a00;
-	--info: #2f80ed;
-	--chip-gray-bg: #ecedeb; --chip-gray-ink: #43484c;
+	--info: #0088cb; /* the site's blue */
+	--chip-gray-bg: #ededee; --chip-gray-ink: #545456;
 	--chip-blue-bg: #dfeafc; --chip-blue-ink: #1d4fb0;
 	--chip-amber-bg: #fbe9c4; --chip-amber-ink: #7a4a00;
 	--chip-purple-bg: #e9e0fb; --chip-purple-ink: #5a2fb3;

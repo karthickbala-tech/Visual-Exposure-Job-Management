@@ -6,7 +6,7 @@
 html { -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; }
 body {
-	font-family: var(--font); font-size: 14px; line-height: 1.5; color: var(--ink); background: var(--bg);
+	font-family: var(--font); font-size: 14px; line-height: 1.4; /* the site's body: Raleway 14px at 1.4 */ color: var(--ink); background: var(--bg);
 	-webkit-font-smoothing: antialiased;
 }
 h1, h2, h3, h4, p, ul, ol, dl, dd { margin: 0; }
@@ -78,6 +78,8 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.12; }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .eyebrow { margin-bottom: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-strong); }
 .page-header h1, .page-title { font-size: clamp(22px, 2.6vw, 28px); font-weight: 700; line-height: 1.12; text-transform: uppercase; }
+/* The site's section signature: a short green bar above the heading. */
+.page-header h1::before { content: ''; display: block; width: 48px; height: 6px; margin-bottom: 10px; background: var(--brand); }
 .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; max-width: 70ch; }
 .page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .back-link { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-weight: 700; color: var(--muted); text-decoration: none; }
