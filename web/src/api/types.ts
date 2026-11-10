@@ -330,6 +330,17 @@ export interface SiteItem {
 	address: string;
 	contactName: string;
 	phone: string;
+	country?: string;
+	notes?: string;
+	accessNotes?: string;
+	businessHours?: string;
+	tenantBusiness?: string;
+	tenantContact?: string;
+	tenantPhone?: string;
+	tenantEmail?: string;
+	ownerName?: string;
+	ownerPhone?: string;
+	ownerEmail?: string;
 	isActive: boolean;
 }
 

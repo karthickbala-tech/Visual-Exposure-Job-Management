@@ -187,14 +187,29 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 	);
 }
 
+/** The other fields of the Creator Sites form, in its order: label, length and input kind. */
+const SITE_FIELDS: ['country' | 'business_hours' | 'notes' | 'access_notes' | 'tenant_business' | 'tenant_contact' | 'tenant_phone' | 'tenant_email' | 'owner_name' | 'owner_phone' | 'owner_email', string, number, 'text' | 'email' | 'area'][] = [
+	['country', 'Country', 50, 'text'],
+	['business_hours', 'Business Hours', 200, 'text'],
+	['notes', 'Location Notes', 2000, 'area'],
+	['access_notes', 'Location Access Notes', 2000, 'area'],
+	['tenant_business', 'Tenant Business Name', 200, 'text'],
+	['tenant_contact', 'Tenant Contact Name', 200, 'text'],
+	['tenant_phone', 'Tenant Contact Phone', 40, 'text'],
+	['tenant_email', 'Tenant Contact Email', 200, 'email'],
+	['owner_name', 'Location Owner Name', 200, 'text'],
+	['owner_phone', 'Location Owner Phone', 40, 'text'],
+	['owner_email', 'Location Owner Email', 200, 'email'],
+];
+
 function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 	const list = useSites();
 	const write = useRegisterWrite(['sites']);
 	const { notify } = useToast();
-	const empty = { name: '', street: '', suburb: '', state: '', post_code: '' };
+	const empty = { name: '', street: '', suburb: '', state: '', post_code: '', country: '', business_hours: '', notes: '', access_notes: '', tenant_business: '', tenant_contact: '', tenant_phone: '', tenant_email: '', owner_name: '', owner_phone: '', owner_email: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
-	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
+	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
 	return (
 		<>
 			<Card flush>
@@ -212,7 +227,7 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								{ method: 'POST', path: '/sites', body: { name: form.name, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined } },
+								{ method: 'POST', path: '/sites', body: Object.fromEntries(Object.entries(form).filter(([k, v]) => k === 'name' || v !== '')) },
 								{
 									onSuccess: () => {
 										setOpen(false);
@@ -243,6 +258,12 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 							<span className="toolbar__label">Post code</span>
 							<input value={form.post_code} onChange={set('post_code')} maxLength={10} />
 						</label>
+						{SITE_FIELDS.map(([key, label, max, kind]) => (
+							<label key={key}>
+								<span className="toolbar__label">{label}</span>
+								{kind === 'area' ? <textarea rows={3} value={form[key]} onChange={set(key)} maxLength={max} /> : <input type={kind} value={form[key]} onChange={set(key)} maxLength={max} />}
+							</label>
+						))}
 						<button className="btn" disabled={write.isPending}>
 							{write.isPending ? 'Saving…' : 'Save'}
 						</button>
