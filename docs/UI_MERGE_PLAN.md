@@ -52,3 +52,20 @@ Each phase is committed and pushed on its own; tested on localhost with the mock
 ## Request-budget rules (Catalyst free plan)
 
 One request per screen where possible; new numbers are added to existing endpoints, not new calls per row; no polling; lists keep the 30 to 60 second cache already in the app.
+
+## Status (all ten phases built, none deployed)
+
+| Phase | Done | Left out on purpose |
+|---|---|---|
+| 1 Shell | grouped sidebar, settings icon and page, No access page | none |
+| 2 Dashboard | "To do now" list, shortcuts, linked tiles | none |
+| 3 Jobs list | tabs with counts, filters, risks, CSV | none |
+| 4 Work modules | Design, Fabrication, Installation pages, approval panel | none |
+| 5 SWMS | signing queue, 3-step signing, 21 high-risk categories, PPE rules | none |
+| 6 People | four tabs, compliance tiles, validated add forms | worker slide-over, editing a worker or ticket, crew own-record view |
+| 7 Issues | board and list, saved views, update rules, six new issue columns | photo attachments, extra print layouts (waiting on the client) |
+| 8 Hours | last 8 days, CSV, add a past shift | shift clock (needs a new table and pay rules), hours-not-filled list |
+| 9 Admin | Data tab: CSV downloads and imports, settings backup | schematic device map, off-hire screen |
+| 10 Design pass | missing styles added, small-screen rules, class and token audit | screenshot checks on desktop, tablet and phone (browser tool was down) |
+
+Deploy checklist: backend (`npm run deploy:env`) and client (`catalyst deploy --only client`) together. The Data Store columns `swms.hazards` and the six new `issue` columns are already live in the Development environment.
