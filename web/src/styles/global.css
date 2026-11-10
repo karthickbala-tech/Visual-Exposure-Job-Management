@@ -797,7 +797,7 @@ body { overscroll-behavior-y: auto; }
 
 /* Full-width body: no left, right or bottom padding under the title. Only the title (and the back link above it) keep side padding. */
 .page { padding: 0; gap: 8px; }
-.page > :first-child, .page > .jm > :first-child { margin-top: 10px; }
+.page > :first-child:not(.jm), .page > .jm > :first-child { margin-top: 10px; }
 .page > :is(.page-header, .back-link), .jm > :is(.page-header, .back-link) { padding-left: 12px; padding-right: 12px; }
 .page > :is(p, h1), .jm > :is(p, h1) { padding-left: 12px; padding-right: 12px; }
 :is(.page, .jm) > :is(.card, .jd-band, .jd-head, .jd-facts, .form-section, .job-form, .form-actions, .attention, .issue-board) { border-left-width: 0; border-right-width: 0; border-radius: 0; }
