@@ -824,3 +824,27 @@ Report column lists for the task, Issues, SWMS and checklist forms were not comp
 ### Design task emails: not applicable
 
 The DS workflows `designjob_send_email` and `Design_Task_Creation_Stage_Email` only email a design checklist's owner when a design pre-job or post-job checklist record is created. The app has no design checklists (DES-2: design tasks book hours by hand), so there is no event to attach them to. They are closed as not applicable. If the owner later wants design checklists, these two emails come with them.
+
+---
+
+## 16. Catalyst Data Store check (read-only, Development)
+
+The tables were inspected with the Catalyst MCP (project VisualExposure, Development, 24 tables). Nothing was created, changed or deleted in the Data Store.
+
+**Correction to earlier sections.** Several gaps listed as "needs a new column" already have storage. The columns exist; the app code and screens do not use them yet.
+
+| Table | Columns that already exist | DS fields they can hold |
+|---|---|---|
+| company | street, suburb, state, post_code, rates (text), do_not_contact (text), notes, contact_name, phone, email | company address, the weekday / weekend / public holiday rates, the do-not-contact flags, billing notes (in notes) |
+| site | street, suburb, state, post_code, country, lat, lng, maps_url, contacts (text), notes (text), crm_site_id, crm_account_id, crm_contact_id | country, location and access notes, tenant and owner contacts, CRM links |
+| compliance_type | meta (text, unused today) | years before expiry, trainer, duration, cost, required-for-VE flags |
+
+Tables not yet inspected: person, job, task, issue, swms, sign, device and the others. Their gaps in sections 1 to 11 should be re-checked the same way before anyone adds a column.
+
+**Done in this batch**
+- Company address: the company API and the Add company form now store Street Address, Suburb, State (the DS list: VIC, NSW, QLD, SA, WA, TAS, ACT, NT) and Post Code. No schema change.
+
+**Not done, and why**
+- Company rates and do-not-contact flags: the columns exist, but rates are pay-related and need a finance-only grant and an owner decision on who sees them.
+- Site notes, country and contacts: the columns exist; the site form still needs the fields (a follow-up).
+- Company type values (installer, fabricator, and so on) still need the owner's decision.

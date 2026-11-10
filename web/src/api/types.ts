@@ -306,7 +306,10 @@ export interface CompanyItem {
 	id: string;
 	name: string;
 	kind: 'subcontractor' | 'supplier' | 'client' | 'internal';
+	street?: string;
+	suburb?: string;
 	state: string;
+	postCode?: string;
 	contactName: string;
 	phone: string;
 	email: string;

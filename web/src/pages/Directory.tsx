@@ -11,6 +11,8 @@ import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn, GridLayout } from '../components/GridKit';
 
+/** The state list of the Creator company form (Companies1.State). */
+const AU_STATES = ['VIC', 'NSW', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'];
 const KINDS = ['subcontractor', 'supplier', 'client', 'internal'] as const;
 
 const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
@@ -86,7 +88,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 	const list = useCompanies();
 	const write = useRegisterWrite(['companies']);
 	const { notify } = useToast();
-	const empty = { name: '', kind: 'subcontractor', contact_name: '', phone: '', email: '' };
+	const empty = { name: '', kind: 'subcontractor', contact_name: '', phone: '', email: '', street: '', suburb: '', state: '', post_code: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
 	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
@@ -107,7 +109,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								{ method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined } },
+								{ method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined } },
 								{
 									onSuccess: () => {
 										setOpen(false);
@@ -141,6 +143,27 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 						<label>
 							<span className="toolbar__label">Email</span>
 							<input type="email" value={form.email} onChange={set('email')} maxLength={200} />
+						</label>
+						<label>
+							<span className="toolbar__label">Street Address</span>
+							<input value={form.street} onChange={set('street')} maxLength={200} />
+						</label>
+						<label>
+							<span className="toolbar__label">Suburb</span>
+							<input value={form.suburb} onChange={set('suburb')} maxLength={100} />
+						</label>
+						<label>
+							<span className="toolbar__label">State</span>
+							<select value={form.state} onChange={set('state')} style={{ width: '100%' }}>
+								<option value="">Choose…</option>
+								{AU_STATES.map((s) => (
+									<option key={s}>{s}</option>
+								))}
+							</select>
+						</label>
+						<label>
+							<span className="toolbar__label">Post Code</span>
+							<input value={form.post_code} onChange={set('post_code')} maxLength={10} />
 						</label>
 						<button className="btn" disabled={write.isPending}>
 							{write.isPending ? 'Saving…' : 'Save'}
