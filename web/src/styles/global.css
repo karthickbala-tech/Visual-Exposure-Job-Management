@@ -433,3 +433,28 @@ body { overscroll-behavior-y: auto; }
 .dept-tile .dept-open { color: var(--danger); }
 .dept-tile:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: 2px; }
 @media (max-width: 760px) { .dept-board { padding-left: 16px; padding-right: 16px; } }
+
+/* ---------- Grouped sidebar, settings page, no-access page, personal display choices ---------- */
+.side-group { display: grid; }
+.side-group-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 40px; padding: 0 12px; border: 0; border-left: 3px solid transparent; border-radius: 2px; background: transparent; color: #d3d4d5; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; }
+.side-group-head:hover { background: var(--side-hover); color: #fff; }
+.side-group-head:focus-visible { outline: 2px solid #9bd47f; outline-offset: -2px; }
+.side-group-head .side-label { flex: 1; }
+.side-group-head .grp-chev { flex: none; transition: transform 0.15s ease-out; color: #9a9ea2; }
+.side-group.open > .side-group-head .grp-chev { transform: rotate(180deg); }
+.side-group.has-active > .side-group-head { color: #fff; }
+.side-group.has-active > .side-group-head svg:first-child { color: var(--brand); }
+.side-group-body { display: grid; gap: 2px; margin: 2px 0 6px; }
+.side-link.nested { padding-left: 38px; min-height: 36px; font-size: 12px; }
+.pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pref-row p { font-size: 12.5px; max-width: 52ch; }
+.no-access { display: flex; align-items: flex-start; gap: 14px; max-width: 560px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--danger); border-radius: 2px; }
+.no-access p { margin-bottom: 8px; }
+.no-access .btn { margin-top: 6px; }
+.no-access svg { flex: none; margin-top: 2px; color: var(--danger); }
+/* density and text size (Settings) */
+:root[data-density='compact'] .table td, :root[data-density='compact'] .rtable td { padding-top: 6px; padding-bottom: 6px; }
+:root[data-density='compact'] .table th, :root[data-density='compact'] .rtable th { padding-top: 7px; padding-bottom: 7px; }
+:root[data-density='compact'] .page { gap: 12px; }
+:root[data-density='compact'] .card-body { padding-top: 12px; padding-bottom: 12px; }
+:root[data-text='large'] body { zoom: 1.08; }

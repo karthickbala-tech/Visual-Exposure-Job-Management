@@ -4,6 +4,10 @@ import { AuthGate } from './auth/AuthGate';
 import { ApiError } from './api/client';
 import { Shell } from './components/Shell';
 import { ThemeProvider } from './components/theme';
+import { PrefsProvider } from './components/prefs';
+import { Guard } from './components/Guard';
+import { ROUTE_ROLES } from './navConfig';
+import { Settings } from './pages/Settings';
 import { ToastProvider } from './components/toast';
 import { Home } from './pages/Home';
 import { Jobs } from './pages/Jobs';
@@ -43,6 +47,7 @@ const queryClient = new QueryClient({
 export default function App() {
 	return (
 		<ThemeProvider>
+		<PrefsProvider>
 		<QueryClientProvider client={queryClient}>
 			<ToastProvider>
 			<AuthGate>
@@ -54,17 +59,18 @@ export default function App() {
 							<Route path="jobs/:id" element={<JobDetail />} />
 							<Route path="issues" element={<Issues />} />
 							<Route path="calendar" element={<Calendar />} />
-							<Route path="people" element={<People />} />
+							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
 							<Route path="people/:id" element={<PersonDetail />} />
 							<Route path="compliance" element={<Compliance />} />
-							<Route path="equipment" element={<Equipment />} />
-							<Route path="devices" element={<Devices />} />
-							<Route path="admin" element={<Admin />} />
-							<Route path="directory" element={<Directory />} />
+							<Route path="equipment" element={<Guard roles={ROUTE_ROLES.equipment}><Equipment /></Guard>} />
+							<Route path="devices" element={<Guard roles={ROUTE_ROLES.devices}><Devices /></Guard>} />
+							<Route path="settings" element={<Settings />} />
+							<Route path="admin" element={<Guard roles={ROUTE_ROLES.admin}><Admin /></Guard>} />
+							<Route path="directory" element={<Guard roles={ROUTE_ROLES.directory}><Directory /></Guard>} />
 							<Route path="tasks" element={<TaskBoard />} />
-							<Route path="hours" element={<Hours />} />
-							<Route path="swms" element={<SwmsList />} />
-							<Route path="reports/checklists" element={<ChecklistReport />} />
+							<Route path="hours" element={<Guard roles={ROUTE_ROLES.hours}><Hours /></Guard>} />
+							<Route path="swms" element={<Guard roles={ROUTE_ROLES.swms}><SwmsList /></Guard>} />
+							<Route path="reports/checklists" element={<Guard roles={ROUTE_ROLES.checklists}><ChecklistReport /></Guard>} />
 							<Route path="tasks/:id" element={<TaskDetail />} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />
@@ -74,6 +80,7 @@ export default function App() {
 			</AuthGate>
 			</ToastProvider>
 		</QueryClientProvider>
+		</PrefsProvider>
 		</ThemeProvider>
 	);
 }

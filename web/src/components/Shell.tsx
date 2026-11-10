@@ -1,41 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Briefcase, CalendarDays, LayoutDashboard, ChevronUp, ChevronsLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, Users, X, Building2, Settings, Smartphone, Wrench, Clock, KanbanSquare, FileCheck2, ClipboardList } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, ChevronsLeft, LogOut, Menu, Moon, Search, Settings2, Sun, X } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
 import emblem from '../assets/emblem.png';
 import { useMe } from '../api/queries';
 import { signOut } from '../auth/Login';
 import { useTheme } from './theme';
+import { usePrefs } from './prefs';
+import { flatNav, isGroup, visibleNav } from '../navConfig';
+import type { NavEntry, NavGroup, NavItem } from '../navConfig';
 import { NotificationBell } from './NotificationBell';
-
-interface NavItem {
-	to: string;
-	label: string;
-	icon: LucideIcon;
-	end?: boolean;
-	/** Roles that see this item. Omit for everyone. The server enforces access regardless. */
-	roles?: string[];
-}
-
-/** Only screens that exist are listed; more appear as later phases are built. */
-const NAV: NavItem[] = [
-	{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-	{ to: '/jobs', label: 'Jobs', icon: Briefcase },
-	{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
-	{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
-	{ to: '/hours', label: 'Hours', icon: Clock, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer', 'fab_worker', 'workshop'] },
-	{ to: '/swms', label: 'SWMS', icon: FileCheck2, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'installer'] },
-	{ to: '/reports/checklists', label: 'Checklists', icon: ClipboardList, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator'] },
-	{ to: '/issues', label: 'Issues', icon: AlertTriangle },
-	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
-	{ to: '/equipment', label: 'Equipment', icon: Wrench, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'workshop', 'fab_worker'] },
-	{ to: '/directory', label: 'Companies and sites', icon: Building2, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic', 'viewer'] },
-	{ to: '/people', label: 'People', icon: Users, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator', 'second_ic'] },
-	{ to: '/devices', label: 'Devices', icon: Smartphone, roles: ['admin', 'project_manager', 'fab_manager', 'install_coordinator'] },
-	{ to: '/admin', label: 'Admin', icon: Settings, roles: ['admin'] },
-];
 
 const roleLabel = (r: string) => r.replace(/_/g, ' ');
 const initialsOf = (name: string) =>
@@ -54,6 +29,76 @@ const readCollapsed = () => {
 		return false;
 	}
 };
+
+const OPEN_KEY = 've.nav.open';
+const readOpen = (): string[] => {
+	try {
+		const v = JSON.parse(window.localStorage.getItem(OPEN_KEY) || '[]');
+		return Array.isArray(v) ? v.map(String) : [];
+	} catch {
+		return [];
+	}
+};
+
+function SideLink({ n, collapsed, onGo, nested = false }: { n: NavItem; collapsed: boolean; onGo: () => void; nested?: boolean }) {
+	return (
+		<NavLink to={n.to} end={n.end} title={collapsed ? n.label : undefined} className={({ isActive }) => 'side-link' + (nested ? ' nested' : '') + (isActive ? ' active' : '')} onClick={onGo}>
+			<n.icon size={17} aria-hidden="true" />
+			<span className="side-label">{n.label}</span>
+		</NavLink>
+	);
+}
+
+/** The menu. Groups open and close like an accordion; the group holding the current page opens by itself. In the slim rail, or with grouping turned off, it is one flat list. */
+function SideNav({ entries, collapsed, grouped, onGo }: { entries: NavEntry[]; collapsed: boolean; grouped: boolean; onGo: () => void }) {
+	const { pathname } = useLocation();
+	const [open, setOpen] = useState<string[]>(readOpen);
+	const holds = (g: NavGroup) => g.items.some((i) => (i.end ? pathname === i.to : pathname === i.to || pathname.startsWith(i.to + '/')));
+	const toggle = (key: string) =>
+		setOpen((cur) => {
+			const next = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+			try {
+				window.localStorage.setItem(OPEN_KEY, JSON.stringify(next));
+			} catch {
+				/* not remembered */
+			}
+			return next;
+		});
+
+	if (collapsed || !grouped) {
+		return (
+			<nav className="side-nav" aria-label="Main">
+				{flatNav(entries).map((n) => (
+					<SideLink key={n.to} n={n} collapsed={collapsed} onGo={onGo} />
+				))}
+			</nav>
+		);
+	}
+	return (
+		<nav className="side-nav" aria-label="Main">
+			{entries.map((e) => {
+				if (!isGroup(e)) return <SideLink key={e.to} n={e} collapsed={false} onGo={onGo} />;
+				const isOpen = open.includes(e.key) || holds(e);
+				return (
+					<div key={e.key} className={'side-group' + (isOpen ? ' open' : '') + (holds(e) ? ' has-active' : '')}>
+						<button type="button" className="side-group-head" aria-expanded={isOpen} aria-controls={'grp-' + e.key} onClick={() => toggle(e.key)}>
+							<e.icon size={17} aria-hidden="true" />
+							<span className="side-label">{e.label}</span>
+							<ChevronDown size={15} className="grp-chev" aria-hidden="true" />
+						</button>
+						{isOpen && (
+							<div id={'grp-' + e.key} className="side-group-body">
+								{e.items.map((n) => (
+									<SideLink key={n.to} n={n} collapsed={false} onGo={onGo} nested />
+								))}
+							</div>
+						)}
+					</div>
+				);
+			})}
+		</nav>
+	);
+}
 
 /** The signed-in person at the foot of the sidebar. Opens a small menu: theme and sign out. Esc or a click outside closes it. */
 function UserMenu({ name, role, collapsed }: { name: string; role: string; collapsed: boolean }) {
@@ -135,7 +180,8 @@ export function Shell() {
 	const searchRef = useRef<HTMLInputElement>(null);
 
 	const roles = me.data?.roles ?? [];
-	const items = NAV.filter((n) => !n.roles || n.roles.some((r) => roles.includes(r)));
+	const entries = visibleNav(roles);
+	const { prefs } = usePrefs();
 	const name = me.data ? `${me.data.user.firstName} ${me.data.user.lastName}`.trim() || me.data.user.email : '';
 
 	// Ctrl or Cmd + K jumps to the search box.
@@ -173,14 +219,7 @@ export function Shell() {
 						<X size={18} />
 					</button>
 				</div>
-				<nav className="side-nav">
-					{items.map((n) => (
-						<NavLink key={n.to} to={n.to} end={n.end} title={collapsed ? n.label : undefined} className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')} onClick={() => setNavOpen(false)}>
-							<n.icon size={17} aria-hidden="true" />
-							<span className="side-label">{n.label}</span>
-						</NavLink>
-					))}
-				</nav>
+				<SideNav entries={entries} collapsed={collapsed} grouped={prefs.groupedNav} onGo={() => setNavOpen(false)} />
 				<UserMenu name={name} role={roles[0] ? roleLabel(roles[0]) : ''} collapsed={collapsed} />
 			</aside>
 			{navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
@@ -206,6 +245,9 @@ export function Shell() {
 							{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
 						</button>
 						<NotificationBell />
+						<NavLink to="/settings" className="icon-btn" aria-label="Settings" title="Settings">
+							<Settings2 size={18} aria-hidden="true" />
+						</NavLink>
 					</div>
 				</div>
 				<main id="main" className="page">
