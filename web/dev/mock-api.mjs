@@ -89,7 +89,7 @@ const complianceView = (c) => {
 	const daysLeft = c.expiryDate ? Math.round((new Date(c.expiryDate) - new Date(TODAY)) / 864e5) : null;
 	const person = c.personId ? S.nameOf(c.personId) : null;
 	const company = c.companyId ? S.companies.find((x) => x.id === c.companyId) : null;
-	return { id: c.id, kind: t ? t.kind : 'ticket', typeId: c.typeId, typeName: t ? t.name : null, personId: c.personId, personName: person, companyId: c.companyId, companyName: company ? company.name : null, referenceNo: c.referenceNo || '', expiryDate: c.expiryDate, daysLeft, status: S.complianceStatus(c.expiryDate) };
+	return { id: c.id, kind: t ? t.kind : 'ticket', typeId: c.typeId, typeName: t ? t.name : null, personId: c.personId, personName: person, companyId: c.companyId, companyName: company ? company.name : null, referenceNo: c.referenceNo || '', issueDate: c.issueDate || null, expiryDate: c.expiryDate, daysLeft, status: S.complianceStatus(c.expiryDate) };
 };
 const complianceDash = () => {
 	const counts = {};
@@ -237,12 +237,13 @@ const routes = [
 	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
 	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2007', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2008', rating: 4, comment: '', ratedAt: null }, { taskId: '2003', rating: 5, comment: 'Great finish on the frames', ratedAt: null }], count: 3, average: 4.67 })],
 	['GET', /^\/people\/(\d+)$/, (m) => ({ person: personRow(S.people.find((p) => p.ROWID === m[1]) || S.people[0]) })],
-	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); if (b.roles) p.roles = b.roles; if (b.is_active !== undefined) p.is_active = b.is_active; return { person: personRow(p) }; }],
+	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
 	['GET', /^\/people$/, () => list(S.people.map(personRow))],
 	['POST', /^\/people$/, (_, __, b) => { const p = { ROWID: id(), first_name: b.first_name, last_name: b.last_name || '', email: b.email || '', phone: b.phone || '', person_kind: b.person_kind || 'staff', job_title: '', roles: b.roles || [], is_active: true, hourly_rate: 0 }; S.people.push(p); return { person: personRow(p) }; }],
 	// compliance
 	['GET', /^\/compliance\/dashboard$/, () => complianceDash()],
 	['GET', /^\/compliance\/types$/, () => ({ items: S.complianceTypes })],
+	['PATCH', /^\/compliance\/(\d+)$/, (m, _, b) => { const c = S.complianceItems.find((x) => x.id === m[1]); if (!c) throw Object.assign(new Error('Not found'), { status: 404 }); if (b.issue_date && b.expiry_date && b.expiry_date < b.issue_date) throw Object.assign(new Error('The expiry date is before the issue date'), { status: 400 }); if (b.reference_no !== undefined) c.referenceNo = b.reference_no; if (b.issue_date !== undefined) c.issueDate = b.issue_date; if (b.expiry_date !== undefined) c.expiryDate = b.expiry_date; return { item: complianceView(c) }; }],
 	['GET', /^\/compliance$/, (_, q) => { let l = S.complianceItems.map(complianceView); if (q.get('person_id')) l = l.filter((c) => c.personId === q.get('person_id')); if (q.get('company_id')) l = l.filter((c) => c.companyId === q.get('company_id')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); if (!isManager) l = l.filter((c) => c.personId === ME); l.sort((a, b) => (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999')); return list(l); }],
 	['POST', /^\/compliance$/, (_, __, b) => { const c = { id: id(), typeId: b.type_id, personId: b.person_id || null, companyId: b.company_id || null, referenceNo: b.reference_no || '', expiryDate: b.expiry_date || null }; S.complianceItems.push(c); return { item: complianceView(c) }; }],
 	// directory

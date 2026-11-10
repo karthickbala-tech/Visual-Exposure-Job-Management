@@ -79,7 +79,7 @@ export interface Assignee {
 }
 
 export interface TaskDetailResponse {
-	task: Task & { description?: string; notes?: string; booked_hours?: string | number };
+	task: Task & { description?: string; notes?: string; booked_hours?: string | number; proposed_hours?: string | number; spec?: string };
 	assignees: Assignee[];
 	nextStages: string[];
 }

@@ -678,3 +678,7 @@ body { overscroll-behavior-y: auto; }
 	.jm .kpis { grid-template-columns: repeat(2, 1fr); }
 }
 .page:has(> .jm) { padding-top: 14px; padding-bottom: 28px; max-width: 1600px; }
+
+/* A one-line notice at the top of a page that needs the viewer's action */
+.attention { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 14px; background: var(--chip-amber-bg); border: 1px solid var(--line-3); border-left: 3px solid var(--status-hold, #ffcb05); font-size: 12.5px; color: var(--ink); }
+.attention a { font-weight: 700; }

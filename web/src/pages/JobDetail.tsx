@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { useCreateTask, useJob, useMe, useTransitionTask } from '../api/queries';
+import { ArrowLeft, Pencil, Plus } from 'lucide-react';
+import { useJob, useMe, useTransitionTask } from '../api/queries';
+import { AddTaskForm } from '../components/AddTaskForm';
+import { EditJobForm } from '../components/EditJobForm';
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
@@ -19,12 +21,10 @@ export function JobDetail() {
 	const q = useJob(id);
 	const me = useMe();
 	const move = useTransitionTask(id ?? '');
-	const add = useCreateTask(id ?? '');
 	const close = useCloseJob(id ?? '');
 	const { notify } = useToast();
-	const [taskName, setTaskName] = useState('');
-	const [taskType, setTaskType] = useState<(typeof TYPES)[number]>('design');
 	const [adding, setAdding] = useState(false);
+	const [editing, setEditing] = useState(false);
 
 	if (q.isPending) return <p role="status">Loading job…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) {
@@ -42,6 +42,7 @@ export function JobDetail() {
 	const { job, tasks, progress } = q.data;
 	const kpis = (q.data as { kpis?: Record<string, { total: number; open: number; overdue: number; percent: number }> }).kpis;
 	const canClose = me.data?.permissions.editJob && job.stage === 'Completed';
+	const inReview = tasks.filter((t) => t.stage === 'Manager Review');
 	const groups = TYPES.map((t) => ({ type: t, rows: tasks.filter((x) => x.task_type === t) })).filter((g) => g.rows.length > 0);
 
 	return (
@@ -62,13 +63,22 @@ export function JobDetail() {
 						{job.description && <p className="lead" style={{ marginTop: 12 }}>{job.description}</p>}
 					</div>
 					<Ring value={progress.job} label="Job progress" />
+					{me.data?.permissions.editJob && !editing && <button className="btn btn-ghost" onClick={() => setEditing(true)}><Pencil size={14} aria-hidden="true" /> Edit job</button>}
 					{canClose && (
-						<button className="btn" disabled={close.isPending} onClick={() => close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') })}>
+						<button className="btn" disabled={close.isPending} onClick={() => !(inReview.length && !window.confirm(`${inReview.length} ${inReview.length === 1 ? 'task is' : 'tasks are'} still in Manager Review. Closing will not wait for approval. Close the job anyway?`)) && close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') })}>
 							{close.isPending ? 'Closing…' : 'Close job'}
 						</button>
 					)}
 				</div>
+				{editing && <EditJobForm job={job} isAdmin={!!me.data?.roles.includes('admin')} onClose={() => setEditing(false)} />}
 			</Card>
+
+			{me.data?.permissions.editJob && inReview.length > 0 && (
+				<div className="attention" role="status">
+					<strong className="num">{inReview.length}</strong> {inReview.length === 1 ? 'task is' : 'tasks are'} waiting for your approval.
+					{inReview.slice(0, 3).map((t) => <Link key={t.ROWID} to={'/tasks/' + t.ROWID}>Review {t.name}</Link>)}
+				</div>
+			)}
 
 			{kpis && (
 				<section className="kpis" aria-label="Tasks by discipline">
@@ -100,46 +110,7 @@ export function JobDetail() {
 					}
 					flush
 				>
-					{adding && (
-						<form
-							className="inline-form"
-							onSubmit={(e) => {
-								e.preventDefault();
-								add.mutate(
-									{ task_type: taskType, name: taskName.trim() },
-									{
-										onSuccess: () => {
-											setTaskName('');
-											setAdding(false);
-											notify('Task added');
-										},
-									},
-								);
-							}}
-						>
-							<label style={{ flex: '0 1 180px' }}>
-								<span className="toolbar__label">Type</span>
-								<select value={taskType} onChange={(e) => setTaskType(e.target.value as typeof taskType)} style={{ width: '100%' }}>
-									{TYPES.map((t) => (
-										<option key={t} value={t}>
-											{TYPE_LABEL[t]}
-										</option>
-									))}
-								</select>
-							</label>
-							<label>
-								<span className="toolbar__label">Task name</span>
-								<input value={taskName} onChange={(e) => setTaskName(e.target.value)} required maxLength={200} autoFocus />
-							</label>
-							<button className="btn" disabled={add.isPending || !taskName.trim()}>
-								{add.isPending ? 'Adding…' : 'Add task'}
-							</button>
-							<button type="button" className="btn btn-ghost" onClick={() => setAdding(false)}>
-								Cancel
-							</button>
-							{add.isError && <p role="alert">{add.error.message}</p>}
-						</form>
-					)}
+					{adding && <AddTaskForm jobId={id ?? ''} onClose={() => setAdding(false)} />}
 					{tasks.length === 0 && !adding && <p className="table-empty">This job has no tasks yet.</p>}
 				</Card>
 			)}

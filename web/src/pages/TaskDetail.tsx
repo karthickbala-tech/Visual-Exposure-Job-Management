@@ -9,6 +9,7 @@ import { Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
 import { HoursPanel, ManagePanel, RatingPanel, StageActions } from './TaskManage';
+import { TaskDetailsPanel } from '../components/TaskDetailsPanel';
 import { NextStepCard } from '../components/CrewCards';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
@@ -77,6 +78,10 @@ export function TaskDetail() {
 
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
 				<ManagePanel taskId={task.ROWID} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} isFab={task.task_type === 'fabrication'} />
+			)}
+
+			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
+				<TaskDetailsPanel key={task.ROWID + (task.kind ?? '')} taskId={task.ROWID} type={task.task_type} name={task.name} kind={task.kind} description={task.description} proposedHours={task.proposed_hours} spec={task.spec} started={['In Progress', 'Manager Review'].includes(task.stage)} />
 			)}
 
 			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}

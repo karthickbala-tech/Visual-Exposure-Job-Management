@@ -147,6 +147,9 @@ test('crew: assigned installer can start and submit, but not approve; unassigned
 
 	const crew = w.as(['installer'], '105747000000900001');
 	await tasks.transitionTask(crew, task.ROWID, { to: 'In Progress' });
+	// INS-3: submitting waits for the crew's closure step
+	await rejects(tasks.transitionTask(crew, task.ROWID, { to: 'Manager Review' }), 409, 'closure_open');
+	w.db.checklists.push({ ROWID: '105747000000990001', task_id: task.ROWID, assignee_id: '105747000000900001', phase: 'post', checklist_status: 'Completed' });
 	await tasks.transitionTask(crew, task.ROWID, { to: 'Manager Review' });
 	await rejects(tasks.transitionTask(crew, task.ROWID, { to: 'Completed' }), 403);
 
