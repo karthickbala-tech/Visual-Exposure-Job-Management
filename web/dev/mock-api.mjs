@@ -164,6 +164,23 @@ const routes = [
 	['GET', /^\/reports\/checklists$/, (_, q) => { let l = S.checklists; if (q.get('phase')) l = l.filter((c) => c.phase === q.get('phase')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); return list(l.map((c) => ({ id: c.id, taskId: c.taskId, taskName: (taskById(c.taskId) || {}).name || null, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours }))); }],
 	// dashboards and calendar
 	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: S.tasks.filter((t) => isOpen(t) && t.scheduled_date).slice(0, 5).map(taskView), jobsByStage: Object.fromEntries(['Preparation', 'In Progress', 'On Hold', 'Completed'].map((s) => [s, S.jobs.filter((j) => j.stage === s).length])), overdueTasks: S.tasks.filter(isLate).length, openIssues: S.issues.filter((i) => ['Open', 'In Progress'].includes(i.issue_status)).length, swmsAwaiting: S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status)).length } : { scope: 'mine', today: TODAY, myTasks: myTasks().map(taskView) })],
+	['GET', /^\/dashboard\/todo$/, () => {
+		const items = [];
+		const swmsOpen = S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status));
+		if (swmsOpen.length) items.push({ id: 'swms', tone: 'danger', title: `${swmsOpen.length} SWMS are waiting for a signature`, detail: `${swmsOpen.filter((s) => s.status === 'Created').length} not signed yet`, to: '/swms', action: 'Open SWMS' });
+		S.tasks.filter((t) => t.stage === 'Manager Review').slice(0, 3).forEach((t) => items.push({ id: 'review-' + t.ROWID, tone: 'warn', title: `Review: ${t.name}`, detail: `${t.task_type} task waiting for approval`, to: '/tasks/' + t.ROWID, action: 'Review' }));
+		const late = S.tasks.filter(isLate).length;
+		if (late) items.push({ id: 'overdue', tone: 'danger', title: `${late} tasks are past the required finish`, detail: '', to: '/tasks', action: 'Open board' });
+		S.issues.filter((i) => ['High', 'Urgent'].includes(i.issue_priority) && ['Open', 'In Progress'].includes(i.issue_status)).slice(0, 3).forEach((i) => items.push({ id: 'issue-' + i.ROWID, tone: 'danger', title: `${i.issue_priority} issue: ${i.subject}`, detail: `${i.department} · ${i.issue_status}`, to: '/issues', action: 'Open issues' }));
+		const dash = complianceDash();
+		const exp = Object.values(dash.counts).reduce((n, c) => n + c.overdue, 0); const soon = Object.values(dash.counts).reduce((n, c) => n + c.today + c.within30, 0);
+		if (exp) items.push({ id: 'expired', tone: 'danger', title: `${exp} compliance items have expired`, detail: 'Tickets, inductions or company documents', to: '/compliance', action: 'Open compliance' });
+		if (soon) items.push({ id: 'soon', tone: 'warn', title: `${soon} compliance items expire within 30 days`, detail: '', to: '/compliance', action: 'Open compliance' });
+		S.tasks.filter((t) => t.task_type === 'install' && t.stage === 'Awaiting Scheduling').slice(0, 3).forEach((t) => items.push({ id: 'schedule-' + t.ROWID, tone: 'info', title: `Schedule: ${t.name}`, detail: 'Install task waiting for a date and a crew', to: '/tasks/' + t.ROWID, action: 'Schedule' }));
+		const order = { danger: 0, warn: 1, info: 2 };
+		items.sort((a, b) => order[a.tone] - order[b.tone]);
+		return { today: TODAY, total: items.length, items, generatedAt: now() };
+	}],
 	['GET', /^\/dashboards\/(\w+)$/, (m) => ({ role: m[1], today: TODAY, tiles: tilesFor(m[1]) })],
 	['GET', /^\/calendar$/, (_, q) => { const kind = q.get('kind'); return { items: S.tasks.filter((t) => t.scheduled_date && (isManager || mine(t)) && (!kind || kind === 'all' || (kind === 'install' ? t.task_type === 'install' && t.kind !== 'External Install' : t.task_type === 'fabrication'))).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) }; }],
 	// issues

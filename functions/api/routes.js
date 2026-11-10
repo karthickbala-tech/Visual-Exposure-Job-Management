@@ -188,6 +188,7 @@ router.add('GET', '/devices', withCtx(async (ctx, { url }) => ok(await registers
 
 
 // Dashboard and calendar
+router.add('GET', '/dashboard/todo', withCtx(async (ctx) => ok(await dashboard.getTodo(ctx))));
 router.add('GET', '/dashboard', withCtx(async (ctx) => ok(await dashboard.getDashboard(ctx))));
 router.add('GET', '/calendar', withCtx(async (ctx, { url }) => ok(await dashboard.getCalendar(ctx, parseQuery(url)))));
 

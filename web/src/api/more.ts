@@ -143,6 +143,10 @@ export const useCreatePerson = () => {
 	});
 };
 
+// ---- manager's "to do now" ----
+export interface TodoItem { id: string; tone: 'danger' | 'warn' | 'info'; title: string; detail: string; to: string; action: string }
+export const useTodo = () => useGet<{ today: string; total: number; items: TodoItem[] }>(['todo'], '/dashboard/todo', true, 60_000);
+
 // ---- checklist next step (crew) ----
 export interface NextStep { phase: 'pre' | 'post' | null; action: 'start' | 'continue' | 'done'; checklistId: string | null; next: { label: string } | null }
 export const useNextStep = (taskId: string, enabled: boolean) => useGet<NextStep>(['next-step', taskId], `/tasks/${taskId}/checklist/next`, enabled, 15_000);

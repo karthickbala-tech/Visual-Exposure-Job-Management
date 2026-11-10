@@ -4,6 +4,7 @@ import { Chip } from '../components/Chip';
 import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useRoleDashboard } from '../api/more';
 import { CrewTasks } from '../components/CrewCards';
+import { ToDoList } from '../components/ToDoList';
 
 /** Where a tile goes when it is tapped. */
 const TILE_LINK = (key: string): string | undefined => {
@@ -52,10 +53,20 @@ export function Home() {
 			{q.isSuccess && q.data.scope === 'all' && (
 				<>
 					<section className="kpis" aria-label="Needs attention">
-						<Kpi label="Overdue tasks" value={q.data.overdueTasks ?? 0} to="/calendar" tone={q.data.overdueTasks ? 'danger' : 'ok'} note={q.data.overdueTasks ? 'past their required finish' : 'nothing overdue'} />
+						<Kpi label="Overdue tasks" value={q.data.overdueTasks ?? 0} to="/tasks" tone={q.data.overdueTasks ? 'danger' : 'ok'} note={q.data.overdueTasks ? 'past their required finish' : 'nothing overdue'} />
 						<Kpi label="Open issues" value={q.data.openIssues ?? 0} to="/issues" tone={q.data.openIssues ? 'danger' : 'ok'} note={q.data.openIssues ? 'waiting for someone' : 'all clear'} />
-						<Kpi label="SWMS awaiting signature" value={q.data.swmsAwaiting ?? 0} tone={q.data.swmsAwaiting ? 'danger' : 'ok'} note="before crews go on site" />
+						<Kpi label="SWMS awaiting signature" value={q.data.swmsAwaiting ?? 0} to="/swms" tone={q.data.swmsAwaiting ? 'danger' : 'ok'} note="before crews go on site" />
 					</section>
+
+					<ToDoList />
+
+					<Card title="Go to" label="Shortcuts">
+						<div className="actions">
+							{[['/jobs', 'Jobs'], ['/tasks', 'Task board'], ['/calendar', 'Calendar'], ['/hours', 'Hours'], ['/compliance', 'Compliance'], ['/issues', 'Issues']].map(([to, label]) => (
+								<Link key={to} className="btn btn-ghost" to={to}>{label}</Link>
+							))}
+						</div>
+					</Card>
 
 					<Card title="Jobs by stage" action={<Link className="view-all" to="/jobs">View all</Link>}>
 						<div className="kpis">
