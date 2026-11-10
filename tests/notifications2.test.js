@@ -49,7 +49,7 @@ test('rules: placeholders are checked and edits are applied safely', () => {
 test('admin can list, edit, preview and reset email templates; placeholders and roles are checked', async () => {
 	const { w } = setup();
 	const list = await notifications.listTemplates(w.ctx);
-	assert.equal(list.items.length, 8);
+	assert.equal(list.items.length, 10); // 8 original plus install finished and fab checklist submitted (DS_COMPARISON 14.1)
 	assert.deepEqual(list.items.find((i) => i.name === 'issueRaised').placeholders, ['subject', 'department', 'priority']);
 	assert.equal(list.items.find((i) => i.name === 'jobClosed').override, null);
 
@@ -172,4 +172,35 @@ test('the compliance reminder job logs each send and counts a real mail failure 
 	assert.equal(r2.sent, 1);
 	const log = await notifications.listNotifications(w.ctx);
 	assert.deepEqual(log.items.map((i) => [i.event, i.status]).sort(), [['compliance.due', 'failed'], ['compliance.due', 'sent']]);
+});
+
+test('a finished post-job checklist emails the managers: install to the PM and install manager, fabrication to the fab manager', async () => {
+	const { w, sent, ctx } = setup();
+	const IM = '105747000000900009';
+	w.db.people.push({ ROWID: 'pm1', first_name: 'Pat', last_name: 'PM', email: 'pat@example.test', roles: ['project_manager'], is_active: 'true' });
+	w.db.people.push({ ROWID: IM, first_name: 'Ian', last_name: 'IC', email: 'ian@example.test', roles: ['install_coordinator'], is_active: 'true' });
+	w.db.people.push({ ROWID: 'fm1', first_name: 'Fay', last_name: 'FM', email: 'fay@example.test', roles: ['fab_manager'], is_active: 'true' });
+	w.db.people.push({ ROWID: 'tl1', first_name: 'Sam', last_name: 'Installer', email: 'sam@example.test', roles: ['installer'], is_active: 'true' });
+	w.db.jobs.push({ ROWID: 'j1', name: 'Pylon refresh', pm_id: 'pm1', fab_manager_id: 'fm1' });
+	w.db.tasks.push({ ROWID: 't1', job_id: 'j1', task_type: 'install', name: 'Install pylon' });
+	w.db.tasks.push({ ROWID: 't2', job_id: 'j1', task_type: 'fabrication', name: 'Cut panels' });
+	w.db.checklists.push({ ROWID: 'c1', task_id: 't1', assignee_id: 'tl1', assignee_role: 'lead', phase: 'post' });
+	w.db.checklists.push({ ROWID: 'c2', task_id: 't1', assignee_id: 'tl1', assignee_role: 'member', phase: 'post' });
+	w.db.checklists.push({ ROWID: 'c3', task_id: 't2', assignee_id: 'tl1', assignee_role: 'member', phase: 'post' });
+	await appSettings.updateSettings(w.ctx, { issue_routing: { Install: { manager_id: IM } } });
+
+	await handlers['checklist.closed']({ checklistId: 'c1', taskId: 't1', phase: 'post' }, ctx);
+	assert.equal(sent.length, 1, 'one email for the install, not one per person');
+	assert.deepEqual(sent[0].to.sort(), ['ian@example.test', 'pat@example.test']);
+	assert.match(sent[0].subject, /Install finished on site: Install pylon/);
+	assert.match(sent[0].html, /Sam Installer/);
+
+	await handlers['checklist.closed']({ checklistId: 'c2', taskId: 't1', phase: 'post' }, ctx); // a member's checklist
+	await handlers['checklist.closed']({ checklistId: 'c1', taskId: 't1', phase: 'pre' }, ctx); // not a post-job checklist
+	assert.equal(sent.length, 1, 'only the team leader post-job checklist of an install sends');
+
+	await handlers['checklist.closed']({ checklistId: 'c3', taskId: 't2', phase: 'post' }, ctx);
+	assert.equal(sent.length, 2);
+	assert.deepEqual(sent[1].to, ['fay@example.test']);
+	assert.match(sent[1].subject, /Fab checklist submitted: Cut panels/);
 });

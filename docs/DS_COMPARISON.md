@@ -743,9 +743,9 @@ The app has 8 notifications: new issue, issue updated, ticket or document expiri
 | K_VE_Hours_Report_Schedule, K_VE_Issues_Report_Schedule | weekly hours and open issues reports | NONE |
 | Install_Job: Email Install Man - Equipment off hire | hired equipment off hire | NONE |
 | Reject and reopen forms: Update the Task Stage | task sent back | NONE |
-| Jobs: VE_Email_For_FabManager (on add) | none | DEC: email the Fab Manager when a job is created |
-| Install_Post_Job_Checklists: Send Email to PM (Finished On Site) | none | DEC: email the PM when an install finishes on site |
-| Fabrication_Post_Job_Checklists: Send Email to Fab Manager | none | DEC: email the Fab Manager after the fab post-job checklist |
+| Jobs: VE_Email_For_FabManager (on add) | none | SKIPPED: the DS script only sends when the owner email equals one hard-coded address, so it is a test stub, not a real rule |
+| Install_Post_Job_Checklists: Send Email to PM (Finished On Site) | `installFinished` email, sent when a team leader finishes the post-job checklist | DONE: to the job's project manager and the installation manager (from the issue routing settings), in one message |
+| Fabrication_Post_Job_Checklists: Send Email to Fab Manager | `fabChecklistSubmitted` email | DONE: to the job's fab manager when a post-job checklist is completed |
 | Design_Task_Creation_Stage_Email, designjob_send_email | none | DEC: design task emails |
 
 Mail is limited to 100 a month on the demo plan (`REQUEST_BUDGET.md`), so the four missing emails each need an owner decision on volume before they are built.
@@ -815,3 +815,8 @@ All other columns in the 15 Jobs reports already exist in the app grid.
 ### 15.2 Other forms' report columns
 
 Report column lists for the task, Issues, SWMS and checklist forms were not compared column by column. The forms' fields were compared in sections 2 to 13, and every report column is a field of its form, so the field gaps listed there are the report gaps.
+
+### Done after section 14 was first written
+
+- Two of the four missing emails are built: install finished on site (to the PM and the installation manager) and fab checklist submitted (to the fab manager). Both are sent from the existing `checklist.closed` event, are editable in the Admin emails tab, and send one message each. The new-job email was a test stub in the DS and was skipped. The design task email is still open.
+- Mail volume: each completed team leader install checklist and each completed fab post-job checklist now sends one email. Watch the monthly 100-mail cap on the demo plan.
