@@ -49,6 +49,14 @@ function EquipmentTab({ canWrite }: { canWrite: boolean }) {
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState({ name: '', type: '', location_id: '', frequency_days: '', off_hire_required: false });
 	const checked = (id: string) => write.mutate({ method: 'POST', path: `/equipment/${id}/checked` }, { onSuccess: () => notify('Marked as checked today') });
+	const [view, setView] = useState('all');
+	const [text, setText] = useState('');
+	const [kind, setKind] = useState('');
+	const items = list.data?.items ?? [];
+	const counts = { all: items.length, service: items.filter((e) => e.status === 'In service').length, off: items.filter((e) => e.status === 'Off hire').length, overdue: items.filter((e) => e.overdue).length };
+	const types = [...new Set(items.map((e) => e.type).filter(Boolean))];
+	const needle = text.trim().toLowerCase();
+	const shown = items.filter((e) => (view === 'all' || (view === 'service' && e.status === 'In service') || (view === 'off' && e.status === 'Off hire') || (view === 'overdue' && e.overdue)) && (!kind || e.type === kind) && (!needle || `${e.code} ${e.name} ${e.locationName ?? ''}`.toLowerCase().includes(needle)));
 
 	return (
 		<Card flush>
@@ -124,7 +132,24 @@ function EquipmentTab({ canWrite }: { canWrite: boolean }) {
 				</form>
 			)}
 			<State q={list} empty="No equipment yet." />
-			{list.isSuccess && list.data.items.length > 0 && (
+			{list.isSuccess && items.length > 0 && (
+				<div className="list-toolbar">
+					<div className="segmented" role="group" aria-label="Show">
+						{([['all', 'All'], ['service', 'In service'], ['off', 'Off hire'], ['overdue', 'Overdue']] as const).map(([k, label]) => (
+							<button key={k} className={view === k ? 'on' : ''} aria-pressed={view === k} onClick={() => setView(k)}>{label}<span className="tab-count num">{counts[k]}</span></button>
+						))}
+					</div>
+					<input type="search" style={{ flex: '1 1 200px', maxWidth: 300 }} value={text} onChange={(e) => setText(e.target.value)} placeholder="Search code, name or location…" aria-label="Search equipment" />
+					{types.length > 1 && (
+						<select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Type" style={{ width: 'auto' }}>
+							<option value="">All types</option>
+							{types.map((t) => <option key={t}>{t}</option>)}
+						</select>
+					)}
+				</div>
+			)}
+			{list.isSuccess && items.length > 0 && shown.length === 0 && <p className="table-empty">Nothing matches.</p>}
+			{list.isSuccess && shown.length > 0 && (
 				<div className="table-wrap">
 					<table className="table">
 						<caption className="sr-only">Equipment register</caption>
@@ -134,12 +159,14 @@ function EquipmentTab({ canWrite }: { canWrite: boolean }) {
 								<th scope="col">Name</th>
 								<th scope="col">Location</th>
 								<th scope="col">Status</th>
+								<th scope="col">Last checked</th>
+								<th scope="col">Every</th>
 								<th scope="col">Next check</th>
 								{canWrite && <th scope="col">Action</th>}
 							</tr>
 						</thead>
 						<tbody>
-							{list.data.items.map((e) => (
+							{shown.map((e) => (
 								<tr key={e.id}>
 									<td data-label="Code" className="num">{e.code}</td>
 									<td data-label="Name" className="cell-primary">
@@ -150,6 +177,8 @@ function EquipmentTab({ canWrite }: { canWrite: boolean }) {
 									<td data-label="Status">
 										<Chip status={e.status} />
 									</td>
+									<td data-label="Last checked">{e.lastChecked ?? '-'}</td>
+									<td data-label="Every" className="num">{e.frequencyDays ? `${e.frequencyDays} days` : '-'}</td>
 									<td data-label="Next check">
 										{e.nextDue ?? '-'}
 										{e.overdue && <span className="chip chip-red" style={{ marginLeft: 8 }}>{e.daysOverdue} days overdue</span>}

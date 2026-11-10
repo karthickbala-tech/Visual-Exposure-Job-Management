@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, ClipboardCheck } from 'lucide-react';
-import { useNextStep } from '../api/more';
+import { useAddShift, useNextStep } from '../api/more';
 import { useStartChecklist } from '../api/queries';
 import type { Task } from '../api/types';
 import { Chip } from './Chip';
@@ -9,6 +10,35 @@ import { fmtDate } from './ui';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 const PHASE = { pre: 'pre-job checklist', post: 'post-job checklist' } as const;
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+/** Book hours on a task without leaving the home page. Over 14 hours asks to confirm; 16 or more is refused (the server checks too). */
+function BookHours({ taskId }: { taskId: string }) {
+	const [open, setOpen] = useState(false);
+	const [f, setF] = useState({ date: todayIso(), hours: '' });
+	const add = useAddShift();
+	const { notify } = useToast();
+	const h = Number(f.hours);
+	const problem = !f.hours ? '' : !(h >= 0.25) ? 'Enter at least 0.25 hours.' : h > 16 ? 'A shift cannot be longer than 16 hours.' : f.date > todayIso() ? 'Choose a day that has already started.' : '';
+	if (!open) return <button type="button" className="btn btn-ghost btn-sm crew-book" onClick={() => setOpen(true)}>Book hours</button>;
+	return (
+		<form
+			className="crew-book-form"
+			onSubmit={(e) => {
+				e.preventDefault();
+				if (h > 14 && !window.confirm(`${h} hours is a very long shift. Save it anyway?`)) return;
+				add.mutate({ taskId, work_date: f.date, hours: h }, { onSuccess: () => { notify('Hours booked'); setOpen(false); setF({ date: todayIso(), hours: '' }); }, onError: (er) => notify(er instanceof Error ? er.message : 'Could not book the hours', 'error') });
+			}}
+		>
+			<input type="date" max={todayIso()} value={f.date} aria-label="Day" onChange={(e) => setF({ ...f, date: e.target.value })} required />
+			<input type="number" min={0.25} max={16} step="0.25" inputMode="decimal" value={f.hours} aria-label="Hours" placeholder="Hours" onChange={(e) => setF({ ...f, hours: e.target.value })} required />
+			<button className="btn btn-sm" disabled={add.isPending || !f.hours || !!problem}>{add.isPending ? 'Saving…' : 'Book'}</button>
+			<button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Cancel</button>
+			{problem && <small role="alert">{problem}</small>}
+		</form>
+	);
+}
 
 /** Today's and coming-up tasks as big tappable cards, for people on a phone on site. */
 export function CrewTasks({ tasks, today }: { tasks: Task[]; today: string }) {
@@ -30,6 +60,7 @@ export function CrewTasks({ tasks, today }: { tasks: Task[]; today: string }) {
 								<Chip status={t.stage} />
 								<ArrowRight size={18} aria-hidden="true" />
 							</Link>
+							{t.stage === 'In Progress' && <BookHours taskId={t.ROWID} />}
 						</li>
 					))}
 				</ul>

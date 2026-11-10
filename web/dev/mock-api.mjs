@@ -182,6 +182,7 @@ const routes = [
 	['POST', /^\/tasks\/(\d+)\/hours$/, (m, _, b) => { const t = taskById(m[1]); t.booked_hours = Number(t.booked_hours || 0) + Number(b.hours || 0); return { entry: { hours: b.hours }, task: { bookedHours: t.booked_hours } }; }],
 	['POST', /^\/tasks\/(\d+)\/ratings$/, () => ({ ok: true })],
 	['POST', /^\/tasks\/(\d+)\/subtasks$/, (m, _, b) => { const p = taskById(m[1]); const t = { ...p, ROWID: id(), name: b.name, stage: 'Awaiting Scheduling', assignees: [], swms_id: undefined }; S.tasks.push(t); return { task: taskView(t) }; }],
+	['GET', /^\/tasks\/(\d+)\/history$/, (m) => { const t = taskById(m[1]); return { items: [{ at: now(), from: 'Awaiting Scheduling', to: t ? t.stage : 'Scheduled', comment: null, by: S.nameOf(ME) }], count: 1 }; }],
 	['GET', /^\/tasks\/(\d+)$/, (m) => { const t = taskById(m[1]) || S.tasks[0]; return { task: taskView(t), assignees: t.assignees.map(([p, role], i) => ({ linkId: `${t.ROWID}-${i}`, personId: p, role, name: S.nameOf(p) })), nextStages: S.nextStages(t.stage) }; }],
 	['PATCH', /^\/tasks\/(\d+)$/, (m, _, b) => { const t = taskById(m[1]); patch(t, b, ['scheduled_date', 'required_finish', 'quoted_hours', 'description', 'name']); return { task: taskView(t) }; }],
 	['GET', /^\/tasks$/, (_, q) => {

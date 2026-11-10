@@ -240,3 +240,13 @@ test('the real context swallows a failed event publish and logs a warning', asyn
 	assert.equal(warnings[0][0], 'event publish failed');
 	assert.match(warnings[0][1].error, /queue down/);
 });
+
+test('task history lists the stage moves with who, from, to and the reason', async () => {
+	const w = makeWorld();
+	const { task } = await jobWithTask(w);
+	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Scheduled' });
+	const h = await tasks.taskHistory(w.ctx, task.ROWID);
+	assert.equal(h.count, 1);
+	assert.equal(h.items[0].to, 'Scheduled');
+	assert.equal(h.items[0].from, task.stage);
+});

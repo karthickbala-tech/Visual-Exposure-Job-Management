@@ -194,3 +194,7 @@ export const useTodo = () => useGet<{ today: string; total: number; items: TodoI
 // ---- checklist next step (crew) ----
 export interface NextStep { phase: 'pre' | 'post' | null; action: 'start' | 'continue' | 'done'; checklistId: string | null; next: { label: string } | null }
 export const useNextStep = (taskId: string, enabled: boolean) => useGet<NextStep>(['next-step', taskId], `/tasks/${taskId}/checklist/next`, enabled, 15_000);
+
+// ---- task history ----
+export interface TaskHistoryItem { at: string | null; from: string | null; to: string | null; comment: string | null; by: string | null }
+export const useTaskHistory = (taskId: string | undefined) => useGet<{ items: TaskHistoryItem[]; count: number }>(['task-history', taskId ?? ''], `/tasks/${taskId}/history`, !!taskId, 30_000);

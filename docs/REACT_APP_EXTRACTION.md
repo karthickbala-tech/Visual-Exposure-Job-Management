@@ -55,3 +55,9 @@ Three read-only audits compared the colleague's demo (`react-app/`) with our app
 | S2 | Settings extras | auto theme, accent swatches, hide menu items | L FE | todo |
 
 Already taken earlier (see `UI_MERGE_PLAN.md`): grouped sidebar, settings icon, dashboard to-do list, jobs list, work modules, SWMS signing, People tabs, Issues board and rules, Hours range and CSV, Admin data tab.
+
+## Progress on 2026-11-10 (before `react-app/` moved to `backup-files/`)
+
+**Done and pushed:** P1 edit a worker, P2 edit a ticket with the "set expiry N years" button, P3 add a ticket from the person page without duplicates, P6 "Expires today" tile and bucket counts in the status filter, J1 submit blocked until the crew closed their checklists (backend rule plus test), J2 add-task form with kind, dates and hours, J3 task details with fab spec and hired equipment (also E1), J4 edit job, J5 approval notice and close confirmation, J6 task stage history (new `GET /tasks/:id/history`), E2 equipment register filters, search and extra columns, D1 device schematic map, D2 inline "Book hours" on the crew home cards.
+
+**Still to do (all rules are in the tables above; the demo's code is in `backup-files/react-app/`):** P4, P5, P7, H1 to H4, J7 to J11, I1 to I3, E2 (off-hire toggle and edit history), E3, E4, D2 (PM and workshop dashboards), D3, D4, S1, S2.

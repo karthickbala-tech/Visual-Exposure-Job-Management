@@ -112,6 +112,7 @@ router.add('GET', '/compliance/dashboard', withCtx(async (ctx, { url }) => ok(aw
 router.add('GET', '/dashboards/:role', withCtx(async (ctx, { params }) => ok(await reports.roleDashboard(ctx, params.role))));
 router.add('POST', '/admin/reports/weekly-hours', withCtx(async (ctx) => ok(await weeklyReports.runWeeklyHoursReport(ctx))));
 router.add('POST', '/admin/reports/weekly-issues', withCtx(async (ctx) => ok(await weeklyReports.runWeeklyIssuesReport(ctx))));
+router.add('GET', '/tasks/:id/history', withCtx(async (ctx, { params }) => ok(await tasks.taskHistory(ctx, params.id))));
 router.add('GET', '/tasks/:id', withCtx(async (ctx, { params }) => ok(await tasks.getTask(ctx, params.id))));
 router.add('PATCH', '/tasks/:id', withCtx(async (ctx, { req, params }) => ok(await tasks.updateTask(ctx, params.id, await readJson(req)))));
 router.add('POST', '/tasks/:id/transition', withCtx(async (ctx, { req, params }) => ok(await tasks.transitionTask(ctx, params.id, await readJson(req)))));

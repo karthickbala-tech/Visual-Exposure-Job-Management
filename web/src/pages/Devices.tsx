@@ -1,4 +1,5 @@
 import { useDevices, useMe } from '../api/queries';
+import { DeviceMap } from '../components/DeviceMap';
 import { Card, PageHeader } from '../components/ui';
 
 /** Worker devices and where each was last seen. The list comes from the device sync; nothing is typed in here. */
@@ -10,6 +11,7 @@ export function Devices() {
 	return (
 		<>
 			<PageHeader eyebrow="Workers" title="Devices" subtitle="Last known location of each worker device." />
+			{list.isSuccess && list.data.items.length > 0 && <Card title="Map"><DeviceMap devices={list.data.items} /></Card>}
 			<Card flush>
 				{!allowed && me.isSuccess && <p className="table-empty">You do not have access to devices.</p>}
 				{allowed && list.isPending && <p role="status" className="table-empty">Loading…</p>}
