@@ -5,6 +5,7 @@ import { useMe } from '../api/queries';
 import { pdfUrl, useChecklistReport, useSwmsList } from '../api/more';
 import type { SwmsListItem } from '../api/more';
 import { Chip } from '../components/Chip';
+import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 
 interface View {
@@ -68,14 +69,7 @@ export function SwmsList() {
 			)}
 			<Card flush>
 				<div className="list-toolbar">
-					<div className="segmented" role="group" aria-label="Show">
-						{VIEWS.filter((v) => !(isCrew === false && (v.key === 'my_open' || v.key === 'my_done'))).map((v) => (
-							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => setView(v.key)}>
-								{v.label}
-								<span className="tab-count num">{counts[v.key]}</span>
-							</button>
-						))}
-					</div>
+					<FilterMenu views={VIEWS.filter((v) => !(isCrew === false && (v.key === 'my_open' || v.key === 'my_done'))).map((v) => ({ key: v.key, label: v.label, count: counts[v.key] }))} view={view} onView={setView} />
 					<label className="search" style={{ flex: '1 1 220px', maxWidth: 360 }}>
 						<Search size={16} aria-hidden="true" />
 						<input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Search task, job or number…" aria-label="Search SWMS" />

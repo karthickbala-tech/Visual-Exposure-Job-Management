@@ -7,6 +7,7 @@ import type { IssuePatch } from '../api/queries';
 import type { Issue } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
+import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 
 const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
@@ -278,11 +279,7 @@ export function Issues() {
 				)}
 
 				<div className="list-toolbar">
-					<div className="segmented" role="group" aria-label="Saved views">
-						{VIEWS.filter((v) => isManager || v.key !== 'assigned').map((v) => (
-							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => setView(v.key)}>{v.label} <span className="num">{counts[v.key as keyof typeof counts]}</span></button>
-						))}
-					</div>
+					<FilterMenu views={VIEWS.filter((v) => isManager || v.key !== 'assigned').map((v) => ({ key: v.key, label: v.label, count: counts[v.key as keyof typeof counts] }))} view={view} onView={setView} />
 					<label className="search" style={{ flex: '1 1 180px', maxWidth: 280 }}>
 						<Search size={16} aria-hidden="true" />
 						<input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Search issues…" aria-label="Search issues" />

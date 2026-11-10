@@ -6,6 +6,7 @@ import { useWorkTasks } from '../api/more';
 import type { WorkTask } from '../api/more';
 import { num } from '../api/types';
 import { Chip } from '../components/Chip';
+import { FilterMenu } from '../components/FilterMenu';
 import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 
 type Kind = 'design' | 'fabrication' | 'install';
@@ -120,14 +121,7 @@ export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: bo
 
 			<Card flush>
 				<div className="list-toolbar">
-					<div className="segmented" role="group" aria-label="Saved views">
-						{views.map((v) => (
-							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => setView(v.key)}>
-								{v.label}
-								<span className="tab-count num">{counts[v.key] ?? 0}</span>
-							</button>
-						))}
-					</div>
+					<FilterMenu views={views.map((v) => ({ key: v.key, label: v.label, count: counts[v.key] ?? 0 }))} view={view} onView={setView} />
 				</div>
 				<div className="list-toolbar">
 					<label className="search" style={{ flex: '1 1 220px', maxWidth: 360 }}>

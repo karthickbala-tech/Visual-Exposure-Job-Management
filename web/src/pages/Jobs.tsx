@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Download, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { AlertTriangle, Download, Plus, Search } from 'lucide-react';
 import { useCreateJob, useJobs, useMe, usePeople } from '../api/queries';
 import { num } from '../api/types';
 import type { Job, JobTabCounts } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
+import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 
 const VIEWS: { key: keyof JobTabCounts; label: string }[] = [
@@ -45,7 +46,6 @@ export function Jobs() {
 	const [pm, setPm] = useState('');
 	const [fab, setFab] = useState('');
 	const [view, setView] = useState<keyof JobTabCounts>('all');
-	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [picked, setPicked] = useState<string[]>([]);
 	const jobs = useJobs(stage || undefined, view, { pm_id: pm || undefined, fab_manager_id: fab || undefined });
 	const me = useMe();
@@ -106,63 +106,53 @@ export function Jobs() {
 				)}
 
 				<div className="list-toolbar">
-					<div className="segmented" role="group" aria-label="Job lists">
-						{VIEWS.map((v) => (
-							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => { setView(v.key); setPicked([]); }}>
-								{v.label}
-								{counts && <span className="tab-count num">{counts[v.key]}</span>}
-							</button>
-						))}
-					</div>
+					<FilterMenu
+						views={VIEWS.map((v) => ({ key: v.key, label: v.label, count: counts?.[v.key] }))}
+						view={view}
+						onView={(k) => { setView(k as typeof view); setPicked([]); }}
+						extraCount={activeFilters}
+						onClear={() => { setStage(''); setPm(''); setFab(''); }}
+						extra={(
+							<>
+							<label>
+								<span className="toolbar__label">Stage</span>
+								<select value={stage} onChange={(e) => setStage(e.target.value)}>
+									<option value="">All stages</option>
+									{STAGES.map((s) => (
+										<option key={s}>{s}</option>
+									))}
+								</select>
+							</label>
+							{canManage && (
+								<>
+									<label>
+										<span className="toolbar__label">Project manager</span>
+										<select value={pm} onChange={(e) => setPm(e.target.value)}>
+											<option value="">Anyone</option>
+											{managers.map((p) => (
+												<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+											))}
+										</select>
+									</label>
+									<label>
+										<span className="toolbar__label">Fab manager</span>
+										<select value={fab} onChange={(e) => setFab(e.target.value)}>
+											<option value="">Anyone</option>
+											{managers.map((p) => (
+												<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+											))}
+										</select>
+									</label>
+								</>
+							)}
+							</>
+						)}
+					/>
 					<label className="search" style={{ flex: '1 1 220px', maxWidth: 360 }}>
 						<Search size={16} aria-hidden="true" />
 						<input type="search" value={text} onChange={(e) => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} placeholder="Search name, number or deal…" aria-label="Search jobs" />
 					</label>
-					<button type="button" className={'btn btn-ghost' + (activeFilters ? ' has-filters' : '')} aria-expanded={filtersOpen} aria-controls="job-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
-						<SlidersHorizontal size={15} aria-hidden="true" /> Filters{activeFilters > 0 && <span className="tab-count num">{activeFilters}</span>}
-					</button>
 				</div>
-
-				{filtersOpen && (
-					<div id="job-filters" className="inline-form" role="group" aria-label="Filters">
-						<label>
-							<span className="toolbar__label">Stage</span>
-							<select value={stage} onChange={(e) => setStage(e.target.value)}>
-								<option value="">All stages</option>
-								{STAGES.map((s) => (
-									<option key={s}>{s}</option>
-								))}
-							</select>
-						</label>
-						{canManage && (
-							<>
-								<label>
-									<span className="toolbar__label">Project manager</span>
-									<select value={pm} onChange={(e) => setPm(e.target.value)}>
-										<option value="">Anyone</option>
-										{managers.map((p) => (
-											<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
-										))}
-									</select>
-								</label>
-								<label>
-									<span className="toolbar__label">Fab manager</span>
-									<select value={fab} onChange={(e) => setFab(e.target.value)}>
-										<option value="">Anyone</option>
-										{managers.map((p) => (
-											<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
-										))}
-									</select>
-								</label>
-							</>
-						)}
-						{activeFilters > 0 && (
-							<button type="button" className="btn btn-ghost" onClick={() => { setStage(''); setPm(''); setFab(''); }}>
-								Clear filters
-							</button>
-						)}
-					</div>
-				)}
 
 				{chosen.length > 0 && (
 					<div className="bulk-bar" role="region" aria-label="Selected jobs">
