@@ -469,3 +469,26 @@ Several of these forms are sub-forms or extra variants (`_SF`, `_OLD`, `Sheet1`,
    - Hours: confirm the rating scale, whether roles are stored with ratings, and whether the shift needs start, end and break times (5.2).
    - SWMS: decide the hazard and PPE wording, the missing hazards and PPE items, the excavation rule, and whether fabrication tasks get a SWMS (4.2 to 4.4).
 4. Ask the owner about the unknown forms: Declaration, Sheet1, Line_Items_SF, Companies_OLD, Task, Fab_and_Install_Task, and which form each `_SF` belongs to.
+
+---
+
+## 8. Changes made after the comparison
+
+Done, with tests passing (298 of 298 backend tests) and the web type check, lint and build passing:
+
+- **Jobs list (section 1):** design hours booked and design labour cost (role-gated) are returned by the existing job list. No new request. Grid columns added: Design Hours Booked, Design Labour Cost (admin), Job Completed Date.
+- **Fabrication spec (section 2.4):** the DS fields are added as optional keys in both the backend rules and the picker. Existing keys are kept, so saved specs still validate. CCV gains artwork %, reverse cut and weed, vinyl brands 1 to 3 and colour codes 1 to 3. CNC gains artwork % and intracut female and male. CLB gains width, height, artwork %, return material and return height. Labels use the DS wording.
+- **SWMS hazards (section 4.3):** labels changed to the DS wording. Stored keys are unchanged, so saved statements still work. Added: hazardous substances, and flammable or contaminated atmosphere. These two have no automatic PPE, because the PPE rule for them is not in the DS.
+- **SWMS PPE (section 4.4):** added Breathing apparatus and Full face shield. Existing PPE names are unchanged, because they are stored as text.
+
+Not done, and why:
+
+- **Labour cost Parent and Fab fields:** the definitions are not in the DS or the app.
+- **Job Owner, Owner Email, Manufacturing Owner:** the DS puts these under "Not Needed or not visible?", so they stay hidden.
+- **Issue notification recipients and Person Responsible:** need new stored fields, which I can't create without a schema change.
+- **Issue Date Completed:** needs a stored column.
+- **SWMS Completed and Closed statuses:** change the stored status set.
+- **Hours rating scale and role, shift start, end and break times:** need stored fields, and the rating scale is the owner's decision.
+- **Install kit lists, vehicles and site contact:** need a decision on where the data lives.
+- **Fabrication CCV and CNC spec labels and types:** the DS types for some spec fields are text, not numbers. Changing them would change how saved specs are validated, so they are unchanged.
+- **Checklists, compliance, equipment, people, directory, sites and signs, settings, and the reports and workflows:** not yet compared.

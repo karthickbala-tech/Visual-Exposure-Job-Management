@@ -34,6 +34,9 @@ export interface Job {
 	install_hours_booked?: number;
 	fab_labour_cost?: number;
 	install_labour_cost?: number;
+	design_hours_booked?: number;
+	design_labour_cost?: number;
+	completed_date?: string | null;
 	closure_email_sent?: boolean;
 }
 

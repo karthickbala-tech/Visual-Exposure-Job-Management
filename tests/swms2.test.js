@@ -17,8 +17,8 @@ async function setup() {
 }
 
 test('hazard and PPE lists are consistent: every auto-PPE item is a known PPE item and the rules only add', () => {
-	assert.equal(D.HAZARDS.length, 21);
-	assert.equal(D.PPE_ITEMS.length, 11);
+	assert.equal(D.HAZARDS.length, 23); // 21 original plus hazardous substances and flammable atmosphere (DS_COMPARISON 4.3)
+	assert.equal(D.PPE_ITEMS.length, 13); // 11 original plus breathing apparatus and full face shield (DS_COMPARISON 4.4)
 	for (const items of Object.values(D.PPE_FOR)) for (const p of items) assert.ok(D.PPE_ITEMS.includes(p), p);
 	for (const key of Object.keys(D.PPE_FOR)) assert.ok(D.HAZARD_KEYS.includes(key), key);
 	assert.deepEqual(D.autoPpe(['falls', 'hot_works']).sort(), ['Gloves', 'Hard hat', 'Harness and fall arrest', 'Long sleeves and pants', 'Safety boots', 'Safety glasses', 'Welding mask or face shield']);
@@ -35,7 +35,7 @@ test('ticking hazards saves them and adds the PPE they need; unticking never rem
 	assert.ok(b.swms.ppe.includes('Harness and fall arrest'), 'PPE stays');
 	await rejects(swms.updateSwms(w.ctx, id, { hazards: ['moon_walking'] }), 400);
 	const opt = await swms.options(w.ctx);
-	assert.equal(opt.hazards.length, 21);
+	assert.equal(opt.hazards.length, 23);
 	assert.ok(opt.ppeFor.falls.includes('Hard hat'));
 });
 
