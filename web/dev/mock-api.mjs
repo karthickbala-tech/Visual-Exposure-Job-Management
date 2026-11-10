@@ -162,7 +162,7 @@ const routes = [
 			counts,
 		};
 	}],
-	['POST', /^\/jobs$/, (_, __, b) => { const j = { ROWID: id(), name: b.name, stage: 'Preparation', crm_deal_id: '', pm_id: ME, fab_manager_id: null, expected_finish: b.expected_finish || null, created_date: TODAY, percent_fab: 0, percent_install: 0, percent_job: 0, server_path: '', description: b.description || '' }; S.jobs.unshift(j); return { job: j }; }],
+	['POST', /^\/jobs$/, (_, __, b) => { const j = { ROWID: id(), name: b.name, stage: 'Preparation', crm_deal_id: b.crm_deal_id || '', quote_ref: b.quote_ref || '', pm_id: b.pm_id || ME, fab_manager_id: b.fab_manager_id || null, expected_finish: b.expected_finish || null, agreed_fab_finish: b.agreed_fab_finish || null, required_fab_finish: b.required_fab_finish || null, created_date: TODAY, percent_fab: 0, percent_install: 0, percent_job: 0, server_path: b.server_path || '', description: b.description || '' }; S.jobs.unshift(j); return { job: j }; }],
 	['GET', /^\/jobs\/(\d+)\/signs$/, (m) => list(S.signs.filter((s) => s.jobId === m[1]))],
 	['GET', /^\/jobs\/(\d+)\/sign-groups$/, (m) => list(S.signGroups.filter((s) => s.jobId === m[1]))],
 	['POST', /^\/jobs\/(\d+)\/sync-quotes$/, (m) => ({ synced: S.signGroups.filter((s) => s.jobId === m[1]).length, items: S.signGroups.filter((s) => s.jobId === m[1]) })],

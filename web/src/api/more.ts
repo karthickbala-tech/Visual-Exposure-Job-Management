@@ -161,7 +161,7 @@ export const usePersonCompliance = (id: string | undefined) => useGet<{ items: {
 export const useCreatePerson = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; roles?: string[] }) => api<{ person: PersonFull }>('/people', send('POST', v)),
+		mutationFn: (v: { first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string[] }) => api<{ person: PersonFull }>('/people', send('POST', v)),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['people'] }),
 	});
 };

@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { useCompanies, useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
-import { useCreatePerson, useRoles } from '../api/more';
 import type { ComplianceItem } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -19,7 +18,6 @@ const parseRoles = (v: unknown): string[] => {
 };
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 const todayIso = () => new Date().toISOString().slice(0, 10);
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Tab = 've' | 'sub' | 'tickets' | 'docs';
 const TABS: { key: Tab; label: string }[] = [
@@ -34,51 +32,6 @@ function stateOf(items: ComplianceItem[]) {
 	const act = items.filter((i) => i.status === 'Expired' || i.status === 'Expiring').length;
 	const label = items.some((i) => i.status === 'Expired') ? 'Expired' : items.some((i) => i.status === 'Expiring') ? 'Expiring' : items.length ? 'Valid' : 'No records';
 	return { label, act };
-}
-
-function AddPerson({ onClose }: { onClose: () => void }) {
-	const create = useCreatePerson();
-	const roles = useRoles();
-	const { notify } = useToast();
-	const [f, setF] = useState({ first_name: '', last_name: '', email: '', phone: '', person_kind: 'staff', role: '' });
-	const emailBad = !!f.email && !EMAIL.test(f.email);
-	const needRole = f.person_kind === 'staff' && !f.role;
-	return (
-		<form
-			className="inline-form"
-			onSubmit={(e) => {
-				e.preventDefault();
-				create.mutate(
-					{ first_name: f.first_name.trim(), last_name: f.last_name.trim() || undefined, email: f.email.trim() || undefined, phone: f.phone.trim() || undefined, person_kind: f.person_kind, roles: f.role ? [f.role] : undefined },
-					{ onSuccess: () => { onClose(); notify('Person added'); }, onError: (er) => notify(errText(er), 'error') },
-				);
-			}}
-		>
-			<label><span className="toolbar__label">First name *</span><input value={f.first_name} required maxLength={100} autoComplete="off" onChange={(e) => setF({ ...f, first_name: e.target.value })} /></label>
-			<label><span className="toolbar__label">Last name</span><input value={f.last_name} maxLength={100} autoComplete="off" onChange={(e) => setF({ ...f, last_name: e.target.value })} /></label>
-			<label style={{ flex: '0 1 170px' }}>
-				<span className="toolbar__label">Employer</span>
-				<select value={f.person_kind} onChange={(e) => setF({ ...f, person_kind: e.target.value })}>
-					<option value="staff">Visual Exposure</option>
-					<option value="subcontractor">Subcontractor</option>
-				</select>
-			</label>
-			{f.person_kind === 'staff' && (
-				<label style={{ flex: '0 1 200px' }}>
-					<span className="toolbar__label">Primary role *</span>
-					<select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })} required>
-						<option value="">Choose…</option>
-						{(roles.data?.items ?? []).filter((r) => r.key !== 'admin').map((r) => <option key={r.key} value={r.key}>{roleLabel(r.key)}</option>)}
-					</select>
-				</label>
-			)}
-			<label><span className="toolbar__label">Email</span><input type="email" value={f.email} maxLength={100} autoComplete="off" spellCheck={false} aria-invalid={emailBad} onChange={(e) => setF({ ...f, email: e.target.value })} /></label>
-			<label><span className="toolbar__label">Phone</span><input type="tel" value={f.phone} maxLength={30} autoComplete="off" onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
-			<button className="btn" disabled={create.isPending || !f.first_name.trim() || emailBad || needRole}>{create.isPending ? 'Saving…' : 'Add person'}</button>
-			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-			{emailBad && <p role="alert">Enter a valid email address.</p>}
-		</form>
-	);
 }
 
 function AddRecord({ onClose }: { onClose: () => void }) {
@@ -114,6 +67,7 @@ function AddRecord({ onClose }: { onClose: () => void }) {
 
 /** Everyone who works with the company, with their tickets and inductions: workers, subcontractors and the companies behind them, tickets, and company documents. */
 export function People() {
+	const navigate = useNavigate();
 	const me = useMe();
 	const q = usePeople(true);
 	const items = useComplianceItems();
@@ -124,7 +78,7 @@ export function People() {
 	const [activeOnly, setActiveOnly] = useState(true);
 	const [text, setText] = useState('');
 	const [status, setStatus] = useState('');
-	const [form, setForm] = useState<'person' | 'record' | null>(null);
+	const [form, setForm] = useState<'record' | null>(null);
 
 	const people = useMemo(() => q.data?.items ?? [], [q.data]);
 	const all = useMemo(() => items.data?.items ?? [], [items.data]);
@@ -185,7 +139,7 @@ export function People() {
 			<PageHeader eyebrow="Team" title="People" subtitle="Workers, subcontractors, and their tickets, inductions and documents.">
 				{canAdd && !form && (
 					<>
-						<button className="btn" onClick={() => setForm('person')}><Plus size={16} aria-hidden="true" /> Add a person</button>
+						<button className="btn" onClick={() => navigate('/people/new')}><Plus size={16} aria-hidden="true" /> Add a person</button>
 						<button className="btn btn-ghost" onClick={() => setForm('record')}><Plus size={16} aria-hidden="true" /> Add a ticket</button>
 					</>
 				)}
@@ -206,7 +160,6 @@ export function People() {
 			</section>
 
 			<Card flush>
-				{form === 'person' && canAdd && <AddPerson onClose={() => setForm(null)} />}
 				{form === 'record' && canAdd && <AddRecord onClose={() => setForm(null)} />}
 				<div className="list-toolbar">
 					<div className="segmented" role="group" aria-label="People views">

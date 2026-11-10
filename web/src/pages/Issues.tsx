@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FileDown, Plus, Search, X } from 'lucide-react';
 import { pdfUrl, useCrmDeal, useIssueBoard, useIssueHistory } from '../api/more';
-import { useCreateIssue, useIssues, useMe, usePeople, useUpdateIssue } from '../api/queries';
+import { useIssues, useMe, usePeople, useUpdateIssue } from '../api/queries';
 import type { IssuePatch } from '../api/queries';
 import type { Issue } from '../api/types';
 import { Chip } from '../components/Chip';
@@ -13,7 +13,6 @@ import { Card, PageHeader, fmtDate } from '../components/ui';
 const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
 const DEPARTMENTS = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
 const COLUMNS = ['Open', 'In Progress', 'Resolved', 'Closed'];
-const REVIEWS = ['None', 'Design review', 'Fabrication review', 'Install review', 'Management review'];
 const DEAL_DEPARTMENTS = ['Management', 'Civic Billboards']; // ISS-4
 const FACES = ['North', 'South', 'East', 'West', 'Single face'];
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -46,61 +45,6 @@ function History({ id }: { id: string }) {
 				</li>
 			))}
 		</ul>
-	);
-}
-
-/** The report form: fields that only apply to some departments appear only for them. */
-function ReportForm({ onClose }: { onClose: () => void }) {
-	const create = useCreateIssue();
-	const { notify } = useToast();
-	const [f, setF] = useState({ subject: '', description: '', issue_priority: 'Normal', department: 'Management', billboard_site: '', billboard_face: '', review_needed: 'None' });
-	const civic = f.department === 'Civic Billboards';
-	const missing = !f.subject.trim() || (civic && (!f.billboard_site.trim() || !f.billboard_face));
-	return (
-		<form
-			className="inline-form"
-			onSubmit={(e) => {
-				e.preventDefault();
-				create.mutate(
-					{
-						subject: f.subject.trim(),
-						description: f.description.trim() || undefined,
-						issue_priority: f.issue_priority,
-						department: f.department,
-						billboard_site: civic ? f.billboard_site.trim() : undefined,
-						billboard_face: civic ? f.billboard_face : undefined,
-						review_needed: f.review_needed !== 'None' ? f.review_needed : undefined,
-					},
-					{ onSuccess: () => { onClose(); notify('Issue raised'); }, onError: (er) => notify(errText(er), 'error') },
-				);
-			}}
-		>
-			<label style={{ flex: '2 1 280px' }}><span className="toolbar__label">What is the problem? *</span><input value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} required maxLength={255} autoFocus /></label>
-			<label style={{ flex: '0 1 180px' }}>
-				<span className="toolbar__label">Department</span>
-				<select value={f.department} onChange={(e) => setF({ ...f, department: e.target.value })}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>
-			</label>
-			<label style={{ flex: '0 1 140px' }}>
-				<span className="toolbar__label">Priority</span>
-				<select value={f.issue_priority} onChange={(e) => setF({ ...f, issue_priority: e.target.value })}>{PRIORITIES.map((p) => <option key={p}>{p}</option>)}</select>
-			</label>
-			{civic && (
-				<>
-					<label><span className="toolbar__label">Billboard site *</span><input value={f.billboard_site} maxLength={150} onChange={(e) => setF({ ...f, billboard_site: e.target.value })} /></label>
-					<label style={{ flex: '0 1 150px' }}>
-						<span className="toolbar__label">Billboard face *</span>
-						<select value={f.billboard_face} onChange={(e) => setF({ ...f, billboard_face: e.target.value })}><option value="">Choose…</option>{FACES.map((x) => <option key={x}>{x}</option>)}</select>
-					</label>
-				</>
-			)}
-			<label style={{ flex: '0 1 200px' }}>
-				<span className="toolbar__label">Review needed</span>
-				<select value={f.review_needed} onChange={(e) => setF({ ...f, review_needed: e.target.value })}>{REVIEWS.map((r) => <option key={r}>{r}</option>)}</select>
-			</label>
-			<label style={{ flex: '1 1 100%' }}><span className="toolbar__label">Details</span><textarea rows={2} value={f.description} maxLength={9000} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
-			<button className="btn" disabled={create.isPending || missing}>{create.isPending ? 'Saving…' : 'Raise issue'}</button>
-			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-		</form>
 	);
 }
 
@@ -203,6 +147,7 @@ function IssueCard({ i, nameOf, onOpen }: { i: Who; nameOf: (id?: string | null)
 }
 
 export function Issues() {
+	const navigate = useNavigate();
 	const me = useMe();
 	const issues = useIssues();
 	const people = usePeople(true);
@@ -210,7 +155,6 @@ export function Issues() {
 	const [dept, setDept] = useState('');
 	const [text, setText] = useState('');
 	const [layout, setLayout] = useState<'board' | 'list'>('board');
-	const [form, setForm] = useState(false);
 	const [selected, setSelected] = useState<string | null>(null);
 	const isManager = !!me.data?.permissions.editJob; // the server decides for real
 	const board = useIssueBoard(isManager);
@@ -252,7 +196,7 @@ export function Issues() {
 	return (
 		<>
 			<PageHeader eyebrow="Safety and quality" title="Issues" subtitle="Problems found on site or in the workshop, routed to the right department.">
-				{!form && <button className="btn" onClick={() => setForm(true)}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
+				{<button className="btn" onClick={() => navigate('/issues/new')}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
 			</PageHeader>
 
 			<section className="kpis" aria-label="Summary">
@@ -264,7 +208,6 @@ export function Issues() {
 			</section>
 
 			<Card flush>
-				{form && <ReportForm onClose={() => setForm(false)} />}
 
 				{isManager && board.isSuccess && (
 					<div className="dept-board" role="group" aria-label="Open issues by department">

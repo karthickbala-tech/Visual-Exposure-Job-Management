@@ -696,3 +696,20 @@ body { overscroll-behavior-y: auto; }
 .crew-book { margin-top: 6px; }
 .crew-book-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
 .crew-book-form input { width: auto; min-width: 0; flex: 1 1 110px; }
+
+/* The shared "add" form page (FormKit): grouped fields, Submit and Reset under them */
+.form-page { display: grid; gap: 12px; align-content: start; }
+.form-section { margin: 0; padding: 0; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 2px; }
+.form-section legend { float: left; width: 100%; padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.form-section legend + .form-fields { clear: both; }
+.form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; padding: 14px; }
+.form-field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.form-field--wide { grid-column: 1 / -1; }
+.form-field > label, .form-field__label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.form-field__req { color: var(--danger); }
+.form-field__hint { font-size: 11px; color: var(--muted); }
+.form-field__static { min-height: 32px; display: flex; align-items: center; padding: 0 10px; background: var(--surface-3); border: 1px dashed var(--line-3); border-radius: 2px; color: var(--ink-2); font-size: 12.5px; }
+.form-field input:not([type='checkbox']):not([type='radio']), .form-field select { min-height: 32px; }
+.form-actions { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 8px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-top: 2px solid var(--brand); }
+.form-page__error { margin: 0; }
+@media (max-width: 760px) { .form-fields { grid-template-columns: 1fr; padding: 12px; } .form-section legend { padding: 8px 12px; } }

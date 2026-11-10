@@ -2,11 +2,10 @@ import { useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Columns3, Download, ExternalLink, Plus, Search } from 'lucide-react';
-import { useCreateJob, useJobs, useMe, usePeople } from '../api/queries';
+import { useJobs, useMe, usePeople } from '../api/queries';
 import { num } from '../api/types';
 import type { Job, JobTabCounts } from '../api/types';
 import { Chip } from '../components/Chip';
-import { useToast } from '../components/toast';
 import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader } from '../components/ui';
 import { useDismiss } from '../components/useDismiss';
@@ -117,11 +116,7 @@ export function Jobs() {
 	const canManage = !!me.data?.permissions.createJob;
 	const seesMoney = !!me.data?.roles.includes('admin');
 	const people = usePeople(canManage);
-	const create = useCreateJob();
 	const navigate = useNavigate();
-	const { notify } = useToast();
-	const [name, setName] = useState('');
-	const [open, setOpen] = useState(false);
 
 	const cols = useMemo(() => COLS.filter((c) => visible.includes(c.key) && (!c.admin || seesMoney)), [visible, seesMoney]);
 	const needle = text.trim().toLowerCase();
@@ -140,34 +135,18 @@ export function Jobs() {
 		setVisible(next);
 		try { localStorage.setItem(COLS_KEY, JSON.stringify(next)); } catch { /* not saved */ }
 	};
-	const submit = (e: React.FormEvent) => {
-		e.preventDefault();
-		create.mutate({ name: name.trim() }, { onSuccess: (job) => { notify('Job created'); navigate('/jobs/' + job.ROWID); } });
-	};
 
 	return (
 		<>
 			<PageHeader eyebrow="Projects" title="All Jobs" subtitle={jobs.isSuccess ? `Showing ${shown.length} of ${jobs.data.total ?? all.length}` : 'Every job from deal to finished install.'}>
-				{canManage && !open && (
-					<button className="btn" onClick={() => setOpen(true)}>
+				{canManage && (
+					<button className="btn" onClick={() => navigate('/jobs/new')}>
 						<Plus size={16} aria-hidden="true" /> Add
 					</button>
 				)}
 			</PageHeader>
 
 			<Card flush>
-				{open && (
-					<form className="inline-form" onSubmit={submit}>
-						<label>
-							<span className="toolbar__label">Job name</span>
-							<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} autoFocus />
-						</label>
-						<button className="btn" disabled={create.isPending || !name.trim()}>{create.isPending ? 'Creating…' : 'Create job'}</button>
-						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
-						{create.isError && <p role="alert">{create.error.message}</p>}
-					</form>
-				)}
-
 				<div className="list-toolbar">
 					<div className="search-builder">
 						<label className="sr-only" htmlFor="job-search-field">Search in</label>

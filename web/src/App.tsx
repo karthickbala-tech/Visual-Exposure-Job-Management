@@ -12,6 +12,9 @@ import { ToastProvider } from './components/toast';
 import { Home } from './pages/Home';
 import { JobModule } from './components/JobModule';
 import { Jobs } from './pages/Jobs';
+import { NewJob } from './pages/NewJob';
+import { NewIssue } from './pages/NewIssue';
+import { NewPerson } from './pages/NewPerson';
 import { JobDetail } from './pages/JobDetail';
 import { TaskDetail } from './pages/TaskDetail';
 import { ChecklistPage } from './pages/ChecklistPage';
@@ -57,10 +60,13 @@ export default function App() {
 						<Route element={<Shell />}>
 							<Route index element={<Home />} />
 							<Route path="jobs" element={<JobModule><Jobs /></JobModule>} />
+							<Route path="jobs/new" element={<JobModule><NewJob /></JobModule>} />
 							<Route path="jobs/:id" element={<JobModule><JobDetail /></JobModule>} />
 							<Route path="issues" element={<Issues />} />
+							<Route path="issues/new" element={<NewIssue />} />
 							<Route path="calendar" element={<Calendar />} />
 							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
+							<Route path="people/new" element={<Guard roles={ROUTE_ROLES.people}><NewPerson /></Guard>} />
 							<Route path="people/:id" element={<PersonDetail />} />
 							<Route path="compliance" element={<Compliance />} />
 							<Route path="equipment" element={<Guard roles={ROUTE_ROLES.equipment}><Equipment /></Guard>} />
