@@ -848,3 +848,30 @@ Tables not yet inspected: person, job, task, issue, swms, sign, device and the o
 - Company rates and do-not-contact flags: the columns exist, but rates are pay-related and need a finance-only grant and an owner decision on who sees them.
 - Site notes, country and contacts: the columns exist; the site form still needs the fields (a follow-up).
 - Company type values (installer, fabricator, and so on) still need the owner's decision.
+
+### 16.1 Remaining tables checked (read-only)
+
+Correction to sections 1 to 15: most gaps listed there as "needs a new column" already have a column or a JSON text column. The code and screens do not use them yet.
+
+| Table | Columns that already exist | DS gaps they cover |
+|---|---|---|
+| task | cost_type, start_at, finish_at, completed_at, proposed_hours, sub_stage, group_description, notes, whs_flag, ohs_flag, management_review, quote_id, spec (JSON), swms_id, sign_group_id, site_id, lead_id | Cost Type, Start and Finish times, Group Description, WHS and OH&S flags, Proposed Hours |
+| issue | site_id (to site), owner_id (to person), completed_at, reported_by_id, assigned_to_id, task_id, billboard_site, billboard_face, review_needed | Issue site (Locations), Person Responsible (owner_id) |
+| swms | swms_status (free text, 30 characters), swms_tasks (text), hazards, ppe, pcbu, declarations, signoff, work_manager_id, pdf_file_id | work steps and task grid, Completed and Closed statuses (a new value needs no column) |
+| sign | details (text), install_date, deal_stage, artwork_stage, manufacturing_stage, install_stage, CRM ids | the long text fields (notes, feedback, RFQ text) fit in details |
+| person | profile_private (encrypted text, 10,000 characters), tags, crm_worker_id, mdm_enabled, hourly_rate | personal details (address, date of birth, emergency contact, skills) in the encrypted column; the CRM user id |
+| register_item | item_data (text), plan (text), item_status, location_id | equipment model, serial number, tool notes, purchase and warranty dates (JSON in item_data) |
+| job | design_hours, fab_hours, install_hours, design_cost, fab_cost, install_cost, flags (JSON), percent_*, workdrive_*, server_path | job-level totals already stored |
+| device | serial_number, model, os_name, last position, person_id | only a small subset |
+
+**Columns that are genuinely missing**
+- job: Job Owner, Owner Email, Manufacturing Owner (the DS puts these under "Not Needed or not visible?").
+- swms: a SWMS number column (or store it in a JSON field).
+- device: most of the DS device details (device id, name, type, platform, capacity, UDID, Wifi MAC, owner).
+- Per-task fabrication file name and location; signs: file attachments (the file store has kinds, but signs are not linked).
+
+**What this means for the open items**
+- Labour cost Parent / Fab: task.cost_type exists, but the code does not read or set it. The DS only declares the Parent and Fab job fields. It does not say how they are calculated. The natural reading (sum the labour cost of tasks marked Parent or Fab) is an assumption, so it needs the owner's confirmation.
+- Issue Locations and Person Responsible: the storage exists, so these are code and screen changes only.
+- SWMS Completed and Closed: a code change only, but the rules for who sets them are not in the DS.
+- Personal details: storage exists in the encrypted profile column. It still needs a privacy decision on who sees it.
