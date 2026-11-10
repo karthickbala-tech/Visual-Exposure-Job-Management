@@ -328,6 +328,10 @@ export interface SiteItem {
 	id: string;
 	name: string;
 	address: string;
+	street?: string;
+	suburb?: string;
+	state?: string;
+	postCode?: string;
 	contactName: string;
 	phone: string;
 	country?: string;

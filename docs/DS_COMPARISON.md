@@ -901,3 +901,7 @@ If the owner defines these differently, only `costByType` and the column labels 
 The DS Sites fields now have a home, with no schema change: Country and Location Notes use the `country` and `notes` columns; Location Access Notes, Business Hours, and the tenant and owner contacts (business, name, phone, email) are kept in the existing `contacts` JSON next to the primary contact. The Add site form shows all of them in the DS order and labels, and the site API returns them. Updating one field keeps the rest. A backend test covers this (301 of 301 pass).
 
 Still not done for sites: editing an existing site on screen (the form only adds), the DS Site Code field (no column; could go in the contacts JSON if wanted), and the full state names (decision, see 11.2).
+
+### 16.4 Editing companies and sites (built)
+
+The Directory lists now have an Edit button on each row (for people who can add). It opens the same dialog, prefilled, and saves with the existing PATCH routes (`/companies/:id`, `/sites/:id`). Clearing a field clears it. Checked in the browser up to the prefilled dialog; saving is covered by the backend tests, not by a browser run against the real API.

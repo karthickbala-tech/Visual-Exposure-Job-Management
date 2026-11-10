@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useCompanies, useMe, useRegisterWrite, useSites } from '../api/queries';
 import type { CompanyItem, SiteItem } from '../api/types';
@@ -15,16 +15,30 @@ import type { GridColumn, GridLayout } from '../components/GridKit';
 const AU_STATES = ['VIC', 'NSW', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'];
 const KINDS = ['subcontractor', 'supplier', 'client', 'internal'] as const;
 
+/** The Edit button of a row reads its handler from the list that shows it; it is hidden for people who cannot edit. */
+const CompanyEditCtx = createContext<((c: CompanyItem) => void) | null>(null);
+const SiteEditCtx = createContext<((s: SiteItem) => void) | null>(null);
+function EditCompany({ c }: { c: CompanyItem }) {
+	const edit = useContext(CompanyEditCtx);
+	return edit ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => edit(c)}>Edit</button> : null;
+}
+function EditSite({ s }: { s: SiteItem }) {
+	const edit = useContext(SiteEditCtx);
+	return edit ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => edit(s)}>Edit</button> : null;
+}
+
 const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
 	{ key: 'name', label: 'Name', width: 240, cell: (c) => <strong>{c.name}</strong> },
 	{ key: 'kind', label: 'Kind', width: 150, cell: (c) => <Chip status={c.kind} /> },
 	{ key: 'contact', label: 'Contact', width: 320, cell: (c) => [c.contactName, c.phone, c.email].filter(Boolean).join(' / ') || '-' },
 	{ key: 'status', label: 'Status', width: 130, cell: (c) => <Chip status={c.isActive ? 'Active' : 'Inactive'} /> },
+	{ key: 'edit', label: 'Actions', width: 90, cell: (c) => <EditCompany c={c} /> },
 ];
 const SITE_COLUMNS: GridColumn<SiteItem>[] = [
 	{ key: 'name', label: 'Name', width: 240, cell: (s) => <strong>{s.name}</strong> },
 	{ key: 'address', label: 'Address', width: 360, cell: (s) => s.address || '-' },
 	{ key: 'status', label: 'Status', width: 130, cell: (s) => <Chip status={s.isActive ? 'Active' : 'Inactive'} /> },
+	{ key: 'edit', label: 'Actions', width: 90, cell: (s) => <EditSite s={s} /> },
 ];
 const COMPANY_WIDTHS = gridWidths(COMPANY_COLUMNS);
 const SITE_WIDTHS = gridWidths(SITE_COLUMNS);
@@ -91,6 +105,13 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 	const empty = { name: '', kind: 'subcontractor', contact_name: '', phone: '', email: '', street: '', suburb: '', state: '', post_code: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
+	const [editing, setEditing] = useState<CompanyItem | null>(null);
+	const close = () => { setOpen(false); setEditing(null); setForm(empty); };
+	const startEdit = (c: CompanyItem) => {
+		setForm({ name: c.name, kind: c.kind, contact_name: c.contactName, phone: c.phone, email: c.email, street: c.street ?? '', suburb: c.suburb ?? '', state: c.state, post_code: c.postCode ?? '' });
+		setEditing(c);
+		setOpen(true);
+	};
 	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 	return (
 		<>
@@ -103,18 +124,17 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 					</div>
 				)}
 				{canWrite && open && (
-					<Dialog title="Add company" onClose={() => setOpen(false)}>
+					<Dialog title={editing ? 'Edit company' : 'Add company'} onClose={close}>
 					<form
 						className="inline-form"
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								{ method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined } },
+								editing ? { method: 'PATCH', path: '/companies/' + editing.id, body: form } : { method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined } },
 								{
 									onSuccess: () => {
-										setOpen(false);
-										setForm(empty);
-										notify('Company added');
+										close();
+										notify(editing ? 'Company saved' : 'Company added');
 									},
 								},
 							);
@@ -168,7 +188,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 						<button className="btn" disabled={write.isPending}>
 							{write.isPending ? 'Saving…' : 'Save'}
 						</button>
-						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+						<button type="button" className="btn btn-ghost" onClick={close}>
 							Cancel
 						</button>
 						{write.isError && <p role="alert">{write.error.message}</p>}
@@ -179,7 +199,9 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 				{list.isError && <p role="alert">Could not load companies.</p>}
 				{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No companies yet.</p>}
 				{list.isSuccess && list.data.items.length > 0 && (
-					<ResizableGrid layout={grid} label="Companies" columns={COMPANY_COLUMNS} rows={list.data.items} rowKey={(c) => c.id} />
+					<CompanyEditCtx.Provider value={canWrite ? startEdit : null}>
+						<ResizableGrid layout={grid} label="Companies" columns={COMPANY_COLUMNS} rows={list.data.items} rowKey={(c) => c.id} />
+					</CompanyEditCtx.Provider>
 				)}
 			</Card>
 			{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
@@ -209,6 +231,13 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 	const empty = { name: '', street: '', suburb: '', state: '', post_code: '', country: '', business_hours: '', notes: '', access_notes: '', tenant_business: '', tenant_contact: '', tenant_phone: '', tenant_email: '', owner_name: '', owner_phone: '', owner_email: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
+	const [editing, setEditing] = useState<SiteItem | null>(null);
+	const close = () => { setOpen(false); setEditing(null); setForm(empty); };
+	const startEdit = (x: SiteItem) => {
+		setForm({ name: x.name, street: x.street ?? '', suburb: x.suburb ?? '', state: x.state ?? '', post_code: x.postCode ?? '', country: x.country ?? '', business_hours: x.businessHours ?? '', notes: x.notes ?? '', access_notes: x.accessNotes ?? '', tenant_business: x.tenantBusiness ?? '', tenant_contact: x.tenantContact ?? '', tenant_phone: x.tenantPhone ?? '', tenant_email: x.tenantEmail ?? '', owner_name: x.ownerName ?? '', owner_phone: x.ownerPhone ?? '', owner_email: x.ownerEmail ?? '' });
+		setEditing(x);
+		setOpen(true);
+	};
 	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
 	return (
 		<>
@@ -221,18 +250,17 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 					</div>
 				)}
 				{canWrite && open && (
-					<Dialog title="Add site" onClose={() => setOpen(false)}>
+					<Dialog title={editing ? 'Edit site' : 'Add site'} onClose={close}>
 					<form
 						className="inline-form"
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								{ method: 'POST', path: '/sites', body: Object.fromEntries(Object.entries(form).filter(([k, v]) => k === 'name' || v !== '')) },
+								editing ? { method: 'PATCH', path: '/sites/' + editing.id, body: form } : { method: 'POST', path: '/sites', body: Object.fromEntries(Object.entries(form).filter(([k, v]) => k === 'name' || v !== '')) },
 								{
 									onSuccess: () => {
-										setOpen(false);
-										setForm(empty);
-										notify('Site added');
+										close();
+										notify(editing ? 'Site saved' : 'Site added');
 									},
 								},
 							);
@@ -267,7 +295,7 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 						<button className="btn" disabled={write.isPending}>
 							{write.isPending ? 'Saving…' : 'Save'}
 						</button>
-						<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+						<button type="button" className="btn btn-ghost" onClick={close}>
 							Cancel
 						</button>
 						{write.isError && <p role="alert">{write.error.message}</p>}
@@ -278,7 +306,9 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 				{list.isError && <p role="alert">Could not load sites.</p>}
 				{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No sites yet.</p>}
 				{list.isSuccess && list.data.items.length > 0 && (
-					<ResizableGrid layout={grid} label="Sites" columns={SITE_COLUMNS} rows={list.data.items} rowKey={(s) => s.id} />
+					<SiteEditCtx.Provider value={canWrite ? startEdit : null}>
+						<ResizableGrid layout={grid} label="Sites" columns={SITE_COLUMNS} rows={list.data.items} rowKey={(s) => s.id} />
+					</SiteEditCtx.Provider>
 				)}
 			</Card>
 			{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
