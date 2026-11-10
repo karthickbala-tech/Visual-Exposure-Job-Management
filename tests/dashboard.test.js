@@ -42,7 +42,7 @@ async function seed(w) {
 test('managers get company figures; crew only get their own work', async () => {
 	const w = makeWorld();
 	await seed(w);
-	w.db.issues.push({ ROWID: '105747000001999001', issue_status: 'Open' }, { ROWID: '105747000001999002', issue_status: 'Resolved' });
+	w.db.issues.push({ ROWID: '105747000001999001', issue_status: 'To Be discussed' }, { ROWID: '105747000001999002', issue_status: 'Completed' });
 
 	const pm = await dashboard.getDashboard(w.as(['project_manager'], '105747000000900002'));
 	assert.equal(pm.scope, 'all');

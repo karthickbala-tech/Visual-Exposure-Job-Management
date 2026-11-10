@@ -26,17 +26,17 @@ const make = async (w, over = {}) => (await issues.createIssue(w.ctx, { subject:
 const logCtx = (w, sent) => ({ ...w.ctx, log: { info() {}, warn() {}, error() {} }, mailer: { send: async (m) => (sent.push(m), { sent: true, count: m.to.length }) } });
 
 test('rules: what an update really changes, and board counts', () => {
-	const row = { issue_status: 'Open', issue_priority: 'Normal', assigned_to_id: null, owner_id: 'p1', department: 'Install', description: 'a' };
-	assert.deepEqual(diffIssue(row, { issue_status: 'Open', issue_priority: 'High', owner_id: 'p1', assigned_to_id: 'p2' }), [
-		{ field: 'issue_priority', label: 'Priority', from: 'Normal', to: 'High' },
+	const row = { issue_status: 'To Be discussed', issue_priority: 'Medium', assigned_to_id: null, owner_id: 'p1', department: 'Install', description: 'a' };
+	assert.deepEqual(diffIssue(row, { issue_status: 'To Be discussed', issue_priority: 'High', owner_id: 'p1', assigned_to_id: 'p2' }), [
+		{ field: 'issue_priority', label: 'Priority', from: 'Medium', to: 'High' },
 		{ field: 'assigned_to_id', label: 'Assigned to', from: '', to: 'p2' },
 	]);
 	assert.deepEqual(diffIssue(row, { description: 'b' }), [{ field: 'description', label: 'Description', long: true }]);
 	assert.deepEqual(diffIssue(row, { description: 'a', department: 'Install' }), []);
 
-	const c = boardCounts([{ department: 'Install', issue_status: 'Open' }, { department: 'Install', issue_status: 'Resolved' }, { department: 'Management', issue_status: 'In Progress' }, { department: 'Odd', issue_status: 'Open' }]);
+	const c = boardCounts([{ department: 'Install', issue_status: 'To Be discussed' }, { department: 'Install', issue_status: 'Completed' }, { department: 'Management', issue_status: 'In Progress' }, { department: 'Odd', issue_status: 'To Be discussed' }]);
 	assert.equal(c.Install.openTotal, 1);
-	assert.equal(c.Install.Resolved, 1);
+	assert.equal(c.Install.Completed, 1);
 	assert.equal(c.Management['In Progress'], 1);
 	assert.equal(c.Odd.openTotal, 1, 'an unknown department still shows');
 	for (const d of DEPARTMENTS) assert.ok(c[d], `${d} always appears`);
@@ -47,7 +47,7 @@ test('boards: filter by department and by All Open, My Open and My Reported; cre
 	const a = await make(w, { subject: 'A', department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' });
 	const b = await make(w, { subject: 'B' });
 	await issues.updateIssue(w.ctx, a.ROWID, { assigned_to_id: ME });
-	await issues.updateIssue(w.ctx, b.ROWID, { issue_status: 'Resolved', work_completed: 'Done' });
+	await issues.updateIssue(w.ctx, b.ROWID, { issue_status: 'Completed', work_completed: 'Done' });
 	w.db.issues.find((i) => i.subject === 'B').reported_by_id = STAFF;
 
 	assert.deepEqual((await issues.listIssues(w.ctx, { department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' })).items.map((i) => i.subject), ['A']);
@@ -60,8 +60,8 @@ test('boards: filter by department and by All Open, My Open and My Reported; cre
 	await rejects(issues.createIssue(w.ctx, { subject: 'x', department: 'Nope' }), 400);
 
 	const board = await issues.issueBoard(w.ctx);
-	assert.equal(board.counts['Civic Billboards'].Open, 1);
-	assert.equal(board.counts.Management.Resolved, 1);
+	assert.equal(board.counts['Civic Billboards']['To Be discussed'], 1);
+	assert.equal(board.counts.Management.Completed, 1);
 	assert.equal(board.truncated, false);
 	await rejects(issues.issueBoard(w.as(['installer'], STAFF)), 403);
 });
@@ -71,15 +71,15 @@ test('history: only real changes are saved, each with old and new values; an upd
 	const issue = await make(w);
 	const events = () => w.published.filter((p) => p.type === 'issue.changed' && p.payload.changes);
 
-	await issues.updateIssue(w.ctx, issue.ROWID, { issue_priority: 'Normal', issue_status: 'Open' }); // nothing new
+	await issues.updateIssue(w.ctx, issue.ROWID, { issue_priority: 'Medium', issue_status: 'To Be discussed' }); // nothing new
 	assert.equal(events().length, 0);
 	assert.equal(w.db.activity.filter((a) => a.activity_type === 'updated').length, 0);
 
 	await issues.updateIssue(w.ctx, issue.ROWID, { issue_priority: 'High', issue_status: 'In Progress', next_step: 'Call', due_date: '2026-12-01', assigned_to_id: STAFF, description: 'more detail' });
 	assert.equal(events().length, 1);
 	assert.deepEqual(events()[0].payload.changes.map((c) => [c.field, c.from, c.to]), [
-		['issue_status', 'Open', 'In Progress'],
-		['issue_priority', 'Normal', 'High'],
+		['issue_status', 'To Be discussed', 'In Progress'],
+		['issue_priority', 'Medium', 'High'],
 		['assigned_to_id', '', STAFF],
 		['description', undefined, undefined],
 		['next_step', undefined, undefined],
@@ -88,7 +88,6 @@ test('history: only real changes are saved, each with old and new values; an upd
 	assert.equal(events()[0].payload.actorId, ME);
 	assert.equal(w.db.issues[0].issue_priority, 'High');
 
-	await rejects(issues.updateIssue(w.ctx, issue.ROWID, { issue_status: 'Closed' }), 409, 'invalid_transition');
 	const h = await issues.issueHistory(w.ctx, issue.ROWID);
 	assert.equal(h.count, 1);
 	assert.equal(h.items[0].changes[1].to, 'High');
@@ -102,16 +101,16 @@ test('update email: one message with old and new values, to the right people, no
 	w.db.issues[0].assigned_to_id = ME;
 	const sent = [];
 	const ctx = logCtx(w, sent);
-	const changes = [{ field: 'issue_status', label: 'Status', from: 'Open', to: 'In Progress' }, { field: 'assigned_to_id', label: 'Assigned to', from: '', to: BOSS }];
+	const changes = [{ field: 'issue_status', label: 'Status', from: 'To Be discussed', to: 'In Progress' }, { field: 'assigned_to_id', label: 'Assigned to', from: '', to: BOSS }];
 	await handlers['issue.changed']({ issueId: String(issue.ROWID), changes, actorId: ME }, ctx);
 	assert.equal(sent.length, 1, 'one email');
 	assert.deepEqual(sent[0].to.sort(), ['rachel@example.test', 'sam@example.test'], 'reporter and project managers, not the person who changed it');
 	assert.match(sent[0].subject, /Issue updated: Cracked panel/);
-	assert.match(sent[0].html, /Status: Open -&gt; In Progress/);
+	assert.match(sent[0].html, /Status: To Be discussed -&gt; In Progress/);
 	assert.match(sent[0].html, /Assigned to: none -&gt; Rachel PM/, 'ids become names');
 
 	sent.length = 0;
-	await handlers['issue.changed']({ issueId: String(issue.ROWID), status: 'Open' }, ctx);
+	await handlers['issue.changed']({ issueId: String(issue.ROWID), status: 'To Be discussed' }, ctx);
 	assert.equal(sent.length, 0, 'no changes and not new: nothing to send');
 	assert.equal(render('issueUpdated', { issue: { subject: 'x' }, changes: [{ label: 'Description', long: true }] }).text.includes('Description was changed.'), true);
 });
@@ -178,7 +177,7 @@ test('the CRM client creates a deal and surfaces a rejection', async () => {
 test('update rules: finishing needs the work completed; other statuses need a next step and due date; Civic needs site and face', async () => {
 	const w = setup();
 	const a = await make(w, { subject: 'Rules' });
-	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'Resolved' }), 400);
+	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'Completed' }), 400);
 	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress' }), 400);
 	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress', next_step: 'Call', due_date: 'tomorrow' }), 400);
 	const ok = await issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress', next_step: 'Call', due_date: '2020-01-01' });

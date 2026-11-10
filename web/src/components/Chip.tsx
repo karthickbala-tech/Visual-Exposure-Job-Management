@@ -7,7 +7,7 @@ const TONES: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 're
 	// SWMS
 	Created: 'red', 'PM Signed': 'amber', 'TL Signed': 'green', 'Not Required': 'gray',
 	// issues
-	Open: 'red', Resolved: 'green', Closed: 'gray',
+	Open: 'red', Resolved: 'green', Closed: 'gray', 'To Be discussed': 'red', 'To Be Quoted': 'amber', Quoted: 'blue', 'Quote Sent': 'purple',
 	// compliance and people
 	'In service': 'green', 'Off hire': 'gray', 'Out of service': 'red', subcontractor: 'blue', supplier: 'purple', client: 'green', internal: 'gray', Pending: 'amber', Done: 'green', Failed: 'red', Valid: 'green', Expiring: 'amber', Expired: 'red', 'No expiry': 'gray', Active: 'green', Inactive: 'gray',
 	// checklists

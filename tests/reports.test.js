@@ -271,18 +271,18 @@ test('weekly issues report: one email per department with open issues, to that d
 	const a = (await issues.createIssue(w.ctx, { subject: 'Billboard dispute', department: 'Civic Billboards', billboard_site: 'S1', billboard_face: 'North', issue_priority: 'High' })).issue;
 	await issues.createIssue(w.ctx, { subject: 'Wet floor', department: 'Install' });
 	await issues.createIssue(w.ctx, { subject: 'Cracked panel', department: 'Install' });
-	const resolved = (await issues.createIssue(w.ctx, { subject: 'Old', department: 'Design' })).issue;
-	await issues.updateIssue(w.ctx, resolved.ROWID, { issue_status: 'Resolved', work_completed: 'Done' });
+	const resolved = (await issues.createIssue(w.ctx, { subject: 'Old', department: 'Management' })).issue;
+	await issues.updateIssue(w.ctx, resolved.ROWID, { issue_status: 'Completed', work_completed: 'Done' });
 	await issues.updateIssue(w.ctx, a.ROWID, { assigned_to_id: BOSS });
 
 	const out = await weekly.runWeeklyIssuesReport(ctx);
-	assert.deepEqual([out.departments, out.sent], [2, 2], 'Design has only a resolved issue, so no email');
+	assert.deepEqual([out.departments, out.sent], [2, 2], 'Management has only a completed issue, so no email');
 	const civic = sent.find((m) => /Civic Billboards/.test(m.subject));
 	const install = sent.find((m) => /Install/.test(m.subject));
 	assert.deepEqual(civic.to, ['sam@example.test'], 'its own manager from the routing');
 	assert.deepEqual(install.to, ['rachel@example.test'], 'no routing: the project managers');
 	assert.match(civic.subject, /Open issues this week: Civic Billboards \(1\)/);
-	assert.match(civic.html, /Billboard dispute - High, Open, open 0 days, assigned to Rachel PM/);
+	assert.match(civic.html, /Billboard dispute - High, To Be discussed, open 0 days, assigned to Rachel PM/);
 	assert.match(install.subject, /\(2\)/);
 	await rejects(weekly.runWeeklyIssuesReport({ ...ctx, actor: { roles: ['project_manager'], person: null } }), 403);
 });

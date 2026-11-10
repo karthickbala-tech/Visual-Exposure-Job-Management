@@ -56,7 +56,7 @@ test('a new issue emails the project managers, once, with the issue in the messa
 	assert.deepEqual(sent[0].to, ['pm@x.com']);
 	assert.match(sent[0].subject, /Loose bracket/);
 
-	await dispatch('issue.changed', { issueId: String(issue.ROWID), status: 'Resolved' }, ctx); // a status change is not a new issue
+	await dispatch('issue.changed', { issueId: String(issue.ROWID), status: 'Completed' }, ctx); // a status change is not a new issue
 	assert.equal(sent.length, 1);
 });
 

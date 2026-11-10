@@ -4,11 +4,12 @@ import { useCreateIssue } from '../api/queries';
 import { Field, FormPage, FormSection } from '../components/FormKit';
 import { useToast } from '../components/toast';
 
-const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
-const DEPARTMENTS = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
-const REVIEWS = ['None', 'Design review', 'Fabrication review', 'Install review', 'Management review'];
-const FACES = ['North', 'South', 'East', 'West', 'Single face'];
-const EMPTY = { subject: '', description: '', issue_priority: 'Normal', department: 'Management', billboard_site: '', billboard_face: '', review_needed: 'None' };
+const PRIORITIES = ['High', 'Medium', 'Low'];
+const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
+const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
+/** Review choices by department, as in Creator: Install and Workshop ask for one. */
+const reviewFor = (d: string) => (d === 'Install' ? ['Management Review', 'WHS Reported'] : d === 'Workshop' ? ['Management Review', 'OH&S Reported'] : []);
+const EMPTY = { subject: '', description: '', issue_priority: 'Medium', department: 'Management', billboard_site: '', billboard_face: '', review_needed: '' };
 
 /** Raise an issue on its own page. The billboard fields appear only for Civic Billboards, as in the old form. */
 export function NewIssue() {
@@ -36,7 +37,7 @@ export function NewIssue() {
 						department: f.department,
 						billboard_site: civic ? f.billboard_site.trim() : undefined,
 						billboard_face: civic ? f.billboard_face : undefined,
-						review_needed: f.review_needed !== 'None' ? f.review_needed : undefined,
+						review_needed: reviewFor(f.department).includes(f.review_needed) ? f.review_needed : undefined,
 					},
 					{ onSuccess: () => { notify('Issue raised'); navigate('/issues'); }, onError: (e) => notify(e instanceof Error ? e.message : 'Could not raise the issue', 'error') },
 				)
@@ -46,17 +47,19 @@ export function NewIssue() {
 			canSubmit={!missing}
 		>
 			<FormSection title="Issue">
-				<Field label="What is the problem?" required htmlFor="i-subject" wide><input id="i-subject" value={f.subject} required maxLength={255} autoFocus onChange={(e) => set('subject', e.target.value)} /></Field>
-				<Field label="Department" htmlFor="i-dept"><select id="i-dept" value={f.department} onChange={(e) => set('department', e.target.value)}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select></Field>
+				<Field label="Issue Subject" required htmlFor="i-subject" wide><input id="i-subject" value={f.subject} required maxLength={255} autoFocus onChange={(e) => set('subject', e.target.value)} /></Field>
+				<Field label="Department" htmlFor="i-dept"><select id="i-dept" value={f.department} onChange={(e) => setF((x) => ({ ...x, department: e.target.value, review_needed: '' }))}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select></Field>
 				<Field label="Priority" htmlFor="i-prio"><select id="i-prio" value={f.issue_priority} onChange={(e) => set('issue_priority', e.target.value)}>{PRIORITIES.map((p) => <option key={p}>{p}</option>)}</select></Field>
 				{civic && (
 					<>
-						<Field label="Billboard site" required htmlFor="i-site"><input id="i-site" value={f.billboard_site} maxLength={150} onChange={(e) => set('billboard_site', e.target.value)} /></Field>
-						<Field label="Billboard face" required htmlFor="i-face"><select id="i-face" value={f.billboard_face} onChange={(e) => set('billboard_face', e.target.value)}><option value="">Choose…</option>{FACES.map((x) => <option key={x}>{x}</option>)}</select></Field>
+						<Field label="Location" required htmlFor="i-site"><input id="i-site" value={f.billboard_site} maxLength={150} onChange={(e) => set('billboard_site', e.target.value)} /></Field>
+						<Field label="Direction" required htmlFor="i-face"><select id="i-face" value={f.billboard_face} onChange={(e) => set('billboard_face', e.target.value)}><option value="">Choose…</option>{DIRECTIONS.map((x) => <option key={x}>{x}</option>)}</select></Field>
 					</>
 				)}
-				<Field label="Review needed" htmlFor="i-review"><select id="i-review" value={f.review_needed} onChange={(e) => set('review_needed', e.target.value)}>{REVIEWS.map((r) => <option key={r}>{r}</option>)}</select></Field>
-				<Field label="Details" htmlFor="i-desc" wide><textarea id="i-desc" rows={3} maxLength={9000} value={f.description} onChange={(e) => set('description', e.target.value)} /></Field>
+				{reviewFor(f.department).length > 0 && (
+					<Field label={f.department === 'Install' ? 'Install Review For' : 'Fabrication Review For'} htmlFor="i-review"><select id="i-review" value={f.review_needed} onChange={(e) => set('review_needed', e.target.value)}><option value="">Not needed</option>{reviewFor(f.department).map((r) => <option key={r}>{r}</option>)}</select></Field>
+				)}
+				<Field label="Detailed Description" htmlFor="i-desc" wide><textarea id="i-desc" rows={3} maxLength={9000} value={f.description} onChange={(e) => set('description', e.target.value)} /></Field>
 			</FormSection>
 		</FormPage>
 	);

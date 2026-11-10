@@ -21,9 +21,9 @@ test('the to-do list names up to 3 items per kind, folds the rest, and puts the 
 		reviewTasks: [t(1), t(2), t(3), t(4), t(5)],
 		scheduleTasks: [t(6, 'install')],
 		issues: [
-			{ ROWID: '9', subject: 'Wet floor', issue_priority: 'High', issue_status: 'Open', department: 'Install' },
-			{ ROWID: '10', subject: 'Minor', issue_priority: 'Low', issue_status: 'Open' },
-			{ ROWID: '11', subject: 'Closed one', issue_priority: 'High', issue_status: 'Closed' },
+			{ ROWID: '9', subject: 'Wet floor', issue_priority: 'High', issue_status: 'To Be discussed', department: 'Install' },
+			{ ROWID: '10', subject: 'Minor', issue_priority: 'Low', issue_status: 'To Be discussed' },
+			{ ROWID: '11', subject: 'Closed one', issue_priority: 'High', issue_status: 'Completed' },
 		],
 		compliance: [{ expiry_date: '2026-11-01' }, { expiry_date: '2026-11-10' }, { expiry_date: '2026-12-01' }],
 		overdueTasks: 2,

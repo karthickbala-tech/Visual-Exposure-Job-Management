@@ -10,16 +10,17 @@ import { useToast } from '../components/toast';
 import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 
-const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
-const DEPARTMENTS = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
-const COLUMNS = ['Open', 'In Progress', 'Resolved', 'Closed'];
+const PRIORITIES = ['High', 'Medium', 'Low'];
+const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
+const COLUMNS = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed'];
 const DEAL_DEPARTMENTS = ['Management', 'Civic Billboards']; // ISS-4
-const FACES = ['North', 'South', 'East', 'West', 'Single face'];
+const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 
 type Who = Issue & { reported_by_id?: string };
-const isOpen = (i: Issue) => i.issue_status === 'Open' || i.issue_status === 'In Progress';
+const isOpen = (i: Issue) => i.issue_status !== 'Completed';
+const isHigh = (i: Issue) => i.issue_priority === 'High';
 const isOverdue = (i: Issue) => isOpen(i) && !!i.due_date && i.due_date.slice(0, 10) < todayIso();
 
 const VIEWS: { key: string; label: string }[] = [
@@ -63,9 +64,9 @@ function QuickPanel({ issue, isManager, onClose }: { issue: Who; isManager: bool
 	const [site, setSite] = useState(issue.billboard_site ?? '');
 	const [face, setFace] = useState(issue.billboard_face ?? '');
 	const allowed = [issue.issue_status, ...(issue.nextStatuses ?? [])];
-	const closing = status === 'Resolved' || status === 'Closed';
+	const closing = status === 'Completed';
 	const civic = issue.department === 'Civic Billboards';
-	const problem = closing && !done.trim() ? 'Say what work was completed.' : !closing && status !== issue.issue_status && (!nextStep.trim() || !due) ? 'A next step and a due date are needed.' : civic && (!site.trim() || !face) ? 'Civic Billboards issues need the site and face.' : '';
+	const problem = closing && !done.trim() ? 'Add the completion notes.' : !closing && status !== issue.issue_status && (!nextStep.trim() || !due) ? 'A next step and a due date are needed.' : civic && (!site.trim() || !face) ? 'Civic Billboards issues need the site and face.' : '';
 
 	const save = () => {
 		const patch: IssuePatch = {};
@@ -92,7 +93,7 @@ function QuickPanel({ issue, isManager, onClose }: { issue: Who; isManager: bool
 			</div>
 			{issue.description && <p>{issue.description}</p>}
 			{civic && <p className="muted">Billboard: {issue.billboard_site || '-'}, {issue.billboard_face || '-'}</p>}
-			{issue.review_needed && issue.review_needed !== 'None' && <p><Chip status="Pending" /> {issue.review_needed}</p>}
+			{issue.review_needed && <p><Chip status="Pending" /> {issue.review_needed}</p>}
 			{isManager ? (
 				<div className="form-grid">
 					<label><span className="toolbar__label">Status</span><select value={status} onChange={(e) => setStatus(e.target.value)}>{allowed.map((s) => <option key={s}>{s}</option>)}</select></label>
@@ -104,13 +105,13 @@ function QuickPanel({ issue, isManager, onClose }: { issue: Who; isManager: bool
 							{(people.data?.items ?? []).filter((p) => p.is_active !== false).map((p) => <option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>)}
 						</select>
 					</label>
-					<label><span className="toolbar__label">Due date{!closing ? ' *' : ''}</span><input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></label>
-					<label style={{ gridColumn: '1 / -1' }}><span className="toolbar__label">Next step{!closing ? ' *' : ''}</span><textarea rows={2} value={nextStep} maxLength={9000} onChange={(e) => setNextStep(e.target.value)} /></label>
-					{closing && <label style={{ gridColumn: '1 / -1' }}><span className="toolbar__label">Work completed *</span><textarea rows={2} value={done} maxLength={9000} onChange={(e) => setDone(e.target.value)} /></label>}
+					<label><span className="toolbar__label">Due Date{!closing ? ' *' : ''}</span><input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></label>
+					<label style={{ gridColumn: '1 / -1' }}><span className="toolbar__label">Next Steps/Notes{!closing ? ' *' : ''}</span><textarea rows={2} value={nextStep} maxLength={9000} onChange={(e) => setNextStep(e.target.value)} /></label>
+					{closing && <label style={{ gridColumn: '1 / -1' }}><span className="toolbar__label">Completion Notes *</span><textarea rows={2} value={done} maxLength={9000} onChange={(e) => setDone(e.target.value)} /></label>}
 					{civic && (
 						<>
-							<label><span className="toolbar__label">Billboard site *</span><input value={site} maxLength={150} onChange={(e) => setSite(e.target.value)} /></label>
-							<label><span className="toolbar__label">Billboard face *</span><select value={face} onChange={(e) => setFace(e.target.value)}><option value="">Choose…</option>{FACES.map((x) => <option key={x}>{x}</option>)}</select></label>
+							<label><span className="toolbar__label">Location *</span><input value={site} maxLength={150} onChange={(e) => setSite(e.target.value)} /></label>
+							<label><span className="toolbar__label">Direction *</span><select value={face} onChange={(e) => setFace(e.target.value)}><option value="">Choose…</option>{DIRECTIONS.map((x) => <option key={x}>{x}</option>)}</select></label>
 						</>
 					)}
 					{problem && <p role="alert" style={{ gridColumn: '1 / -1' }}>{problem}</p>}
@@ -170,7 +171,7 @@ export function Issues() {
 		open: all.filter(isOpen).length,
 		mine: all.filter((i) => !!myId && i.reported_by_id === myId).length,
 		assigned: all.filter((i) => isOpen(i) && !!myId && i.assigned_to_id === myId).length,
-		high: all.filter((i) => isOpen(i) && (i.issue_priority === 'High' || i.issue_priority === 'Urgent')).length,
+		high: all.filter((i) => isOpen(i) && isHigh(i)).length,
 		overdue: all.filter(isOverdue).length,
 		all: all.length,
 	}), [all, myId]);
@@ -185,13 +186,13 @@ export function Issues() {
 		if (view === 'open' && !isOpen(i)) return false;
 		if (view === 'mine' && !(myId && i.reported_by_id === myId)) return false;
 		if (view === 'assigned' && !(isOpen(i) && myId && i.assigned_to_id === myId)) return false;
-		if (view === 'high' && !(isOpen(i) && (i.issue_priority === 'High' || i.issue_priority === 'Urgent'))) return false;
+		if (view === 'high' && !(isOpen(i) && isHigh(i))) return false;
 		if (view === 'overdue' && !isOverdue(i)) return false;
 		if (dept && i.department !== dept) return false;
 		return !needle || `${i.subject} ${i.description ?? ''} ${i.billboard_site ?? ''}`.toLowerCase().includes(needle);
 	});
 	const current = selected ? all.find((i) => i.ROWID === selected) : undefined;
-	const columns = view === 'all' ? COLUMNS : COLUMNS.filter((c) => c === 'Open' || c === 'In Progress' || shown.some((i) => i.issue_status === c));
+	const columns = view === 'all' ? COLUMNS : COLUMNS.filter((c) => c !== 'Completed');
 
 	return (
 		<>

@@ -78,8 +78,8 @@ const tilesFor = (role) => {
 
 const issueView = (i) => ({ ...i, nextStatuses: S.issueNext(i.issue_status) });
 const issueBoard = () => {
-	const departments = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
-	const counts = Object.fromEntries(departments.map((d) => { const l = S.issues.filter((i) => i.department === d); const c = (s) => l.filter((i) => i.issue_status === s).length; return [d, { Open: c('Open'), 'In Progress': c('In Progress'), Resolved: c('Resolved'), Closed: c('Closed'), openTotal: c('Open') + c('In Progress') }]; }));
+	const departments = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
+	const counts = Object.fromEntries(departments.map((d) => { const l = S.issues.filter((i) => i.department === d); const c = (s) => l.filter((i) => i.issue_status === s).length; const sts = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed']; return [d, { ...Object.fromEntries(sts.map((x) => [x, c(x)])), openTotal: l.filter((i) => i.issue_status !== 'Completed').length }]; }));
 	return { departments, counts, truncated: false };
 };
 const issueHistory = [];
@@ -204,7 +204,7 @@ const routes = [
 		S.tasks.filter((t) => t.stage === 'Manager Review').slice(0, 3).forEach((t) => items.push({ id: 'review-' + t.ROWID, tone: 'warn', title: `Review: ${t.name}`, detail: `${t.task_type} task waiting for approval`, to: '/tasks/' + t.ROWID, action: 'Review' }));
 		const late = S.tasks.filter(isLate).length;
 		if (late) items.push({ id: 'overdue', tone: 'danger', title: `${late} tasks are past the required finish`, detail: '', to: '/tasks', action: 'Open board' });
-		S.issues.filter((i) => ['High', 'Urgent'].includes(i.issue_priority) && ['Open', 'In Progress'].includes(i.issue_status)).slice(0, 3).forEach((i) => items.push({ id: 'issue-' + i.ROWID, tone: 'danger', title: `${i.issue_priority} issue: ${i.subject}`, detail: `${i.department} · ${i.issue_status}`, to: '/issues', action: 'Open issues' }));
+		S.issues.filter((i) => i.issue_priority === 'High' && i.issue_status !== 'Completed').slice(0, 3).forEach((i) => items.push({ id: 'issue-' + i.ROWID, tone: 'danger', title: `${i.issue_priority} issue: ${i.subject}`, detail: `${i.department} · ${i.issue_status}`, to: '/issues', action: 'Open issues' }));
 		const dash = complianceDash();
 		const exp = Object.values(dash.counts).reduce((n, c) => n + c.overdue, 0); const soon = Object.values(dash.counts).reduce((n, c) => n + c.today + c.within30, 0);
 		if (exp) items.push({ id: 'expired', tone: 'danger', title: `${exp} compliance items have expired`, detail: 'Tickets, inductions or company documents', to: '/compliance', action: 'Open compliance' });
@@ -218,10 +218,10 @@ const routes = [
 	['GET', /^\/calendar$/, (_, q) => { const kind = q.get('kind'); return { items: S.tasks.filter((t) => t.scheduled_date && (isManager || mine(t)) && (!kind || kind === 'all' || (kind === 'install' ? t.task_type === 'install' && t.kind !== 'External Install' : t.task_type === 'fabrication'))).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) }; }],
 	// issues
 	['GET', /^\/issues\/board$/, () => issueBoard()],
-	['GET', /^\/issues\/(\d+)\/history$/, (m) => ({ items: [{ at: now(), changes: [{ field: 'issue_status', from: 'Open', to: (S.issues.find((i) => i.ROWID === m[1]) || {}).issue_status || 'Open' }, { field: 'assigned_to_id', from: '', to: 'Rachel Barnes' }] }, ...issueHistory.filter((h) => h.id === m[1])] })],
+	['GET', /^\/issues\/(\d+)\/history$/, (m) => ({ items: [{ at: now(), changes: [{ field: 'issue_status', from: 'To Be discussed', to: (S.issues.find((i) => i.ROWID === m[1]) || {}).issue_status || 'To Be discussed' }, { field: 'assigned_to_id', from: '', to: 'Rachel Barnes' }] }, ...issueHistory.filter((h) => h.id === m[1])] })],
 	['POST', /^\/issues\/(\d+)\/crm-deal$/, () => ({ created: true, dealId: '4590000000999' })],
 	['GET', /^\/issues$/, (_, q) => { let l = S.issues; if (q.get('status')) l = l.filter((i) => i.issue_status === q.get('status')); return list(l.map(issueView)); }],
-	['POST', /^\/issues$/, (_, __, b) => { const i = { ROWID: id(), subject: b.subject, department: b.department || 'Management', issue_status: 'Open', issue_priority: b.issue_priority || 'Normal', description: b.description || '', task_id: '', reported_by_id: ME, CREATEDTIME: now() }; S.issues.unshift(i); return { issue: issueView(i) }; }],
+	['POST', /^\/issues$/, (_, __, b) => { const i = { ROWID: id(), subject: b.subject, department: b.department || 'Management', issue_status: 'To Be discussed', issue_priority: b.issue_priority || 'Medium', description: b.description || '', task_id: '', reported_by_id: ME, CREATEDTIME: now() }; S.issues.unshift(i); return { issue: issueView(i) }; }],
 	['PATCH', /^\/issues\/(\d+)$/, (m, _, b) => { const i = S.issues.find((x) => x.ROWID === m[1]); if (b.issue_status) { issueHistory.push({ id: m[1], at: now(), changes: [{ field: 'issue_status', from: i.issue_status, to: b.issue_status }] }); i.issue_status = b.issue_status; } return { issue: issueView(i) }; }],
 	// swms
 	['GET', /^\/swms$/, (_, q) => { let l = swmsList(); const v = q.get('view'); if (v === 'open') l = l.filter((s) => ['Created', 'PM Signed'].includes(s.status)); if (v === 'completed') l = l.filter((s) => ['TL Signed', 'Not Required'].includes(s.status)); return list(l); }],

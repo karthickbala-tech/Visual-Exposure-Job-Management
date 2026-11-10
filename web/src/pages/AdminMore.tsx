@@ -7,7 +7,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card } from '../components/ui';
 
-const DEPARTMENTS = ['Management', 'Design', 'Fabrication', 'Install', 'Civic Billboards'];
+const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
 const fullName = (p: { first_name: string; last_name?: string }) => `${p.first_name} ${p.last_name ?? ''}`.trim();
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 const parseRoles = (v: unknown): string[] => {

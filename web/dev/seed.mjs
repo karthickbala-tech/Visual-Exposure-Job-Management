@@ -90,16 +90,17 @@ export const nextStages = (stage) => NEXT[stage] || [];
 
 export const issues = [
 	{ ROWID: '4001', next_step: 'Order a replacement rack', due_date: iso(3).slice(0, 10), assigned_to_id: '502', subject: 'Ladder rack damaged on van 3', department: 'Install', issue_status: 'In Progress', issue_priority: 'High', description: 'Rack bent after a low clearance strike.', task_id: '', reported_by_id: '508', CREATEDTIME: iso(-4) },
-	{ ROWID: '4002', next_step: 'Book the lift for Thursday', due_date: iso(-2).slice(0, 10), billboard_site: 'Panel 12, Citylink', billboard_face: 'North', review_needed: 'Install review', subject: 'Panel 12 face lighting out', department: 'Civic Billboards', issue_status: 'In Progress', issue_priority: 'High', description: '', task_id: '', reported_by_id: '510', CREATEDTIME: iso(-9) },
-	{ ROWID: '4003', next_step: 'Order filters', due_date: iso(-1).slice(0, 10), subject: 'Spray booth filter overdue', department: 'Fabrication', issue_status: 'Open', issue_priority: 'High', description: 'Filters past their change date.', task_id: '', reported_by_id: '509', CREATEDTIME: iso(-1) },
-	{ ROWID: '4004', subject: 'Wet floor at the loading bay', department: 'Install', issue_status: 'Open', issue_priority: 'Normal', description: '', task_id: '', reported_by_id: '507', CREATEDTIME: iso(-2) },
-	{ ROWID: '4005', subject: 'Supplier sent the wrong vinyl colour, please check the order before we cut anything on the next job', department: 'Fabrication', issue_status: 'Resolved', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '506', CREATEDTIME: iso(-20) },
-	{ ROWID: '4006', subject: 'Council dispute about billboard height', department: 'Management', issue_status: 'Open', issue_priority: 'Normal', description: 'Needs a manager call.', task_id: '', reported_by_id: '502', CREATEDTIME: iso(-6) },
-	{ ROWID: '4007', subject: 'Artwork proof approved late', department: 'Design', issue_status: 'Closed', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '503', CREATEDTIME: iso(-30) },
-	{ ROWID: '4008', subject: 'Harness inspection tag missing', department: 'Install', issue_status: 'Open', issue_priority: 'Urgent', description: 'Found at the Anzac site.', task_id: '', reported_by_id: '508', CREATEDTIME: iso(0) },
-	{ ROWID: '4009', subject: 'CNC dust extraction noisy', department: 'Fabrication', issue_status: 'Closed', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '507', CREATEDTIME: iso(-40) },
+	{ ROWID: '4002', next_step: 'Book the lift for Thursday', due_date: iso(-2).slice(0, 10), billboard_site: 'Panel 12, Citylink', billboard_face: 'Inbound', review_needed: 'WHS Reported', subject: 'Panel 12 face lighting out', department: 'Civic Billboards', issue_status: 'In Progress', issue_priority: 'High', description: '', task_id: '', reported_by_id: '510', CREATEDTIME: iso(-9) },
+	{ ROWID: '4003', next_step: 'Order filters', due_date: iso(-1).slice(0, 10), subject: 'Spray booth filter overdue', department: 'Workshop', issue_status: 'To Be discussed', issue_priority: 'High', description: 'Filters past their change date.', task_id: '', reported_by_id: '509', CREATEDTIME: iso(-1) },
+	{ ROWID: '4004', subject: 'Wet floor at the loading bay', department: 'Install', issue_status: 'To Be discussed', issue_priority: 'Medium', description: '', task_id: '', reported_by_id: '507', CREATEDTIME: iso(-2) },
+	{ ROWID: '4005', subject: 'Supplier sent the wrong vinyl colour, please check the order before we cut anything on the next job', department: 'Workshop', issue_status: 'Completed', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '506', CREATEDTIME: iso(-20) },
+	{ ROWID: '4006', subject: 'Council dispute about billboard height', department: 'Management', issue_status: 'To Be discussed', issue_priority: 'Medium', description: 'Needs a manager call.', task_id: '', reported_by_id: '502', CREATEDTIME: iso(-6) },
+	{ ROWID: '4007', subject: 'Artwork proof approved late', department: 'Management', issue_status: 'Completed', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '503', CREATEDTIME: iso(-30) },
+	{ ROWID: '4008', subject: 'Harness inspection tag missing', department: 'Install', issue_status: 'To Be discussed', issue_priority: 'High', description: 'Found at the Anzac site.', task_id: '', reported_by_id: '508', CREATEDTIME: iso(0) },
+	{ ROWID: '4009', subject: 'CNC dust extraction noisy', department: 'Workshop', issue_status: 'Completed', issue_priority: 'Low', description: '', task_id: '', reported_by_id: '507', CREATEDTIME: iso(-40) },
 ];
-const ISSUE_NEXT = { Open: ['In Progress', 'Resolved'], 'In Progress': ['Resolved', 'Open'], Resolved: ['Closed', 'Open'], Closed: ['Open'] };
+const ISSUE_STATUSES = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed'];
+const ISSUE_NEXT = Object.fromEntries(ISSUE_STATUSES.map((x) => [x, ISSUE_STATUSES.filter((y) => y !== x)]));
 export const issueNext = (s) => ISSUE_NEXT[s] || [];
 
 export const swms = [
