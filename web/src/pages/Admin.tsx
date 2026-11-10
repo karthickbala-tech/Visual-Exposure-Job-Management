@@ -6,18 +6,19 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, PageHeader } from '../components/ui';
 import { EmailsTab, NotificationsTab, RolesTab, SettingsTab } from './AdminMore';
+import { DataTab } from './AdminData';
 
 const VERBS: Verb[] = ['view', 'create', 'edit', 'delete'];
 const SCOPES: Scope[] = ['all', 'assigned', 'own'];
 const SCOPE_LABEL: Record<Scope, string> = { all: 'All records', assigned: 'Assigned to them', own: 'Their own' };
 const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
 
-const TAB_LABEL = { permissions: 'Permissions', settings: 'Settings', roles: 'Roles', emails: 'Emails', log: 'Email log', outbox: 'Outbox', integrations: 'Integrations' } as const;
+const TAB_LABEL = { permissions: 'Permissions', settings: 'Settings', roles: 'Roles', emails: 'Emails', log: 'Email log', outbox: 'Outbox', integrations: 'Integrations', data: 'Data' } as const;
 
 /** Administrator tools: who can do what, and the queue of work waiting to reach other systems. */
 export function Admin() {
 	const me = useMe();
-	const [tab, setTab] = useState<'permissions' | 'settings' | 'roles' | 'emails' | 'log' | 'outbox' | 'integrations'>('permissions');
+	const [tab, setTab] = useState<'permissions' | 'settings' | 'roles' | 'emails' | 'log' | 'outbox' | 'integrations' | 'data'>('permissions');
 	if (me.isSuccess && !me.data.roles.includes('admin')) {
 		return (
 			<>
@@ -30,13 +31,13 @@ export function Admin() {
 		<>
 			<PageHeader eyebrow="Administration" title="Admin" subtitle="Permissions, settings, emails and the queue of work for other systems." />
 			<div className="inline-form" role="tablist" aria-label="Admin">
-				{(['permissions', 'settings', 'roles', 'emails', 'log', 'outbox', 'integrations'] as const).map((t) => (
+				{(['permissions', 'settings', 'roles', 'emails', 'log', 'outbox', 'integrations', 'data'] as const).map((t) => (
 					<button key={t} role="tab" aria-selected={tab === t} className={'btn' + (tab === t ? '' : ' btn-ghost')} onClick={() => setTab(t)}>
 						{TAB_LABEL[t]}
 					</button>
 				))}
 			</div>
-			{tab === 'permissions' ? <Permissions /> : tab === 'settings' ? <SettingsTab /> : tab === 'roles' ? <RolesTab /> : tab === 'emails' ? <EmailsTab /> : tab === 'log' ? <NotificationsTab /> : tab === 'outbox' ? <Outbox /> : <Integrations />}
+			{tab === 'permissions' ? <Permissions /> : tab === 'settings' ? <SettingsTab /> : tab === 'roles' ? <RolesTab /> : tab === 'emails' ? <EmailsTab /> : tab === 'log' ? <NotificationsTab /> : tab === 'outbox' ? <Outbox /> : tab === 'data' ? <DataTab /> : <Integrations />}
 		</>
 	);
 }
