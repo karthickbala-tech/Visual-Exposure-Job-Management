@@ -15,8 +15,8 @@ test('tab counts and tab membership follow the same rules as the tabs', () => {
 		{ stage: 'Completed', pm_id: '1' },
 		{ stage: 'Completed - Closed', pm_id: '3' },
 	];
-	assert.deepEqual(L.tabCounts(list, '1'), { all: 5, my_open: 2, my_jobs: 4, preparation: 1, ongoing: 2, completed: 2 });
-	assert.deepEqual(L.tabCounts(list, null), { all: 5, my_open: 0, my_jobs: 0, preparation: 1, ongoing: 2, completed: 2 }, 'no person record, nothing is "mine"');
+	assert.deepEqual(L.tabCounts(list, '1'), { all: 5, all_open: 3, my_open: 2, my_jobs: 4, preparation: 1, ongoing: 2, completed: 2 });
+	assert.deepEqual(L.tabCounts(list, null), { all: 5, all_open: 3, my_open: 0, my_jobs: 0, preparation: 1, ongoing: 2, completed: 2 }, 'no person record, nothing is "mine"');
 });
 
 test('hours add up and the warnings say what is wrong, at most two', () => {
@@ -40,7 +40,7 @@ test('the jobs list carries names, hours, risk and tab counts, and filters work 
 
 	const all = await jobs.listJobs(w.ctx, {});
 	assert.equal(all.total, 2);
-	assert.deepEqual(all.counts, { all: 2, my_open: 1, my_jobs: 1, preparation: 1, ongoing: 1, completed: 0 });
+	assert.deepEqual(all.counts, { all: 2, all_open: 2, my_open: 1, my_jobs: 1, preparation: 1, ongoing: 1, completed: 0 });
 	const pylon = all.items.find((j) => j.name === 'Pylon Refresh');
 	assert.equal(pylon.pm_name, 'Test User');
 	assert.deepEqual([pylon.quoted_hours, pylon.booked_hours], [10, 14]);

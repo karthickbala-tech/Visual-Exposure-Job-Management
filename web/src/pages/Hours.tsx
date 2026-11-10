@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react';
 import { useAddShift, useBookableTasks, useHoursNotFilled, usePayPeriodHours, useWeeklyHours } from '../api/more';
 import { useToast } from '../components/toast';
-import type { HourCell, HoursReport } from '../api/more';
+import { Dialog } from '../components/Dialog';
+import type { HourCell, HoursReport, HoursRow } from '../api/more';
 import { Card, Kpi, PageHeader } from '../components/ui';
+import { ListToolbarButtons } from '../components/ListToolbar';
+import { GridStatusBar, ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
+import type { GridColumn, GridLayout } from '../components/GridKit';
 
 const COLS: { key: keyof HourCell; label: string }[] = [
 	{ key: 'fab', label: 'Fab' },
@@ -21,43 +26,46 @@ const shift = (iso: string, days: number) => {
 };
 const dayLabel = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-function Table({ report, perDay }: { report: HoursReport; perDay: boolean }) {
-	const cols = perDay ? COLS.filter((c) => c.key === 'unbilled') : COLS; // a week shows the days; the types are in the tiles below
+/** Widths of the fixed columns. The per-day columns use DAY_WIDTH, since their keys change with the period. */
+const WIDTHS: Record<string, number> = { person: 200, fab: 110, install: 110, workshop: 120, design: 110, other: 110, unbilled: 120, total: 110, labour: 140 };
+const DAY_WIDTH = 120;
+
+/** The table's columns for this period: the days (a week only), the types (a week shows only Unbilled), the total and the labour cost. */
+function columnsFor(days: string[], perDay: boolean, money: boolean): GridColumn<HoursRow>[] {
+	const types = perDay ? COLS.filter((c) => c.key === 'unbilled') : COLS; // a week shows the days; the types are in the tiles below
+	return [
+		{ key: 'person', label: 'Person', width: WIDTHS.person ?? 200, cell: (r) => <strong>{r.name || 'Person ' + r.personId}</strong> },
+		...(perDay ? days.map((d): GridColumn<HoursRow> => ({ key: `day:${d}`, label: dayLabel(d), width: DAY_WIDTH, right: true, cell: (r) => hrs(r.days[d] ? sumWorked(r.days[d]) : 0) })) : []),
+		...types.map((c): GridColumn<HoursRow> => ({ key: c.key, label: c.label, width: WIDTHS[c.key] ?? DAY_WIDTH, right: true, cell: (r) => hrs(r.totals[c.key]) })),
+		...(perDay ? [{ key: 'total', label: 'Total', width: WIDTHS.total ?? 110, right: true, cell: (r: HoursRow) => hrs(sumWorked(r.totals)) }] : []),
+		...(money ? [{ key: 'labour', label: 'Labour cost', width: WIDTHS.labour ?? 140, right: true, cell: (r: HoursRow) => (r.labourCost !== undefined ? `$${r.labourCost.toFixed(2)}` : '-') }] : []),
+	];
+}
+
+/** The totals row: one cell per column, in the same order as columnsFor. */
+function totalsFor(report: HoursReport, perDay: boolean, money: boolean): ReactNode[] {
+	const types = perDay ? COLS.filter((c) => c.key === 'unbilled') : COLS;
+	return [
+		<strong key="label">Total</strong>,
+		...(perDay ? (report.days ?? []).map((d) => hrs(report.rows.reduce((n, r) => n + (r.days[d] ? sumWorked(r.days[d]) : 0), 0))) : []),
+		...types.map((c) => hrs(report.totals[c.key])),
+		...(perDay ? [hrs(sumWorked(report.totals))] : []),
+		...(money ? [''] : []),
+	];
+}
+
+function Table({ report, perDay, grid }: { report: HoursReport; perDay: boolean; grid: GridLayout }) {
 	const money = report.rows.some((r) => r.labourCost !== undefined);
 	if (report.rows.length === 0) return <p className="table-empty">No hours were booked in this period.</p>;
 	return (
-		<div className="table-wrap">
-			<table className="table">
-				<caption className="sr-only">Hours by person</caption>
-				<thead>
-					<tr>
-						<th scope="col">Person</th>
-						{perDay && (report.days ?? []).map((d) => <th key={d} scope="col">{dayLabel(d)}</th>)}
-						{cols.map((c) => <th key={c.key} scope="col">{c.label}</th>)}
-						{perDay && <th scope="col">Total</th>}
-						{money && <th scope="col">Labour cost</th>}
-					</tr>
-				</thead>
-				<tbody>
-					{report.rows.map((r) => (
-						<tr key={r.personId}>
-							<td data-label="Person" className="cell-primary"><strong>{r.name || 'Person ' + r.personId}</strong></td>
-							{perDay && (report.days ?? []).map((d) => <td key={d} data-label={dayLabel(d)} className="num">{hrs(r.days[d] ? sumWorked(r.days[d]) : 0)}</td>)}
-							{cols.map((c) => <td key={c.key} data-label={c.label} className="num">{hrs(r.totals[c.key])}</td>)}
-							{perDay && <td data-label="Total" className="num">{hrs(sumWorked(r.totals))}</td>}
-							{money && <td data-label="Labour cost" className="num">{r.labourCost !== undefined ? `$${r.labourCost.toFixed(2)}` : '-'}</td>}
-						</tr>
-					))}
-					<tr>
-						<td data-label="Person" className="cell-primary"><strong>Total</strong></td>
-						{perDay && (report.days ?? []).map((d) => <td key={d} data-label={dayLabel(d)} className="num">{hrs(report.rows.reduce((n, r) => n + (r.days[d] ? sumWorked(r.days[d]) : 0), 0))}</td>)}
-						{cols.map((c) => <td key={c.key} data-label={c.label} className="num">{hrs(report.totals[c.key])}</td>)}
-						{perDay && <td data-label="Total" className="num">{hrs(sumWorked(report.totals))}</td>}
-						{money && <td data-label="Labour cost" />}
-					</tr>
-				</tbody>
-			</table>
-		</div>
+		<ResizableGrid
+			layout={grid}
+			label="Hours by person"
+			columns={columnsFor(report.days ?? [], perDay, money)}
+			rows={report.rows}
+			rowKey={(r) => r.personId}
+			footer={totalsFor(report, perDay, money)}
+		/>
 	);
 }
 const sumWorked = (c: HourCell) => c.fab + c.install + c.workshop + c.design + c.other;
@@ -92,6 +100,7 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 	const u = f.unbilled ? Number(f.unbilled) : 0;
 	const problem = !f.hours ? '' : h < 0.25 ? 'Enter at least 0.25 hours.' : h > 16 ? 'A shift cannot be longer than 16 hours.' : u > h ? 'Unbilled hours cannot be more than the hours worked.' : f.date > todayIso() ? 'Choose a day that has already happened.' : '';
 	return (
+		<Dialog title="Add shift" onClose={onClose}>
 		<form
 			className="inline-form"
 			onSubmit={(e) => {
@@ -117,6 +126,7 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{problem && <p role="alert">{problem}</p>}
 		</form>
+		</Dialog>
 	);
 }
 
@@ -125,6 +135,7 @@ export function Hours() {
 	const [view, setView] = useState<'week' | 'eight' | 'this' | 'last'>('week');
 	const [adding, setAdding] = useState(false);
 	const [week, setWeek] = useState<string | undefined>(undefined);
+	const grid = useGridLayout('ve.grid.hours', WIDTHS);
 	const eight = useMemo(() => ({ from: shift(todayIso(), -7), to: todayIso() }), []);
 	const weekly = useWeeklyHours(view === 'eight' ? undefined : week, view === 'eight' ? eight : undefined);
 	const period = usePayPeriodHours(view === 'last' ? 'last' : 'this', view === 'this' || view === 'last');
@@ -136,6 +147,17 @@ export function Hours() {
 	return (
 		<>
 			<PageHeader eyebrow="Time" title="Hours" subtitle="Worked hours by person, taken from the post-job checklists and booked time.">
+				<ListToolbarButtons
+					viewOptions={(
+						<>
+							<p className="filter-pop__title">Row height</p>
+							<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
+							<div className="filter-pop__actions">
+								<button type="button" className="btn btn-ghost btn-sm" onClick={grid.reset}>Reset widths</button>
+							</div>
+						</>
+					)}
+				/>
 				{!adding && <button className="btn" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" /> Add a past shift</button>}
 			</PageHeader>
 
@@ -169,7 +191,7 @@ export function Hours() {
 				</div>
 				{active.isPending && <p role="status" className="table-empty">Loading hours…</p>}
 				{active.isError && <p role="alert">{active.error instanceof Error ? active.error.message : 'Could not load hours.'}</p>}
-				{active.isSuccess && <Table report={active.data} perDay={perDay} />}
+				{active.isSuccess && <Table report={active.data} perDay={perDay} grid={grid} />}
 				{active.isSuccess && perDay && (
 					<div className="kpis" style={{ padding: '16px 20px' }}>
 						{COLS.filter((c) => c.key !== 'unbilled' && (active.data.totals[c.key] ?? 0) > 0).map((c) => <Kpi key={c.key} label={c.label} value={hrs(active.data.totals[c.key])} />)}
@@ -177,6 +199,7 @@ export function Hours() {
 				)}
 				{active.isSuccess && active.data.truncated && <p className="table-empty">Only the first 300 entries are shown. Choose a shorter period.</p>}
 			</Card>
+			{active.isSuccess && <GridStatusBar text={`Showing ${active.data.rows.length} of ${active.data.rows.length}`} />}
 		</>
 	);
 }

@@ -5,6 +5,7 @@ import { useAddSubtask, useAddTime, useAssign, useRate, useUnassign, useUpdateTa
 import type { Assignee } from '../api/types';
 import { useToast } from '../components/toast';
 import { Card } from '../components/ui';
+import { Dialog } from '../components/Dialog';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 const today = () => new Date().toISOString().slice(0, 10);
@@ -23,6 +24,8 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFa
 	const [person, setPerson] = useState('');
 	const [role, setRole] = useState('member');
 	const [subName, setSubName] = useState('');
+	const [addingCrew, setAddingCrew] = useState(false);
+	const [addingSub, setAddingSub] = useState(false);
 	const free = (people.data?.items ?? []).filter((p) => !assignees.some((a) => a.personId === p.ROWID) && p.is_active !== false);
 
 	return (
@@ -68,6 +71,9 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFa
 							</li>
 						))}
 					</ul>
+					<button className="btn btn-ghost btn-sm" onClick={() => setAddingCrew(true)}>Add a person</button>
+					{addingCrew && (
+					<Dialog title="Add a person to the crew" onClose={() => setAddingCrew(false)}>
 					<form
 						className="inline-form"
 						style={bare}
@@ -89,9 +95,15 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFa
 						</label>
 						<button className="btn" disabled={assign.isPending || !person}>Add</button>
 					</form>
+					</Dialog>
+					)}
 				</div>
 
 				{isFab && (
+					<>
+					<button className="btn btn-ghost" onClick={() => setAddingSub(true)}>Add subtask</button>
+					{addingSub && (
+					<Dialog title="Add a subtask" onClose={() => setAddingSub(false)}>
 					<form
 						className="inline-form"
 						style={bare}
@@ -106,6 +118,9 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFa
 						</label>
 						<button className="btn btn-ghost" disabled={sub.isPending || !subName.trim()}>Add subtask</button>
 					</form>
+					</Dialog>
+					)}
+					</>
 				)}
 			</div>
 		</Card>

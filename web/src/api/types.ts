@@ -39,6 +39,7 @@ export interface Job {
 
 export interface JobTabCounts {
 	all: number;
+	all_open: number;
 	my_open: number;
 	my_jobs: number;
 	preparation: number;

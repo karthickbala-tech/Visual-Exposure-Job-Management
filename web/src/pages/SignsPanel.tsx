@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useRegisterWrite, useSigns } from '../api/queries';
 import { SIGN_STAGES } from '../lib/names';
+import { Dialog } from '../components/Dialog';
 import { useToast } from '../components/toast';
 import { Card, fmtDate } from '../components/ui';
 
@@ -31,6 +32,7 @@ export function SignsPanel({ jobId, canWrite }: { jobId: string; canWrite: boole
 			action={canWrite && !open ? <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}><Plus size={14} aria-hidden="true" /> Add Sign</button> : undefined}
 		>
 			{canWrite && open && (
+				<Dialog title="Add a sign" onClose={() => setOpen(false)}>
 				<form
 					className="inline-form"
 					onSubmit={(e) => {
@@ -73,6 +75,7 @@ export function SignsPanel({ jobId, canWrite }: { jobId: string; canWrite: boole
 					<button type="button" className="btn btn-ghost" onClick={() => setForm(EMPTY)}>Reset</button>
 					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
 				</form>
+				</Dialog>
 			)}
 			{list.isPending && <p role="status" className="table-empty">Loading…</p>}
 			{list.isError && <p role="alert">Could not load signs.</p>}

@@ -72,3 +72,8 @@ export function fmtDate(value: string | null | undefined): string {
 	if (!m) return value;
 	return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
+
+/** "Showing N of N" directly under a table, outside its scroll area, so the count always sits at the table's bottom edge. */
+export function TableFooter({ shown, total, children }: { shown: number; total?: number; children?: ReactNode }) {
+	return <p className="grid-foot">Showing {shown} of {total ?? shown}{children}</p>;
+}

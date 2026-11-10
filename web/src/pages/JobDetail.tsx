@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Briefcase, ExternalLink, Hammer, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
@@ -40,10 +40,16 @@ export function JobDetail() {
 	const q = useJob(id);
 	const me = useMe();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const move = useTransitionTask(id ?? '');
 	const close = useCloseJob(id ?? '');
 	const { notify } = useToast();
-	const [adding, setAdding] = useState<{ type: TaskType; kind: string } | null>(null);
+	// The jobs list links here with ?add=design|fab|install to open the matching add-task form (Creator's row actions).
+	const [params] = useSearchParams();
+	const [adding, setAdding] = useState<{ type: TaskType; kind: string } | null>(() => {
+		const a = params.get('add');
+		return a === 'design' ? { type: 'design', kind: '' } : a === 'fab' ? { type: 'fabrication', kind: '' } : a === 'install' ? { type: 'install', kind: 'VE Install' } : null;
+	});
 
 	if (q.isPending) return <p role="status">Loading job…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) {
@@ -97,7 +103,7 @@ export function JobDetail() {
 			<Link className="back-link" to="/jobs"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
 
 			<header className="jd-head">
-				<div className="jd-head__side">{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`)}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}</div>
+				<div className="jd-head__side">{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}</div>
 				<h1 className="jd-head__title"><Briefcase size={20} aria-hidden="true" /> Job Details</h1>
 				<div className="jd-head__side jd-head__side--right">
 					{job.crm_deal_id ? <span className="jd-deal" title="CRM deal">Deal: {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
@@ -130,7 +136,7 @@ export function JobDetail() {
 			)}
 			{move.isError && <p role="alert">{move.error.message}</p>}
 
-			<div className="grid-2">
+			<div className="grid-2 jd-pair">
 				<Card title="Job Locations" flush>
 					{locations.length === 0 ? <p className="table-empty">No Data Available</p> : (
 						<div className="table-wrap">

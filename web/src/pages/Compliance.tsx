@@ -1,21 +1,39 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useCompanies, useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
+import type { ComplianceItem } from '../api/types';
 import { Chip } from '../components/Chip';
+import { Dialog } from '../components/Dialog';
 import { useToast } from '../components/toast';
 import { Card, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useComplianceDashboard } from '../api/more';
+import { ListToolbar, ListToolbarButtons } from '../components/ListToolbar';
+import type { ActiveChip } from '../components/ListToolbar';
+import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
+import type { GridColumn } from '../components/GridKit';
 
 const KIND_LABEL: Record<string, string> = { ticket: 'Tickets', induction: 'Inductions', company_document: 'Company documents' };
 
 const STATUSES = ['Expired', 'Expiring', 'Valid', 'No expiry'];
 const EMPTY = { person_id: '', company_id: '', type_id: '', reference_no: '', expiry_date: '' };
 
+const COLUMNS: GridColumn<ComplianceItem>[] = [
+	{ key: 'person', label: 'Person or company', width: 220, cell: (i) => <strong>{i.personName ?? i.companyName ?? '-'}</strong> },
+	{ key: 'type', label: 'Type', width: 200, cell: (i) => i.typeName ?? i.kind },
+	{ key: 'ref', label: 'Reference', width: 160, cell: (i) => i.referenceNo || '-' },
+	{ key: 'expires', label: 'Expires', width: 220, cell: (i) => (i.expiryDate ? `${fmtDate(i.expiryDate)}${i.daysLeft !== null ? ` (${i.daysLeft < 0 ? Math.abs(i.daysLeft) + ' days ago' : i.daysLeft + ' days'})` : ''}` : '-') },
+	{ key: 'status', label: 'Status', width: 130, cell: (i) => <Chip status={i.status} /> },
+];
+const WIDTHS = gridWidths(COLUMNS);
+
 /** Tickets, inductions and documents with their expiry, soonest first. Crew see only their own. */
 export function Compliance() {
 	const me = useMe();
 	const canAdd = !!me.data?.permissions.createJob; // managers; the server decides for real
 	const [status, setStatus] = useState('');
+	const [panelOpen, setPanelOpen] = useState(false);
+	const [draftStatus, setDraftStatus] = useState('');
+	const grid = useGridLayout('ve.grid.compliance', WIDTHS);
 	const [activeOnly, setActiveOnly] = useState(true);
 	const dash = useComplianceDashboard(activeOnly, canAdd);
 	const items = useComplianceItems(status || undefined);
@@ -30,10 +48,30 @@ export function Compliance() {
 	const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 	const type = types.data?.items.find((t) => t.id === form.type_id);
 	const typeChoices = (types.data?.items ?? []).filter((t) => (t.kind === 'company_document') === forCompany);
+	const searchActive = !!status;
+	const openPanel = () => { setDraftStatus(status); setPanelOpen(true); };
+	const applyPanel = () => { setStatus(draftStatus); setPanelOpen(false); };
+	const clearDraft = () => setDraftStatus('');
+	const clearAll = () => setStatus('');
+	const chips: ActiveChip[] = status ? [{ key: 'status', label: `Status: ${status}`, onRemove: () => setStatus('') }] : [];
 
 	return (
 		<>
 			<PageHeader eyebrow="Workers and subcontractors" title="Compliance" subtitle="Tickets, inductions and documents, with expiry dates and reminders.">
+				<ListToolbarButtons
+					searchOpen={panelOpen}
+					onSearchOpen={openPanel}
+					searchActive={searchActive}
+					viewOptions={(
+						<>
+							<p className="filter-pop__title">Row height</p>
+							<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
+							<div className="filter-pop__actions">
+								<button type="button" className="btn btn-ghost btn-sm" onClick={grid.reset}>Reset widths</button>
+							</div>
+						</>
+					)}
+				/>
 				{canAdd && !open && (
 					<button className="btn" onClick={() => setOpen(true)}>
 						<Plus size={16} aria-hidden="true" /> Add a ticket or document
@@ -55,6 +93,7 @@ export function Compliance() {
 
 			<Card flush>
 				{canAdd && open && (
+					<Dialog title="Add a ticket or document" onClose={() => setOpen(false)}>
 					<form
 						className="inline-form"
 						onSubmit={(e) => {
@@ -125,57 +164,37 @@ export function Compliance() {
 						</button>
 						{create.isError && <p role="alert">{create.error.message}</p>}
 					</form>
+					</Dialog>
 				)}
 
-				<div className="inline-form">
-					<label style={{ flex: '0 1 200px' }}>
-						<span className="toolbar__label">Status</span>
-						<select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: '100%' }}>
-							<option value="">All</option>
-							{STATUSES.map((s) => (
-								<option key={s}>{s}</option>
-							))}
-						</select>
-					</label>
-				</div>
+				<ListToolbar
+					label="Compliance list"
+					searchOpen={panelOpen}
+					panelTitle="Search compliance"
+					onPanelClose={() => setPanelOpen(false)}
+					onPanelApply={applyPanel}
+					onPanelClear={clearDraft}
+					panelBody={(
+						<div className="lt-form">
+							<span className="toolbar__label">Status</span>
+							<select aria-label="Status" value={draftStatus} onChange={(e) => setDraftStatus(e.target.value)}>
+								<option value="">All</option>
+								{STATUSES.map((s) => <option key={s}>{s}</option>)}
+							</select>
+						</div>
+					)}
+					chips={chips}
+					onClearAll={clearAll}
+				/>
 
 				{items.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{items.isError && <p role="alert">Could not load compliance records.</p>}
 				{items.isSuccess && items.data.items.length === 0 && <p className="table-empty">No records to show.</p>}
 				{items.isSuccess && items.data.items.length > 0 && (
-					<div className="table-wrap">
-						<table className="table">
-							<caption className="sr-only">Compliance records</caption>
-							<thead>
-								<tr>
-									<th scope="col">Person or company</th>
-									<th scope="col">Type</th>
-									<th scope="col">Reference</th>
-									<th scope="col">Expires</th>
-									<th scope="col">Status</th>
-								</tr>
-							</thead>
-							<tbody>
-								{items.data.items.map((i) => (
-									<tr key={i.id}>
-										<td data-label="Person or company" className="cell-primary">
-											<strong>{i.personName ?? i.companyName ?? '-'}</strong>
-										</td>
-										<td data-label="Type">{i.typeName ?? i.kind}</td>
-										<td data-label="Reference">{i.referenceNo || '-'}</td>
-										<td data-label="Expires">
-											{i.expiryDate ? `${fmtDate(i.expiryDate)}${i.daysLeft !== null ? ` (${i.daysLeft < 0 ? Math.abs(i.daysLeft) + ' days ago' : i.daysLeft + ' days'})` : ''}` : '-'}
-										</td>
-										<td data-label="Status">
-											<Chip status={i.status} />
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+					<ResizableGrid layout={grid} label="Compliance records" columns={COLUMNS} rows={items.data.items} rowKey={(i) => i.id} />
 				)}
 			</Card>
+			{items.isSuccess && <GridStatusBar text={`Showing ${items.data.items.length} of ${items.data.items.length}`} />}
 		</>
 	);
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ChevronsLeft, LogOut, Menu, Moon, Search, Settings2, Sun, X } from 'lucide-react';
 import logo from '../assets/visual_exposure_logo.avif';
@@ -49,6 +50,82 @@ function SideLink({ n, collapsed, onGo, nested = false }: { n: NavItem; collapse
 	);
 }
 
+/**
+ * A group in the slim rail: one icon. Hovering it (or focusing it, or clicking it) opens a flyout beside it listing the
+ * group's pages, so Work shows Jobs, Task board and Calendar. The flyout is drawn in the page body so the sidebar's
+ * scrolling area does not cut it off.
+ */
+function RailGroup({ group, onGo }: { group: NavGroup; onGo: () => void }) {
+	const { pathname } = useLocation();
+	const [open, setOpen] = useState(false);
+	const [pos, setPos] = useState({ top: 0, left: 0 });
+	const head = useRef<HTMLButtonElement>(null);
+	const flyout = useRef<HTMLDivElement>(null);
+	const timer = useRef<number | undefined>(undefined);
+	const holds = group.items.some((i) => (i.end ? pathname === i.to : pathname === i.to || pathname.startsWith(i.to + '/')));
+
+	const cancel = () => window.clearTimeout(timer.current);
+	const show = () => {
+		cancel();
+		const r = head.current?.getBoundingClientRect();
+		if (r) setPos({ top: r.top, left: r.right + 6 });
+		setOpen(true);
+	};
+	// a short delay lets the pointer cross the gap from the icon to the flyout
+	const hideSoon = () => { cancel(); timer.current = window.setTimeout(() => setOpen(false), 150); };
+	const hideNow = () => { cancel(); setOpen(false); };
+
+	useEffect(() => cancel, []);
+	useEffect(() => {
+		if (!open) return;
+		const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { hideNow(); head.current?.focus(); } };
+		document.addEventListener('keydown', esc);
+		return () => document.removeEventListener('keydown', esc);
+	}, [open]);
+
+	return (
+		<>
+			<button
+				ref={head}
+				type="button"
+				className={'side-link rail-head' + (holds ? ' active' : '')}
+				aria-label={group.label}
+				aria-haspopup="true"
+				aria-expanded={open}
+				title={group.label}
+				onMouseEnter={show}
+				onMouseLeave={hideSoon}
+				onFocus={show}
+				onBlur={(e) => { if (!flyout.current?.contains(e.relatedTarget as Node)) hideSoon(); }}
+				onClick={() => (open ? hideNow() : show())}
+			>
+				<group.icon size={17} aria-hidden="true" />
+			</button>
+			{open && createPortal(
+				<div
+					ref={flyout}
+					className="rail-flyout"
+					role="group"
+					aria-label={group.label}
+					style={{ top: pos.top, left: pos.left }}
+					onMouseEnter={show}
+					onMouseLeave={hideSoon}
+					onBlur={(e) => { if (!head.current?.contains(e.relatedTarget as Node) && !flyout.current?.contains(e.relatedTarget as Node)) hideSoon(); }}
+				>
+					<p className="rail-flyout__title">{group.label}</p>
+					{group.items.map((n) => (
+						<NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => 'rail-flyout__link' + (isActive ? ' active' : '')} onClick={() => { hideNow(); onGo(); }}>
+							<n.icon size={15} aria-hidden="true" />
+							<span>{n.label}</span>
+						</NavLink>
+					))}
+				</div>,
+				document.body,
+			)}
+		</>
+	);
+}
+
 /** The menu. Groups open and close like an accordion; the group holding the current page opens by itself. In the slim rail, or with grouping turned off, it is one flat list. */
 function SideNav({ entries, collapsed, grouped, onGo }: { entries: NavEntry[]; collapsed: boolean; grouped: boolean; onGo: () => void }) {
 	const { pathname } = useLocation();
@@ -65,11 +142,18 @@ function SideNav({ entries, collapsed, grouped, onGo }: { entries: NavEntry[]; c
 			return next;
 		});
 
-	if (collapsed || !grouped) {
+	if (collapsed) {
+		return (
+			<nav className="side-nav" aria-label="Main">
+				{entries.map((e) => (isGroup(e) ? <RailGroup key={e.key} group={e} onGo={onGo} /> : <SideLink key={e.to} n={e} collapsed onGo={onGo} />))}
+			</nav>
+		);
+	}
+	if (!grouped) {
 		return (
 			<nav className="side-nav" aria-label="Main">
 				{flatNav(entries).map((n) => (
-					<SideLink key={n.to} n={n} collapsed={collapsed} onGo={onGo} />
+					<SideLink key={n.to} n={n} collapsed={false} onGo={onGo} />
 				))}
 			</nav>
 		);

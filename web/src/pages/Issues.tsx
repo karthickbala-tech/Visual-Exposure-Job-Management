@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FileDown, Plus, Search, X } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FileDown, Plus, X } from 'lucide-react';
 import { pdfUrl, useCrmDeal, useIssueBoard, useIssueHistory } from '../api/more';
 import { useIssues, useMe, usePeople, useUpdateIssue } from '../api/queries';
 import type { IssuePatch } from '../api/queries';
 import type { Issue } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { FilterMenu } from '../components/FilterMenu';
+import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
+import type { ActiveChip } from '../components/ListToolbar';
 import { Card, PageHeader, fmtDate } from '../components/ui';
+import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
+import type { GridColumn } from '../components/GridKit';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
 const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
@@ -31,6 +34,27 @@ const VIEWS: { key: string; label: string }[] = [
 	{ key: 'overdue', label: 'Overdue' },
 	{ key: 'all', label: 'Everything' },
 ];
+/** The search and department values the panel edits before they are applied. */
+interface Draft { text: string; dept: string }
+const emptyDraft: Draft = { text: '', dept: '' };
+
+/** Columns of the list layout. The assignee name and the open-panel action come from the page, so the cells are built per render. */
+function listColumns(nameOf: (id?: string | null) => string, onOpen: (id: string) => void): GridColumn<Who>[] {
+	return [
+		{ key: 'issue', label: 'Issue', width: 300, cell: (i) => (
+			<>
+				<button type="button" className="link-btn" onClick={() => onOpen(i.ROWID)}>{i.subject}</button>
+				{i.task_id && <small className="sub"><Link to={'/tasks/' + i.task_id}>Open task</Link></small>}
+			</>
+		) },
+		{ key: 'dept', label: 'Department', width: 150, cell: (i) => i.department || '-' },
+		{ key: 'priority', label: 'Priority', width: 110, cell: (i) => i.issue_priority || '-' },
+		{ key: 'status', label: 'Status', width: 140, cell: (i) => <Chip status={i.issue_status} /> },
+		{ key: 'due', label: 'Due', width: 120, cell: (i) => (i.due_date ? <span className={isOverdue(i) ? 'text-danger' : undefined}>{fmtDate(i.due_date)}</span> : '-') },
+		{ key: 'assigned', label: 'Assigned', width: 170, cell: (i) => nameOf(i.assigned_to_id) || '-' },
+	];
+}
+const LIST_WIDTHS = gridWidths(listColumns(() => '', () => {}));
 
 function History({ id }: { id: string }) {
 	const q = useIssueHistory(id, true);
@@ -149,6 +173,7 @@ function IssueCard({ i, nameOf, onOpen }: { i: Who; nameOf: (id?: string | null)
 
 export function Issues() {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const me = useMe();
 	const issues = useIssues();
 	const people = usePeople(true);
@@ -157,6 +182,9 @@ export function Issues() {
 	const [text, setText] = useState('');
 	const [layout, setLayout] = useState<'board' | 'list'>('board');
 	const [selected, setSelected] = useState<string | null>(null);
+	const [panelOpen, setPanelOpen] = useState(false);
+	const [draft, setDraft] = useState<Draft>(emptyDraft);
+	const grid = useGridLayout('ve.grid.issues', LIST_WIDTHS);
 	const isManager = !!me.data?.permissions.editJob; // the server decides for real
 	const board = useIssueBoard(isManager);
 	const myId = me.data?.person ? String((me.data.person as { ROWID?: string }).ROWID ?? '') : '';
@@ -193,11 +221,40 @@ export function Issues() {
 	});
 	const current = selected ? all.find((i) => i.ROWID === selected) : undefined;
 	const columns = view === 'all' ? COLUMNS : COLUMNS.filter((c) => c !== 'Completed');
+	const viewList = VIEWS.filter((v) => isManager || v.key !== 'assigned');
+	const searchActive = !!needle || !!dept || view !== 'open';
+	const openPanel = () => { setDraft({ text, dept }); setPanelOpen(true); };
+	const clearDraft = () => setDraft(emptyDraft);
+	const applyPanel = () => { setText(draft.text); setDept(draft.dept); setPanelOpen(false); };
+	const clearAll = () => { setView('open'); setText(''); setDept(''); };
+	const chips: ActiveChip[] = [
+		...(view !== 'open' ? [{ key: 'view', label: `View: ${VIEWS.find((v) => v.key === view)?.label ?? view}`, onRemove: () => setView('open') }] : []),
+		...(needle ? [{ key: 'q', label: `Search "${text.trim()}"`, onRemove: () => setText('') }] : []),
+		...(dept ? [{ key: 'dept', label: `Department: ${dept}`, onRemove: () => setDept('') }] : []),
+	];
 
 	return (
 		<>
 			<PageHeader eyebrow="Safety and quality" title="Issues" subtitle="Problems found on site or in the workshop, routed to the right department.">
-				{<button className="btn" onClick={() => navigate('/issues/new')}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
+				<div className="segmented" role="group" aria-label="Layout">
+					<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}>Board</button>
+					<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}>List</button>
+				</div>
+				<ListToolbarButtons
+					searchOpen={panelOpen}
+					onSearchOpen={openPanel}
+					searchActive={searchActive}
+					viewOptions={(
+						<>
+							<p className="filter-pop__title">Row height</p>
+							<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
+							<div className="filter-pop__actions">
+								<button type="button" className="btn btn-ghost btn-sm" onClick={grid.reset}>Reset widths</button>
+							</div>
+						</>
+					)}
+				/>
+				{<button className="btn" onClick={() => navigate('/issues/new', { state: { background: location } })}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
 			</PageHeader>
 
 			<section className="kpis" aria-label="Summary">
@@ -222,18 +279,41 @@ export function Issues() {
 					</div>
 				)}
 
-				<div className="list-toolbar">
-					<FilterMenu views={VIEWS.filter((v) => isManager || v.key !== 'assigned').map((v) => ({ key: v.key, label: v.label, count: counts[v.key as keyof typeof counts] }))} view={view} onView={setView} />
-					<label className="search" style={{ flex: '1 1 180px', maxWidth: 280 }}>
-						<Search size={16} aria-hidden="true" />
-						<input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Search issues…" aria-label="Search issues" />
-					</label>
-					<label><span className="sr-only">Department</span><select value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Department"><option value="">All departments</option>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select></label>
-					<div className="segmented" role="group" aria-label="Layout">
-						<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}>Board</button>
-						<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}>List</button>
-					</div>
-				</div>
+				<ListToolbar
+					label="Issues list"
+					searchOpen={panelOpen}
+					panelTitle="Search issues"
+					onPanelClose={() => setPanelOpen(false)}
+					onPanelApply={applyPanel}
+					onPanelClear={clearDraft}
+					panelBody={(
+						<>
+							<PanelSection title="Show" summary={VIEWS.find((v) => v.key === view)?.label} defaultOpen={false}>
+								<div className="lt-views" role="radiogroup" aria-label="Views">
+									{viewList.map((v) => (
+										<button key={v.key} type="button" role="radio" aria-checked={view === v.key} className={'lt-view' + (view === v.key ? ' is-on' : '')} onClick={() => setView(v.key)}>
+											<span>{v.label}</span>
+											<span className="lt-count num">{counts[v.key as keyof typeof counts]}</span>
+										</button>
+									))}
+								</div>
+							</PanelSection>
+							<div className="lt-form">
+								<span className="toolbar__label">Search</span>
+								<input type="search" aria-label="Search text" placeholder="Subject, description or site" value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') applyPanel(); }} />
+							</div>
+							<div className="lt-form">
+								<span className="toolbar__label">Department</span>
+								<select aria-label="Department" value={draft.dept} onChange={(e) => setDraft({ ...draft, dept: e.target.value })}>
+									<option value="">All departments</option>
+									{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+								</select>
+							</div>
+						</>
+					)}
+					chips={chips}
+					onClearAll={clearAll}
+				/>
 
 				{issues.isPending && <p role="status" className="table-empty">Loading issues…</p>}
 				{issues.isError && <p role="alert">Could not load issues.</p>}
@@ -251,29 +331,16 @@ export function Issues() {
 				)}
 
 				{issues.isSuccess && shown.length > 0 && layout === 'list' && (
-					<div className="table-wrap">
-						<table className="table">
-							<caption className="sr-only">Issues</caption>
-							<thead><tr><th scope="col">Issue</th><th scope="col">Department</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Due</th><th scope="col">Assigned</th></tr></thead>
-							<tbody>
-								{shown.map((i) => (
-									<tr key={i.ROWID}>
-										<td data-label="Issue" className="cell-primary">
-											<button type="button" className="link-btn" onClick={() => setSelected(i.ROWID)}>{i.subject}</button>
-											{i.task_id && <small className="sub"><Link to={'/tasks/' + i.task_id}>Open task</Link></small>}
-										</td>
-										<td data-label="Department">{i.department || '-'}</td>
-										<td data-label="Priority">{i.issue_priority || '-'}</td>
-										<td data-label="Status"><Chip status={i.issue_status} /></td>
-										<td data-label="Due" className={isOverdue(i) ? 'text-danger' : ''}>{i.due_date ? fmtDate(i.due_date) : '-'}</td>
-										<td data-label="Assigned">{nameOf(i.assigned_to_id) || '-'}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+					<ResizableGrid
+						layout={grid}
+						label="Issues"
+						columns={listColumns(nameOf, setSelected)}
+						rows={shown}
+						rowKey={(i) => i.ROWID}
+					/>
 				)}
 			</Card>
+			{issues.isSuccess && <GridStatusBar text={`Showing ${shown.length} of ${all.length}`} />}
 
 			{current && <QuickPanel key={current.ROWID} issue={current} isManager={isManager} onClose={() => setSelected(null)} />}
 		</>

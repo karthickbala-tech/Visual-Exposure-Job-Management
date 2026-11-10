@@ -1,4 +1,6 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import type { Location } from 'react-router-dom';
+import { Dialog } from './components/Dialog';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthGate } from './auth/AuthGate';
 import { ApiError } from './api/client';
@@ -46,18 +48,23 @@ const queryClient = new QueryClient({
 });
 
 /**
- * HashRouter: Catalyst client hosting serves one index.html, so hash URLs
- * (/app/#/jobs) refresh and deep-link without any server rewrite rules.
+ * A popup route: the page opens over the screen the user came from (the list stays visible behind it).
+ * Navigate to it with state { background: location }. Closing it, or saving and going on to the record, ends the popup.
  */
-export default function App() {
+function PopupRoute({ title, children }: { title: string; children: React.ReactNode }) {
+	const location = useLocation();
+	const navigate = useNavigate();
+	const background = (location.state as { background?: Location } | null)?.background;
+	return <Dialog title={title} wide onClose={() => navigate(background ?? '/', { replace: true })}>{children}</Dialog>;
+}
+
+/** The app's routes. A URL reached from another screen with a background location also opens as a popup over it. */
+function AppRoutes() {
+	const location = useLocation();
+	const background = (location.state as { background?: Location } | null)?.background;
 	return (
-		<ThemeProvider>
-		<PrefsProvider>
-		<QueryClientProvider client={queryClient}>
-			<ToastProvider>
-			<AuthGate>
-				<HashRouter>
-					<Routes>
+		<>
+			<Routes location={background ?? location}>
 						<Route element={<Shell />}>
 							<Route index element={<Home />} />
 							<Route path="jobs" element={<JobModule><Jobs /></JobModule>} />
@@ -87,7 +94,33 @@ export default function App() {
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />
 						</Route>
-					</Routes>
+	
+			</Routes>
+			{background && (
+				<Routes>
+					<Route path="jobs/new" element={<PopupRoute title="New job"><JobModule><NewJob /></JobModule></PopupRoute>} />
+					<Route path="jobs/:id/edit" element={<PopupRoute title="Edit job"><JobModule><EditJob /></JobModule></PopupRoute>} />
+					<Route path="issues/new" element={<PopupRoute title="Raise an issue"><NewIssue /></PopupRoute>} />
+					<Route path="people/new" element={<PopupRoute title="Add a person"><Guard roles={ROUTE_ROLES.people}><NewPerson /></Guard></PopupRoute>} />
+				</Routes>
+			)}
+		</>
+	);
+}
+
+/**
+ * HashRouter: Catalyst client hosting serves one index.html, so hash URLs
+ * (/app/#/jobs) refresh and deep-link without any server rewrite rules.
+ */
+export default function App() {
+	return (
+		<ThemeProvider>
+		<PrefsProvider>
+		<QueryClientProvider client={queryClient}>
+			<ToastProvider>
+			<AuthGate>
+				<HashRouter>
+					<AppRoutes />
 				</HashRouter>
 			</AuthGate>
 			</ToastProvider>

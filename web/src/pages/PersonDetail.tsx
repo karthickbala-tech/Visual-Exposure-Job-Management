@@ -6,6 +6,7 @@ import type { PersonFull } from '../api/more';
 import { useComplianceTypes, useCreateCompliance, useMe, useUpdateCompliance } from '../api/queries';
 import { ApiError } from '../api/client';
 import { Chip } from '../components/Chip';
+import { Dialog } from '../components/Dialog';
 import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 import { addYears, validityYears } from '../lib/validity';
@@ -128,9 +129,10 @@ function AddRecord({ personId, held, onClose }: { personId: string; held: Set<st
 	const years = validityYears(type?.name);
 	const problem = f.issue_date > todayIso() ? 'The issue date cannot be in the future.' : f.issue_date && f.expiry_date && f.expiry_date <= f.issue_date ? 'The expiry date must be after the issue date.' : '';
 	if (types.isSuccess && free.length === 0) {
-		return <p className="muted" style={{ padding: '10px 14px' }}>This person already has every ticket and induction type. <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></p>;
+		return <Dialog title="Add a ticket or induction" onClose={onClose}><p className="muted">This person already has every ticket and induction type. <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></p></Dialog>;
 	}
 	return (
+		<Dialog title="Add a ticket or induction" onClose={onClose}>
 		<form
 			className="inline-form"
 			onSubmit={(e) => {
@@ -160,6 +162,7 @@ function AddRecord({ personId, held, onClose }: { personId: string; held: Set<st
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{problem && <p role="alert">{problem}</p>}
 		</form>
+		</Dialog>
 	);
 }
 

@@ -4,6 +4,7 @@ import { TASK_NAMES } from '../lib/names';
 import { TASK_KINDS } from '../lib/taskKinds';
 import type { TaskType } from '../lib/taskKinds';
 import { useToast } from './toast';
+import { Dialog } from './Dialog';
 
 const TYPE_LABEL: Record<TaskType, string> = { design: 'Design', fabrication: 'Fabrication', install: 'Install' };
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -20,6 +21,7 @@ export function AddTaskForm({ jobId, onClose, type = 'install', kind = '' }: { j
 	const datesBad = !!f.scheduled && !!f.finish && f.scheduled > f.finish;
 	const hoursBad = [f.quoted, f.proposed].some((h) => h !== '' && !(Number(h) >= 0));
 	return (
+		<Dialog title={`Add ${TYPE_LABEL[type].toLowerCase()} task`} onClose={onClose}>
 		<form
 			className="inline-form"
 			onSubmit={(e) => {
@@ -64,5 +66,6 @@ export function AddTaskForm({ jobId, onClose, type = 'install', kind = '' }: { j
 			{datesBad && <p role="alert">The scheduled date cannot be after the required finish date.</p>}
 			<p className="muted" style={{ flex: '1 1 100%', margin: 0 }}>With no date the task starts as {f.type === 'design' ? '"To be Assigned"' : '"Awaiting Scheduling"'}; a manager schedules it later.</p>
 		</form>
+		</Dialog>
 	);
 }

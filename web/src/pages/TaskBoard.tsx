@@ -5,7 +5,8 @@ import { useCreateWorkshopTask } from '../api/more';
 import { useMe } from '../api/queries';
 import { ROUTE_ROLES } from '../navConfig';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Dialog } from '../components/Dialog';
+import { PageHeader } from '../components/ui';
 import { WorkList } from './WorkList';
 
 type Kind = 'design' | 'fabrication' | 'install';
@@ -21,6 +22,7 @@ function WorkshopTaskForm({ onClose }: { onClose: () => void }) {
 	const { notify } = useToast();
 	const [f, setF] = useState({ name: '', scheduled_date: '', every: '', unit: 'weeks' });
 	return (
+		<Dialog title="Add workshop task" onClose={onClose}>
 		<form
 			className="inline-form"
 			onSubmit={(e) => {
@@ -38,6 +40,7 @@ function WorkshopTaskForm({ onClose }: { onClose: () => void }) {
 			<button className="btn" disabled={make.isPending || !f.name.trim()}>{make.isPending ? 'Saving…' : 'Create'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 		</form>
+		</Dialog>
 	);
 }
 
@@ -75,7 +78,7 @@ export function TaskBoard() {
 				</nav>
 			)}
 
-			{adding && active?.key === 'fabrication' && <Card flush><WorkshopTaskForm onClose={() => setAdding(false)} /></Card>}
+			{adding && active?.key === 'fabrication' && <WorkshopTaskForm onClose={() => setAdding(false)} />}
 
 			{active ? <WorkList key={active.key} kind={active.key} embedded /> : me.isSuccess && <p className="table-empty">There are no task boards for your role.</p>}
 		</>
