@@ -1,4 +1,4 @@
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthGate } from './auth/AuthGate';
 import { ApiError } from './api/client';
@@ -8,7 +8,6 @@ import { PrefsProvider } from './components/prefs';
 import { Guard } from './components/Guard';
 import { ROUTE_ROLES } from './navConfig';
 import { Settings } from './pages/Settings';
-import { WorkList } from './pages/WorkList';
 import { ToastProvider } from './components/toast';
 import { Home } from './pages/Home';
 import { Jobs } from './pages/Jobs';
@@ -69,9 +68,9 @@ export default function App() {
 							<Route path="admin" element={<Guard roles={ROUTE_ROLES.admin}><Admin /></Guard>} />
 							<Route path="directory" element={<Guard roles={ROUTE_ROLES.directory}><Directory /></Guard>} />
 							<Route path="tasks" element={<TaskBoard />} />
-							<Route path="design" element={<Guard roles={ROUTE_ROLES.design}><WorkList kind="design" /></Guard>} />
-							<Route path="fabrication" element={<Guard roles={ROUTE_ROLES.fabrication}><WorkList kind="fabrication" /></Guard>} />
-							<Route path="installation" element={<Guard roles={ROUTE_ROLES.installation}><WorkList kind="install" /></Guard>} />
+							<Route path="design" element={<Navigate to="/tasks?type=design" replace />} />
+							<Route path="fabrication" element={<Navigate to="/tasks" replace />} />
+							<Route path="installation" element={<Navigate to="/tasks?type=install" replace />} />
 							<Route path="hours" element={<Guard roles={ROUTE_ROLES.hours}><Hours /></Guard>} />
 							<Route path="swms" element={<Guard roles={ROUTE_ROLES.swms}><SwmsList /></Guard>} />
 							<Route path="reports/checklists" element={<Guard roles={ROUTE_ROLES.checklists}><ChecklistReport /></Guard>} />

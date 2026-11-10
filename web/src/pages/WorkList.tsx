@@ -61,7 +61,7 @@ function Hours({ t }: { t: WorkTask }) {
 }
 
 /** One work screen for design, fabrication or installation: saved views with counts, search, a list or a board, and the next action for each task. */
-export function WorkList({ kind }: { kind: Kind }) {
+export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: boolean }) {
 	const copy = COPY[kind];
 	const me = useMe();
 	const myId = me.data?.person ? String(me.data.person.ROWID) : null;
@@ -69,10 +69,16 @@ export function WorkList({ kind }: { kind: Kind }) {
 	const [view, setView] = useState('open');
 	const [text, setText] = useState('');
 	const [type, setType] = useState('');
-	const [layout, setLayout] = useState<'list' | 'board'>('list');
+	const [layout, setLayout] = useState<'list' | 'board'>(embedded ? 'board' : 'list');
 	const [byJob, setByJob] = useState(false);
 
 	const views = useMemo(() => viewsFor(kind), [kind]);
+	const layoutToggle = (
+		<div className="segmented" role="group" aria-label="Layout">
+			<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><LayoutList size={14} aria-hidden="true" /> List</button>
+			<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}><Columns3 size={14} aria-hidden="true" /> Board</button>
+		</div>
+	);
 	const all = useMemo(() => q.data?.items ?? [], [q.data]);
 	const counts = useMemo(() => Object.fromEntries(views.map((v) => [v.key, all.filter((t) => v.test(t, myId)).length])), [views, all, myId]);
 	const kinds = useMemo(() => [...new Set(all.map((t) => t.kind).filter(Boolean))] as string[], [all]);
@@ -88,12 +94,11 @@ export function WorkList({ kind }: { kind: Kind }) {
 
 	return (
 		<>
-			<PageHeader eyebrow={copy.eyebrow} title={copy.title} subtitle={copy.subtitle}>
-				<div className="segmented" role="group" aria-label="Layout">
-					<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><LayoutList size={14} aria-hidden="true" /> List</button>
-					<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}><Columns3 size={14} aria-hidden="true" /> Board</button>
-				</div>
-			</PageHeader>
+			{!embedded && (
+				<PageHeader eyebrow={copy.eyebrow} title={copy.title} subtitle={copy.subtitle}>
+					{layoutToggle}
+				</PageHeader>
+			)}
 
 			{q.isSuccess && (
 				<section className="kpis" aria-label="Summary">
@@ -141,6 +146,7 @@ export function WorkList({ kind }: { kind: Kind }) {
 						</label>
 					)}
 					{layout === 'list' && <label className="check"><input type="checkbox" checked={byJob} onChange={(e) => setByJob(e.target.checked)} /> Group by job</label>}
+					{embedded && <span style={{ marginLeft: 'auto' }}>{layoutToggle}</span>}
 				</div>
 
 				{q.isPending && <p role="status" className="table-empty">Loading tasks…</p>}
