@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react';
 import { useAddShift, useBookableTasks, useHoursNotFilled, usePayPeriodHours, useWeeklyHours } from '../api/more';
 import { useToast } from '../components/toast';
+import { useConfirm } from '../components/Messages';
 import { Dialog } from '../components/Dialog';
 import type { HourCell, HoursReport, HoursRow } from '../api/more';
 import { Card, Kpi, PageHeader } from '../components/ui';
@@ -93,6 +94,7 @@ function downloadCsv(report: HoursReport, name: string) {
 /** Add a past shift: a task, a day, hours. Over 14 hours asks to confirm; over 16 is refused (the server enforces it too). */
 function ShiftForm({ onClose }: { onClose: () => void }) {
 	const tasks = useBookableTasks(true);
+	const confirm = useConfirm();
 	const add = useAddShift();
 	const { notify } = useToast();
 	const [f, setF] = useState({ taskId: '', date: todayIso(), hours: '', unbilled: '' });
@@ -103,9 +105,9 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 		<Dialog title="Add shift" onClose={onClose}>
 		<form
 			className="inline-form"
-			onSubmit={(e) => {
+			onSubmit={async (e) => {
 				e.preventDefault();
-				if (h > 14 && !window.confirm(`${h} hours is a very long shift. Save it anyway?`)) return;
+				if (h > 14 && !(await confirm({ message: `${h} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
 				add.mutate(
 					{ taskId: f.taskId, work_date: f.date, hours: h, unbilled_hours: u || undefined },
 					{ onSuccess: () => { notify('Shift added'); onClose(); }, onError: (er) => notify(er instanceof Error ? er.message : 'Could not add the shift', 'error') },

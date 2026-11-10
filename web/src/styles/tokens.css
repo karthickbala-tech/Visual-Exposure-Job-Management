@@ -37,6 +37,7 @@
 	/* Status */
 	--danger: #ed1c24; /* the site's red */
 	--warn-ink: #7a4a00;
+	--warn: #d89a1c; /* warning icons and accents */
 	--info: #0088cb; /* the site's blue */
 	--chip-gray-bg: #ededee; --chip-gray-ink: #545456;
 	--chip-blue-bg: #dfeafc; --chip-blue-ink: #1d4fb0;
@@ -102,6 +103,7 @@
 	--side-active: #2b2d31;
 	--danger: #ff6b63;
 	--warn-ink: #f6d9b0;
+	--warn: #f2b84b;
 	--info: #5b9bf5;
 	--chip-gray-bg: #2b2e32; --chip-gray-ink: #c3c7ca;
 	--chip-blue-bg: #17293f; --chip-blue-ink: #8db8f5;

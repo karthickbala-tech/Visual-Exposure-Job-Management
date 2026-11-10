@@ -73,6 +73,8 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.12; }
 }
 .toast svg { color: var(--brand); flex: none; }
 .toast--error svg { color: #ff9c94; }
+.toast--warn svg { color: var(--warn); }
+.toast--info svg { color: #8fc1ef; }
 
 /* ---------- Page header, buttons ---------- */
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -952,6 +954,23 @@ body.dialog-open { overflow: hidden; }
 .dialog__head h2 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .dialog__body { min-height: 0; overflow-y: auto; padding: 14px 16px 16px; }
 .dialog__body .inline-form { padding: 0; border: 0; background: transparent; }
+.msg { display: flex; align-items: flex-start; gap: 12px; }
+.msg p { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.msg svg { flex: none; margin-top: 1px; color: var(--info); }
+.msg--ok svg { color: var(--brand-strong); }
+.msg--warn svg { color: var(--warn); }
+.msg--error svg { color: var(--danger); }
+.msg-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+/* Inline notice: stays on the page until the cause is fixed. Same card look as the other panels. */
+.notice { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--notice-c, var(--info)); border-radius: 2px; font-size: 14px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.notice svg { flex: none; margin-top: 2px; color: var(--notice-c, var(--info)); }
+.notice__body { min-width: 0; }
+.notice__title { display: block; margin-bottom: 2px; }
+.notice--ok { --notice-c: var(--brand-strong); }
+.notice--info { --notice-c: var(--info); }
+.notice--warn { --notice-c: var(--warn); }
+.notice--error { --notice-c: var(--danger); }
 .dialog__body .card { border: 0; box-shadow: none; }
 @media (max-width: 760px) {
 	.dialog-layer { padding: 0; }

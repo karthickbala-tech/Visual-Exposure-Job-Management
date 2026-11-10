@@ -6,6 +6,7 @@ import { useStartChecklist } from '../api/queries';
 import type { Task } from '../api/types';
 import { Chip } from './Chip';
 import { useToast } from './toast';
+import { useConfirm } from './Messages';
 import { fmtDate } from './ui';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
@@ -19,15 +20,16 @@ function BookHours({ taskId }: { taskId: string }) {
 	const [f, setF] = useState({ date: todayIso(), hours: '' });
 	const add = useAddShift();
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	const h = Number(f.hours);
 	const problem = !f.hours ? '' : !(h >= 0.25) ? 'Enter at least 0.25 hours.' : h > 16 ? 'A shift cannot be longer than 16 hours.' : f.date > todayIso() ? 'Choose a day that has already started.' : '';
 	if (!open) return <button type="button" className="btn btn-ghost btn-sm crew-book" onClick={() => setOpen(true)}>Book hours</button>;
 	return (
 		<form
 			className="crew-book-form"
-			onSubmit={(e) => {
+			onSubmit={async (e) => {
 				e.preventDefault();
-				if (h > 14 && !window.confirm(`${h} hours is a very long shift. Save it anyway?`)) return;
+				if (h > 14 && !(await confirm({ message: `${h} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save hours' }))) return;
 				add.mutate({ taskId, work_date: f.date, hours: h }, { onSuccess: () => { notify('Hours booked'); setOpen(false); setF({ date: todayIso(), hours: '' }); }, onError: (er) => notify(er instanceof Error ? er.message : 'Could not book the hours', 'error') });
 			}}
 		>

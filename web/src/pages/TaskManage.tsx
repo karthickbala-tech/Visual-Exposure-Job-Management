@@ -5,6 +5,7 @@ import { useAddTime, useAssign, useRate, useUnassign, useUpdateTask } from '../a
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import type { Assignee } from '../api/types';
 import { useToast } from '../components/toast';
+import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 import { Dialog } from '../components/Dialog';
 
@@ -20,6 +21,7 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 	const unassign = useUnassign(taskId);
 	const people = usePeople(true);
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	const [dates, setDates] = useState({ scheduled_date: scheduled?.slice(0, 10) ?? '', required_finish: finish?.slice(0, 10) ?? '', quoted_hours: String(quoted || '') });
 	const [person, setPerson] = useState('');
 	const [role, setRole] = useState('member');
@@ -59,8 +61,8 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 									className="btn btn-ghost btn-sm"
 									aria-label={`Remove ${a.name ?? 'person'} from this task`}
 									disabled={unassign.isPending}
-									onClick={() => {
-										if (window.confirm(`Remove ${a.name ?? 'this person'} from the task? Their unfinished checklists are cleared.`)) {
+									onClick={async () => {
+										if (await confirm({ message: `Remove ${a.name ?? 'this person'} from the task? Their unfinished checklists are cleared.`, confirmLabel: 'Remove', danger: true })) {
 											unassign.mutate(a.personId, { onSuccess: () => notify('Removed from the task'), onError: (er) => notify(errText(er), 'error') });
 										}
 									}}
@@ -191,15 +193,22 @@ export function StageActions({ taskId, stage, nextStages, move, onDone }: { task
 	const [ohs, setOhs] = useState<'Yes' | 'No'>('No');
 	const [review, setReview] = useState(false);
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	const approving = !!ask && stage === 'Manager Review' && APPROVE_TO.includes(ask);
 	const go = (to: string, extra: { comment?: string; ohs?: 'Yes' | 'No'; management_review?: boolean } = {}) =>
 		move.mutate({ taskId, to, ...extra }, { onSuccess: () => { setAsk(null); setComment(''); onDone(to); }, onError: (e) => notify(errText(e), 'error') });
+	// Sending a task for manager review is the DS "Awaiting Submission" step: ask first, because the manager then takes over the task.
+	const choose = async (s: string) => {
+		if (NEEDS_COMMENT.includes(s) || (stage === 'Manager Review' && APPROVE_TO.includes(s))) return setAsk(ask === s ? null : s);
+		if (s === 'Manager Review' && !(await confirm({ title: 'Submit for manager review', message: 'The task will move to Manager Review, and the manager will check it next.', confirmLabel: 'Submit for review' }))) return;
+		go(s);
+	};
 
 	return (
 		<Card title="Move this task">
 			<div className="actions">
 				{nextStages.map((s) => (
-					<button key={s} className={'btn ' + (APPROVE_TO.includes(s) && stage === 'Manager Review' ? '' : 'btn-ghost')} aria-pressed={ask === s} disabled={move.isPending} onClick={() => (NEEDS_COMMENT.includes(s) || (stage === 'Manager Review' && APPROVE_TO.includes(s)) ? setAsk(ask === s ? null : s) : go(s))}>
+					<button key={s} className={'btn ' + (APPROVE_TO.includes(s) && stage === 'Manager Review' ? '' : 'btn-ghost')} aria-pressed={ask === s} disabled={move.isPending} onClick={() => choose(s)}>
 						{stage === 'Manager Review' && APPROVE_TO.includes(s) ? 'Approve' : s}
 					</button>
 				))}

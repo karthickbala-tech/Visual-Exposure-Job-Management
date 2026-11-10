@@ -11,6 +11,7 @@ import { Guard } from './components/Guard';
 import { ROUTE_ROLES } from './navConfig';
 import { Settings } from './pages/Settings';
 import { ToastProvider } from './components/toast';
+import { MessageProvider } from './components/Messages';
 import { Home } from './pages/Home';
 import { JobModule } from './components/JobModule';
 import { Jobs } from './pages/Jobs';
@@ -118,11 +119,13 @@ export default function App() {
 		<PrefsProvider>
 		<QueryClientProvider client={queryClient}>
 			<ToastProvider>
+			<MessageProvider>
 			<AuthGate>
 				<HashRouter>
 					<AppRoutes />
 				</HashRouter>
 			</AuthGate>
+			</MessageProvider>
 			</ToastProvider>
 		</QueryClientProvider>
 		</PrefsProvider>

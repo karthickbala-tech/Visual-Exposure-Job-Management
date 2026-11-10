@@ -4,6 +4,7 @@ import { Download, Upload } from 'lucide-react';
 import { api } from '../api/client';
 import { pdfUrl, useSaveSettings, useSettings } from '../api/more';
 import { useToast } from '../components/toast';
+import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 
 const EXPORTS = [
@@ -116,6 +117,7 @@ export function DataTab() {
 	const settings = useSettings();
 	const save = useSaveSettings();
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	const fileRef = useRef<HTMLInputElement>(null);
 
 	const backup = () => {
@@ -131,7 +133,7 @@ export function DataTab() {
 		try {
 			const parsed: unknown = JSON.parse(await file.text());
 			if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('This is not a settings file.');
-			if (!window.confirm('Replace the current settings with the ones in this file?')) return;
+			if (!(await confirm({ message: 'Replace the current settings with the ones in this file? The current settings will be overwritten.', confirmLabel: 'Replace settings', danger: true }))) return;
 			save.mutate(parsed as never, { onSuccess: () => notify('Settings restored'), onError: (e) => notify(errText(e), 'error') });
 		} catch (e) {
 			notify(e instanceof SyntaxError ? 'That file is not valid JSON.' : errText(e), 'error');

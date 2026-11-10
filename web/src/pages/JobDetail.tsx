@@ -13,6 +13,8 @@ import { num } from '../api/types';
 import type { Task } from '../api/types';
 import { StageCell } from '../components/StageCell';
 import { useToast } from '../components/toast';
+import { useConfirm } from '../components/Messages';
+import { Notice } from '../components/Notice';
 import { Card, Ring, fmtDate } from '../components/ui';
 import { useCloseJob } from '../api/more';
 import { SignsPanel } from './SignsPanel';
@@ -48,6 +50,7 @@ export function JobDetail() {
 	const move = useTransitionTask(id ?? '');
 	const close = useCloseJob(id ?? '');
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	// The jobs list links here with ?add=design|fab|install to open the matching add-task form (Creator's row actions).
 	const [params] = useSearchParams();
 	const [menu, setMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
@@ -142,12 +145,15 @@ export function JobDetail() {
 			{canClose && (
 				<div className="attention" role="status">
 					Every task is finished.
-					<button className="btn btn-sm" disabled={close.isPending} onClick={() => !(inReview.length && !window.confirm(`${inReview.length} ${inReview.length === 1 ? 'task is' : 'tasks are'} still in Manager Review. Closing will not wait for approval. Close the job anyway?`)) && close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') })}>
+					<button className="btn btn-sm" disabled={close.isPending} onClick={async () => {
+							if (inReview.length && !(await confirm({ message: `${inReview.length} ${inReview.length === 1 ? 'task is' : 'tasks are'} still in Manager Review. Closing will not wait for approval. Close the job anyway?`, confirmLabel: 'Close job' }))) return;
+							close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') });
+						}}>
 						{close.isPending ? 'Closing…' : 'Close job'}
 					</button>
 				</div>
 			)}
-			{move.isError && <p role="alert">{move.error.message}</p>}
+			{move.isError && <Notice kind="error">{move.error.message}</Notice>}
 
 			<div className="grid-2 jd-pair">
 				<Card title="Job Locations" flush>
