@@ -97,9 +97,16 @@ export const useRetryNotification = () => {
 };
 export const useRunReport = () => useMutation({ mutationFn: (which: 'weekly-hours' | 'weekly-issues') => api<Record<string, unknown>>(`/admin/reports/${which}`, send('POST')) });
 export const useRoles = () => useGet<{ items: { key: string; label: string }[] }>(['roles'], '/roles', true, 600_000);
+export interface PersonPatch { first_name?: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string[]; hourly_rate?: number; is_active?: boolean }
 export const useUpdatePerson = () => {
 	const qc = useQueryClient();
-	return useMutation({ mutationFn: (v: { id: string; roles?: string[]; is_active?: boolean }) => api(`/people/${v.id}`, send('PATCH', { roles: v.roles, is_active: v.is_active })), onSuccess: () => qc.invalidateQueries({ queryKey: ['people'] }) });
+	return useMutation({
+		mutationFn: ({ id, ...patch }: { id: string } & PersonPatch) => api(`/people/${id}`, send('PATCH', patch)),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['people'] });
+			void qc.invalidateQueries({ queryKey: ['person'] });
+		},
+	});
 };
 
 /** PDFs open in a new tab: the browser sends the sign-in cookie and the server makes the file on request. */
@@ -150,7 +157,7 @@ export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: 
 export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number }
 export const usePerson = (id: string | undefined) => useGet<{ person: PersonFull }>(['person', id ?? ''], `/people/${id}`, !!id, 60_000);
 export const useRatings = (id: string | undefined) => useGet<{ items: { taskId: string; rating: number; comment: string; ratedAt: string | null }[]; count: number; average: number | null }>(['ratings', id ?? ''], `/people/${id}/ratings`, !!id, 60_000);
-export const usePersonCompliance = (id: string | undefined) => useGet<{ items: { id: string; typeName: string | null; referenceNo: string; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id, 60_000);
+export const usePersonCompliance = (id: string | undefined) => useGet<{ items: { id: string; typeId?: string | null; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id, 60_000);
 export const useCreatePerson = () => {
 	const qc = useQueryClient();
 	return useMutation({

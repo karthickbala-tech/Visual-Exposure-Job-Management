@@ -221,11 +221,28 @@ export const useComplianceItems = (status?: string) =>
 		staleTime: 30_000,
 	});
 
+export const useUpdateCompliance = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { id: string; reference_no?: string; issue_date?: string | null; expiry_date?: string | null; is_active?: boolean }) => {
+			const { id, ...patch } = v;
+			return api('/compliance/' + id, json('PATCH', patch));
+		},
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['compliance'] });
+			void qc.invalidateQueries({ queryKey: ['person-compliance'] });
+		},
+	});
+};
+
 export const useCreateCompliance = () => {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (input: { person_id?: string; company_id?: string; type_id: string; reference_no?: string; issue_date?: string; expiry_date?: string }) => api('/compliance', json('POST', input)),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance'] }),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['compliance'] });
+			void qc.invalidateQueries({ queryKey: ['person-compliance'] });
+		},
 	});
 };
 

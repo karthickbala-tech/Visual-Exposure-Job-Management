@@ -200,6 +200,8 @@ export interface ComplianceItem {
 	personId: string | null;
 	personName: string | null;
 	referenceNo: string;
+	issueDate?: string | null;
+	typeId?: string | null;
 	expiryDate: string | null;
 	daysLeft: number | null;
 	status: 'Valid' | 'Expiring' | 'Expired' | 'No expiry';

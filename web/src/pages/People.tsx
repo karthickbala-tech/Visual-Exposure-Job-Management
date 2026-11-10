@@ -137,9 +137,10 @@ export function People() {
 	const visible = people.filter((p) => (!activeOnly || p.is_active !== false) && (!needle || `${p.first_name} ${p.last_name ?? ''} ${p.email ?? ''}`.toLowerCase().includes(needle)));
 	const ve = visible.filter((p) => (p as { person_kind?: string }).person_kind !== 'subcontractor');
 	const subs = visible.filter((p) => (p as { person_kind?: string }).person_kind === 'subcontractor');
-	const records = all.filter((i) => (tab === 'docs' ? i.kind === 'company_document' : i.kind !== 'company_document') && (!status || i.status === status) && (!needle || `${i.personName ?? i.companyName ?? ''} ${i.typeName ?? ''}`.toLowerCase().includes(needle)));
+	const records = all.filter((i) => (tab === 'docs' ? i.kind === 'company_document' : i.kind !== 'company_document') && (!status || (status === 'Today' ? i.daysLeft === 0 : i.status === status)) && (!needle || `${i.personName ?? i.companyName ?? ''} ${i.typeName ?? ''}`.toLowerCase().includes(needle)));
 	const expired = all.filter((i) => i.status === 'Expired').length;
-	const expiring = all.filter((i) => i.status === 'Expiring').length;
+	const expiring = all.filter((i) => i.status === 'Expiring' && i.daysLeft !== 0).length;
+	const today0 = all.filter((i) => i.daysLeft === 0 && i.status !== 'Expired').length;
 	const activeAll = people.filter((p) => p.is_active !== false);
 	const goStatus = (s: string) => { setTab('tickets'); setStatus(s); };
 
@@ -196,6 +197,9 @@ export function People() {
 				<button type="button" className={'kpi kpi-btn' + (expired ? ' kpi-danger' : '')} aria-pressed={tab === 'tickets' && status === 'Expired'} onClick={() => goStatus('Expired')}>
 					<span className="kpi-label">Expired</span><span className="kpi-value num">{expired}</span>
 				</button>
+				<button type="button" className={'kpi kpi-btn' + (today0 ? ' kpi-danger' : '')} aria-pressed={tab === 'tickets' && status === 'Today'} onClick={() => goStatus('Today')}>
+					<span className="kpi-label">Expires today</span><span className="kpi-value num">{today0}</span>
+				</button>
 				<button type="button" className="kpi kpi-btn" aria-pressed={tab === 'tickets' && status === 'Expiring'} onClick={() => goStatus('Expiring')}>
 					<span className="kpi-label">Expiring within 30 days</span><span className="kpi-value num">{expiring}</span>
 				</button>
@@ -220,7 +224,7 @@ export function People() {
 							<span className="sr-only">Status</span>
 							<select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
 								<option value="">All statuses</option>
-								{['Expired', 'Expiring', 'Valid', 'No expiry'].map((s) => <option key={s}>{s}</option>)}
+								{[['Expired', 'Expired'], ['Today', 'Expires today'], ['Expiring', 'Within 30 days'], ['Valid', 'Valid'], ['No expiry', 'No expiry']].map(([v, l]) => <option key={v} value={v}>{l} ({v === 'Today' ? today0 : all.filter((i) => (tab === 'docs' ? i.kind === 'company_document' : i.kind !== 'company_document') && i.status === v).length})</option>)}
 							</select>
 						</label>
 					)}
