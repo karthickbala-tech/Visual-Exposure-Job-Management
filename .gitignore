@@ -56,3 +56,6 @@ functions/*/lib/
 # Tool output
 .build/
 .playwright-mcp/
+
+# Moved here by the cleanup; browser-tool output stays out of git
+backup-files/playwright-mcp-output/
