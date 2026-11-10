@@ -16,9 +16,23 @@ const qs = (o: Record<string, string | undefined>) => {
 export interface HourCell { fab: number; install: number; workshop: number; design: number; other: number; unbilled: number; final?: number }
 export interface HoursRow { personId: string; name: string; days: Record<string, HourCell>; totals: HourCell; labourCost?: number }
 export interface HoursReport { rows: HoursRow[]; totals: HourCell; truncated: boolean; weekStart?: string; days?: string[]; period?: { start: string; end: string }; which?: string }
-export const useWeeklyHours = (week?: string) => useGet<HoursReport>(['hours-week', week ?? ''], '/hours/weekly' + qs({ week }));
+export const useWeeklyHours = (week?: string, range?: { from: string; to: string }) => useGet<HoursReport>(['hours-week', week ?? '', range?.from ?? '', range?.to ?? ''], '/hours/weekly' + qs({ week, from: range?.from, to: range?.to }));
+/** The tasks the person could book a past shift on: crew get their own, managers everyone's open ones (one request, cached). */
+export const useBookableTasks = (enabled: boolean) => useGet<{ items: { ROWID: string; name: string; task_type: string; job_name?: string; stage: string }[] }>(['bookable-tasks'], '/tasks?detail=true&limit=120', enabled, 60_000);
 export const usePayPeriodHours = (which: 'this' | 'last', enabled: boolean) => useGet<HoursReport>(['hours-period', which], '/hours/pay-period' + qs({ which }), enabled);
 export const useHoursNotFilled = () => useGet<{ workshop: number; other: number; total: number }>(['hours-not-filled'], '/hours/not-filled', true, 120_000);
+/** Book a past shift on any task the person can edit (the task is chosen when sending). */
+export const useAddShift = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { taskId: string; work_date: string; hours: number; unbilled_hours?: number }) => api(`/tasks/${v.taskId}/hours`, send('POST', { work_date: v.work_date, hours: v.hours, unbilled_hours: v.unbilled_hours })),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['hours-week'] });
+			void qc.invalidateQueries({ queryKey: ['hours-period'] });
+			void qc.invalidateQueries({ queryKey: ['hours-not-filled'] });
+		},
+	});
+};
 export const useAddTime = (taskId: string) => {
 	const qc = useQueryClient();
 	return useMutation({
