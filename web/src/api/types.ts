@@ -18,6 +18,13 @@ export interface Job {
 	quoted_hours?: number;
 	booked_hours?: number;
 	risk?: string[];
+	profit_email_at?: string | null;
+	total_purchases?: number | string | null;
+	stock_purchases?: number | string | null;
+	close_triggered?: boolean;
+	quote_ref?: string;
+	pm_id?: string;
+	fab_manager_id?: string;
 	CREATEDTIME?: string;
 	MODIFIEDTIME?: string;
 	workdrive_url?: string;
@@ -52,6 +59,11 @@ export interface Task {
 	required_finish?: string;
 	nextStages?: string[];
 	swms_id?: string;
+	parent_id?: string | null;
+	team_leader?: string;
+	team_members?: string;
+	swms_status?: string | null;
+	labour_cost?: string | number | null;
 }
 
 export interface Progress {
@@ -60,10 +72,12 @@ export interface Progress {
 	job: number;
 }
 
+export interface JobLocation { id: string; name: string; address: string }
 export interface JobDetailResponse {
 	job: Job;
 	tasks: Task[];
 	progress: Progress;
+	locations?: JobLocation[];
 }
 
 export const num = (v: string | number | undefined | null): number => {

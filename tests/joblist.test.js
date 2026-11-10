@@ -77,3 +77,23 @@ test('trade figures: booked hours per trade, labour cost only when allowed', () 
 	assert.deepEqual(L.tradeFigures(mix, 'install', true), { hours: 4, cost: 200 });
 	assert.deepEqual(L.tradeFigures([], 'install', true), { hours: 0, cost: 0 });
 });
+
+test('job form fields: a manager picks the starting stage; the system fields are administrator-only and live in flags and columns', async () => {
+	const w = makeWorld();
+	const pm = w.as(['project_manager']);
+	const j = await jobs.createJob(pm, { name: 'Form job', stage: 'In Progress' });
+	assert.equal(j.job.stage, 'In Progress');
+	await assert.rejects(jobs.createJob(pm, { name: 'Nope', total_purchases: 5 }), { status: 403 });
+	const admin = w.as(['admin']);
+	const a = await jobs.createJob(admin, { name: 'Admin job', total_purchases: 120.5, stock_purchases: 20, closure_email_sent: true, close_triggered: true, profit_email_at: '2026-12-01T09:30', workdrive_url: 'https://example.test/f' });
+	const row = w.db.jobs.find((r) => r.name === 'Admin job');
+	assert.equal(row.total_purchases, 120.5);
+	assert.equal(row.profit_email_at, '2026-12-01 09:30:00');
+	assert.deepEqual(JSON.parse(row.flags), { closure_email_sent: true, close_triggered: true });
+	const got = await jobs.getJob(admin, a.job.ROWID);
+	assert.equal(got.job.closure_email_sent, true);
+	assert.equal(got.job.close_triggered, true);
+	assert.deepEqual(got.locations, []);
+	const kept = await jobs.updateJob(admin, a.job.ROWID, { stage: 'On Hold', description: 'd', expected_finish: '2026-12-31', server_path: 'S:x' });
+	assert.equal(kept.job.stage, 'Preparation', 'the stage is not editable after creation');
+});

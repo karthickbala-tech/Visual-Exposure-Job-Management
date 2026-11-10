@@ -13,6 +13,7 @@ import { Home } from './pages/Home';
 import { JobModule } from './components/JobModule';
 import { Jobs } from './pages/Jobs';
 import { NewJob } from './pages/NewJob';
+import { EditJob } from './pages/EditJob';
 import { NewIssue } from './pages/NewIssue';
 import { NewPerson } from './pages/NewPerson';
 import { JobDetail } from './pages/JobDetail';
@@ -61,6 +62,7 @@ export default function App() {
 							<Route index element={<Home />} />
 							<Route path="jobs" element={<JobModule><Jobs /></JobModule>} />
 							<Route path="jobs/new" element={<JobModule><NewJob /></JobModule>} />
+							<Route path="jobs/:id/edit" element={<JobModule><EditJob /></JobModule>} />
 							<Route path="jobs/:id" element={<JobModule><JobDetail /></JobModule>} />
 							<Route path="issues" element={<Issues />} />
 							<Route path="issues/new" element={<NewIssue />} />

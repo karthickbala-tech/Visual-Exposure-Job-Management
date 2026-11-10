@@ -11,10 +11,10 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
  * Add a task to a job with what the old wizard asked for: type, kind, name, dates, quoted and proposed hours, and a note.
  * A task with no date starts as "Awaiting Scheduling" (or "To be Assigned" for design), exactly as before.
  */
-export function AddTaskForm({ jobId, onClose }: { jobId: string; onClose: () => void }) {
+export function AddTaskForm({ jobId, onClose, type = 'install', kind = '' }: { jobId: string; onClose: () => void; type?: TaskType; kind?: string }) {
 	const add = useCreateTask(jobId);
 	const { notify } = useToast();
-	const [f, setF] = useState({ type: 'install' as TaskType, kind: '', name: '', scheduled: '', finish: '', quoted: '', proposed: '', description: '' });
+	const [f, setF] = useState({ type, kind, name: '', scheduled: '', finish: '', quoted: '', proposed: '', description: '' });
 	const datesBad = !!f.scheduled && !!f.finish && f.scheduled > f.finish;
 	const hoursBad = [f.quoted, f.proposed].some((h) => h !== '' && !(Number(h) >= 0));
 	return (

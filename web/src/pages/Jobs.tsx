@@ -5,7 +5,7 @@ import { AlertTriangle, Columns3, Download, ExternalLink, Plus, Search } from 'l
 import { useJobs, useMe, usePeople } from '../api/queries';
 import { num } from '../api/types';
 import type { Job, JobTabCounts } from '../api/types';
-import { Chip } from '../components/Chip';
+import { StageCell } from '../components/StageCell';
 import { FilterMenu } from '../components/FilterMenu';
 import { Card, PageHeader } from '../components/ui';
 import { useDismiss } from '../components/useDismiss';
@@ -51,7 +51,7 @@ const COLS: Col[] = [
 			{(j.risk ?? []).map((r) => <small key={r} className="risk"><AlertTriangle size={12} aria-hidden="true" /> {r}</small>)}
 		</>
 	) },
-	{ key: 'stage', label: 'Stage', width: 150, value: (j) => j.stage, cell: (j) => <Chip status={j.stage} /> },
+	{ key: 'stage', label: 'Stage', width: 150, value: (j) => j.stage, cell: (j) => <StageCell stage={j.stage} /> },
 	{ key: 'pfab', label: '% Fab Completed', width: 120, right: true, value: (j) => pct(j.percent_fab), cell: (j) => pct(j.percent_fab) },
 	{ key: 'pjob', label: '% Job Completed', width: 120, right: true, value: (j) => pct(j.percent_job), cell: (j) => pct(j.percent_job) },
 	{ key: 'pinst', label: '% Install Completed', width: 130, right: true, value: (j) => pct(j.percent_install), cell: (j) => pct(j.percent_install) },
@@ -215,6 +215,13 @@ export function Jobs() {
 						<Download size={15} aria-hidden="true" /> CSV
 					</button>
 				</div>
+
+				{needle && (
+					<div className="search-tags">
+					<span className="search-tags__label">Search</span>
+					<span className="search-tag">{searchCol.label} : contains "{text.trim()}" <button type="button" aria-label="Clear the search" onClick={() => setParams({}, { replace: true })}>×</button></span>
+					</div>
+				)}
 
 				{chosen.length > 0 && (
 					<div className="bulk-bar" role="region" aria-label="Selected jobs">

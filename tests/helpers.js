@@ -41,6 +41,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		sites: {
 			findById: async (id) => clone(db.sites.find((r) => String(r.ROWID) === String(id))),
 			list: async () => db.sites.map(clone),
+			findByIds: async (ids) => db.sites.filter((r) => ids.map(String).includes(String(r.ROWID))).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
 				db.sites.push(r);
