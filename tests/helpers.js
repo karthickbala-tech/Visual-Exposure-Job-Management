@@ -111,7 +111,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.tasks.filter((t) => t.required_finish && t.required_finish < today && !terminal.includes(t.stage)).length,
 			findBySwms: async (swmsId) => clone(db.tasks.find((t) => String(t.swms_id) === String(swmsId))),
 			listByJob: async (jobId) => db.tasks.filter((t) => String(t.job_id) === String(jobId)).map(clone),
-			list: async ({ jobId, type, stage, ids, excludeStages, from, to, kind, swmsIds, requiredBefore } = {}) =>
+			list: async ({ jobId, jobIds, type, stage, ids, excludeStages, from, to, kind, swmsIds, requiredBefore } = {}) =>
 				byIds(db.tasks, ids)
 					.filter(
 						(t) =>
@@ -119,6 +119,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 							(!swmsIds || swmsIds.map(String).includes(String(t.swms_id))) &&
 							(!requiredBefore || (t.required_finish && t.required_finish < requiredBefore)) &&
 							(!jobId || String(t.job_id) === String(jobId)) &&
+							(!jobIds || jobIds.map(String).includes(String(t.job_id))) &&
 							(!type || t.task_type === type) &&
 							(!stage || t.stage === stage) &&
 							(!excludeStages || !excludeStages.includes(t.stage)) &&

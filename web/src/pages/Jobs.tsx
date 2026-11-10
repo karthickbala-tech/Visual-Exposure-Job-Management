@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
-import { useCreateJob, useJobs, useMe } from '../api/queries';
+import { AlertTriangle, Download, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { useCreateJob, useJobs, useMe, usePeople } from '../api/queries';
 import { num } from '../api/types';
-import { Chip, Progress } from '../components/Chip';
+import type { Job, JobTabCounts } from '../api/types';
+import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 
-const VIEWS = [
+const VIEWS: { key: keyof JobTabCounts; label: string }[] = [
 	{ key: 'all', label: 'All' },
 	{ key: 'my_open', label: 'My open' },
 	{ key: 'my_jobs', label: 'My jobs' },
@@ -16,14 +17,40 @@ const VIEWS = [
 	{ key: 'completed', label: 'Completed' },
 ];
 const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed', 'Completed - Closed', 'Cancelled'];
+const FINISHED = ['Completed', 'Completed - Closed', 'Cancelled'];
+const today = () => new Date().toISOString().slice(0, 10);
 
+/** One CSV cell; values that start with = + - @ are prefixed so a spreadsheet never runs them as a formula. */
+const cell = (v: unknown) => {
+	let s = v === null || v === undefined ? '' : String(v);
+	if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+	return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+function exportCsv(rows: Job[]) {
+	const head = ['Job', 'Deal', 'Stage', 'Project manager', 'Fab manager', 'Fab %', 'Install %', 'Job %', 'Booked hours', 'Quoted hours', 'Expected finish'];
+	const lines = [head.join(',')].concat(rows.map((j) => [j.name, j.crm_deal_id, j.stage, j.pm_name, j.fab_manager_name, num(j.percent_fab), num(j.percent_install), num(j.percent_job), j.booked_hours ?? 0, j.quoted_hours ?? 0, j.expected_finish].map(cell).join(',')));
+	const url = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'jobs.csv';
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/** The jobs list: tabs with counts, filters, hours against the quote, warnings, and a CSV export of what you select. */
 export function Jobs() {
 	const [params, setParams] = useSearchParams();
 	const text = params.get('q') ?? '';
 	const [stage, setStage] = useState('');
-	const [view, setView] = useState('all');
-	const jobs = useJobs(stage || undefined, view);
+	const [pm, setPm] = useState('');
+	const [fab, setFab] = useState('');
+	const [view, setView] = useState<keyof JobTabCounts>('all');
+	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [picked, setPicked] = useState<string[]>([]);
+	const jobs = useJobs(stage || undefined, view, { pm_id: pm || undefined, fab_manager_id: fab || undefined });
 	const me = useMe();
+	const canManage = !!me.data?.permissions.createJob;
+	const people = usePeople(canManage);
 	const create = useCreateJob();
 	const navigate = useNavigate();
 	const { notify } = useToast();
@@ -31,7 +58,12 @@ export function Jobs() {
 	const [open, setOpen] = useState(false);
 
 	const needle = text.trim().toLowerCase();
-	const shown = (jobs.data?.items ?? []).filter((j) => !needle || j.name.toLowerCase().includes(needle) || (j.crm_deal_id ?? '').toLowerCase().includes(needle));
+	const shown = useMemo(() => (jobs.data?.items ?? []).filter((j) => !needle || j.name.toLowerCase().includes(needle) || (j.crm_deal_id ?? '').toLowerCase().includes(needle)), [jobs.data, needle]);
+	const counts = jobs.data?.counts;
+	const activeFilters = [stage, pm, fab].filter(Boolean).length;
+	const managers = (people.data?.items ?? []).filter((p) => p.is_active !== false);
+	const allPicked = shown.length > 0 && shown.every((j) => picked.includes(j.ROWID));
+	const chosen = shown.filter((j) => picked.includes(j.ROWID));
 
 	const submit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -49,7 +81,7 @@ export function Jobs() {
 	return (
 		<>
 			<PageHeader eyebrow="Projects" title="Jobs" subtitle="Every job from deal to finished install.">
-				{me.data?.permissions.createJob && !open && (
+				{canManage && !open && (
 					<button className="btn" onClick={() => setOpen(true)}>
 						<Plus size={16} aria-hidden="true" /> New job
 					</button>
@@ -73,35 +105,76 @@ export function Jobs() {
 					</form>
 				)}
 
-				<div className="inline-form" role="group" aria-label="Job lists">
-					<div className="segmented" role="group" aria-label="Show">
+				<div className="list-toolbar">
+					<div className="segmented" role="group" aria-label="Job lists">
 						{VIEWS.map((v) => (
-							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => setView(v.key)}>{v.label}</button>
+							<button key={v.key} className={view === v.key ? 'on' : ''} aria-pressed={view === v.key} onClick={() => { setView(v.key); setPicked([]); }}>
+								{v.label}
+								{counts && <span className="tab-count num">{counts[v.key]}</span>}
+							</button>
 						))}
 					</div>
+					<label className="search" style={{ flex: '1 1 220px', maxWidth: 360 }}>
+						<Search size={16} aria-hidden="true" />
+						<input type="search" value={text} onChange={(e) => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} placeholder="Search name, number or deal…" aria-label="Search jobs" />
+					</label>
+					<button type="button" className={'btn btn-ghost' + (activeFilters ? ' has-filters' : '')} aria-expanded={filtersOpen} aria-controls="job-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
+						<SlidersHorizontal size={15} aria-hidden="true" /> Filters{activeFilters > 0 && <span className="tab-count num">{activeFilters}</span>}
+					</button>
 				</div>
 
-				<div className="inline-form" role="group" aria-label="Filter jobs">
-					<label className="search" style={{ flex: '1 1 240px' }}>
-						<Search size={16} aria-hidden="true" />
-						<input
-							type="search"
-							value={text}
-							onChange={(e) => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })}
-							placeholder="Filter by name or deal…"
-							aria-label="Filter jobs"
-						/>
-					</label>
-					<label style={{ flex: '0 1 200px' }}>
-						<span className="toolbar__label">Stage</span>
-						<select value={stage} onChange={(e) => setStage(e.target.value)} style={{ width: '100%' }}>
-							<option value="">All stages</option>
-							{STAGES.map((s) => (
-								<option key={s}>{s}</option>
-							))}
-						</select>
-					</label>
-				</div>
+				{filtersOpen && (
+					<div id="job-filters" className="inline-form" role="group" aria-label="Filters">
+						<label>
+							<span className="toolbar__label">Stage</span>
+							<select value={stage} onChange={(e) => setStage(e.target.value)}>
+								<option value="">All stages</option>
+								{STAGES.map((s) => (
+									<option key={s}>{s}</option>
+								))}
+							</select>
+						</label>
+						{canManage && (
+							<>
+								<label>
+									<span className="toolbar__label">Project manager</span>
+									<select value={pm} onChange={(e) => setPm(e.target.value)}>
+										<option value="">Anyone</option>
+										{managers.map((p) => (
+											<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+										))}
+									</select>
+								</label>
+								<label>
+									<span className="toolbar__label">Fab manager</span>
+									<select value={fab} onChange={(e) => setFab(e.target.value)}>
+										<option value="">Anyone</option>
+										{managers.map((p) => (
+											<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+										))}
+									</select>
+								</label>
+							</>
+						)}
+						{activeFilters > 0 && (
+							<button type="button" className="btn btn-ghost" onClick={() => { setStage(''); setPm(''); setFab(''); }}>
+								Clear filters
+							</button>
+						)}
+					</div>
+				)}
+
+				{chosen.length > 0 && (
+					<div className="bulk-bar" role="region" aria-label="Selected jobs">
+						<strong className="num">{chosen.length}</strong> selected
+						<button type="button" className="btn btn-ghost btn-sm" onClick={() => exportCsv(chosen)}>
+							<Download size={14} aria-hidden="true" /> Export CSV
+						</button>
+						<button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicked([])}>
+							Clear
+						</button>
+					</div>
+				)}
 
 				{jobs.isPending && <p role="status" className="table-empty">Loading jobs…</p>}
 				{jobs.isError && (
@@ -120,27 +193,68 @@ export function Jobs() {
 							<caption className="sr-only">Jobs</caption>
 							<thead>
 								<tr>
+									{canManage && (
+										<th scope="col" className="col-check">
+											<input type="checkbox" aria-label="Select all jobs shown" checked={allPicked} onChange={(e) => setPicked(e.target.checked ? shown.map((j) => j.ROWID) : [])} />
+										</th>
+									)}
 									<th scope="col">Job</th>
 									<th scope="col">Stage</th>
+									<th scope="col">Project / fab manager</th>
 									<th scope="col">Progress</th>
-									<th scope="col">Expected finish</th>
+									<th scope="col">Hours</th>
+									<th scope="col">Finish</th>
 								</tr>
 							</thead>
 							<tbody>
-								{shown.map((j) => (
-									<tr key={j.ROWID}>
-										<td data-label="Job" className="cell-primary">
-											<Link to={`/jobs/${j.ROWID}`}>{j.name}</Link>
-										</td>
-										<td data-label="Stage">
-											<Chip status={j.stage} />
-										</td>
-										<td data-label="Progress">
-											<Progress label="Job" value={num(j.percent_job)} single />
-										</td>
-										<td data-label="Expected finish">{fmtDate(j.expected_finish)}</td>
-									</tr>
-								))}
+								{shown.map((j) => {
+									const finished = FINISHED.includes(j.stage);
+									const late = !!j.expected_finish && j.expected_finish.slice(0, 10) < today() && !finished;
+									const over = (j.quoted_hours ?? 0) > 0 && (j.booked_hours ?? 0) > (j.quoted_hours ?? 0);
+									return (
+										<tr key={j.ROWID} className={picked.includes(j.ROWID) ? 'row-picked' : ''}>
+											{canManage && (
+												<td data-label="Select" className="col-check">
+													<input type="checkbox" aria-label={`Select ${j.name}`} checked={picked.includes(j.ROWID)} onChange={(e) => setPicked(e.target.checked ? [...picked, j.ROWID] : picked.filter((x) => x !== j.ROWID))} />
+												</td>
+											)}
+											<td data-label="Job" className="cell-primary">
+												<Link to={`/jobs/${j.ROWID}`}>{j.name}</Link>
+												{j.crm_deal_id && <small className="sub">Deal {j.crm_deal_id}</small>}
+												{(j.risk ?? []).map((r) => (
+													<small key={r} className="risk">
+														<AlertTriangle size={12} aria-hidden="true" /> {r}
+													</small>
+												))}
+											</td>
+											<td data-label="Stage">
+												<Chip status={j.stage} />
+											</td>
+											<td data-label="Managers">
+												<span className="two-line">
+													<span>{j.pm_name || '-'}</span>
+													<small>{j.fab_manager_name || '-'}</small>
+												</span>
+											</td>
+											<td data-label="Progress">
+												<span className="two-line">
+													<span className="mini-bar" role="img" aria-label={`Job ${num(j.percent_job)} percent`}>
+														<span style={{ width: `${Math.min(100, num(j.percent_job))}%` }} />
+													</span>
+													<small className="num">
+														{num(j.percent_job)}% · Fab {num(j.percent_fab)}% · Install {num(j.percent_install)}%
+													</small>
+												</span>
+											</td>
+											<td data-label="Hours" className={'num' + (over ? ' over' : '')}>
+												{(j.booked_hours ?? 0) || (j.quoted_hours ?? 0) ? `${j.booked_hours ?? 0} / ${j.quoted_hours ?? 0}h` : '-'}
+											</td>
+											<td data-label="Finish" className={late ? 'over' : ''}>
+												{fmtDate(j.expected_finish)}
+											</td>
+										</tr>
+									);
+								})}
 							</tbody>
 						</table>
 					</div>

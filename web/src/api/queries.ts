@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -16,10 +16,14 @@ export const useHealth = () =>
 export const useMe = () =>
 	useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: 5 * 60_000 });
 
-export const useJobs = (stage?: string, view?: string) =>
+/** The jobs list: one request serves the rows, the people names, the hours and the numbers on the tabs. */
+export const useJobs = (stage?: string, view?: string, who: { pm_id?: string; fab_manager_id?: string } = {}) =>
 	useQuery({
-		queryKey: ['jobs', stage ?? 'all', view ?? 'all'],
-		queryFn: () => api<{ items: Job[]; count: number }>('/jobs' + [stage && `stage=${encodeURIComponent(stage)}`, view && view !== 'all' && `view=${view}`].filter(Boolean).reduce<string>((s, p, i) => s + (i ? '&' : '?') + p, '')),
+		queryKey: ['jobs', stage ?? 'all', view ?? 'all', who.pm_id ?? '', who.fab_manager_id ?? ''],
+		queryFn: () =>
+			api<{ items: Job[]; count: number; total?: number; counts?: JobTabCounts }>(
+				'/jobs' + [stage && `stage=${encodeURIComponent(stage)}`, view && view !== 'all' && `view=${view}`, who.pm_id && `pm_id=${who.pm_id}`, who.fab_manager_id && `fab_manager_id=${who.fab_manager_id}`].filter(Boolean).reduce<string>((s, p, i) => s + (i ? '&' : '?') + p, ''),
+			),
 		staleTime: 30_000,
 	});
 

@@ -124,15 +124,34 @@ const routes = [
 	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: { createJob: isManager, editJob: isManager, createTask: isManager, assignPeople: isManager }, person: { ROWID: ME } }; }],
 	// jobs
 	['GET', /^\/jobs$/, (_, q) => {
-		let items = S.jobs.filter((j) => isManager || S.tasks.some((t) => t.job_id === j.ROWID && mine(t)));
-		const v = q.get('view'); const done = (j) => j.stage.startsWith('Completed');
-		if (v === 'my_open') items = items.filter((j) => j.pm_id === ME && !done(j));
-		if (v === 'my_jobs') items = items.filter((j) => j.pm_id === ME || j.fab_manager_id === ME);
-		if (v === 'preparation') items = items.filter((j) => j.stage === 'Preparation');
-		if (v === 'ongoing') items = items.filter((j) => ['In Progress', 'On Hold'].includes(j.stage));
-		if (v === 'completed') items = items.filter(done);
-		if (q.get('stage')) items = items.filter((j) => j.stage === q.get('stage'));
-		return list(items.map(({ pm_id, fab_manager_id, ...j }) => ({ ...j, pm_name: S.nameOf(pm_id), fab_manager_name: S.nameOf(fab_manager_id) })));
+		const visible = S.jobs.filter((j) => isManager || S.tasks.some((t) => t.job_id === j.ROWID && mine(t)));
+		const done = (j) => j.stage.startsWith('Completed');
+		const tab = {
+			all: () => true,
+			my_open: (j) => j.pm_id === ME && !done(j),
+			my_jobs: (j) => j.pm_id === ME || j.fab_manager_id === ME,
+			preparation: (j) => j.stage === 'Preparation',
+			ongoing: (j) => ['In Progress', 'On Hold'].includes(j.stage),
+			completed: done,
+		};
+		const counts = Object.fromEntries(Object.entries(tab).map(([k, fn]) => [k, visible.filter(fn).length]));
+		const needle = (q.get('search') || '').toLowerCase();
+		const items = visible.filter((j) => (tab[q.get('view')] || tab.all)(j) && (!q.get('stage') || j.stage === q.get('stage')) && (!q.get('pm_id') || j.pm_id === q.get('pm_id')) && (!q.get('fab_manager_id') || j.fab_manager_id === q.get('fab_manager_id')) && (!needle || j.name.toLowerCase().includes(needle)));
+		return {
+			items: items.map(({ pm_id, fab_manager_id, ...j }) => {
+				const own = S.tasks.filter((t) => t.job_id === j.ROWID);
+				const quoted = own.reduce((n, t) => n + Number(t.quoted_hours || 0), 0);
+				const booked = own.reduce((n, t) => n + Number(t.booked_hours || 0), 0);
+				const risk = [];
+				if (quoted > 0 && booked > quoted) risk.push(`Hours ${Math.round(((booked - quoted) / quoted) * 100)}% over quote`);
+				if (own.some((t) => t.task_type === 'fabrication' && isLate(t))) risk.push('Fab behind schedule');
+				if (own.some((t) => t.task_type === 'install' && isLate(t))) risk.push('Install behind schedule');
+				return { ...j, pm_name: S.nameOf(pm_id), fab_manager_name: S.nameOf(fab_manager_id), quoted_hours: quoted, booked_hours: booked, risk: risk.slice(0, 2) };
+			}),
+			count: items.length,
+			total: items.length,
+			counts,
+		};
 	}],
 	['POST', /^\/jobs$/, (_, __, b) => { const j = { ROWID: id(), name: b.name, stage: 'Preparation', crm_deal_id: '', pm_id: ME, fab_manager_id: null, expected_finish: b.expected_finish || null, created_date: TODAY, percent_fab: 0, percent_install: 0, percent_job: 0, server_path: '', description: b.description || '' }; S.jobs.unshift(j); return { job: j }; }],
 	['GET', /^\/jobs\/(\d+)\/signs$/, (m) => list(S.signs.filter((s) => s.jobId === m[1]))],

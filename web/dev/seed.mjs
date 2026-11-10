@@ -66,7 +66,7 @@ export const tasks = [
 	T('1051', 'design', 'Hoarding artwork', null, 'In Progress', day(-3), day(10), { q: 30, b: 8, who: [['512', 'lead']] }),
 	T('1051', 'fabrication', 'Print hoarding panels', 'Print', 'Awaiting Scheduling', null, day(30), { q: 40 }),
 	T('1053', 'design', 'Façade letter layout', null, 'Manager Review', day(-14), day(-4), { q: 14, b: 16, who: [['512', 'lead']] }),
-	T('1053', 'fabrication', 'Cut aluminium letters', 'Metal', 'In Progress', day(-5), day(-3), { q: 80, b: 90, who: [['506', 'lead'], ['507', 'member']] }),
+	T('1053', 'fabrication', 'Cut aluminium letters', 'Metal', 'In Progress', day(-5), day(-3), { q: 80, b: 112, who: [['506', 'lead'], ['507', 'member']] }),
 	T('1053', 'fabrication', 'Powder coat letters', 'Paint', 'On Hold', day(3), day(12), { q: 20 }),
 	T('1058', 'fabrication', 'Weld letter brackets', 'Metal', 'Manager Review', day(-8), day(-5), { q: 24, b: 25, who: [['507', 'lead']] }),
 	T('1058', 'install', 'Install building letters', 'VE Install', 'On Hold', day(4), day(6), { q: 30, b: 12, swms: '3004', who: [['508', 'lead']] }),

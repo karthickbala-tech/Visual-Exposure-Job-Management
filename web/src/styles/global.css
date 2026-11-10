@@ -474,3 +474,20 @@ body { overscroll-behavior-y: auto; }
 .todo-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; border: 0; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--brand-strong); }
 .todo-more:hover { background: var(--surface-hover); }
 @media (max-width: 760px) { .todo-item { padding-left: 16px; padding-right: 16px; flex-wrap: wrap; } .todo-item .btn { margin-left: 21px; } }
+
+/* ---------- Jobs list (merge phase 3) ---------- */
+.list-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.tab-count { margin-left: 7px; padding: 0 6px; border-radius: 9px; background: var(--chip-gray-bg); color: var(--chip-gray-ink); font-size: 10.5px; }
+.segmented button.on .tab-count { background: var(--brand); color: var(--on-brand); }
+.btn.has-filters { border-color: var(--brand); }
+.bulk-bar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--brand-soft); border-bottom: 1px solid var(--line); font-size: 13px; }
+.col-check { width: 44px; padding-right: 0 !important; }
+.row-picked { background: var(--brand-soft); }
+.sub, .risk { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.risk { display: flex; align-items: center; gap: 5px; color: var(--danger); font-weight: 700; }
+.two-line { display: grid; gap: 3px; }
+.two-line small { font-size: 11.5px; color: var(--muted); }
+.mini-bar { display: block; width: 100%; min-width: 110px; height: 6px; overflow: hidden; background: var(--track); border-radius: 2px; }
+.mini-bar span { display: block; height: 100%; background: var(--brand); }
+.over { color: var(--danger); font-weight: 700; }
+@media (max-width: 760px) { .list-toolbar, .bulk-bar { padding-left: 16px; padding-right: 16px; } .list-toolbar .search { max-width: none !important; } .col-check { width: auto; } }

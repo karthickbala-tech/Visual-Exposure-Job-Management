@@ -12,6 +12,21 @@ export interface Job {
 	percent_fab?: string | number;
 	percent_install?: string | number;
 	percent_job?: string | number;
+	// added by the jobs list (JOB-2)
+	pm_name?: string | null;
+	fab_manager_name?: string | null;
+	quoted_hours?: number;
+	booked_hours?: number;
+	risk?: string[];
+}
+
+export interface JobTabCounts {
+	all: number;
+	my_open: number;
+	my_jobs: number;
+	preparation: number;
+	ongoing: number;
+	completed: number;
 }
 
 export interface Task {
