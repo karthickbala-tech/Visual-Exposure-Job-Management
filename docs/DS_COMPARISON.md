@@ -610,3 +610,61 @@ App side read: `lib/services/registers.js` (equipment, chemicals, locations, dev
 - Devices are gated by their own grant (`devices` view). That matches the app's rule for sensitive positions.
 - The app's maintenance flow (FAB-4) already covers the DS "Create Fabrication Task" behaviour.
 - No code change was made in this section. Every gap here needs a stored field or an owner decision.
+
+---
+
+## 11. Directory: companies, company documents, sites and signs (Companies1, Company_Documents, Copmpany_Document_Types, Sites, Signs, Sign_Groups)
+
+App side read: `lib/services/directory.js` (company, site and sign schemas and stage lists), `web/src/pages/Directory.tsx` (site form), `web/src/pages/SignsPanel.tsx` (sign form).
+
+### 11.1 Matches
+
+| DS field | DS label | App | Result |
+|---|---|---|---|
+| Company_Name | Company Name | company name | NONE |
+| Active_Company | Active / Not Active | is_active | NONE |
+| Phone_Number, Email | Phone, Email | phone, email | NONE |
+| Skills_of_company_Notes | Skills of company / Notes | notes | NONE |
+| Site_Name | Location Name | site name | NONE |
+| Street, Suburb, Post_Code | address | street, suburb, post_code | NONE |
+| Contact (site) | contact | contact_name, phone | NONE |
+| Sign_Name, Sign_Number, Revision_Number (Version Number), Qty, Sign_Medium_Used, Finishing_Details | sign details | name, sign_number, revision, qty, medium, finishing | NONE |
+| Sign_Deal_Stage | Early Design, Client Review, Needs Changes, Approved | the same four | NONE |
+| Sign_Artwork_Stage | Not a job yet, Design Stage, Client Review, Needs Changes, Client Approved, Manual Approval | the same six | NONE |
+| Sign_Manufacturing_Stage | Not required, RFQ, Quoted, Approved, In Production, QC, Completed | the same seven | NONE |
+| Install_Stage | Pre Install planning, Ready for Scheduling, Scheduled, Installed - POP not sent, Installed - POP sent, Completed | the same six | NONE |
+| Proposed_Install_Date, Actual_Install_Date | install date | install_date | Partly: the actual install date is not stored (see 11.2) |
+| Document_Types, Companies, Expiry_Date, Issue_Date (company documents) | company document fields | company document with type, issue and expiry dates | NONE |
+
+### 11.2 Gaps
+
+| DS field | DS label | App | Required action |
+|---|---|---|---|
+| Owner_Name | Owner Name | contact name is shared | DEC: one contact or a separate owner |
+| Company_Type | Local - Installer, Local - Fabricator, Local - Supplier, Interstate - Installer, Interstate - Full Service | subcontractor, supplier, client, internal | DEC: two different categories. Changing the stored values would affect existing records and filters, so the owner decides the list. |
+| Weekday and weekend rates (business, AH, Saturday and Sunday day and night, public holiday) | AUD rates per company | none | BE: schema and pay logic. Rates are sensitive, so they need a finance-only grant. Decision needed. |
+| Billing_Notes | Billing Notes | none | BE: schema (decision) |
+| Street_Address (company) | Street Address | none on the company (the app has an address only on sites) | BE: schema (decision) |
+| State (companies) | VIC, NSW, QLD, SA, WA, TAS, ACT, NT | the company form has no state | UI/BE: add the state picklist. The backend already stores state (up to 10 characters), so the abbreviations fit. Not done: needs confirmation that the company form should show it. |
+| Do_not_contact flags (company documents) | Do not contact manager or company | none | DEC: needs a stored flag and a reminder check (as for compliance, 9.2) |
+| Document_Name | Document Name | none | BE: schema (decision) |
+| Company_Document_Attachments, Document_template | file uploads | file store | DEC: confirm which attachments the app needs |
+| Number_of_years_before_expiry, This_is_required_for_new_companies | document type rules | none on the type | BE: schema (decision). Same gap as compliance types (9.2). |
+| Site: State (full names: Australian Capital Territory, New South Wales, and so on) | full state names | free text, up to 10 characters | DEC: the DS uses full names, which do not fit the 10-character limit. Choosing the list is the owner's decision. |
+| Site: Site_Notes, Site_Access_Notes | Location Notes, Access Notes | none | BE: schema (decision) |
+| Site: Country, Site_Code, Business_Hours | location details | none | BE: schema (decision) |
+| Site: tenant and owner contacts (business name, contact name, phone, email; owner name, phone, email) | tenant and owner | none | BE: schema (decision). Personal contact data: confirm who may see it. |
+| Site: Account_Name, Contact_Name, Deal_Name, Z_CRM_site_ID | CRM links | none on the site | DEC: the CRM link is separate from the directory. Confirm. |
+| Site: Jobs (list) | jobs at this site | jobs through tasks (location) | NONE (the link exists through tasks) |
+| Sign: Site_Map, Original_Picture, Artwork_File, Mock_Up, Sign_PDF_Document, Finished_Pic, Asset_Pdf, Fabrication_Pic | sign files | file store (not linked to signs) | DEC/BE: a sign file kind. Decision on which files the app needs. |
+| Sign: Artwork_Sign_Size, Install_Medium_Wall_Types, Wall_Install_Area_Size, Sign_Location_Notes, Colours_to_Match, Mock_Up_Notes, Internal_Art_Notes, Client_Artwork_Feedback, Deal_Stage_Feedback, Install_Notes_for_Client, Install_Notes_for_Installer, Notes_for_the_Client_POP | long text fields | none | BE: schema (decision) |
+| Sign: To_be_quoted, Complex_Fab_Job, RFQ_* fields, RFQ_Viewing_Distance, RFQ_Budget_Expectations, Quote_Required_Date, Est_date_sign_required, Manufacturing_Req_Date | quoting and manufacturing | none | DEC/BE: the RFQ workflow is not built. Decide whether it is needed. |
+| Sign_Group: Product_Item_Groups grid, Sub_Total, Total_Cost, Profit_Margin, Tax, Grand_Total | cost build-up | none | BE: finance-only (decision). Costs are restricted. |
+| Sign_Group: Sites, Description, Jobs | group details | sign group exists (4 files) | confirm the group has a site and description |
+| Account_Name, Contact_Name, Deal_Name, Z_CRM_sign_ID, CRM_View_Record, View_Record, Edit_Record, Check_on_the_on_Edit | CRM and Creator links | none | SYS |
+
+### 11.3 Notes
+
+- The sign stage lists match the DS exactly (sign stages were the work already done under the Creator names).
+- The site state field is a free text box (`web/src/pages/Directory.tsx:217`). The DS uses full state names, so this stays a decision.
+- No code change was made in this section, for the reasons in 11.2.
