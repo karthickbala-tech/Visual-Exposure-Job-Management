@@ -132,6 +132,7 @@ export interface IssueInput {
 	issue_priority?: string;
 	department?: string;
 	task_id?: string;
+	site_id?: string;
 	billboard_site?: string;
 	billboard_face?: string;
 	review_needed?: string;

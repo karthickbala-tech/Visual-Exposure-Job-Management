@@ -875,3 +875,8 @@ Correction to sections 1 to 15: most gaps listed there as "needs a new column" a
 - Issue Locations and Person Responsible: the storage exists, so these are code and screen changes only.
 - SWMS Completed and Closed: a code change only, but the rules for who sets them are not in the DS.
 - Personal details: storage exists in the encrypted profile column. It still needs a privacy decision on who sees it.
+
+### 16.2 Done from the table check
+
+- Issue Locations (DS `Sites`): the Raise an issue form now has a Locations picker, backed by the existing `issue.site_id` column and the backend that already accepted it. It uses the shared sites list, so no new endpoint. Users who cannot list sites see an empty picker.
+- Company address (section 16): street, suburb, state (DS list) and post code.
