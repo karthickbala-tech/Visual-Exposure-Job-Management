@@ -208,7 +208,7 @@ export const useComplianceItems = (status?: string) =>
 export const useCreateCompliance = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (input: { person_id?: string; company_id?: string; type_id: string; reference_no?: string; expiry_date?: string }) => api('/compliance', json('POST', input)),
+		mutationFn: (input: { person_id?: string; company_id?: string; type_id: string; reference_no?: string; issue_date?: string; expiry_date?: string }) => api('/compliance', json('POST', input)),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance'] }),
 	});
 };
