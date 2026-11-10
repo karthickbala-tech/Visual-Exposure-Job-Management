@@ -552,3 +552,61 @@ App side read: `lib/services/compliance.js`, `lib/seed/complianceTypes.js`, `lib
 ### 9.4 Login and password
 
 The DS stores a login and a password on each ticket and induction. This app does not copy them. Storing passwords in plain text is a security risk, and the owner should confirm whether this data is needed at all.
+
+---
+
+## 10. Equipment, chemicals and devices (Equipment_Register, Equipment_Register_SF, Equipment_Type, Chemical_Register, Devices, Maintenance_Checklists)
+
+App side read: `lib/services/registers.js` (equipment, chemicals, locations, devices), `lib/domain/registers.js` (status, due dates, tool code, SDS review, devices).
+
+### 10.1 Matches
+
+| DS field | DS label | App | Result |
+|---|---|---|---|
+| Is_Active | Is Active | status: In service, Off hire, Out of service | Partly: the DS has one tick. The app has three states, which is more. Keep the app's states. |
+| Equipment_Name | Equipment Name | name | NONE |
+| Equipment_Type | Equipment Type | type (free text) | Partly: see 10.2 |
+| Workshop_Locations | Workshop Locations | location_id | NONE (the values differ, see 10.2) |
+| Auto_Number, Tool_Code | Auto Number, Tool Code | `nextToolCode` (domain) | NONE |
+| Maintenance_Frequency_Days | Maintenance Frequency (Days) | frequency_days | NONE |
+| Create_Fabrication_Task, Scheduled_Date | create a maintenance task | maintenance tasks (FAB-4) | NONE |
+| Equipment_Register | link to the equipment | equipment id on the maintenance task | NONE |
+| Issue_Date_of_SDS | Issue Date of SDS | review_date and SDS review rule | Partly: confirm the review rule uses the issue date |
+| Name_Of_Chemical | Name Of Chemical | name | NONE |
+| Current_Qty_in_Stock, Max_Stock_Holding | stock levels | stock and unit | Partly: no max stock holding |
+| MSDS_Location | MSDS Location (link) | sds_url | NONE |
+| Hazard_Clasification | Hazard Classification | hazard_class | NONE (the DS has several classification fields, see 10.2) |
+| Serial_Number | Serial Number (device, required) | not stored | BE: schema |
+| Device model, OS | Model, OS | model, os | NONE |
+| Device location | Address and position | last position, address, last seen | App extra. Position data is sensitive; see 10.2. |
+
+### 10.2 Gaps
+
+| DS field | DS label | App | Required action |
+|---|---|---|---|
+| Image | equipment photo | none | BE/UI: file_asset with an equipment kind (decision) |
+| Model, Serial_Number | Model, Serial Number | model is stored for devices only; equipment has none | BE: schema (decision) |
+| Tool_Notes | Tool Notes | none | BE: schema (decision) |
+| Entered_By | Entered By | none | BE: schema (decision). Use the signed-in user if added. |
+| Purchase_Date, Warranty_Expiry_Date | Purchase and warranty dates | none | BE: schema (decision) |
+| Checklist_Details (grid) | Checklist Details | maintenance tasks have a checklist | DEC: the DS grid is per-item. Decide whether the maintenance task checklist replaces it. |
+| Equipment_Type (form) | a type list with a description | free-text type on each item | DEC/BE: a type master list, if the owner wants a fixed list. Adding a list is a schema change. |
+| Checklist (richtext), Maintenance_Checklist, Maintenance_Checklists form | checklist text per equipment type | none as a template | DEC: the plan (CATALYST_PLAN) keeps checklists as JSON templates. Choose where the maintenance checklist text lives. |
+| Assigned | Assigned | the maintenance task's crew | NONE for the task; the DS also picks a person on the plan. DEC. |
+| Zoho_Learn, Zoho_Learn_2 | training links | none | DEC: links to training. Low value; decide whether to keep. |
+| Proposed_Hours | Proposed Hours | none on the plan | DEC: decide whether maintenance hours need an estimate |
+| Workshop_Locations (values) | Paint Prep Area, SAV Room, Metal Fab Area, Letter Fab Mezanine, Kitchen, and others | the app's workshop location list | DEC: confirm the locations match. Seed data changes write to the live Data Store, so do this with the owner. |
+| Chemical: Location | a fixed list of chemical locations | the workshop location list | as above |
+| Chemical: MSDS (upload) | upload file | a link (sds_url) | DEC: keep the link, or add a file (file_asset) |
+| Storage, Handling, General_Details | three text areas | none | BE: schema (decision) |
+| Flammable_Code, Hazchem_Code, Dangerous_Good_Clasification, U_N_Number, Poison_Clasification, Emergency_Response_Guide_No, Product_Code | chemical codes | none (one hazard_class) | BE: schema (decision). Safety data: confirm the owner needs these on screen. |
+| Max_Stock_Holding | Max Stock Holding | none | BE: schema (decision) |
+| Devices: Device_Id, Device_Name, Device_Type, Product_Name, Platform_Type, OS_Version, Device_Capacity, UDID, Wifi_Mac, Owned_By, Customer_Name, Customer_ID | device details | model, os only | BE: schema and MDM sync (decision). The MDM sync needs credentials (EQP-4 in BACKEND_STATUS). |
+| Devices: User_Email, User_ID, User_Name, Worker_Name, Address | the person using the device | person_id (linked person) | DEC: the DS stores the same person's details again. The app links to the person record instead, which is better. Keep the link. |
+| Devices: Serial_Number (required) | Serial Number | none | BE: schema (decision). Serial numbers are sensitive (the app's own comment), so the grant stays devices-only. |
+
+### 10.3 Notes
+
+- Devices are gated by their own grant (`devices` view). That matches the app's rule for sensitive positions.
+- The app's maintenance flow (FAB-4) already covers the DS "Create Fabrication Task" behaviour.
+- No code change was made in this section. Every gap here needs a stored field or an owner decision.
