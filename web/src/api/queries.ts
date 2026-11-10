@@ -21,7 +21,7 @@ export const useJobs = (stage?: string, view?: string, who: { pm_id?: string; fa
 	useQuery({
 		queryKey: ['jobs', stage ?? 'all', view ?? 'all', who.pm_id ?? '', who.fab_manager_id ?? ''],
 		queryFn: () =>
-			api<{ items: Job[]; count: number; total?: number; counts?: JobTabCounts }>(
+			api<{ items: Job[]; count: number; total?: number; truncated?: boolean; counts?: JobTabCounts }>(
 				'/jobs' + [stage && `stage=${encodeURIComponent(stage)}`, view && view !== 'all' && `view=${view}`, who.pm_id && `pm_id=${who.pm_id}`, who.fab_manager_id && `fab_manager_id=${who.fab_manager_id}`].filter(Boolean).reduce<string>((s, p, i) => s + (i ? '&' : '?') + p, ''),
 			),
 		staleTime: 30_000,

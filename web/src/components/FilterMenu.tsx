@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, SlidersHorizontal } from 'lucide-react';
+import { useDismiss } from './useDismiss';
 
 export interface FilterView {
 	key: string;
@@ -25,17 +26,7 @@ export function FilterMenu({ views, view, onView, extra, extraCount = 0, onClear
 	const box = useRef<HTMLDivElement>(null);
 	const current = views.find((v) => v.key === view) ?? views[0];
 
-	useEffect(() => {
-		if (!open) return;
-		const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-		const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-		document.addEventListener('mousedown', away);
-		document.addEventListener('keydown', esc);
-		return () => {
-			document.removeEventListener('mousedown', away);
-			document.removeEventListener('keydown', esc);
-		};
-	}, [open]);
+	useDismiss(open, box, () => setOpen(false));
 
 	return (
 		<div className="filter-menu" ref={box}>

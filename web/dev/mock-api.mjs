@@ -8,6 +8,7 @@ import * as S from './seed.mjs';
 
 const { day } = S;
 const roles = (process.env.MOCK_ROLES || 'admin').split(',');
+const isAdmin = roles.includes('admin');
 const isManager = roles.some((r) => ['admin', 'project_manager', 'fab_manager', 'install_coordinator'].includes(r));
 const TODAY = day(0);
 // who you are in the sample data, by role
@@ -152,7 +153,9 @@ const routes = [
 				if (quoted > 0 && booked > quoted) risk.push(`Hours ${Math.round(((booked - quoted) / quoted) * 100)}% over quote`);
 				if (own.some((t) => t.task_type === 'fabrication' && isLate(t))) risk.push('Fab behind schedule');
 				if (own.some((t) => t.task_type === 'install' && isLate(t))) risk.push('Install behind schedule');
-				return { ...j, pm_name: S.nameOf(pm_id), fab_manager_name: S.nameOf(fab_manager_id), quoted_hours: quoted, booked_hours: booked, risk: risk.slice(0, 2) };
+				const sumType = (type) => own.filter((t) => t.task_type === type).reduce((n, t) => n + Number(t.booked_hours || 0), 0);
+				const rate = isAdmin ? { fab_labour_cost: Math.round(sumType('fabrication') * 38 * 100) / 100, install_labour_cost: Math.round(sumType('install') * 42 * 100) / 100 } : {};
+				return { ...j, pm_name: S.nameOf(pm_id), fab_manager_name: S.nameOf(fab_manager_id), quoted_hours: quoted, booked_hours: booked, risk: risk.slice(0, 2), fab_hours_booked: sumType('fabrication'), install_hours_booked: sumType('install'), workdrive_url: j.workdrive_url || (j.ROWID < '1050' ? 'https://workdrive.zoho.com.au/folder/example-' + j.ROWID : ''), job_status: j.job_status || (j.stage === 'Completed - Closed' ? 'Closed' : ''), CREATEDTIME: j.CREATEDTIME || (j.created_date ? j.created_date + ' 09:30:00' : ''), MODIFIEDTIME: j.MODIFIEDTIME || (j.created_date ? j.created_date + ' 16:05:12' : ''), closure_email_sent: j.stage === 'Completed - Closed', ...rate };
 			}),
 			count: items.length,
 			total: items.length,

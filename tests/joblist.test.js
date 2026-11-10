@@ -69,3 +69,11 @@ test('the task list can carry the job name, the crew and the SWMS status in thre
 	assert.equal(row.swms_status, 'Created');
 	assert.equal((await tasks.listTasks(w.ctx, { type: 'design', detail: 'true' })).items.length, 0);
 });
+
+test('trade figures: booked hours per trade, labour cost only when allowed', () => {
+	const t = (type, b, c) => ({ task_type: type, booked_hours: b, labour_cost: c });
+	const mix = [t('fabrication', 2.5, 100), t('fabrication', 1, 40), t('install', 4, 200), t('design', 9, 999)];
+	assert.deepEqual(L.tradeFigures(mix, 'fabrication', false), { hours: 3.5 });
+	assert.deepEqual(L.tradeFigures(mix, 'install', true), { hours: 4, cost: 200 });
+	assert.deepEqual(L.tradeFigures([], 'install', true), { hours: 0, cost: 0 });
+});

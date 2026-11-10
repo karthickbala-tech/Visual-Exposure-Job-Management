@@ -18,6 +18,16 @@ export interface Job {
 	quoted_hours?: number;
 	booked_hours?: number;
 	risk?: string[];
+	CREATEDTIME?: string;
+	MODIFIEDTIME?: string;
+	workdrive_url?: string;
+	server_path?: string;
+	job_status?: string;
+	fab_hours_booked?: number;
+	install_hours_booked?: number;
+	fab_labour_cost?: number;
+	install_labour_cost?: number;
+	closure_email_sent?: boolean;
 }
 
 export interface JobTabCounts {
