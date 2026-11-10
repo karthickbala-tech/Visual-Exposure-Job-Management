@@ -695,3 +695,30 @@ App side read: `lib/services/appSettings.js`, `lib/services/notifications.js`, `
 ### Done in this section
 
 - Backend fix: issue routing can be saved for Workshop and VT/Digital Screens (`lib/services/appSettings.js`), with a test (`tests/issues2.test.js`). 298 of 298 backend tests pass.
+
+---
+
+## 13. Checklists (13 DS forms)
+
+Full question lists are in `docs/DS_CHECKLISTS.md` (generated from the DS file; question text, answer type and choices only).
+
+App side read: `lib/seed/checklistTemplates.js` (templates as JSON with sections and questions, one per task type, phase and role).
+
+| DS form | Questions listed | App |
+|---|---|---|
+| Install_Pre_Job_Checklists | 63 | one lead template and one member template, a handful of questions each |
+| Install_Post_Job_Checklists | 55 | one lead and one member template, a handful of questions each |
+| Install_Job_Checklists | 26 | not in the app as a separate form |
+| Fabrication_Pre_Job_Checklists, Fabrication_Post_Job_Checklists, Fabrication_Job_Checklists | 14, 18, 14 | short generic templates |
+| Design_Pre_Job_Checklists, Design_Post_Job_Checklists, Design_Task_Checklists | 50, 45, 26 | the app has no design checklists (design hours are booked by hand, DES-2) |
+| Project_Manager_Checklist (install), _for_Fab, _Design_Task, Checklist1 | 5, 5, 4, 3 | the approval panel on the task (OH&S, management review, rating) |
+
+Findings:
+
+- The app's templates are short placeholders. The backend notes already say the briefing wording is a placeholder (`BACKEND_STATUS.md`, CHK-2 and INS-2). The DS now supplies the real wording, for example the install job briefing questions ("Are you clear on the scope of works for the job?", "Have you read the SWMS and signed the Works Supervisor panel?", "Have you loaded your vehicle/jobs bay for the works?").
+- One DS checklist form holds both the team leader and the member questions. The app has separate lead and member templates. Splitting the DS questions by role needs the DS visibility rules, which are not in the form definition and sit in workflows.
+- Show-if conditions and issue-raising answers (the app has `showIf` and `raiseIssueOn`) are not extracted either.
+- The "Team Briefed" sub-stage (INS-2) depends on the briefing step being a separate step, which the DS pre-job form shows as the "Job Briefing Checklist" section.
+- The DS has pre-job checklists for design tasks. The app has none, by an earlier decision (DES-2).
+
+Required action: **DEC.** Template content is the owner's to confirm: which questions are for the team leader and which for the member, and which answers raise an issue. Not changed in code, because turning the DS question list into templates without the role and condition rules would put guesses into safety checklists. `docs/DS_CHECKLISTS.md` is the starting list for that review.
