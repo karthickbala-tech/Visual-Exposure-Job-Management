@@ -14,12 +14,12 @@ import { useCloseJob } from '../api/more';
 import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
 import type { TaskType } from '../lib/taskKinds';
+import { INSTALL_LEGEND, TASK_NAMES } from '../lib/names';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 const today = () => new Date().toISOString().slice(0, 10);
 const hrs = (v: unknown) => (num(v as string | number) ? num(v as string | number).toFixed(2) : '');
 const kindClass = (k?: string) => (k ? 'kind-' + k.toLowerCase().replace(/[^a-z]+/g, '-') : '');
-const INSTALL_KINDS = ['VE Install', 'VE Subtask', 'Minor Task', 'Print Only', 'External Install'];
 
 /** One coloured section of the job page: a title band, a row of buttons and numbers, then the table. */
 function Band({ tone, icon, title, children }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; title: string; children: ReactNode }) {
@@ -97,21 +97,21 @@ export function JobDetail() {
 			<Link className="back-link" to="/jobs"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
 
 			<header className="jd-head">
-				<div className="jd-head__side">{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`)}><Pencil size={14} aria-hidden="true" /> Edit job</button>}</div>
-				<h1 className="jd-head__title"><Briefcase size={20} aria-hidden="true" /> Job details</h1>
+				<div className="jd-head__side">{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`)}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}</div>
+				<h1 className="jd-head__title"><Briefcase size={20} aria-hidden="true" /> Job Details</h1>
 				<div className="jd-head__side jd-head__side--right">
-					{job.crm_deal_id ? <span className="jd-deal" title="CRM deal">Deal {job.crm_deal_id}</span> : <span className="muted">No deal</span>}
+					{job.crm_deal_id ? <span className="jd-deal" title="CRM deal">Deal: {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
 				</div>
 			</header>
 
 			<div className="jd-facts">
-				<div className="jd-fact jd-fact--name"><strong>{job.name}</strong><span>Job name</span></div>
-				<div className="jd-fact"><strong>{job.stage}</strong><span>Job stage</span></div>
-				<div className="jd-fact"><strong>{serverPath || '-'}</strong><span>Location of files on VE server</span></div>
+				<div className="jd-fact jd-fact--name"><strong>{job.name}</strong><span>Job Name</span></div>
+				<div className="jd-fact"><strong>{job.stage}</strong><span>Job Stage</span></div>
+				<div className="jd-fact"><strong>{serverPath || '-'}</strong><span>Location of files on VE Server</span></div>
 				<div className="jd-fact jd-fact--action">
-					{workdrive ? <a className="btn btn-sm" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">No Workdrive folder yet</span>}
+					{workdrive ? <a className="btn btn-sm" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
 				</div>
-				<div className="jd-fact jd-fact--ring"><span>% Job complete</span><Ring value={progress.job} label="Job progress" /></div>
+				<div className="jd-fact jd-fact--ring"><span>% Job Complete</span><Ring value={progress.job} label="Job progress" /></div>
 			</div>
 
 			{canEdit && inReview.length > 0 && (
@@ -131,56 +131,70 @@ export function JobDetail() {
 			{move.isError && <p role="alert">{move.error.message}</p>}
 
 			<div className="grid-2">
-				<Card title="Job locations" flush>
+				<Card title="Job Locations" flush>
 					{locations.length === 0 ? <p className="table-empty">No Data Available</p> : (
 						<div className="table-wrap">
-							<table className="table"><caption className="sr-only">Job locations</caption><thead><tr><th scope="col">Location</th><th scope="col">Address</th></tr></thead>
-								<tbody>{locations.map((l) => <tr key={l.id}><td data-label="Location" className="cell-primary">{l.name}</td><td data-label="Address">{l.address || '-'}</td></tr>)}</tbody>
+							<table className="table"><caption className="sr-only">Job Locations</caption>
+								<thead><tr><th scope="col">Location Name</th><th scope="col">Street</th><th scope="col">City</th><th scope="col">View in Google Maps</th><th scope="col">ID</th><th scope="col">Z CRM site ID</th><th scope="col">Added Time</th></tr></thead>
+								<tbody>
+									{locations.map((l) => (
+										<tr key={l.id}>
+											<td data-label="Location Name" className="cell-primary">{l.name}</td>
+											<td data-label="Street">{l.street || '-'}</td>
+											<td data-label="City">{l.city || '-'}</td>
+											<td data-label="View in Google Maps">{l.mapUrl ? <a href={l.mapUrl} target="_blank" rel="noreferrer">View in Google Maps</a> : '-'}</td>
+											<td data-label="ID" className="num">{l.id}</td>
+											<td data-label="Z CRM site ID">{l.crmSiteId || '-'}</td>
+											<td data-label="Added Time">{l.addedTime ? fmtDate(l.addedTime) : '-'}</td>
+										</tr>
+									))}
+								</tbody>
 							</table>
 						</div>
 					)}
+					<p className="grid-foot">Showing {locations.length} of {locations.length}</p>
 				</Card>
 				<SignsPanel jobId={id ?? ''} canWrite={canAdd} />
 			</div>
 
-			<Band tone="design" icon={<Network size={18} />} title="Management tasks">
+			<Band tone="design" icon={<Network size={18} />} title={TASK_NAMES.design.title}>
 				<div className="jd-stats">
-					{addBtn('Add design task', 'design')}
-					<Stat label="Total design tasks" value={design.length} />
-					<Stat label="Overdue design tasks" value={design.filter(late).length} tone={design.some(late) ? 'danger' : undefined} />
+					{addBtn(TASK_NAMES.design.addLabel, 'design')}
+					<Stat label="Total Design Tasks" value={design.length} />
+					<Stat label="Overdue Design Tasks" value={design.filter(late).length} tone={design.some(late) ? 'danger' : undefined} />
 				</div>
 				{addForm('design')}
-				<TaskTable empty="No design tasks." rows={design} cols={['Design type', 'Task name', 'Stage', 'Required finish', 'Quoted hours', 'Booked hours', '']}
-					row={(t) => [t.kind ?? '', <Link key="n" to={'/tasks/' + t.ROWID}>{t.name}</Link>, <StageCell key="s" stage={t.stage} />, fmtDate(t.required_finish), hrs(t.quoted_hours), hrs(t.booked_hours), actions(t)]}
-					numeric={[4, 5]} />
+				<TaskTable title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
+					row={(t) => [t.kind ?? '', <Link key="n" to={'/tasks/' + t.ROWID}>{t.name}</Link>, <StageCell key="s" stage={t.stage} />, fmtDate(t.required_finish), hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+					numeric={seesMoney ? [4, 5, 6] : [4, 5]} />
 			</Band>
 
-			<Band tone="fab" icon={<Hammer size={18} />} title="Fabrication tasks">
+			<Band tone="fab" icon={<Hammer size={18} />} title={TASK_NAMES.fabrication.title}>
 				<div className="jd-stats">
-					{addBtn('Add fab task', 'fabrication')}
-					<Stat label="Total fab tasks" value={fab.length} />
-					<Stat label="Open fab tasks" value={open(fab).length} tone={open(fab).length ? 'danger' : undefined} />
-					<Stat label="% of fab completed" value={num(progress.fab)} />
-					<Stat label="Required fab finish date" value={fmtDate((job as { required_fab_finish?: string }).required_fab_finish)} />
-					<Stat label="Agreed fab finish date" value={fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)} />
+					{addBtn(TASK_NAMES.fabrication.addLabel, 'fabrication')}
+					<Stat label="Total Fab Tasks" value={fab.length} />
+					<Stat label="Open Fab Tasks" value={open(fab).length} tone={open(fab).length ? 'danger' : undefined} />
+					<Stat label="% of Fab Completed" value={num(progress.fab)} />
+					<Stat label="Required Fab Finish Date" value={fmtDate((job as { required_fab_finish?: string }).required_fab_finish)} />
+					<Stat label="Agreed Fab Finish Date" value={fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)} />
 				</div>
 				{addForm('fabrication')}
-				<TaskTable empty="No fabrication tasks." rows={grouped(fab)} cols={['Task name', 'Stage', 'Booked hours', ...(seesMoney ? ['Total labour cost'] : []), 'Team leader', 'Team member', '']}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', actions(t)]}
-					numeric={seesMoney ? [2, 3] : [2]}
-					footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '']} />
+				<TaskTable title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
+					numeric={seesMoney ? [2, 3, 7] : [2, 6]}
+					footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
 			</Band>
 
-			<Band tone="install" icon={<Truck size={18} />} title="Installation tasks">
+			<Band tone="install" icon={<Truck size={18} />} title={TASK_NAMES.install.title}>
 				<div className="jd-stats">
-					{addBtn('Add install task', 'install', 'VE Install')}
-					{addBtn('Add minor task', 'install', 'Minor Task')}
-					<Stat label="Total install tasks" value={install.length} />
-					<Stat label="Open install tasks" value={open(install).length} tone={open(install).length ? 'danger' : undefined} />
-					<div className="jd-legend" aria-label="Task kinds">{INSTALL_KINDS.map((k) => <span key={k} className={'jd-kind ' + kindClass(k)}>{k.replace('VE ', '').replace(' Install', '')}</span>)}</div>
+					{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}
+					{addBtn('Add Minor Task', 'install', 'Minor Task')}
+					<Stat label="Total Install Tasks" value={install.length} />
+					<Stat label="Open Install Tasks" value={open(install).length} tone={open(install).length ? 'danger' : undefined} />
+					<div className="jd-legend" aria-label="Task kinds">{INSTALL_LEGEND.map((k) => <span key={k} className={'jd-kind ' + kindClass(k === 'Install' ? 'VE Install' : k === 'Subtask' ? 'VE Subtask' : k === 'External' ? 'External Install' : k)}>{k}</span>)}</div>
 				</div>
 				{addForm('install')}
-				<TaskTable empty="No installation tasks." rows={grouped(install)} cols={['Task name', 'Install date', 'Stage', 'Team leader', 'Team member', 'SWMS status', 'Quoted man hours', 'Booked hours', ...(seesMoney ? ['Total labour cost'] : []), '']}
+				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
 					rowClass={(t) => kindClass(t.kind)}
 					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
@@ -193,13 +207,14 @@ export function JobDetail() {
 }
 
 /** A task table: headings, rows (each a list of cells), an optional totals row, and "Showing N of N" under it. */
-function TaskTable({ cols, rows, row, rowClass, footer, numeric = [], empty }: { cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string }) {
+function TaskTable({ title, cols, rows, row, rowClass, footer, numeric = [], empty }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string }) {
 	if (rows.length === 0) return <p className="table-empty jd-empty">{empty}</p>;
 	return (
 		<div className="jd-table">
+			<h3 className="jd-table__title">{title}</h3>
 			<div className="table-wrap">
 				<table className="table jd-tasks">
-					<caption className="sr-only">Tasks</caption>
+					<caption className="sr-only">{title}</caption>
 					<thead><tr>{cols.map((c, i) => <th key={i} scope="col" className={numeric.includes(i) ? 'num' : ''}>{c || <span className="sr-only">Actions</span>}</th>)}</tr></thead>
 					<tbody>
 						{rows.map((t) => <tr key={t.ROWID} className={rowClass?.(t)}>{row(t).map((c, i) => <td key={i} data-label={cols[i]} className={(i === 0 ? 'cell-primary ' : '') + (numeric.includes(i) ? 'num' : '')}>{c}</td>)}</tr>)}

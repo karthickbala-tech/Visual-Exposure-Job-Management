@@ -109,7 +109,7 @@ export function JobForm({ job, isAdmin }: { job?: Job; isAdmin: boolean }) {
 	return (
 		<FormPage
 			eyebrow="Projects"
-			title={editing ? 'Edit job' : 'New job'}
+			title={editing ? 'Edit Job' : 'Jobs'}
 			subtitle="Fields marked * are required. Greyed fields are filled in by the system."
 			backTo={editing ? '/jobs/' + job?.ROWID : '/jobs'}
 			backLabel={editing ? 'Back to the job' : 'All jobs'}
@@ -122,40 +122,40 @@ export function JobForm({ job, isAdmin }: { job?: Job; isAdmin: boolean }) {
 		>
 			<section className="job-form" aria-label="Job details">
 				<div className="job-form__col">
-					<Field label="Job name" required htmlFor="jf-name"><input id="jf-name" value={f.name} required maxLength={200} autoFocus onChange={(e) => set('name', e.target.value)} /></Field>
+					<Field label="Job Name" required htmlFor="jf-name"><input id="jf-name" value={f.name} required maxLength={200} autoFocus onChange={(e) => set('name', e.target.value)} /></Field>
 					{editing ? (
 						<ReadOnlyField label="Stage" value={<Chip status={f.stage} />} hint="Worked out from the tasks." />
 					) : (
 						<Field label="Stage" htmlFor="jf-stage"><select id="jf-stage" value={f.stage} onChange={(e) => set('stage', e.target.value)}>{STAGES_AT_START.map((s) => <option key={s}>{s}</option>)}</select></Field>
 					)}
 					<Field label="Description" htmlFor="jf-desc"><textarea id="jf-desc" rows={9} maxLength={9000} value={f.description} onChange={(e) => set('description', e.target.value)} /></Field>
-					<Field label="Profit email schedule time" htmlFor="jf-profit">
+					<Field label="Profit Email Schedule Time" htmlFor="jf-profit">
 						<input id="jf-profit" type="datetime-local" value={f.profit_email_at} disabled={!isAdmin} onChange={(e) => set('profit_email_at', e.target.value)} />
 					</Field>
-					<label className="check"><input type="checkbox" checked={f.closure_email_sent} disabled={!isAdmin} onChange={(e) => set('closure_email_sent', e.target.checked)} /> Closure email sent</label>
-					<label className="check"><input type="checkbox" checked={f.close_triggered} disabled={!isAdmin} onChange={(e) => set('close_triggered', e.target.checked)} /> Job close triggered</label>
+					<label className="check"><input type="checkbox" checked={f.closure_email_sent} disabled={!isAdmin} onChange={(e) => set('closure_email_sent', e.target.checked)} /> Closure Email Sent</label>
+					<label className="check"><input type="checkbox" checked={f.close_triggered} disabled={!isAdmin} onChange={(e) => set('close_triggered', e.target.checked)} /> Job Close Triggered</label>
 				</div>
 
 				<div className="job-form__col">
-					<Field label="Required fab finish date" htmlFor="jf-req"><input id="jf-req" type="date" value={f.required_fab_finish} onChange={(e) => set('required_fab_finish', e.target.value)} /></Field>
-					<Field label="Expected job finish" required={editing} htmlFor="jf-exp"><input id="jf-exp" type="date" value={f.expected_finish} onChange={(e) => set('expected_finish', e.target.value)} /></Field>
-					<Field label="Agreed fab finish date" htmlFor="jf-agr"><input id="jf-agr" type="date" value={f.agreed_fab_finish} onChange={(e) => set('agreed_fab_finish', e.target.value)} /></Field>
-					<ReadOnlyField label="% Fab completed" value={<>{num(job?.percent_fab)} %</>} />
-					<ReadOnlyField label="% Install completed" value={<>{num(job?.percent_install)} %</>} />
-					<ReadOnlyField label="% Job completed" value={<>{num(job?.percent_job)} %</>} />
+					<Field label="Required Fab Finish Date" htmlFor="jf-req"><input id="jf-req" type="date" value={f.required_fab_finish} onChange={(e) => set('required_fab_finish', e.target.value)} /></Field>
+					<Field label="Expected Job Finish" required={editing} htmlFor="jf-exp"><input id="jf-exp" type="date" value={f.expected_finish} onChange={(e) => set('expected_finish', e.target.value)} /></Field>
+					<Field label="Agreed Fab Finish Date" htmlFor="jf-agr"><input id="jf-agr" type="date" value={f.agreed_fab_finish} onChange={(e) => set('agreed_fab_finish', e.target.value)} /></Field>
+					<ReadOnlyField label="% Fab Completed" value={<>{num(job?.percent_fab)} %</>} />
+					<ReadOnlyField label="% Install Completed" value={<>{num(job?.percent_install)} %</>} />
+					<ReadOnlyField label="% Job Completed" value={<>{num(job?.percent_job)} %</>} />
 				</div>
 
 				<div className="job-form__col">
-					<Field label="Project manager" htmlFor="jf-pm"><select id="jf-pm" value={f.pm_id} onChange={(e) => set('pm_id', e.target.value)}><option value="">Not set</option>{personOptions}</select></Field>
-					<Field label="Fab manager" htmlFor="jf-fm"><select id="jf-fm" value={f.fab_manager_id} onChange={(e) => set('fab_manager_id', e.target.value)}><option value="">Not set</option>{personOptions}</select></Field>
-					<Field label="Workdrive link" htmlFor="jf-wd" hint={isAdmin ? undefined : 'Created automatically after the job is saved.'}>
+					<Field label="Project Manager" htmlFor="jf-pm"><select id="jf-pm" value={f.pm_id} onChange={(e) => set('pm_id', e.target.value)}><option value="">Not set</option>{personOptions}</select></Field>
+					<Field label="Fab Manager" htmlFor="jf-fm"><select id="jf-fm" value={f.fab_manager_id} onChange={(e) => set('fab_manager_id', e.target.value)}><option value="">Not set</option>{personOptions}</select></Field>
+					<Field label="Workdrive Link" htmlFor="jf-wd" hint={isAdmin ? undefined : 'Created automatically after the job is saved.'}>
 						<input id="jf-wd" type="url" value={f.workdrive_url} disabled={!isAdmin} placeholder={isAdmin ? 'https://…' : ''} onChange={(e) => set('workdrive_url', e.target.value)} />
 					</Field>
-					<Field label="Folder location on VE server" required={editing} htmlFor="jf-path"><input id="jf-path" value={f.server_path} maxLength={255} placeholder="M:\Customer\Job name" onChange={(e) => set('server_path', e.target.value)} /></Field>
-					<Field label="Total purchases" htmlFor="jf-tp" hint={isAdmin ? undefined : 'Administrators only.'}>
+					<Field label="Folder Location on VE Server" required={editing} htmlFor="jf-path"><input id="jf-path" value={f.server_path} maxLength={255} placeholder="M:\Customer\Job name" onChange={(e) => set('server_path', e.target.value)} /></Field>
+					<Field label="Total Purchases" htmlFor="jf-tp" hint={isAdmin ? undefined : 'Administrators only.'}>
 						<Suffix suffix="$"><input id="jf-tp" type="number" min={0} step="0.01" inputMode="decimal" value={f.total_purchases} disabled={!isAdmin} onChange={(e) => set('total_purchases', e.target.value)} /></Suffix>
 					</Field>
-					<Field label="Stock purchases" htmlFor="jf-sp">
+					<Field label="Stock Purchases" htmlFor="jf-sp">
 						<Suffix suffix="$"><input id="jf-sp" type="number" min={0} step="0.01" inputMode="decimal" value={f.stock_purchases} disabled={!isAdmin} onChange={(e) => set('stock_purchases', e.target.value)} /></Suffix>
 					</Field>
 				</div>
@@ -167,7 +167,7 @@ export function JobForm({ job, isAdmin }: { job?: Job; isAdmin: boolean }) {
 					<Field label="Deal" htmlFor="jf-deal" hint={editing && !isAdmin ? 'Only an administrator can change the deal.' : 'The CRM deal ID.'}>
 						<input id="jf-deal" value={f.crm_deal_id} maxLength={50} disabled={editing && !isAdmin} onChange={(e) => set('crm_deal_id', e.target.value)} />
 					</Field>
-					<Field label="Related quote" htmlFor="jf-quote"><input id="jf-quote" value={f.quote_ref} maxLength={255} onChange={(e) => set('quote_ref', e.target.value)} /></Field>
+					<Field label="Related Quote" htmlFor="jf-quote"><input id="jf-quote" value={f.quote_ref} maxLength={255} onChange={(e) => set('quote_ref', e.target.value)} /></Field>
 				</div>
 			</section>
 		</FormPage>

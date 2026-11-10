@@ -72,7 +72,7 @@ export interface Progress {
 	job: number;
 }
 
-export interface JobLocation { id: string; name: string; address: string }
+export interface JobLocation { id: string; name: string; street?: string; city?: string; address: string; mapUrl?: string; crmSiteId?: string; addedTime?: string | null }
 export interface JobDetailResponse {
 	job: Job;
 	tasks: Task[];
@@ -327,6 +327,11 @@ export interface SignItem {
 	medium: string;
 	finishing: string;
 	installDate: string | null;
+	signNumber?: string;
+	dealStage?: string;
+	artworkStage?: string;
+	manufacturingStage?: string;
+	installStage?: string;
 }
 
 export interface IntegrationCheck {

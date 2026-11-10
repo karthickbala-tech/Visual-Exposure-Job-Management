@@ -3,7 +3,7 @@ export type TaskType = 'design' | 'fabrication' | 'install';
 
 export const TASK_KINDS: Record<TaskType, string[]> = {
 	design: ['Artwork Sign Off', 'Install Plan', 'LED Design', 'Manufacturing Sign Off', 'Proof Of Posting', 'Project Management'],
-	fabrication: ['CCV', 'CNC', 'CLB', 'General/Pack', 'Metal', 'Paint', 'LED'],
+	fabrication: ['CCV', 'CNC Laser', 'CNC Router', 'CLB', 'General', 'Metal', 'Paint', 'LED', 'Pack'],
 	install: ['VE Install', 'VE Subtask', 'Minor Task', 'External Install', 'Print Only'],
 };
 
@@ -30,6 +30,9 @@ export const SPEC_FIELDS: Record<string, SpecField[]> = {
 		{ key: 'quantity', label: 'Quantity', type: 'number' },
 	],
 };
+
+SPEC_FIELDS['CNC Laser'] = SPEC_FIELDS.CNC;
+SPEC_FIELDS['CNC Router'] = SPEC_FIELDS.CNC;
 
 export const parseSpec = (v: unknown): Record<string, unknown> => {
 	try {
