@@ -100,8 +100,8 @@ const complianceDash = () => {
 	return { today: TODAY, activeOnly: true, counts, workers: { ve: S.people.filter((p) => p.is_active && p.person_kind === 'staff').length, other: S.people.filter((p) => p.is_active && p.person_kind !== 'staff').length }, truncated: false };
 };
 
-const swmsList = () => S.swms.map((s) => { const t = taskById(s.taskId); return { id: s.id, status: s.status, jobId: s.jobId, siteAddress: s.siteAddress, task: t ? { id: t.ROWID, name: t.name, stage: t.stage } : null }; });
-const swmsView = (s) => ({ id: s.id, jobId: s.jobId, status: s.status, pcbu: s.pcbu, siteAddress: s.siteAddress, ppe: s.ppe, tasks: s.tasks, declarations: s.declarations, signoff: s.signoff });
+const swmsList = () => S.swms.map((s) => { const t = taskById(s.taskId); const job = jobById(s.jobId); return { id: s.id, status: s.status, jobId: s.jobId, jobName: job ? job.name : null, siteAddress: s.siteAddress, onSite: t ? t.scheduled_date : null, progress: { pm: !!s.signoff.pm, tl: !!s.signoff.tl, crewSigned: s.declarations.length, crewTotal: t ? t.assignees.length : 0 }, task: t ? { id: t.ROWID, name: t.name, stage: t.stage } : null }; });
+const swmsView = (s) => ({ id: s.id, jobId: s.jobId, status: s.status, pcbu: s.pcbu, siteAddress: s.siteAddress, ppe: s.ppe, hazards: s.hazards || [], tasks: s.tasks, declarations: s.declarations, signoff: s.signoff });
 
 const checklistView = (c) => {
 	const answered = Object.keys(c.answers).length;
@@ -115,6 +115,12 @@ let settings = { workshop_job_id: '1001', pay_period: { start_date: days[0], len
 
 const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
 const matrix = () => Object.fromEntries(RESOURCES.map((r) => [r, Object.fromEntries(S.ROLE_KEYS.map((role) => [role, role === 'admin' ? { verbs: ['view', 'create', 'edit', 'delete'], scope: 'all' } : ['project_manager', 'fab_manager', 'install_coordinator'].includes(role) ? { verbs: ['view', 'create', 'edit'], scope: 'all' } : role === 'viewer' ? { verbs: ['view'], scope: 'all' } : { verbs: ['view'], scope: 'assigned' }]))]));
+
+const SWMS_OPTIONS = {
+	hazards: [['falls', 'Risk of a fall of more than 2 metres'], ['confined_space', 'Confined space'], ['electrical', 'On or near energised electrical installations'], ['roads_rail', 'On or near a road, railway or other traffic corridor in use'], ['mobile_plant', 'Movement of powered mobile plant in the area'], ['hot_works', 'Hot works (welding, cutting, grinding)'], ['lifting', 'Crane or lifting operations'], ['dust', 'Dust, fumes or airborne particles'], ['asbestos', 'Likely to disturb asbestos']].map(([key, label]) => ({ key, label })),
+	ppe: ['Hard hat', 'Hi-vis vest', 'Safety boots', 'Safety glasses', 'Gloves', 'Hearing protection', 'Dust mask or respirator', 'Harness and fall arrest', 'Sun protection', 'Welding mask or face shield', 'Long sleeves and pants'],
+	ppeFor: { falls: ['Harness and fall arrest', 'Hard hat', 'Safety boots'], hot_works: ['Welding mask or face shield', 'Gloves', 'Long sleeves and pants', 'Safety glasses'], roads_rail: ['Hi-vis vest', 'Hard hat', 'Safety boots'], mobile_plant: ['Hi-vis vest', 'Hard hat', 'Safety boots'], dust: ['Dust mask or respirator', 'Safety glasses'], lifting: ['Hard hat', 'Gloves', 'Safety boots'], electrical: ['Gloves', 'Safety glasses'] },
+};
 
 const list = (items) => ({ items, count: items.length });
 const patch = (obj, body, keys) => { for (const k of keys) if (body[k] !== undefined) obj[k] = body[k]; return obj; };
@@ -215,10 +221,12 @@ const routes = [
 	['PATCH', /^\/issues\/(\d+)$/, (m, _, b) => { const i = S.issues.find((x) => x.ROWID === m[1]); if (b.issue_status) { issueHistory.push({ id: m[1], at: now(), changes: [{ field: 'issue_status', from: i.issue_status, to: b.issue_status }] }); i.issue_status = b.issue_status; } return { issue: issueView(i) }; }],
 	// swms
 	['GET', /^\/swms$/, (_, q) => { let l = swmsList(); const v = q.get('view'); if (v === 'open') l = l.filter((s) => ['Created', 'PM Signed'].includes(s.status)); if (v === 'completed') l = l.filter((s) => ['TL Signed', 'Not Required'].includes(s.status)); return list(l); }],
+
 	['GET', /^\/swms\/(\d+)$/, (m) => { const s = S.swms.find((x) => x.id === m[1]) || S.swms[0]; return { swms: swmsView(s), taskId: s.taskId }; }],
-	['PATCH', /^\/swms\/(\d+)$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); if (b.site_address !== undefined) s.siteAddress = b.site_address; if (b.ppe) s.ppe = [...new Set([...s.ppe, ...b.ppe])]; if (b.swms_tasks) s.tasks = b.swms_tasks; return { swms: swmsView(s) }; }],
-	['POST', /^\/swms\/(\d+)\/sign$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); const who = S.nameOf(ME); if (b.as === 'pm') { s.signoff.pm = { name: who, at: day(0) }; s.status = 'PM Signed'; } else { s.signoff.tl = { name: who, at: day(0) }; s.status = 'TL Signed'; } return { swms: swmsView(s) }; }],
-	['POST', /^\/swms\/(\d+)\/declare$/, (m) => { const s = S.swms.find((x) => x.id === m[1]); s.declarations.push({ personId: ME, name: S.nameOf(ME), at: day(0) }); return { swms: swmsView(s) }; }],
+	['PATCH', /^\/swms\/(\d+)$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); if (b.site_address !== undefined) s.siteAddress = b.site_address; if (b.hazards) s.hazards = b.hazards; if (b.ppe) s.ppe = [...new Set([...s.ppe, ...b.ppe])]; if (b.swms_tasks) s.tasks = b.swms_tasks; return { swms: swmsView(s) }; }],
+	['GET', /^\/swms\/options$/, () => SWMS_OPTIONS],
+	['POST', /^\/swms\/(\d+)\/sign$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); const who = (b.typed_name || S.nameOf(ME)); if (b.as === 'pm') { s.signoff.pm = { name: who, at: day(0) }; s.status = 'PM Signed'; } else { s.signoff.tl = { name: who, at: day(0) }; s.status = 'TL Signed'; } return { swms: swmsView(s) }; }],
+	['POST', /^\/swms\/(\d+)\/declare$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); s.declarations.push({ personId: ME, name: b.typed_name || S.nameOf(ME), at: day(0) }); return { swms: swmsView(s) }; }],
 	// hours
 	['GET', /^\/hours\/(weekly|pay-period)$/, () => hoursReport()],
 	['GET', /^\/hours\/not-filled$/, () => ({ personId: ME, workshop: 1, other: 2, total: 3 })],

@@ -105,6 +105,7 @@ router.add('GET', '/tasks/board', withCtx(async (ctx, { url }) => ok(await tasks
 router.add('GET', '/admin/export/:entity', withCtx(async (ctx, { params, url }) => ok(await dataTransfer.exportEntity(ctx, params.entity, parseQuery(url)))));
 router.add('POST', '/admin/import/people', withCtx(async (ctx, { req }) => ok(await dataTransfer.importPeople(ctx, await readJson(req)))));
 router.add('POST', '/admin/import/companies', withCtx(async (ctx, { req }) => ok(await dataTransfer.importCompanies(ctx, await readJson(req)))));
+router.add('GET', '/swms/options', withCtx(async (ctx) => ok(await swms.options(ctx))));
 router.add('GET', '/swms', withCtx(async (ctx, { url }) => ok(await reports.listSwms(ctx, parseQuery(url)))));
 router.add('GET', '/reports/checklists', withCtx(async (ctx, { url }) => ok(await reports.listChecklists(ctx, parseQuery(url)))));
 router.add('GET', '/compliance/dashboard', withCtx(async (ctx, { url }) => ok(await reports.complianceDashboard(ctx, parseQuery(url)))));
@@ -138,7 +139,7 @@ router.add('PATCH', '/issues/:id', withCtx(async (ctx, { req, params }) => ok(aw
 router.add('GET', '/swms/:id', withCtx(async (ctx, { params }) => ok(await swms.getSwms(ctx, params.id))));
 router.add('PATCH', '/swms/:id', withCtx(async (ctx, { req, params }) => ok(await swms.updateSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/sign', withCtx(async (ctx, { req, params }) => ok(await swms.signSwms(ctx, params.id, await readJson(req)))));
-router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { params }) => created(await swms.declare(ctx, params.id))));
+router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { req, params }) => created(await swms.declare(ctx, params.id, await readLooseBody(req)))));
 router.add('GET', '/swms/:id/pdf', withCtx(async (ctx, { params }) => ok(await printing.swmsPdf(ctx, params.id))));
 router.add('GET', '/issues/:id/pdf', withCtx(async (ctx, { params, url }) => ok(await printing.issuePdf(ctx, params.id, parseQuery(url)))));
 

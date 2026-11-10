@@ -127,6 +127,7 @@ export interface SwmsView {
 	pcbu: Record<string, string>;
 	siteAddress: string;
 	ppe: string[];
+	hazards?: string[];
 	tasks: { task: string; responsible?: string }[];
 	declarations: { personId: string; name: string | null; at: string }[];
 	signoff: { pm?: { name: string | null; at: string }; tl?: { name: string | null; at: string } };

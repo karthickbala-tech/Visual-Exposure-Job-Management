@@ -36,7 +36,9 @@ export interface BoardColumn { stage: string; items: BoardItem[]; count: number;
 export const useTaskBoard = (type: string) => useGet<{ type: string; columns: BoardColumn[]; truncated: boolean }>(['board', type], '/tasks/board' + qs({ type }));
 
 // ---- SWMS and checklist reports ----
-export interface SwmsListItem { id: string; status: string; jobId: string; siteAddress: string; task: { id: string; name: string; stage: string } | null }
+export interface SwmsListItem { id: string; status: string; jobId: string; jobName: string | null; siteAddress: string; onSite: string | null; progress: { pm: boolean; tl: boolean; crewSigned: number; crewTotal: number }; task: { id: string; name: string; stage: string } | null }
+/** The high-risk categories and PPE the SWMS form offers, and which PPE each category ticks. Never changes during a session. */
+export const useSwmsOptions = () => useGet<{ hazards: { key: string; label: string }[]; ppe: string[]; ppeFor: Record<string, string[]> }>(['swms-options'], '/swms/options', true, 3_600_000);
 export const useSwmsList = (view: string, mine: boolean) => useGet<{ items: SwmsListItem[]; count: number }>(['swms-list', view, mine], '/swms' + qs({ view, mine: mine ? 'true' : undefined }));
 export interface ChecklistReportRow { id: string; taskId: string; taskName: string | null; phase: string; status: string; assigneeId: string | null; role: string; hours: number | null }
 export const useChecklistReport = (phase: string, status: string) => useGet<{ items: ChecklistReportRow[]; count: number }>(['checklist-report', phase, status], '/reports/checklists' + qs({ phase, status }));

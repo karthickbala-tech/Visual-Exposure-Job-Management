@@ -506,3 +506,19 @@ body { overscroll-behavior-y: auto; }
 .mini-bar .over-fill { background: var(--danger); }
 .board-inline { padding: 16px 20px; }
 @media (max-width: 760px) { .board-inline { padding: 12px 16px; } .group-row td { padding-left: 16px; } }
+
+/* ---------- SWMS signing (merge phase 5) ---------- */
+.steps { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0 0 14px; padding: 0; list-style: none; font-size: 12px; font-weight: 700; color: var(--muted); }
+.steps li { display: inline-flex; align-items: center; gap: 7px; }
+.steps-dot { width: 12px; height: 12px; border: 2px solid var(--line-3); border-radius: 50%; }
+.steps li.done { color: var(--brand-strong); }
+.steps li.done .steps-dot { background: var(--brand); border-color: var(--brand); }
+.sign-dialog, .swms-edit { display: grid; gap: 14px; max-width: 640px; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 2px; background: var(--surface-2); }
+.swms-edit { border-left-color: var(--line-3); max-width: none; }
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 18px; margin: 0; padding: 0; border: 0; }
+.check-grid legend { margin-bottom: 8px; padding: 0; }
+.check-grid .check { font-weight: 500; align-items: flex-start; }
+.check-grid .check input { margin-top: 3px; }
+.bar-parts { display: flex; gap: 3px; min-width: 96px; }
+.bar-parts span { flex: 1; height: 6px; background: var(--track); border-radius: 1px; }
+.bar-parts span.on { background: var(--brand); }

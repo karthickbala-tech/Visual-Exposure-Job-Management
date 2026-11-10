@@ -50,15 +50,15 @@ test('PM signs, then the team leader; each is recorded; then it is locked', asyn
 	const { w, pm, lead } = await setup();
 	const id = String(w.db.swms[0].ROWID);
 
-	await rejects(swms.signSwms(lead, id, { as: 'pm' }), 403);
-	await rejects(swms.signSwms(lead, id, { as: 'tl' }), 409, 'invalid_state'); // PM must go first
+	await rejects(swms.signSwms(lead, id, { as: 'pm', typed_name: 'Pat Manager', declaration: true }), 403);
+	await rejects(swms.signSwms(lead, id, { as: 'tl', typed_name: 'Lee Leader', declaration: true }), 409, 'invalid_state'); // PM must go first
 
-	const a = await swms.signSwms(pm, id, { as: 'pm' });
+	const a = await swms.signSwms(pm, id, { as: 'pm', typed_name: 'Pat Manager', declaration: true });
 	assert.equal(a.swms.status, 'PM Signed');
 	assert.equal(a.swms.signoff.pm.personId, PM);
 
-	await rejects(swms.signSwms(pm, id, { as: 'tl' }), 403); // a manager is not the task's leader
-	const b = await swms.signSwms(lead, id, { as: 'tl' });
+	await rejects(swms.signSwms(pm, id, { as: 'tl', typed_name: 'Lee Leader', declaration: true }), 403); // a manager is not the task's leader
+	const b = await swms.signSwms(lead, id, { as: 'tl', typed_name: 'Lee Leader', declaration: true });
 	assert.equal(b.swms.status, 'TL Signed');
 	assert.ok(b.swms.signoff.tl.at);
 	assert.ok(w.published.some((p) => p.type === 'swms.signed'));
@@ -106,8 +106,8 @@ test('the team leader cannot finish the pre-job checklist until the SWMS is sign
 	assert.equal(e.details.status, 'Created');
 
 	const id = String(w.db.swms[0].ROWID);
-	await swms.signSwms(pm, id, { as: 'pm' });
-	await swms.signSwms(lead, id, { as: 'tl' });
+	await swms.signSwms(pm, id, { as: 'pm', typed_name: 'Pat Manager', declaration: true });
+	await swms.signSwms(lead, id, { as: 'tl', typed_name: 'Lee Leader', declaration: true });
 	const done = await checklists.completeChecklist(lead, checklist.id, {});
 	assert.equal(done.checklist.status, 'Completed');
 });

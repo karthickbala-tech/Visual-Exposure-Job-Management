@@ -358,8 +358,8 @@ async function rejects(promise, status, code) {
 async function signSwmsFor(w, task, leadCtx) {
 	const swms = require('../lib/services/swms');
 	const id = String(w.db.tasks.find((t) => String(t.ROWID) === String(task.ROWID)).swms_id);
-	await swms.signSwms(w.as(['project_manager'], '105747000000900002'), id, { as: 'pm' });
-	await swms.signSwms(leadCtx, id, { as: 'tl' });
+	await swms.signSwms(w.as(['project_manager'], '105747000000900002'), id, { as: 'pm', typed_name: 'Pat Manager', declaration: true });
+	await swms.signSwms(leadCtx, id, { as: 'tl', typed_name: 'Lee Leader', declaration: true });
 	return id;
 }
 
