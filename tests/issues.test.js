@@ -43,15 +43,15 @@ test('crew see only their own issues; managers see all and can move them', async
 
 	assert.equal((await issues.listIssues(w.ctx)).items.length, 1);
 	await rejects(issues.getIssue(w.ctx, '105747000001999999'), 404);
-	await rejects(issues.updateIssue(w.ctx, w.db.issues[0].ROWID, { issue_status: 'Resolved' }), 403);
+	await rejects(issues.updateIssue(w.ctx, w.db.issues[0].ROWID, { issue_status: 'Resolved', work_completed: 'Done' }), 403);
 
 	const pm = w.as(['project_manager'], '105747000000900002');
 	assert.equal((await issues.listIssues(pm)).items.length, 2);
-	const r = await issues.updateIssue(pm, w.db.issues[0].ROWID, { issue_status: 'Resolved' });
+	const r = await issues.updateIssue(pm, w.db.issues[0].ROWID, { issue_status: 'Resolved', work_completed: 'Done' });
 	assert.equal(r.issue.issue_status, 'Resolved');
 	assert.ok(r.issue.completed_at, 'resolved time stamped');
 	await rejects(issues.updateIssue(pm, w.db.issues[0].ROWID, { issue_status: 'In Progress' }), 409, 'invalid_transition');
-	const back = await issues.updateIssue(pm, w.db.issues[0].ROWID, { issue_status: 'Open' });
+	const back = await issues.updateIssue(pm, w.db.issues[0].ROWID, { issue_status: 'Open', next_step: 'Check', due_date: '2026-12-01' });
 	assert.equal(back.issue.completed_at, null, 'reopening clears the finish time');
 });
 

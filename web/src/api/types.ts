@@ -116,6 +116,14 @@ export interface Issue {
 	issue_priority?: string;
 	source_kind?: string;
 	task_id?: string;
+	assigned_to_id?: string | null;
+	next_step?: string;
+	work_completed?: string;
+	due_date?: string | null;
+	billboard_site?: string;
+	billboard_face?: string;
+	review_needed?: string;
+	crm_deal_id?: string;
 	CREATEDTIME?: string;
 	nextStatuses?: string[];
 }

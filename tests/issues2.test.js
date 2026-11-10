@@ -44,13 +44,13 @@ test('rules: what an update really changes, and board counts', () => {
 
 test('boards: filter by department and by All Open, My Open and My Reported; crew never see others', async () => {
 	const w = setup();
-	const a = await make(w, { subject: 'A', department: 'Civic Billboards' });
+	const a = await make(w, { subject: 'A', department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' });
 	const b = await make(w, { subject: 'B' });
 	await issues.updateIssue(w.ctx, a.ROWID, { assigned_to_id: ME });
-	await issues.updateIssue(w.ctx, b.ROWID, { issue_status: 'Resolved' });
+	await issues.updateIssue(w.ctx, b.ROWID, { issue_status: 'Resolved', work_completed: 'Done' });
 	w.db.issues.find((i) => i.subject === 'B').reported_by_id = STAFF;
 
-	assert.deepEqual((await issues.listIssues(w.ctx, { department: 'Civic Billboards' })).items.map((i) => i.subject), ['A']);
+	assert.deepEqual((await issues.listIssues(w.ctx, { department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' })).items.map((i) => i.subject), ['A']);
 	assert.deepEqual((await issues.listIssues(w.ctx, { view: 'open' })).items.map((i) => i.subject), ['A'], 'All Open leaves out resolved');
 	assert.deepEqual((await issues.listIssues(w.ctx, { view: 'mine' })).items.map((i) => i.subject), ['A'], 'My Open: assigned to me');
 	assert.deepEqual((await issues.listIssues(w.as(['project_manager'], BOSS), { view: 'mine' })).items, []);
@@ -75,13 +75,15 @@ test('history: only real changes are saved, each with old and new values; an upd
 	assert.equal(events().length, 0);
 	assert.equal(w.db.activity.filter((a) => a.activity_type === 'updated').length, 0);
 
-	await issues.updateIssue(w.ctx, issue.ROWID, { issue_priority: 'High', issue_status: 'In Progress', assigned_to_id: STAFF, description: 'more detail' });
+	await issues.updateIssue(w.ctx, issue.ROWID, { issue_priority: 'High', issue_status: 'In Progress', next_step: 'Call', due_date: '2026-12-01', assigned_to_id: STAFF, description: 'more detail' });
 	assert.equal(events().length, 1);
 	assert.deepEqual(events()[0].payload.changes.map((c) => [c.field, c.from, c.to]), [
 		['issue_status', 'Open', 'In Progress'],
 		['issue_priority', 'Normal', 'High'],
 		['assigned_to_id', '', STAFF],
 		['description', undefined, undefined],
+		['next_step', undefined, undefined],
+		['due_date', '', '2026-12-01'],
 	]);
 	assert.equal(events()[0].payload.actorId, ME);
 	assert.equal(w.db.issues[0].issue_priority, 'High');
@@ -120,7 +122,7 @@ test('routing: a department can have its own manager and inform-also list; other
 	await appSettings.updateSettings(w.ctx, { issue_routing: { 'Civic Billboards': { manager_id: STAFF, inform_also: [ME] } } });
 	assert.equal((await appSettings.getSettings(w.ctx)).settings.issue_routing['Civic Billboards'].manager_id, STAFF);
 
-	const routed = await make(w, { subject: 'Billboard', department: 'Civic Billboards' });
+	const routed = await make(w, { subject: 'Billboard', department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' });
 	const normal = await make(w, { subject: 'Other' });
 	const sent = [];
 	const ctx = logCtx(w, sent);
@@ -144,7 +146,7 @@ test('ISS-6: crew and viewers do not see the internal fields; managers see every
 
 test('ISS-4: a CRM deal is created from an issue once; asking again returns the same deal; clear errors otherwise', async () => {
 	const w = setup();
-	const issue = await make(w, { subject: 'Billboard dispute', description: 'Needs a quote', department: 'Civic Billboards' });
+	const issue = await make(w, { subject: 'Billboard dispute', description: 'Needs a quote', department: 'Civic Billboards', billboard_site: 'Site 1', billboard_face: 'North' });
 	const calls = [];
 	const zoho = { crm: { createDeal: async (f) => (calls.push(f), '1482987000000999001') } };
 
@@ -171,4 +173,20 @@ test('the CRM client creates a deal and surfaces a rejection', async () => {
 	assert.equal(await good.crm.createDeal({ Deal_Name: 'x' }), '77');
 	const bad = createZoho({ env, fetchFn: answer({ data: [{ status: 'error', code: 'MANDATORY_NOT_FOUND', message: 'required field not found' }] }) });
 	await assert.rejects(bad.crm.createDeal({}), /required field not found/);
+});
+
+test('update rules: finishing needs the work completed; other statuses need a next step and due date; Civic needs site and face', async () => {
+	const w = setup();
+	const a = await make(w, { subject: 'Rules' });
+	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'Resolved' }), 400);
+	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress' }), 400);
+	await rejects(issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress', next_step: 'Call', due_date: 'tomorrow' }), 400);
+	const ok = await issues.updateIssue(w.ctx, a.ROWID, { issue_status: 'In Progress', next_step: 'Call', due_date: '2020-01-01' });
+	assert.equal(ok.issue.issue_status, 'In Progress');
+	await rejects(issues.createIssue(w.ctx, { subject: 'Billboard', department: 'Civic Billboards' }), 400);
+	const civic = await issues.createIssue(w.ctx, { subject: 'Billboard', department: 'Civic Billboards', billboard_site: 'S1', billboard_face: 'East' });
+	assert.equal(civic.issue.billboard_face, 'East');
+	const overdue = await issues.listIssues(w.ctx, { view: 'overdue' });
+	assert.deepEqual(overdue.items.map((i) => i.subject), ['Rules']);
+	assert.equal((await issues.listIssues(w.ctx, { view: 'assigned' })).count, 0);
 });

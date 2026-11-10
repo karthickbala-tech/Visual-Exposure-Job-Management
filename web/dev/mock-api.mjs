@@ -285,7 +285,7 @@ const server = http.createServer((req, res) => {
 		const hit = routes.find(([m, re]) => m === req.method && re.test(path));
 		const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(status < 400 ? { success: true, data } : { success: false, error: data })); };
 		if (hit) {
-			try { return send(200, hit[2](path.match(hit[1]), url.searchParams, body)); } catch (err) { console.log('mock error on', req.method, path, err.message); return send(500, { code: 'mock_error', message: err.message }); }
+			try { return send(200, hit[2](path.match(hit[1]), url.searchParams, body)); } catch (err) { console.log('mock error on', req.method, path, err.message); return send(err.status || 500, { code: 'mock_error', message: err.message }); }
 		}
 		if (req.method !== 'GET') return send(200, { ok: true });
 		console.log('mock: no route for', req.method, path);

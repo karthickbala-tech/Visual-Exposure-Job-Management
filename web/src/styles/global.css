@@ -522,3 +522,20 @@ body { overscroll-behavior-y: auto; }
 .bar-parts { display: flex; gap: 3px; min-width: 96px; }
 .bar-parts span { flex: 1; height: 6px; background: var(--track); border-radius: 1px; }
 .bar-parts span.on { background: var(--brand); }
+
+/* Issues: board, cards and the side panel */
+.issue-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 14px 20px; align-items: start; }
+.issue-col { display: grid; gap: 8px; align-content: start; background: var(--surface-2); border: 1px solid var(--line); padding: 10px; min-height: 120px; }
+.issue-col h3 { margin: 0 0 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; }
+.issue-card { display: grid; gap: 4px; text-align: left; width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line-3); border-radius: 2px; }
+.issue-card:hover { background: var(--surface-hover); }
+.issue-card--late { border-left-color: var(--danger); }
+.issue-card__top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.text-danger { color: var(--danger); }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--link, inherit); text-align: left; cursor: pointer; text-decoration: underline; }
+.slide-over { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); z-index: 40; overflow-y: auto; padding: 18px 20px; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, .12); }
+.slide-over__head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+.slide-over__head h2 { margin: 0; font-size: 15px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid label { display: grid; gap: 4px; }
+@media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }

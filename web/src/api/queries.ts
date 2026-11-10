@@ -118,28 +118,44 @@ export const useCompleteChecklist = (id: string, taskId: string) => {
 	});
 };
 
+/** Every issue the person may see, in one request (up to 300); the page filters and counts them in memory. */
 export const useIssues = (status?: string) =>
 	useQuery({
 		queryKey: ['issues', status ?? 'all'],
-		queryFn: () => api<{ items: Issue[]; count: number }>('/issues' + (status ? '?status=' + encodeURIComponent(status) : '')),
+		queryFn: () => api<{ items: Issue[]; count: number }>('/issues?limit=300' + (status ? '&status=' + encodeURIComponent(status) : '')),
 		staleTime: 15_000,
 	});
 
+export interface IssueInput {
+	subject: string;
+	description?: string;
+	issue_priority?: string;
+	department?: string;
+	task_id?: string;
+	billboard_site?: string;
+	billboard_face?: string;
+	review_needed?: string;
+}
 export const useCreateIssue = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (input: { subject: string; description?: string; issue_priority?: string }) => api('/issues', json('POST', input)),
+		mutationFn: (input: IssueInput) => api('/issues', json('POST', input)),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['issues'] }),
 	});
 };
 
-export const useMoveIssue = () => {
+export type IssuePatch = Partial<{ issue_status: string; issue_priority: string; assigned_to_id: string | null; owner_id: string | null; department: string; description: string; next_step: string; work_completed: string; due_date: string | null; billboard_site: string; billboard_face: string; review_needed: string }>;
+export const useUpdateIssue = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { id: string; issue_status: string }) => api('/issues/' + v.id, json('PATCH', { issue_status: v.issue_status })),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['issues'] }),
+		mutationFn: (v: { id: string; patch: IssuePatch }) => api('/issues/' + v.id, json('PATCH', v.patch)),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['issues'] });
+			void qc.invalidateQueries({ queryKey: ['issue-history'] });
+		},
 	});
 };
+export const useMoveIssue = useUpdateIssue;
 
 export const useSwms = (id: string | undefined) =>
 	useQuery({ queryKey: ['swms', id], queryFn: () => api<{ swms: SwmsView }>('/swms/' + id), enabled: !!id });

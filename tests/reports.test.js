@@ -268,11 +268,11 @@ test('weekly issues report: one email per department with open issues, to that d
 	assert.deepEqual(await weekly.runWeeklyIssuesReport(ctx), { ran: true, departments: 0, sent: 0 }, 'nothing open, nothing sent');
 
 	await appSettings.updateSettings(w.ctx, { issue_routing: { 'Civic Billboards': { manager_id: CREW } } });
-	const a = (await issues.createIssue(w.ctx, { subject: 'Billboard dispute', department: 'Civic Billboards', issue_priority: 'High' })).issue;
+	const a = (await issues.createIssue(w.ctx, { subject: 'Billboard dispute', department: 'Civic Billboards', billboard_site: 'S1', billboard_face: 'North', issue_priority: 'High' })).issue;
 	await issues.createIssue(w.ctx, { subject: 'Wet floor', department: 'Install' });
 	await issues.createIssue(w.ctx, { subject: 'Cracked panel', department: 'Install' });
 	const resolved = (await issues.createIssue(w.ctx, { subject: 'Old', department: 'Design' })).issue;
-	await issues.updateIssue(w.ctx, resolved.ROWID, { issue_status: 'Resolved' });
+	await issues.updateIssue(w.ctx, resolved.ROWID, { issue_status: 'Resolved', work_completed: 'Done' });
 	await issues.updateIssue(w.ctx, a.ROWID, { assigned_to_id: BOSS });
 
 	const out = await weekly.runWeeklyIssuesReport(ctx);
