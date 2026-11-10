@@ -602,3 +602,79 @@ body { overscroll-behavior-y: auto; }
 .grid-table td a { font-weight: 600; }
 .grid-foot { margin: 0; padding: 10px 20px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
 @media (max-width: 760px) { .grid-wrap { max-height: none; } .search-builder { flex-wrap: wrap; } }
+
+/* ---------- Job module: compact, consistent layout ----------
+   One scale for every job page: 4 px grid, 12.5 px body, 11 px labels, 20 px titles, 30 px controls. Only sizes and spacing change. */
+.jm { display: grid; gap: 12px; align-content: start; min-width: 0; font-size: 12.5px; }
+.jm .page-header { gap: 8px 12px; align-items: center; }
+.jm .page-header h1, .jm .page-title { font-size: clamp(17px, 2vw, 20px); letter-spacing: 0.01em; }
+.jm .page-header h1::before { width: 32px; height: 4px; margin-bottom: 6px; }
+.jm .eyebrow { margin-bottom: 1px; font-size: 10px; letter-spacing: 0.1em; }
+.jm .subtitle { margin-top: 2px; font-size: 12px; }
+.jm .back-link { font-size: 12px; }
+.jm .lead { font-size: 12.5px; }
+
+.jm .kpis { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.jm .kpi { gap: 2px; padding: 8px 12px; border-top-width: 2px; }
+.jm .kpi-label { font-size: 10px; letter-spacing: 0.08em; }
+.jm .kpi-value { font-size: 20px; }
+.jm .kpi-note { font-size: 11px; }
+
+.jm .card-head { padding: 8px 14px; }
+.jm .card-head h2 { font-size: 11px; }
+.jm .card-body { padding: 10px 14px 12px; }
+.jm .stack { gap: 12px; }
+.jm .job-head { gap: 12px; padding: 12px 14px; }
+.jm .job-head h1 { font-size: clamp(17px, 2vw, 20px); }
+.jm .job-meta { gap: 4px 14px; margin-top: 6px; }
+
+.jm .table th, .jm .rtable th { padding: 6px 12px; font-size: 10.5px; }
+.jm .table td, .jm .rtable td { padding: 7px 12px; font-size: 12.5px; }
+.jm .table-empty { padding: 20px 14px; }
+.jm .chip { padding: 1px 6px; font-size: 10px; }
+.jm .actions { gap: 6px; }
+.jm .mini-bar, .jm .progress__track { height: 5px; }
+.jm .progress { grid-template-columns: 48px minmax(70px, 1fr) 36px; gap: 8px; font-size: 11.5px; }
+
+.jm .inline-form { gap: 8px; padding: 10px 14px; }
+.jm .inline-form label { flex: 1 1 140px; min-width: min(130px, 100%); }
+.jm .list-toolbar { gap: 8px; padding: 8px 14px; }
+.jm .bulk-bar { padding: 6px 14px; font-size: 12px; }
+.jm .toolbar__label, .jm .field-label { margin-bottom: 2px; font-size: 10px; letter-spacing: 0.06em; }
+.jm input:not([type='checkbox']):not([type='radio']):not([type='file']), .jm select { min-height: 30px; padding-top: 0; padding-bottom: 0; font-size: 12.5px; }
+.jm textarea { padding: 6px 10px; font-size: 12.5px; }
+.jm .btn { min-height: 30px; padding: 0 12px; font-size: 11.5px; gap: 6px; }
+.jm .btn-sm { min-height: 26px; padding: 0 9px; font-size: 11px; }
+.jm .segmented { padding: 2px; }
+.jm .segmented button { min-height: 26px; padding: 0 10px; font-size: 11px; }
+.jm .type-tabs { margin-bottom: 0; }
+.jm .type-tab { min-height: 36px; padding: 0 14px; font-size: 11.5px; }
+.jm .tab-count { margin-left: 5px; padding: 0 5px; font-size: 10px; }
+.jm .filter-pop { padding: 8px; gap: 6px; }
+.jm .filter-pop__views button { min-height: 30px; font-size: 12px; }
+
+.jm .board { gap: 8px; }
+.jm .board-head { padding: 7px 10px; }
+.jm .board-head h2 { font-size: 10.5px; }
+.jm .board-cards { gap: 6px; padding: 8px; }
+.jm .board-card { gap: 2px; padding: 7px 10px; font-size: 12px; }
+.jm .board-card small, .jm .two-line small { font-size: 11px; }
+.jm .issue-board { padding: 10px 14px; }
+
+.jm .grid-table { font-size: 12px; }
+.jm .grid-table th { padding: 6px 10px; font-size: 10.5px; }
+.jm .grid-table td { padding: 5px 10px; }
+.jm .grid-wrap { max-height: calc(100vh - 230px); }
+.jm .grid-foot { padding: 6px 14px; font-size: 11px; }
+
+/* Phones and tablets keep comfortable touch targets */
+@media (pointer: coarse) {
+	.jm .btn, .jm input:not([type='checkbox']):not([type='radio']):not([type='file']), .jm select { min-height: 40px; }
+	.jm .btn-sm, .jm .segmented button { min-height: 36px; }
+}
+@media (max-width: 760px) {
+	.jm { gap: 10px; }
+	.jm .card-head, .jm .card-body, .jm .inline-form, .jm .list-toolbar, .jm .bulk-bar, .jm .job-head { padding-left: 12px; padding-right: 12px; }
+	.jm .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+.page:has(> .jm) { padding-top: 14px; padding-bottom: 28px; max-width: 1600px; }

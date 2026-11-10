@@ -10,6 +10,7 @@ import { ROUTE_ROLES } from './navConfig';
 import { Settings } from './pages/Settings';
 import { ToastProvider } from './components/toast';
 import { Home } from './pages/Home';
+import { JobModule } from './components/JobModule';
 import { Jobs } from './pages/Jobs';
 import { JobDetail } from './pages/JobDetail';
 import { TaskDetail } from './pages/TaskDetail';
@@ -55,8 +56,8 @@ export default function App() {
 					<Routes>
 						<Route element={<Shell />}>
 							<Route index element={<Home />} />
-							<Route path="jobs" element={<Jobs />} />
-							<Route path="jobs/:id" element={<JobDetail />} />
+							<Route path="jobs" element={<JobModule><Jobs /></JobModule>} />
+							<Route path="jobs/:id" element={<JobModule><JobDetail /></JobModule>} />
 							<Route path="issues" element={<Issues />} />
 							<Route path="calendar" element={<Calendar />} />
 							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
@@ -67,14 +68,14 @@ export default function App() {
 							<Route path="settings" element={<Settings />} />
 							<Route path="admin" element={<Guard roles={ROUTE_ROLES.admin}><Admin /></Guard>} />
 							<Route path="directory" element={<Guard roles={ROUTE_ROLES.directory}><Directory /></Guard>} />
-							<Route path="tasks" element={<TaskBoard />} />
+							<Route path="tasks" element={<JobModule><TaskBoard /></JobModule>} />
 							<Route path="design" element={<Navigate to="/tasks?type=design" replace />} />
 							<Route path="fabrication" element={<Navigate to="/tasks" replace />} />
 							<Route path="installation" element={<Navigate to="/tasks?type=install" replace />} />
 							<Route path="hours" element={<Guard roles={ROUTE_ROLES.hours}><Hours /></Guard>} />
 							<Route path="swms" element={<Guard roles={ROUTE_ROLES.swms}><SwmsList /></Guard>} />
 							<Route path="reports/checklists" element={<Guard roles={ROUTE_ROLES.checklists}><ChecklistReport /></Guard>} />
-							<Route path="tasks/:id" element={<TaskDetail />} />
+							<Route path="tasks/:id" element={<JobModule><TaskDetail /></JobModule>} />
 							<Route path="checklists/:id" element={<ChecklistPage />} />
 							<Route path="*" element={<Placeholder title="Page not found" />} />
 						</Route>
