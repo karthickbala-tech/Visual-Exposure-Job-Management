@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import type { MouseEvent as ReactMouseEvent } from 'react';
+import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
+import { ContextMenu } from '../components/ContextMenu';
+import type { MenuItem } from '../components/ContextMenu';
 import { ArrowLeft, Briefcase, ExternalLink, Hammer, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
@@ -46,6 +50,8 @@ export function JobDetail() {
 	const { notify } = useToast();
 	// The jobs list links here with ?add=design|fab|install to open the matching add-task form (Creator's row actions).
 	const [params] = useSearchParams();
+	const [menu, setMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
+	const [subOf, setSubOf] = useState<Task | null>(null);
 	const [adding, setAdding] = useState<{ type: TaskType; kind: string } | null>(() => {
 		const a = params.get('add');
 		return a === 'design' ? { type: 'design', kind: '' } : a === 'fab' ? { type: 'fabrication', kind: '' } : a === 'install' ? { type: 'install', kind: 'VE Install' } : null;
@@ -86,6 +92,13 @@ export function JobDetail() {
 		</div>
 	);
 	const addForm = (type: TaskType) => adding?.type === type && <AddTaskForm jobId={id ?? ''} type={adding.type} kind={adding.kind} onClose={() => setAdding(null)} />;
+	/** Subtasks only for open fabrication and installation tasks, on a job that is not closed. */
+	const canSubtask = (t: Task) => canAdd && (t.task_type === 'fabrication' || t.task_type === 'install') && !DONE.includes(t.stage) && job.stage !== 'Completed - Closed';
+	const openMenu = (t: Task, e: ReactMouseEvent) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, task: t }); };
+	const menuItems = (t: Task): MenuItem[] => [
+		{ label: 'Open task', onSelect: () => navigate('/tasks/' + t.ROWID) },
+		...(canSubtask(t) ? [{ label: 'Create subtask', onSelect: () => setSubOf(t) }] : []),
+	];
 	const addBtn = (label: string, type: TaskType, kind = '') => canAdd && <button className="btn btn-sm jd-add" onClick={() => setAdding({ type, kind })}><Plus size={14} aria-hidden="true" /> {label}</button>;
 
 	/** Subtasks sit under their parent, as in the old list. */
@@ -185,10 +198,10 @@ export function JobDetail() {
 					<Stat label="Agreed Fab Finish Date" value={fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)} />
 				</div>
 				{addForm('fabrication')}
-				<TaskTable title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
+				<TaskTable title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} onRowContext={openMenu} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
 					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
 					numeric={seesMoney ? [2, 3, 7] : [2, 6]}
-					footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
+					groupTotals={(list) => ['', '', hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '', '', '', hrs(sumQuoted(list)), '']} footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
 			</Band>
 
 			<Band tone="install" icon={<Truck size={18} />} title={TASK_NAMES.install.title}>
@@ -200,30 +213,53 @@ export function JobDetail() {
 					<div className="jd-legend" aria-label="Task kinds">{INSTALL_LEGEND.map((k) => <span key={k} className={'jd-kind ' + kindClass(k === 'Install' ? 'VE Install' : k === 'Subtask' ? 'VE Subtask' : k === 'External' ? 'External Install' : k)}>{k}</span>)}</div>
 				</div>
 				{addForm('install')}
-				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
+				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
 					rowClass={(t) => kindClass(t.kind)}
 					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
-					footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
+					groupTotals={(list) => ['', '', '', '', '', '', hrs(sumQuoted(list)), hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '']} footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
 			</Band>
 
+			{menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.task)} onClose={() => setMenu(null)} />}
+			{subOf && <AddSubtaskDialog taskId={subOf.ROWID} onClose={() => setSubOf(null)} />}
 			<QuotesPanel jobId={id ?? ''} hasDeal={!!job.crm_deal_id} canSync={canAdd} />
 		</>
 	);
 }
 
 /** A task table: headings, rows (each a list of cells), an optional totals row, and "Showing N of N" under it. */
-function TaskTable({ title, cols, rows, row, rowClass, footer, numeric = [], empty }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string }) {
+function TaskTable({ title, cols, rows, row, rowClass, footer, groupTotals, numeric = [], empty, onRowContext }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string; onRowContext?: (t: Task, e: ReactMouseEvent) => void; groupTotals?: (list: Task[]) => ReactNode[] }) {
+	/** A subtask is a row whose parent is also in this table. Parents are drawn with their subtasks under a heading. */
+	const isChild = (t: Task) => !!t.parent_id && rows.some((r) => r.ROWID === String(t.parent_id));
 	if (rows.length === 0) return <p className="table-empty jd-empty">{empty}</p>;
 	return (
 		<div className="jd-table">
 			<h3 className="jd-table__title">{title}</h3>
-			<div className="table-wrap">
+			<div className={"table-wrap" + (rows.length > 3 ? " jd-scroll" : "")}>
 				<table className="table jd-tasks">
 					<caption className="sr-only">{title}</caption>
 					<thead><tr>{cols.map((c, i) => <th key={i} scope="col" className={numeric.includes(i) ? 'num' : ''}>{c || <span className="sr-only">Actions</span>}</th>)}</tr></thead>
 					<tbody>
-						{rows.map((t) => <tr key={t.ROWID} className={rowClass?.(t)}>{row(t).map((c, i) => <td key={i} data-label={cols[i]} className={(i === 0 ? 'cell-primary ' : '') + (numeric.includes(i) ? 'num' : '')}>{c}</td>)}</tr>)}
+						{rows.filter((t) => !isChild(t)).map((t) => {
+							const kids = rows.filter((k) => String(k.parent_id) === t.ROWID);
+							const line = (x: Task, cls?: string) => (
+								<tr key={x.ROWID} className={cls} onContextMenu={onRowContext ? (e) => onRowContext(x, e) : undefined}>
+									{row(x).map((c, i) => <td key={i} data-label={cols[i]} className={(i === 0 ? 'cell-primary ' : '') + (numeric.includes(i) ? 'num' : '')}>{c}</td>)}
+								</tr>
+							);
+							return (
+								<Fragment key={t.ROWID}>
+									{line(t, rowClass?.(t))}
+									{kids.length > 0 && (
+										<>
+											<tr className="jd-group"><td colSpan={cols.length}>{t.name}</td></tr>
+											{kids.map((k) => line(k, 'jd-subrow ' + (rowClass?.(k) ?? '')))}
+											{groupTotals && <tr className="jd-group-total">{groupTotals(kids).map((c, i) => <td key={i} className={numeric.includes(i) ? 'num' : ''}>{c}</td>)}</tr>}
+										</>
+									)}
+								</Fragment>
+							);
+						})}
 						{footer && <tr className="jd-total">{footer.map((c, i) => <td key={i} className={numeric.includes(i) ? 'num' : ''}>{c}</td>)}</tr>}
 					</tbody>
 				</table>

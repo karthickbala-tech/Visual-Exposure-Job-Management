@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { usePeople } from '../api/queries';
-import { useAddSubtask, useAddTime, useAssign, useRate, useUnassign, useUpdateTask } from '../api/more';
+import { useAddTime, useAssign, useRate, useUnassign, useUpdateTask } from '../api/more';
+import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import type { Assignee } from '../api/types';
 import { useToast } from '../components/toast';
 import { Card } from '../components/ui';
@@ -13,17 +14,15 @@ const ROLES = ['lead', 'member', 'other'];
 const bare = { background: 'transparent', border: 0, padding: 0 } as const;
 
 /** Managers: schedule, change the crew, add a subtask. The server checks every one of these again. */
-export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFab }: { taskId: string; scheduled?: string; finish?: string; quoted: number; assignees: Assignee[]; isFab: boolean }) {
+export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canSubtask }: { taskId: string; scheduled?: string; finish?: string; quoted: number; assignees: Assignee[]; canSubtask: boolean }) {
 	const update = useUpdateTask(taskId);
 	const assign = useAssign(taskId);
 	const unassign = useUnassign(taskId);
-	const sub = useAddSubtask(taskId);
 	const people = usePeople(true);
 	const { notify } = useToast();
 	const [dates, setDates] = useState({ scheduled_date: scheduled?.slice(0, 10) ?? '', required_finish: finish?.slice(0, 10) ?? '', quoted_hours: String(quoted || '') });
 	const [person, setPerson] = useState('');
 	const [role, setRole] = useState('member');
-	const [subName, setSubName] = useState('');
 	const [addingCrew, setAddingCrew] = useState(false);
 	const [addingSub, setAddingSub] = useState(false);
 	const free = (people.data?.items ?? []).filter((p) => !assignees.some((a) => a.personId === p.ROWID) && p.is_active !== false);
@@ -99,27 +98,10 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, isFa
 					)}
 				</div>
 
-				{isFab && (
+				{canSubtask && (
 					<>
 					<button className="btn btn-ghost" onClick={() => setAddingSub(true)}>Add subtask</button>
-					{addingSub && (
-					<Dialog title="Add a subtask" onClose={() => setAddingSub(false)}>
-					<form
-						className="inline-form"
-						style={bare}
-						onSubmit={(e) => {
-							e.preventDefault();
-							sub.mutate({ name: subName.trim() }, { onSuccess: () => { setSubName(''); notify('Subtask added'); }, onError: (er) => notify(errText(er), 'error') });
-						}}
-					>
-						<label style={{ flex: '2 1 260px' }}>
-							<span className="toolbar__label">New subtask</span>
-							<input value={subName} maxLength={200} onChange={(e) => setSubName(e.target.value)} placeholder="e.g. Paint the frames…" />
-						</label>
-						<button className="btn btn-ghost" disabled={sub.isPending || !subName.trim()}>Add subtask</button>
-					</form>
-					</Dialog>
-					)}
+					{addingSub && <AddSubtaskDialog taskId={taskId} onClose={() => setAddingSub(false)} />}
 					</>
 				)}
 			</div>

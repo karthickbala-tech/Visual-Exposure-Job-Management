@@ -340,7 +340,7 @@ export function Issues() {
 					/>
 				)}
 			</Card>
-			{issues.isSuccess && <GridStatusBar text={`Showing ${shown.length} of ${all.length}`} />}
+			{issues.isSuccess && layout === 'list' && <GridStatusBar text={`Showing ${shown.length} of ${all.length}`} />}
 
 			{current && <QuickPanel key={current.ROWID} issue={current} isManager={isManager} onClose={() => setSelected(null)} />}
 		</>

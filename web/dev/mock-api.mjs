@@ -22,7 +22,7 @@ const taskById = (i) => S.tasks.find((t) => t.ROWID === String(i));
 
 const isOpen = (t) => !['Completed', 'Cancelled', 'Complete - Not Used', 'Approved & Completed'].includes(t.stage);
 const isLate = (t) => isOpen(t) && t.required_finish && t.required_finish < TODAY;
-const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: S.nextStages(t.stage) });
+const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: S.nextStages(t.stage) });
 const mine = (t) => t.assignees.some(([p]) => p === ME);
 const myTasks = () => S.tasks.filter((t) => isOpen(t) && (isManager ? mine(t) || false : mine(t)));
 

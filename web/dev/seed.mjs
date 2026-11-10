@@ -76,6 +76,16 @@ export const tasks = [
 	T('1001', 'fabrication', 'Weekly sweep and bins', 'Workshop', 'Completed', day(-7), day(-7), { q: 1, b: 1, who: [['509', 'lead']] }),
 ];
 
+// Subtasks for Northgate Mall Pylon Refresh (job 1042). Each hangs under its root task, as the server does it.
+const subOf = (root, name, kind, stage, sched, finish, extra = {}) => ({ ...T(root.job_id, root.task_type, name, kind, stage, sched, finish, extra), parent_id: root.ROWID, parent_or_sub: "Sub" });
+const rootNamed = (name) => tasks.find((t) => t.job_id === "1042" && t.name === name);
+tasks.push(
+	subOf(rootNamed("Cut and route ACM faces"), "Cut panel set A", "CNC", "In Progress", day(-2), day(-1), { q: 10, b: 8, who: [["506", "lead"]] }),
+	subOf(rootNamed("Cut and route ACM faces"), "Route edges set A", "CNC", "Scheduled", day(1), day(2), { q: 8, who: [["507", "member"]] }),
+	subOf(rootNamed("Install pylon faces"), "Crane booking", "VE Subtask", "Awaiting Scheduling", null, day(18), { q: 4 }),
+	subOf(rootNamed("Install pylon faces"), "Lift faces on site", "VE Subtask", "Awaiting Scheduling", null, day(20), { q: 36 }),
+);
+
 const NEXT = {
 	'Awaiting Scheduling': ['Scheduled', 'Cancelled'],
 	Scheduled: ['In Progress', 'On Hold', 'Cancelled'],
