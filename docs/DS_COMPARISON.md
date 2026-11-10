@@ -820,3 +820,7 @@ Report column lists for the task, Issues, SWMS and checklist forms were not comp
 
 - Two of the four missing emails are built: install finished on site (to the PM and the installation manager) and fab checklist submitted (to the fab manager). Both are sent from the existing `checklist.closed` event, are editable in the Admin emails tab, and send one message each. The new-job email was a test stub in the DS and was skipped. The design task email is still open.
 - Mail volume: each completed team leader install checklist and each completed fab post-job checklist now sends one email. Watch the monthly 100-mail cap on the demo plan.
+
+### Design task emails: not applicable
+
+The DS workflows `designjob_send_email` and `Design_Task_Creation_Stage_Email` only email a design checklist's owner when a design pre-job or post-job checklist record is created. The app has no design checklists (DES-2: design tasks book hours by hand), so there is no event to attach them to. They are closed as not applicable. If the owner later wants design checklists, these two emails come with them.
