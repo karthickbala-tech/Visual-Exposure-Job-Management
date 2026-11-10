@@ -371,7 +371,7 @@ body { overscroll-behavior-y: auto; }
 
 /* ---------- Collapsible sidebar (desktop): full menu, or a slim rail with the eye emblem ---------- */
 .logo-emblem { display: none; width: 40px; height: 40px; padding: 2px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
-.logo-emblem img { display: block; width: 36px; height: 36px; transition: transform 0.15s ease-out; }
+.logo-emblem img { object-fit: contain; display: block; width: 36px; height: 36px; transition: transform 0.15s ease-out; }
 .logo-emblem:hover img { transform: scale(1.08); }
 .logo-emblem:focus-visible { outline: 2px solid #9bd47f; outline-offset: 2px; }
 .side-fold { color: #b6b8ba; }
