@@ -880,3 +880,18 @@ Correction to sections 1 to 15: most gaps listed there as "needs a new column" a
 
 - Issue Locations (DS `Sites`): the Raise an issue form now has a Locations picker, backed by the existing `issue.site_id` column and the backend that already accepted it. It uses the shared sites list, so no new endpoint. Users who cannot list sites see an empty picker.
 - Company address (section 16): street, suburb, state (DS list) and post code.
+
+---
+
+## 17. Labour cost Parent and Fab (built, with an assumption)
+
+The DS declares six job fields (Design, Fab and Install Labour Cost - Parent and - Fab) and a Cost Type (Fab or Parent) on each task. No DS workflow calculates the six job fields.
+
+**ASSUMPTION, to be confirmed by the owner:** a job's "Parent" figure for a trade is the sum of the labour cost of that trade's tasks marked Parent, and its "Fab" figure is the sum for tasks marked Fab. Tasks with no Cost Type count in neither.
+
+Built on that assumption:
+- Backend: a task accepts `cost_type` (Fab or Parent, or none) on create and update; the job list returns the six sums for finance roles only (`costByType` in `lib/domain/jobList.js`). No new query, and the `task.cost_type` column already existed. A unit test covers the split (300 of 300 backend tests pass).
+- Screens: a Cost Type select in "Manage this task", and six admin-only job grid columns with the DS names.
+- Until managers set a Cost Type on tasks, all six figures show zero.
+
+If the owner defines these differently, only `costByType` and the column labels change.

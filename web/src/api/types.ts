@@ -34,6 +34,12 @@ export interface Job {
 	install_hours_booked?: number;
 	fab_labour_cost?: number;
 	install_labour_cost?: number;
+	design_labour_cost_parent?: number;
+	design_labour_cost_fab?: number;
+	fab_labour_cost_parent?: number;
+	fab_labour_cost_fab?: number;
+	install_labour_cost_parent?: number;
+	install_labour_cost_fab?: number;
 	design_hours_booked?: number;
 	design_labour_cost?: number;
 	completed_date?: string | null;
@@ -56,6 +62,7 @@ export interface Task {
 	task_type: 'design' | 'fabrication' | 'install';
 	name: string;
 	kind?: string;
+	cost_type?: string | null;
 	stage: string;
 	quoted_hours?: string | number;
 	booked_hours?: string | number;

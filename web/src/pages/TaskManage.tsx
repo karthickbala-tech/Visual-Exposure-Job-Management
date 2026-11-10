@@ -15,7 +15,7 @@ const ROLES = ['lead', 'member', 'other'];
 const bare = { background: 'transparent', border: 0, padding: 0 } as const;
 
 /** Managers: schedule, change the crew, add a subtask. The server checks every one of these again. */
-export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canSubtask }: { taskId: string; scheduled?: string; finish?: string; quoted: number; assignees: Assignee[]; canSubtask: boolean }) {
+export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canSubtask, costType }: { taskId: string; scheduled?: string; finish?: string; quoted: number; assignees: Assignee[]; canSubtask: boolean; costType?: string | null }) {
 	const update = useUpdateTask(taskId);
 	const assign = useAssign(taskId);
 	const unassign = useUnassign(taskId);
@@ -23,6 +23,7 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 	const { notify } = useToast();
 	const confirm = useConfirm();
 	const [dates, setDates] = useState({ scheduled_date: scheduled?.slice(0, 10) ?? '', required_finish: finish?.slice(0, 10) ?? '', quoted_hours: String(quoted || '') });
+	const [cost, setCost] = useState(costType ?? '');
 	const [person, setPerson] = useState('');
 	const [role, setRole] = useState('member');
 	const [addingCrew, setAddingCrew] = useState(false);
@@ -41,12 +42,14 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 						if (dates.scheduled_date) body.scheduled_date = dates.scheduled_date;
 						if (dates.required_finish) body.required_finish = dates.required_finish;
 						if (dates.quoted_hours) body.quoted_hours = Number(dates.quoted_hours);
+						if (cost !== (costType ?? '')) body.cost_type = cost || null;
 						update.mutate(body, { onSuccess: () => notify('Task saved'), onError: (er) => notify(errText(er), 'error') });
 					}}
 				>
 					<label><span className="toolbar__label">Scheduled</span><input type="date" value={dates.scheduled_date} onChange={(e) => setDates({ ...dates, scheduled_date: e.target.value })} /></label>
 					<label><span className="toolbar__label">Required finish</span><input type="date" value={dates.required_finish} onChange={(e) => setDates({ ...dates, required_finish: e.target.value })} /></label>
 					<label><span className="toolbar__label">Quoted hours</span><input type="number" min={0} step={0.25} inputMode="decimal" value={dates.quoted_hours} onChange={(e) => setDates({ ...dates, quoted_hours: e.target.value })} /></label>
+					<label><span className="toolbar__label">Cost Type</span><select value={cost} onChange={(e) => setCost(e.target.value)}><option value="">Not set</option><option>Fab</option><option>Parent</option></select></label>
 					<button className="btn" disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save'}</button>
 				</form>
 

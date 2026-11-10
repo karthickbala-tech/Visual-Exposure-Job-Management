@@ -78,7 +78,7 @@ export function TaskDetail() {
 			{nextStages.length > 0 && <StageActions taskId={task.ROWID} stage={task.stage} nextStages={nextStages} move={move} onDone={(to) => notify(`Moved to ${to}`)} />}
 
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
-				<ManagePanel taskId={task.ROWID} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} canSubtask={task.task_type === 'fabrication' || task.task_type === 'install'} />
+				<ManagePanel taskId={task.ROWID} costType={task.cost_type} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} canSubtask={task.task_type === 'fabrication' || task.task_type === 'install'} />
 			)}
 
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (

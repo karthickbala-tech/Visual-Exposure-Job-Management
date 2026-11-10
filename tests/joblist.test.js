@@ -97,3 +97,16 @@ test('job form fields: a manager picks the starting stage; the system fields are
 	const kept = await jobs.updateJob(admin, a.job.ROWID, { stage: 'On Hold', description: 'd', expected_finish: '2026-12-31', server_path: 'S:x' });
 	assert.equal(kept.job.stage, 'Preparation', 'the stage is not editable after creation');
 });
+
+test('labour cost is split by the task cost type (Parent and Fab), per trade', () => {
+	const t = [
+		{ task_type: 'fabrication', cost_type: 'Parent', labour_cost: 100.255 },
+		{ task_type: 'fabrication', cost_type: 'Fab', labour_cost: 50 },
+		{ task_type: 'fabrication', cost_type: 'Fab', labour_cost: 25 },
+		{ task_type: 'fabrication', labour_cost: 999 }, // no cost type: counted in neither
+		{ task_type: 'install', cost_type: 'Parent', labour_cost: 10 },
+	];
+	assert.deepEqual(L.costByType(t, 'fabrication'), { parent: 100.26, fab: 75 });
+	assert.deepEqual(L.costByType(t, 'install'), { parent: 10, fab: 0 });
+	assert.deepEqual(L.costByType([], 'design'), { parent: 0, fab: 0 });
+});
