@@ -217,7 +217,7 @@ export function Jobs() {
 
 	return (
 		<>
-			<PageHeader eyebrow="Projects" title="All Jobs" subtitle={jobs.isSuccess ? `Showing ${shown.length} of ${jobs.data.total ?? all.length}` : 'Every job from deal to finished install.'}>
+			<PageHeader eyebrow="Projects" title="All Jobs" subtitle="Every job from deal to finished install.">
 				<ListToolbarButtons
 					searchOpen={panelOpen}
 					onSearchOpen={openPanel}
