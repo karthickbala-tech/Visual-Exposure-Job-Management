@@ -97,9 +97,12 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 	const confirm = useConfirm();
 	const add = useAddShift();
 	const { notify } = useToast();
-	const [f, setF] = useState({ taskId: '', date: todayIso(), hours: '', unbilled: '' });
+	const [f, setF] = useState({ taskId: '', date: todayIso(), hours: '', unbilled: '', start: '', end: '', brk: '' });
 	const h = Number(f.hours);
 	const u = f.unbilled ? Number(f.unbilled) : 0;
+	// A start and end time replace the hours box; the server splits them into single, time and a half, and double.
+	const byTimes = !!f.start && !!f.end;
+	const timesProblem = !!f.start !== !!f.end ? 'Give both the start and the end time.' : byTimes && f.end <= f.start ? 'The end time must be after the start time.' : '';
 	const problem = !f.hours ? '' : h < 0.25 ? 'Enter at least 0.25 hours.' : h > 16 ? 'A shift cannot be longer than 16 hours.' : u > h ? 'Unbilled hours cannot be more than the hours worked.' : f.date > todayIso() ? 'Choose a day that has already happened.' : '';
 	return (
 		<Dialog title="Add shift" onClose={onClose}>
@@ -107,9 +110,9 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 			className="inline-form"
 			onSubmit={async (e) => {
 				e.preventDefault();
-				if (h > 14 && !(await confirm({ message: `${h} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
+				if (!byTimes && h > 14 && !(await confirm({ message: `${h} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
 				add.mutate(
-					{ taskId: f.taskId, work_date: f.date, hours: h, unbilled_hours: u || undefined },
+					{ taskId: f.taskId, work_date: f.date, ...(byTimes ? { start_time: f.start, end_time: f.end, break_minutes: f.brk ? Number(f.brk) : undefined } : { hours: h }), unbilled_hours: u || undefined },
 					{ onSuccess: () => { notify('Shift added'); onClose(); }, onError: (er) => notify(er instanceof Error ? er.message : 'Could not add the shift', 'error') },
 				);
 			}}
@@ -122,11 +125,14 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 				</select>
 			</label>
 			<label style={{ flex: '0 1 160px' }}><span className="toolbar__label">Day *</span><input type="date" max={todayIso()} value={f.date} required onChange={(e) => setF({ ...f, date: e.target.value })} /></label>
-			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Hours *</span><input type="number" step="0.25" min="0.25" max="16" value={f.hours} required onChange={(e) => setF({ ...f, hours: e.target.value })} /></label>
+			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Hours{byTimes ? '' : ' *'}</span><input type="number" step="0.25" min="0.25" max="16" value={f.hours} required={!byTimes} disabled={byTimes} onChange={(e) => setF({ ...f, hours: e.target.value })} /></label>
 			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Unbilled</span><input type="number" step="0.25" min="0" value={f.unbilled} onChange={(e) => setF({ ...f, unbilled: e.target.value })} /></label>
-			<button className="btn" disabled={add.isPending || !f.taskId || !f.hours || !!problem}>{add.isPending ? 'Saving…' : 'Add shift'}</button>
+			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Start Time</span><input type="time" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} /></label>
+			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">End Time</span><input type="time" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} /></label>
+			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Break Minutes</span><input type="number" min="0" max="600" step="5" value={f.brk} onChange={(e) => setF({ ...f, brk: e.target.value })} /></label>
+			<button className="btn" disabled={add.isPending || !f.taskId || (!f.hours && !byTimes) || !!problem || !!timesProblem}>{add.isPending ? 'Saving…' : 'Add shift'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-			{problem && <p role="alert">{problem}</p>}
+			{(problem || timesProblem) && <p role="alert">{problem || timesProblem}</p>}
 		</form>
 		</Dialog>
 	);

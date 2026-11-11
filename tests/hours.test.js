@@ -198,3 +198,30 @@ test('ratings: a manager rates each person once per finished task, 1 to 5; avera
 	await rejects(hours.listRatings(w.as(['installer'], ME), ME), 403);
 	assert.deepEqual(await hours.listRatings(w.ctx, OTHER), { items: [], count: 0, average: null });
 });
+
+test('booking a past shift by start and end time: split into single, time and a half, and double; stored with the times', async () => {
+	const { w, jobId } = await setup();
+	const t = await mk(w, jobId, { task_type: 'design', name: 'Artwork', quoted_hours: 20 });
+	await tasks.addAssignee(w.ctx, t, { person_id: ME, role: 'lead' });
+	const crew = w.as(['designer'], ME);
+
+	// Tuesday 3 Nov: 06:00 to 16:30 with a 30 minute break = 8 h single, 2 h at time and a half.
+	const week = await hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '06:00', end_time: '16:30', break_minutes: 30 });
+	assert.equal(week.task.bookedHours, 10);
+	const e1 = w.db.time[0];
+	assert.deepEqual([e1.hours_single, e1.hours_x1_5, e1.hours_x2], [8, 2, 0]);
+	assert.deepEqual([e1.start_time, e1.end_time, e1.break_minutes], ['06:00', '16:30', 30]);
+	assert.equal(e1.labour_cost, 400, 'cost is the total hours at the hourly rate, as for a checklist shift');
+
+	// Saturday 7 Nov: 08:00 to 12:00 = 2 h at time and a half, 2 h double.
+	await hours.addTimeEntry(crew, t, { work_date: '2026-11-07', start_time: '08:00', end_time: '12:00' });
+	const e2 = w.db.time[1];
+	assert.deepEqual([e2.hours_single, e2.hours_x1_5, e2.hours_x2], [0, 2, 2]);
+
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '08:00' }), 400); // an end time is needed too
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '16:00', end_time: '08:00' }), 400); // end before start
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '25:00', end_time: '26:00' }), 400); // not a time
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '01:00', end_time: '19:00' }), 400); // over 16 hours
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '08:00', end_time: '10:00', unbilled_hours: 3 }), 400);
+	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03' }), 400); // neither hours nor times
+});

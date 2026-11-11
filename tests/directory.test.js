@@ -73,3 +73,25 @@ test('companies accept the Creator company types and still accept the older kind
 	}
 	await rejects(dir.createCompany(w.ctx, { name: 'Bad', kind: 'Overseas' }), 400);
 });
+
+test('company rates are for managers only: seen, saved and kept on a partial update', async () => {
+	const w = makeWorld();
+	const c = await dir.createCompany(w.ctx, { name: 'Rate Co', kind: 'Local - Installer', rates: { weekday_business: 85, saturday_day: 120, billing_notes: 'Invoice monthly' } });
+	assert.equal(c.item.rates.weekday_business, 85);
+	const u = await dir.updateCompany(w.ctx, c.item.id, { rates: { public_holiday: 200 } });
+	assert.deepEqual([u.item.rates.weekday_business, u.item.rates.public_holiday, u.item.rates.billing_notes], [85, 200, 'Invoice monthly'], 'other rates are kept');
+	assert.ok('rates' in (await dir.listCompanies(w.ctx)).items[0], 'a manager sees rates');
+	await rejects(dir.createCompany(w.ctx, { name: 'Bad', kind: 'Local - Installer', rates: { weekday_business: -5 } }), 400);
+	for (const role of ['viewer', 'second_ic', 'fab_worker']) {
+		let list;
+		try {
+			list = await dir.listCompanies(w.as([role]));
+		} catch (e) {
+			assert.equal(e.status, 403); // the role cannot view companies at all
+			continue;
+		}
+		assert.equal('rates' in list.items[0], false, role + ' must not get rates');
+	}
+	const fm = w.as(['fab_manager']);
+	assert.ok('rates' in (await dir.listCompanies(fm)).items[0], 'a fab manager sees rates');
+});

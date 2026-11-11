@@ -31,6 +31,10 @@ function EditSite({ s }: { s: SiteItem }) {
 	return edit ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => edit(s)}>Edit</button> : null;
 }
 
+/** The Creator company rate fields (AUD). Managers only: the API leaves them out for everyone else. */
+const RATE_FIELDS: [string, string][] = [['weekday_business', 'Weekday - Business Hours'], ['weekday_ah', 'Weekday - AH Hours'], ['saturday_day', 'Saturday - Daytime Rate'], ['saturday_night', 'Saturday - Night time Rate'], ['sunday_day', 'Sunday - Daytime Rate'], ['sunday_night', 'Sunday - Night time Rate'], ['public_holiday', 'Public Holiday Rate']];
+const RATE_ROLES = ['admin', 'project_manager', 'fab_manager', 'install_coordinator'];
+
 const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
 	{ key: 'name', label: 'Name', width: 240, cell: (c) => <strong>{c.name}</strong> },
 	{ key: 'kind', label: 'Kind', width: 150, cell: (c) => <Chip status={c.kind} /> },
@@ -52,6 +56,7 @@ const SITE_WIDTHS = gridWidths(SITE_COLUMNS);
 export function Directory() {
 	const me = useMe();
 	const canWrite = (me.data?.roles ?? []).some((r) => ['admin', 'project_manager', 'install_coordinator'].includes(r));
+	const canRates = (me.data?.roles ?? []).some((r) => RATE_ROLES.includes(r));
 	const [tab, setTab] = useState<'companies' | 'sites'>('companies');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const companiesGrid = useGridLayout('ve.grid.companies', COMPANY_WIDTHS);
@@ -98,12 +103,12 @@ export function Directory() {
 				onClearAll={() => setTab('companies')}
 			/>
 
-			{tab === 'companies' ? <Companies canWrite={canWrite} grid={companiesGrid} /> : <Sites canWrite={canWrite} grid={sitesGrid} />}
+			{tab === 'companies' ? <Companies canWrite={canWrite} canRates={canRates} grid={companiesGrid} /> : <Sites canWrite={canWrite} grid={sitesGrid} />}
 		</>
 	);
 }
 
-function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
+function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: boolean; grid: GridLayout }) {
 	const list = useCompanies();
 	const write = useRegisterWrite(['companies']);
 	const { notify } = useToast();
@@ -111,9 +116,21 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
 	const [editing, setEditing] = useState<CompanyItem | null>(null);
-	const close = () => { setOpen(false); setEditing(null); setForm(empty); };
+	const [rates, setRates] = useState<Record<string, string>>({});
+	const [billing, setBilling] = useState('');
+	const close = () => { setOpen(false); setEditing(null); setForm(empty); setRates({}); setBilling(''); };
+	/** The rates to send: numbers for the filled boxes, null for a cleared one. Nothing for people who cannot see rates. */
+	const ratesBody = () => {
+		if (!canRates) return undefined;
+		const out: Record<string, number | string | null> = {};
+		for (const [k] of RATE_FIELDS) if (rates[k] !== undefined) out[k] = rates[k] === '' ? null : Number(rates[k]);
+		if (billing || editing) out.billing_notes = billing;
+		return Object.keys(out).length ? out : undefined;
+	};
 	const startEdit = (c: CompanyItem) => {
 		setForm({ name: c.name, kind: c.kind, contact_name: c.contactName, phone: c.phone, email: c.email, street: c.street ?? '', suburb: c.suburb ?? '', state: c.state, post_code: c.postCode ?? '' });
+		setRates(Object.fromEntries(RATE_FIELDS.map(([k]) => [k, c.rates?.[k] == null ? '' : String(c.rates[k])])));
+		setBilling(String(c.rates?.billing_notes ?? ''));
 		setEditing(c);
 		setOpen(true);
 	};
@@ -135,7 +152,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								editing ? { method: 'PATCH', path: '/companies/' + editing.id, body: form } : { method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined } },
+								editing ? { method: 'PATCH', path: '/companies/' + editing.id, body: { ...form, rates: ratesBody() } } : { method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined, rates: ratesBody() } },
 								{
 									onSuccess: () => {
 										close();
@@ -190,6 +207,20 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 							<span className="toolbar__label">Post Code</span>
 							<input value={form.post_code} onChange={set('post_code')} maxLength={10} />
 						</label>
+						{canRates && (
+							<>
+								{RATE_FIELDS.map(([key, label]) => (
+									<label key={key}>
+										<span className="toolbar__label">{label}</span>
+										<input type="number" min={0} step="0.01" inputMode="decimal" value={rates[key] ?? ''} onChange={(e) => setRates({ ...rates, [key]: e.target.value })} />
+									</label>
+								))}
+								<label>
+									<span className="toolbar__label">Billing Notes</span>
+									<textarea rows={3} value={billing} onChange={(e) => setBilling(e.target.value)} maxLength={2000} />
+								</label>
+							</>
+						)}
 						<button className="btn" disabled={write.isPending}>
 							{write.isPending ? 'Saving…' : 'Save'}
 						</button>

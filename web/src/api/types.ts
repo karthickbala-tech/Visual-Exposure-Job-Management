@@ -319,6 +319,8 @@ export interface CompanyItem {
 	state: string;
 	postCode?: string;
 	contactName: string;
+	/** Manager-only: left out of the response for everyone else. */
+	rates?: Record<string, number | string | null>;
 	phone: string;
 	email: string;
 	notes: string;

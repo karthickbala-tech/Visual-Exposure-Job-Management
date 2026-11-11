@@ -927,3 +927,11 @@ The Directory lists now have an Edit button on each row (for people who can add)
 | 13 | Company rates and do-not-contact | manager | NOT BUILT. The columns exist (`rates`, `do_not_contact`); a manager-only form is still to do. |
 | 14 | Sign and site CRM push, WorkDrive folder rename | yes | NOT BUILT. |
 | 15 | Timeline, device map, pivot reports | wanted | NOT BUILT. |
+
+### 18.1 Built from answers 11 and 13
+
+- **Answer 13, company rates (managers):** the seven DS rate fields (Weekday Business and AH hours, Saturday day and night, Sunday day and night, Public Holiday) and Billing Notes are stored in the existing `company.rates` JSON column. Only admin, project manager, fab manager and install coordinator get them back from the API, and only they can set them; everyone else gets no `rates` key and a 403 on trying to set them. The company dialog shows the block to those roles only. Tests cover the visibility, the partial update and the refusal.
+- **Answer 11, shift times:** a past shift can be given as a start time, an end time and a break (in minutes) instead of hours. The times go through the same pay rules as a post-job checklist shift (single, time and a half, double; over 16 hours refused) and are stored with the entry. Three optional columns were added to the Development `time_entry` table with the Catalyst MCP: `start_time`, `end_time`, `break_minutes`. **Production needs the same three columns before deploy.** The Add shift form has Start Time, End Time and Break Minutes; hours still work as before.
+- **Rating scale:** kept at 1 to 5 (answer "yes").
+
+Not done from answer 11: the rating role (Team Member or Project Manager). A rating already records who gave it and who it is for; a role would need one more stored value, and the right place has not been chosen.

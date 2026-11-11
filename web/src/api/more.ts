@@ -25,7 +25,8 @@ export const useHoursNotFilled = () => useGet<{ workshop: number; other: number;
 export const useAddShift = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { taskId: string; work_date: string; hours: number; unbilled_hours?: number }) => api(`/tasks/${v.taskId}/hours`, send('POST', { work_date: v.work_date, hours: v.hours, unbilled_hours: v.unbilled_hours })),
+		mutationFn: (v: { taskId: string; work_date: string; hours?: number; start_time?: string; end_time?: string; break_minutes?: number; unbilled_hours?: number }) =>
+			api(`/tasks/${v.taskId}/hours`, send('POST', { work_date: v.work_date, hours: v.hours, start_time: v.start_time, end_time: v.end_time, break_minutes: v.break_minutes, unbilled_hours: v.unbilled_hours })),
 		onSuccess: () => {
 			void qc.invalidateQueries({ queryKey: ['hours-week'] });
 			void qc.invalidateQueries({ queryKey: ['hours-period'] });
