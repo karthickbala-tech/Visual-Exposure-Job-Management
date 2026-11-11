@@ -941,6 +941,13 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .pager__btn[aria-current='page'] { border-color: var(--brand); background: var(--brand); color: var(--on-brand); font-weight: var(--fw-semibold); }
 .pager__btn:disabled { opacity: 0.45; cursor: default; }
 .pager__btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* The row menu cell holds a 26px button: no padding and no clipping, so focusing it never scrolls the cell (a scroll would close the menu) */
+.grid-table .col-menu { position: sticky; left: 0; z-index: 3; text-align: center; }
+:is(.jm, .page) .grid-table :is(td, th).col-menu, .grid-table :is(td, th).col-menu { padding: 0; overflow: visible; }
+.grid-table th.col-menu { z-index: 4; }
+.row-menu-btn { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 3px; background: transparent; color: var(--muted); cursor: pointer; }
+.row-menu-btn:hover, .row-menu-btn[aria-expanded='true'] { background: var(--surface-hover); color: var(--ink); }
+.row-menu-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 .pager__gap { padding: 0 4px; color: var(--muted); }
 
 /* ---------- List search panel (components/ListToolbar.tsx): search icon, inline filter strip above the table, chips ---------- */

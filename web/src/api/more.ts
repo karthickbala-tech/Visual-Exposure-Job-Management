@@ -124,6 +124,14 @@ export const useCloseJob = (jobId: string) => {
 		},
 	});
 };
+/** Delete (soft) one or more jobs: one request for any number of them. The server refuses jobs with booked hours or unfinished tasks. */
+export const useDeleteJobs = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (ids: string[]) => api('/jobs/delete', send('POST', { ids })),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+	});
+};
 // ---- task management (managers) ----
 const useTaskWrite = <V,>(taskId: string, fn: (v: V) => Promise<unknown>) => {
 	const qc = useQueryClient();

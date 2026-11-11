@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { AlertTriangle, Download, ExternalLink, Plus } from 'lucide-react';
+import { AlertTriangle, Download, ExternalLink, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useJobs, useMe, usePeople } from '../api/queries';
+import { useDeleteJobs } from '../api/more';
 import { num } from '../api/types';
 import type { Job, JobTabCounts } from '../api/types';
 import { StageCell } from '../components/StageCell';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
 import { Card, PageHeader } from '../components/ui';
+import { ContextMenu } from '../components/ContextMenu';
+import type { MenuItem } from '../components/ContextMenu';
+import { useConfirm } from '../components/Messages';
+import { useToast } from '../components/toast';
 import { GridStatusBar, Pagination, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 
 const VIEWS: { key: keyof JobTabCounts; label: string }[] = [
@@ -177,6 +182,12 @@ export function Jobs() {
 	const jobs = useJobs(stage || undefined, view, { pm_id: pm || undefined, fab_manager_id: fab || undefined });
 	const me = useMe();
 	const canManage = !!me.data?.permissions.createJob;
+	const canEdit = !!me.data?.permissions.editJob;
+	const canDelete = !!me.data?.permissions.deleteJob;
+	const confirm = useConfirm();
+	const { notify } = useToast();
+	const deleteJobs = useDeleteJobs();
+	const [menu, setMenu] = useState<{ x: number; y: number; job: Job } | null>(null);
 	const seesMoney = !!me.data?.roles.includes('admin');
 	const people = usePeople(canManage);
 	const navigate = useNavigate();
@@ -217,6 +228,20 @@ export function Jobs() {
 		...(fab ? [{ key: 'fab', label: `Fab manager: ${managerName(fab)}`, onRemove: () => setFab('') }] : []),
 	];
 	const chosen = shown.filter((j) => picked.includes(j.ROWID));
+	const editJob = (id: string) => navigate(`/jobs/${id}/edit`, { state: { background: location } });
+	/** Ask first, then delete the given jobs in one request. The server says why when it refuses (booked hours, unfinished tasks). */
+	const askDelete = async (list: Job[]) => {
+		const what = list.length === 1 ? `"${list[0].name}"` : `these ${list.length} jobs`;
+		if (!(await confirm({ message: `Delete ${what}? ${list.length === 1 ? 'It disappears' : 'They disappear'} from every list and cannot be restored from the app.`, confirmLabel: 'Delete' }))) return;
+		deleteJobs.mutate(list.map((j) => j.ROWID), {
+			onSuccess: () => { setPicked((cur) => cur.filter((id) => !list.some((j) => j.ROWID === id))); notify(list.length === 1 ? 'Job deleted' : `${list.length} jobs deleted`); },
+			onError: (e) => notify(e instanceof Error ? e.message : 'Could not delete', 'error'),
+		});
+	};
+	const menuItems = (job: Job): MenuItem[] => [
+		...(canEdit ? [{ label: 'Edit', onSelect: () => editJob(job.ROWID) }] : []),
+		...(canDelete ? [{ label: 'Delete', onSelect: () => askDelete([job]) }] : []),
+	];
 
 	const toggleCol = (key: string) => {
 		const next = visible.includes(key) ? visible.filter((k) => k !== key) : [...visible, key];
@@ -327,6 +352,8 @@ export function Jobs() {
 				{chosen.length > 0 && (
 					<div className="bulk-bar" role="region" aria-label="Selected jobs">
 						<strong className="num">{chosen.length}</strong> selected
+						{chosen.length === 1 && canEdit && <button type="button" className="btn btn-ghost btn-sm" onClick={() => editJob(chosen[0].ROWID)}><Pencil size={14} aria-hidden="true" /> Edit</button>}
+						{canDelete && <button type="button" className="btn btn-danger btn-sm" disabled={deleteJobs.isPending} onClick={() => askDelete(chosen)}><Trash2 size={14} aria-hidden="true" /> Delete</button>}
 						<button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicked([])}>Clear</button>
 					</div>
 				)}
@@ -347,9 +374,15 @@ export function Jobs() {
 						rowKey={(j) => j.ROWID}
 						picked={canManage ? picked : undefined}
 						onPick={canManage ? setPicked : undefined}
+						rowMenu={canEdit || canDelete ? (j: Job) => (
+							<button type="button" className="row-menu-btn" aria-label={`Actions for ${j.name}`} aria-haspopup="menu" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ x: r.left, y: r.bottom + 4, job: j }); }}>
+								<MoreVertical size={16} aria-hidden="true" />
+							</button>
+						) : undefined}
 					/>
 				)}
 			</Card>
+			{menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.job)} onClose={() => setMenu(null)} />}
 			{jobs.isSuccess && (
 				<GridStatusBar
 					pager={<Pagination page={page} pageCount={pageCount} onPage={(p) => setPageAt({ key: filterKey, page: p })} />}

@@ -128,7 +128,7 @@ const patch = (obj, body, keys) => { for (const k of keys) if (body[k] !== undef
 
 const routes = [
 	// who am I
-	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: { createJob: isManager, editJob: isManager, createTask: isManager, assignPeople: isManager }, person: { ROWID: ME } }; }],
+	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: { createJob: isManager, editJob: isManager, deleteJob: isAdmin, createTask: isManager, assignPeople: isManager }, person: { ROWID: ME } }; }],
 	// jobs
 	['GET', /^\/jobs$/, (_, q) => {
 		const visible = S.jobs.filter((j) => isManager || S.tasks.some((t) => t.job_id === j.ROWID && mine(t)));
@@ -166,6 +166,16 @@ const routes = [
 	['GET', /^\/jobs\/(\d+)\/signs$/, (m) => list(S.signs.filter((s) => s.jobId === m[1]))],
 	['GET', /^\/jobs\/(\d+)\/sign-groups$/, (m) => list(S.signGroups.filter((s) => s.jobId === m[1]))],
 	['POST', /^\/jobs\/(\d+)\/sync-quotes$/, (m) => ({ synced: S.signGroups.filter((s) => s.jobId === m[1]).length, items: S.signGroups.filter((s) => s.jobId === m[1]) })],
+	// delete jobs (admin): refused when a job has booked hours or an unfinished task, like the real API
+	['POST', /^\/jobs\/delete$/, (_, __, b) => {
+		if (!isAdmin) { const e = new Error('Forbidden'); e.status = 403; throw e; }
+		const ids = (b.ids || []).map(String);
+		const done = ['Completed', 'Approved & Completed', 'Complete - Not Used', 'Cancelled'];
+		const bad = ids.map(jobById).filter(Boolean).flatMap((j) => { const own = S.tasks.filter((t) => t.job_id === j.ROWID); const hrs = own.reduce((n, t) => n + (Number(t.booked_hours) || 0), 0); const open = own.filter((t) => !done.includes(t.stage)).length; return hrs > 0 ? [j.name + ' has booked hours'] : open ? [j.name + ' has ' + open + ' unfinished ' + (open === 1 ? 'task' : 'tasks')] : []; });
+		if (bad.length) { const e = new Error('Cannot delete: ' + bad.join('; ') + '.'); e.status = 409; throw e; }
+		for (const i of ids) { const k = S.jobs.findIndex((j) => j.ROWID === i); if (k >= 0) S.jobs.splice(k, 1); }
+		return { deleted: ids };
+	}],
 	['POST', /^\/jobs\/(\d+)\/close$/, (m) => { const j = jobById(m[1]); if (j) j.stage = 'Completed - Closed'; return { job: j }; }],
 	['POST', /^\/jobs\/(\d+)\/tasks$/, (m, _, b) => { const t = { ROWID: id(), job_id: m[1], task_type: b.task_type, name: b.name, kind: b.kind || null, stage: b.task_type === 'design' ? 'To be Assigned' : 'Awaiting Scheduling', scheduled_date: b.scheduled_date || null, required_finish: b.required_finish || null, quoted_hours: b.quoted_hours || 0, booked_hours: 0, description: b.description || '', swms_id: undefined, assignees: [] }; S.tasks.push(t); return { task: taskView(t) }; }],
 	['GET', /^\/jobs\/(\d+)$/, (m) => { const job = jobById(m[1]) || S.jobs[0]; const tasks = S.tasks.filter((t) => t.job_id === job.ROWID); const withTeam = (t) => { const v = taskView(t); const names = (role) => t.assignees.filter(([, r]) => (role === 'lead' ? r === 'lead' : r !== 'lead')).map(([p]) => S.nameOf(p)).join(', '); return { ...v, team_leader: names('lead'), team_members: names('member'), swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, labour_cost: isAdmin ? Math.round(Number(t.booked_hours || 0) * 40 * 100) / 100 : undefined }; }; return { job: { ...job, workdrive_url: job.workdrive_url || (job.ROWID < '1050' ? 'https://workdrive.zoho.com.au/folder/example-' + job.ROWID : ''), closure_email_sent: job.stage === 'Completed - Closed', close_triggered: job.stage === 'Completed - Closed', total_purchases: isAdmin ? 1250 : undefined, stock_purchases: isAdmin ? 300 : undefined }, tasks: tasks.map(withTeam), progress: { fab: job.percent_fab, install: job.percent_install, job: job.percent_job }, locations: [{ id: '1001', name: 'Collins Street Tower', street: '12 Collins St', city: 'Melbourne', address: '12 Collins St, Melbourne, VIC, 3000', mapUrl: 'https://www.google.com/maps/search/?api=1&query=12%20Collins%20St%20Melbourne', crmSiteId: '4590000000771', addedTime: '2026-06-12 15:39:18' }], kpis: kpisFor(job.ROWID) }; }],

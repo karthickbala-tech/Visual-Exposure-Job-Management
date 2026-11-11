@@ -115,3 +115,7 @@ Also in this batch: JOB-4 (a task created outside a job is refused with the fami
 ## Also done outside the 64 requirements
 
 CRM and WorkDrive connected; won deals pulled into jobs on a schedule and on demand; CRM quotes saved as sign groups; job folders created in WorkDrive; outbox with retries; permission matrix editor; request-saving rules (docs/REQUEST_BUDGET.md); 274 automated tests.
+
+## Job delete (added 11 Nov 2026)
+
+`POST /jobs/delete` with `{ ids: [...] }` (1 to 50 ids) soft-deletes jobs (`is_deleted`) and hides their finished tasks with them. It needs the `jobs` **delete** permission: the administrator by default (the FSD says only the administrator may delete jobs), and the permission matrix can grant it to others. The whole batch is refused (409 `cannot_delete`) if any job has booked hours or a task that is not finished, and (404) if any id is unknown or already deleted. Cost: two reads (jobs, tasks) and two writes (jobs, tasks) plus one batch insert of history rows (`activity_type = deleted`), however many jobs. No domain event is published yet (nothing consumes one); the web app shows Delete only when `permissions.deleteJob` is true. Tests: `tests/jobsDelete.test.js`.

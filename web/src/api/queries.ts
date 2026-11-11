@@ -5,7 +5,7 @@ import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem,
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
 	roles: string[];
-	permissions: { createJob: boolean; editJob: boolean; createTask: boolean; assignPeople: boolean };
+	permissions: { createJob: boolean; editJob: boolean; deleteJob: boolean; createTask: boolean; assignPeople: boolean };
 	person: Record<string, unknown> | null;
 }
 

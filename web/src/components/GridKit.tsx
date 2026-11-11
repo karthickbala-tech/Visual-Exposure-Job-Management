@@ -181,13 +181,14 @@ export function gridWidths(columns: { key: string; width: number }[]): Record<st
 
 export type GridLayout = ReturnType<typeof useGridLayout>;
 const CHECK_WIDTH = 36;
+const MENU_WIDTH = 34;
 
 /**
  * The shared list table: resizable columns (drag the header edge), a row height set by the layout, cells that clip, and
  * optional row checkboxes. The table scrolls sideways and up and down inside its own box, only when it overflows.
  * Put the GridStatusBar after the card that holds it, so the count stays at the bottom of the screen.
  */
-export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked, onPick, rowClass, empty = 'Nothing to show.', footer, groupOf }: {
+export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked, onPick, rowMenu, rowClass, empty = 'Nothing to show.', footer, groupOf }: {
 	layout: GridLayout;
 	columns: GridColumn<T>[];
 	rows: T[];
@@ -196,6 +197,8 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 	/** Optional row checkboxes: the picked keys and how to change them. */
 	picked?: string[];
 	onPick?: (keys: string[]) => void;
+	/** Optional ⋮ column in front of the checkboxes: return the button for a row (it opens that row's menu). */
+	rowMenu?: (row: T) => ReactNode;
 	rowClass?: (row: T) => string | undefined;
 	empty?: ReactNode;
 	/** Optional totals row: one entry per column, in the same order. */
@@ -207,21 +210,25 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 	const checks = !!picked && !!onPick;
 	const wk = (c: GridColumn<T>) => c.widthKey ?? c.key;
 	const width = (c: GridColumn<T>) => layout.widths[wk(c)] ?? c.width;
-	const total = (checks ? CHECK_WIDTH : 0) + columns.reduce((n, c) => n + width(c), 0);
+	const menu = !!rowMenu;
+	const total = (menu ? MENU_WIDTH : 0) + (checks ? CHECK_WIDTH : 0) + columns.reduce((n, c) => n + width(c), 0);
 	const allPicked = checks && rows.every((r) => picked.includes(rowKey(r)));
-	const firstLeft = checks ? CHECK_WIDTH : 0;
+	const checkLeft = menu ? MENU_WIDTH : 0;
+	const firstLeft = checkLeft + (checks ? CHECK_WIDTH : 0);
 	return (
 		<div className="grid-wrap" data-rows={layout.rows}>
 			<table className="grid-table" style={{ width: total }}>
 				<caption className="sr-only">{label}</caption>
 				<colgroup>
+					{menu && <col style={{ width: MENU_WIDTH }} />}
 					{checks && <col style={{ width: CHECK_WIDTH }} />}
 					{columns.map((c) => <col key={c.key} style={{ width: width(c) }} />)}
 				</colgroup>
 				<thead>
 					<tr>
+						{menu && <th scope="col" className="col-menu"><span className="sr-only">Row menu</span></th>}
 						{checks && (
-							<th scope="col" className="col-check">
+							<th scope="col" className="col-check" style={{ left: checkLeft }}>
 								<input type="checkbox" aria-label={`Select all ${label.toLowerCase()} shown`} checked={allPicked} onChange={(e) => onPick(e.target.checked ? rows.map(rowKey) : [])} />
 							</th>
 						)}
@@ -247,10 +254,11 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 						const heading = groupOf?.(r, idx, rows);
 						return (
 							<Fragment key={k}>
-							{heading != null && <tr className="grid-group"><td colSpan={columns.length + (checks ? 1 : 0)}>{heading}</td></tr>}
+							{heading != null && <tr className="grid-group"><td colSpan={columns.length + (checks ? 1 : 0) + (menu ? 1 : 0)}>{heading}</td></tr>}
 							<tr className={(on ? 'row-picked ' : '') + (rowClass?.(r) ?? '')}>
+								{menu && <td className="col-menu">{rowMenu(r)}</td>}
 								{checks && (
-									<td className="col-check">
+									<td className="col-check" style={{ left: checkLeft }}>
 										<input type="checkbox" aria-label={`Select row ${k}`} checked={on} onChange={(e) => onPick(e.target.checked ? [...picked, k] : picked.filter((x) => x !== k))} />
 									</td>
 								)}
@@ -267,7 +275,8 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 				{footer && (
 					<tfoot>
 						<tr className="grid-total">
-							{checks && <td className="col-check" />}
+							{menu && <td className="col-menu" />}
+							{checks && <td className="col-check" style={{ left: checkLeft }} />}
 							{footer.map((c, i) => (
 								<td key={i} className={(i === 0 ? 'sticky-col ' : '') + (columns[i]?.right ? 'num' : '')} style={i === 0 ? { left: firstLeft } : undefined}>{c}</td>
 							))}
