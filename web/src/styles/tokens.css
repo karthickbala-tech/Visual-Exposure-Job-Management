@@ -62,6 +62,7 @@
 	--space-6: 64px;
 	--sidebar-w: 240px;
 	--grid-min: 280px; /* a data grid never gets shorter than this; the page scrolls instead */
+	--lt-open: 120px; /* extra height taken by the open filter strip */
 	--grid-chrome: 190px; /* height of the header, toolbar and pagination around a data grid */
 	--touch: 44px;
 
