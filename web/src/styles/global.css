@@ -700,7 +700,6 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 :is(.jm, .page) .grid-table { font-size: var(--fs-sm); }
 :is(.jm, .page) .grid-table th { padding: 6px 10px; font-size: var(--fs-xs); }
 :is(.jm, .page) .grid-table td { padding: 5px 10px; }
-:is(.jm, .page) .grid-wrap { max-height: calc(100vh - 230px); }
 :is(.jm, .page) .grid-foot { padding: 6px 14px; font-size: var(--fs-xs); }
 
 /* Phones and tablets keep comfortable touch targets */
@@ -921,7 +920,7 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
    scrolls (vertically or sideways) when its rows or columns do not fit */
 :is(.jm, .page) > .card:has(.grid-wrap) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 :is(.jm, .page) > .card:has(.grid-wrap) > div { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-:is(.jm, .page) > .card:has(.grid-wrap) .grid-wrap { flex: 1 1 auto; min-height: 120px; max-height: max(120px, calc(100dvh - 190px)); }
+:is(.jm, .page) > .card:has(.grid-wrap) .grid-wrap { flex: 1 1 auto; min-height: var(--grid-min); max-height: max(var(--grid-min), calc(100dvh - var(--grid-chrome))); }
 @media (max-width: 760px) { :is(.jm, .page) > .card:has(.grid-wrap) .grid-wrap { flex: none; min-height: 0; } }
 
 /* Job detail: Job Locations and Signs sit side by side at equal height; their cells keep one line and scroll sideways instead of wrapping letters */
