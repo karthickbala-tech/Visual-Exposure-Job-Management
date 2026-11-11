@@ -6,7 +6,7 @@ import type { CompanyItem, ComplianceItem, Person } from '../api/types';
 import { Chip } from '../components/Chip';
 import { Dialog } from '../components/Dialog';
 import { useToast } from '../components/toast';
-import { Card, Kpi, PageHeader, fmtDate, TableFooter } from '../components/ui';
+import { Card, FilterBar, FilterChips, PageHeader, fmtDate, TableFooter } from '../components/ui';
 import { ListToolbar, ListToolbarButtons } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
@@ -170,6 +170,8 @@ export function People() {
 	const expiring = all.filter((i) => i.status === 'Expiring' && i.daysLeft !== 0).length;
 	const today0 = all.filter((i) => i.daysLeft === 0 && i.status !== 'Expired').length;
 	const activeAll = people.filter((p) => p.is_active !== false);
+	/** Active people on the VE workers and Subcontractors tabs. */
+	const tabCount = (k: 've' | 'sub') => activeAll.filter((p) => ((p as { person_kind?: string }).person_kind === 'subcontractor') === (k === 'sub')).length;
 	const goStatus = (s: string) => { setTab('tickets'); setApplied({ ...applied, status: s }); };
 
 	const onRecords = tab === 'tickets' || tab === 'docs';
@@ -253,26 +255,19 @@ export function People() {
 				)}
 			</PageHeader>
 
-			<section className="kpis" aria-label="Summary">
-				<Kpi label="VE workers" value={activeAll.filter((p) => (p as { person_kind?: string }).person_kind !== 'subcontractor').length} />
-				<Kpi label="Subcontractors" value={activeAll.filter((p) => (p as { person_kind?: string }).person_kind === 'subcontractor').length} />
-				<button type="button" className={'kpi kpi-btn' + (expired ? ' kpi-danger' : '')} aria-pressed={tab === 'tickets' && applied.status === 'Expired'} onClick={() => goStatus('Expired')}>
-					<span className="kpi-label">Expired</span><span className="kpi-value num">{expired}</span>
-				</button>
-				<button type="button" className={'kpi kpi-btn' + (today0 ? ' kpi-danger' : '')} aria-pressed={tab === 'tickets' && applied.status === 'Today'} onClick={() => goStatus('Today')}>
-					<span className="kpi-label">Expires today</span><span className="kpi-value num">{today0}</span>
-				</button>
-				<button type="button" className="kpi kpi-btn" aria-pressed={tab === 'tickets' && applied.status === 'Expiring'} onClick={() => goStatus('Expiring')}>
-					<span className="kpi-label">Expiring within 30 days</span><span className="kpi-value num">{expiring}</span>
-				</button>
-			</section>
-
 			<Card flush>
+				<FilterBar>
+					<FilterChips label="Expiry" heading="Tickets and inductions" value={tab === 'tickets' ? applied.status : ''} onChange={(k) => (tab === 'tickets' && applied.status === k ? setApplied({ ...applied, status: '' }) : goStatus(k))} chips={[
+						{ key: 'Expired', label: 'Expired', count: expired, danger: true },
+						{ key: 'Today', label: 'Expires today', count: today0, danger: true },
+						{ key: 'Expiring', label: 'Expiring within 30 days', count: expiring },
+					]} />
+				</FilterBar>
 				{form === 'record' && canAdd && <AddRecord onClose={() => setForm(null)} />}
 				<div className="list-toolbar">
 					<div className="segmented" role="group" aria-label="People views">
 						{TABS.map((t) => (
-							<button key={t.key} className={tab === t.key ? 'on' : ''} aria-pressed={tab === t.key} onClick={() => { setTab(t.key); setApplied({ ...applied, status: '' }); }}>{t.label}</button>
+							<button key={t.key} className={tab === t.key ? 'on' : ''} aria-pressed={tab === t.key} onClick={() => { setTab(t.key); setApplied({ ...applied, status: '' }); }}>{t.label}{t.key === 've' || t.key === 'sub' ? <span className="tab-count num">{tabCount(t.key)}</span> : null}</button>
 						))}
 					</div>
 				</div>
