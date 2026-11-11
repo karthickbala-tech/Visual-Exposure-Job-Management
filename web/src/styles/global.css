@@ -6,7 +6,7 @@
 html { -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; }
 body {
-	font-family: var(--font); font-size: var(--fs-base); line-height: 1.4; /* the site's body: Raleway 14px at 1.4 */ color: var(--ink); background: var(--bg);
+	font-family: var(--font); font-size: var(--fs-base); line-height: 1.4; /* body: Inter 14px at 1.4 */ color: var(--ink); background: var(--bg);
 	-webkit-font-smoothing: antialiased;
 }
 h1, h2, h3, h4, p, ul, ol, dl, dd { margin: 0; }
@@ -328,7 +328,7 @@ body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
 	.table td > :last-child, .rtable td > :last-child { min-width: 0; max-width: 70%; }
 }
 
-/* Raleway's default numerals are old-style (a 0 looks like an "o"); dates, hours and counts need lining figures. */
+/* Dates, hours and counts use lining, equal-width figures so columns of numbers line up. */
 html { font-variant-numeric: lining-nums; font-feature-settings: 'lnum' 1; }
 .num { font-variant-numeric: lining-nums tabular-nums; }
 

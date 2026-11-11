@@ -1,5 +1,5 @@
 /* Sign-in: brand panel on the left, Catalyst's form on the right. Layout follows the approved prototype;
-   colours and the Raleway font are ours, and the theme variables make light and dark both work. */
+   colours and the Inter font are ours, and the theme variables make light and dark both work. */
 .login { display: grid; grid-template-columns: minmax(340px, 5fr) minmax(0, 7fr); min-height: 100vh; background: var(--bg); }
 
 .login__brand { display: flex; flex-direction: column; justify-content: space-between; gap: 32px; padding: 36px 44px; background: var(--side); color: #fff; }

@@ -1,9 +1,9 @@
-/* Design tokens. Brand colours and the Raleway font come from visualexposure.com.au (docs/DESIGN_REFERENCE.md);
+/* Design tokens. Brand colours come from visualexposure.com.au (docs/DESIGN_REFERENCE.md); the font is Inter, chosen by the owner on 11 Nov 2026 for an enterprise look;
    the structure (light and dark themes, surfaces, chip tones) follows the approved Visual Exposure Projects prototype. */
 :root {
-	--font: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-	/* Typography scale: use these, not raw px or numbers (the site's Raleway 14px body is the base) */
+	/* Typography scale: use these, not raw px or numbers (14px body is the base) */
 	--fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 16px; --fs-xl: 18px;
 	--fs-h1: clamp(17px, 2vw, 20px); /* page and job headings: the one heading size */
 	--fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;

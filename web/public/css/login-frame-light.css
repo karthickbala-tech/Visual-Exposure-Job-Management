@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 /* Catalyst default stylesheet (unchanged) */
 @font-face {
 	font-family:"Roboto Mono";
@@ -1447,8 +1447,8 @@
    The page around the form (brand panel, headings) is ours; this only styles what is inside the frame. */
 
 
-html, body { background: transparent !important; font-family: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif !important; color: var(--f-ink) !important; }
-body, input, button, select, textarea { font-family: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif !important; }
+html, body { background: transparent !important; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important; color: var(--f-ink) !important; }
+body, input, button, select, textarea { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important; }
 
 /* Our page supplies the title, so drop Catalyst's own heading, product name and backdrop. */
 .bg_one, .titlename, #headtitle, #trytitle, .service_name, .portal_logo { display: none !important; }

@@ -21,6 +21,9 @@ Status colours (kept apart from the brand accent so a job state never reads as "
 
 ## Typography
 
+> **Font changed on 11 Nov 2026 (owner decision): the app now uses Inter** (`@fontsource/inter`, weights 400, 500, 600, 700) for an enterprise look, everywhere including headings and the sign-in frame. The table below describes the original site (Raleway); sizes, weights and the uppercase headings still apply, with Inter in place of Raleway. The public site is unchanged.
+
+
 | Role | Font | Spec |
 |---|---|---|
 | Headings | **Raleway 700**, UPPERCASE | site uses 80-90 px; in the app scale to a 5-step ramp (36 / 28 / 22 / 18 / 14 px), line-height 1.1 to 1.2 |
