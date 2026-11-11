@@ -935,3 +935,18 @@ The Directory lists now have an Edit button on each row (for people who can add)
 - **Rating scale:** kept at 1 to 5 (answer "yes").
 
 Not done from answer 11: the rating role (Team Member or Project Manager). A rating already records who gave it and who it is for; a role would need one more stored value, and the right place has not been chosen.
+
+### 18.2 Built from answer 6: personal details by role
+
+The Creator personal fields (Address Line 1, Date of Birth, Sex, Personal Email Address, Start Date, Cessation Date, Skills Etc, Emergency Contact) are kept as JSON in the encrypted `person.profile_private` column. A new "Personal details" card on the person page shows the fields the signed-in role may see and lets the allowed roles change them. The rules are in one file, `lib/domain/profile.js`:
+
+| Who | Sees | Can change |
+|---|---|---|
+| Admin | all eight fields | all eight |
+| Project manager, fab manager, install coordinator | start date, cessation date, skills, emergency contact | start date, cessation date, skills |
+| The person themself | all eight of their own | none (their manager or an admin changes them) |
+| Everyone else | nothing (403, and the card is hidden) | nothing |
+
+This is my reading of "based on the role hierarchy"; the matrix is a constant in one place and easy to change. The raw column is never returned by any other people endpoint. The activity log records which fields changed, never their values. Tests cover the matrix, validation, clearing a field, and that nothing leaks (308 of 308 pass).
+
+**Not verified:** the backend tests use a fake database, so how Catalyst handles an encrypted text column on read and write has not been tested against the real Data Store. Check one save and one read in Development before relying on it. Photo (an Employee_Database field) is not included.

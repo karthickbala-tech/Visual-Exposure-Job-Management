@@ -157,6 +157,16 @@ export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: 
 // ---- people ----
 export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number }
 export const usePerson = (id: string | undefined) => useGet<{ person: PersonFull }>(['person', id ?? ''], `/people/${id}`, !!id, 60_000);
+/** Personal details of a worker: the server sends only the fields the signed-in role may see, and marks the ones it may change. */
+export interface ProfileField { key: string; label: string; kind: 'text' | 'date' | 'choice' | 'email'; options?: string[]; value: string; editable: boolean }
+export const useProfile = (id: string | undefined) => useGet<{ personId: string; fields: ProfileField[] }>(['profile', id ?? ''], `/people/${id}/profile`, !!id, 60_000);
+export const useSaveProfile = (id: string | undefined) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: Record<string, string>) => api<{ personId: string; fields: ProfileField[] }>(`/people/${id}/profile`, send('PATCH', body)),
+		onSuccess: (data) => qc.setQueryData(['profile', id ?? ''], data),
+	});
+};
 export const useRatings = (id: string | undefined) => useGet<{ items: { taskId: string; rating: number; comment: string; ratedAt: string | null }[]; count: number; average: number | null }>(['ratings', id ?? ''], `/people/${id}/ratings`, !!id, 60_000);
 export const usePersonCompliance = (id: string | undefined) => useGet<{ items: { id: string; typeId?: string | null; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id, 60_000);
 export const useCreatePerson = () => {

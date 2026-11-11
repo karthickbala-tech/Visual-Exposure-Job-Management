@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Pencil, Plus } from 'lucide-react';
-import { useUpdatePerson, usePerson, usePersonCompliance, useRatings } from '../api/more';
+import { useProfile, useSaveProfile, useUpdatePerson, usePerson, usePersonCompliance, useRatings } from '../api/more';
 import type { PersonFull } from '../api/more';
 import { useComplianceTypes, useCreateCompliance, useMe, useUpdateCompliance } from '../api/queries';
 import { ApiError } from '../api/client';
@@ -167,6 +167,52 @@ function AddRecord({ personId, held, onClose }: { personId: string; held: Set<st
 }
 
 /** One person: contact details, their rating from site managers, and their tickets and inductions. Managers can edit all of it. */
+/** Personal details by role: the server decides which fields appear and which can be changed. Hidden when there is nothing to show. */
+function ProfileCard({ id }: { id: string }) {
+	const q = useProfile(id);
+	const save = useSaveProfile(id);
+	const { notify } = useToast();
+	const [draft, setDraft] = useState<Record<string, string> | null>(null);
+	if (!q.data) return null;
+	const fields = q.data.fields;
+	const canChange = fields.some((f) => f.editable);
+	const submit = () => {
+		const body: Record<string, string> = {};
+		for (const f of fields) if (f.editable && draft && (draft[f.key] ?? f.value) !== f.value) body[f.key] = draft[f.key];
+		if (!Object.keys(body).length) return setDraft(null);
+		save.mutate(body, { onSuccess: () => { setDraft(null); notify('Personal details saved'); }, onError: (e) => notify(e instanceof Error ? e.message : 'Could not save', 'error') });
+	};
+	return (
+		<Card title="Personal details" action={canChange && !draft ? <button className="btn btn-ghost btn-sm" onClick={() => setDraft({})}><Pencil size={14} aria-hidden="true" /> Edit</button> : undefined}>
+			{!draft ? (
+				<dl className="facts">
+					{fields.map((f) => (
+						<div key={f.key}><dt>{f.label}</dt><dd>{f.value ? (f.kind === 'date' ? fmtDate(f.value) : f.value) : '-'}</dd></div>
+					))}
+				</dl>
+			) : (
+				<form className="inline-form" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+					{fields.filter((f) => f.editable).map((f) => (
+						<label key={f.key}>
+							<span className="toolbar__label">{f.label}</span>
+							{f.kind === 'choice' ? (
+								<select value={draft[f.key] ?? f.value} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}>
+									<option value="">Not set</option>
+									{(f.options ?? []).map((o) => <option key={o}>{o}</option>)}
+								</select>
+							) : (
+								<input type={f.kind === 'date' ? 'date' : f.kind === 'email' ? 'email' : 'text'} value={draft[f.key] ?? f.value} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} />
+							)}
+						</label>
+					))}
+					<button className="btn" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</button>
+					<button type="button" className="btn btn-ghost" onClick={() => setDraft(null)}>Cancel</button>
+				</form>
+			)}
+		</Card>
+	);
+}
+
 export function PersonDetail() {
 	const { id } = useParams();
 	const q = usePerson(id);
@@ -193,6 +239,8 @@ export function PersonDetail() {
 				<Chip status={p.is_active === false ? 'Inactive' : 'Active'} />
 				{canEdit && !editing && <button className="btn btn-ghost" onClick={() => setEditing(true)}><Pencil size={14} aria-hidden="true" /> Edit</button>}
 			</PageHeader>
+
+			<ProfileCard id={p.ROWID} />
 
 			<Card title="Details" flush={editing}>
 				{editing && <EditWorker p={p} isAdmin={isAdmin} onClose={() => setEditing(false)} />}
