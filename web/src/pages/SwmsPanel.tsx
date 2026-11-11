@@ -5,6 +5,7 @@ import { pdfUrl, useSwmsOptions } from '../api/more';
 import type { Assignee, SwmsView } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
+import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 
 const PM_ROLES = ['admin', 'project_manager', 'install_coordinator'];
@@ -131,6 +132,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 	const act = useSwmsAction(swmsId);
 	const opts = useSwmsOptions();
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	const [dialog, setDialog] = useState<'pm' | 'tl' | 'crew' | null>(null);
 	const [editing, setEditing] = useState(false);
 
@@ -138,13 +140,19 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 	if (q.isError) return <p role="alert">Could not load the SWMS.</p>;
 
 	const s = q.data.swms;
-	const locked = s.status === 'TL Signed' || s.status === 'Not Required';
+	const locked = ['TL Signed', 'Not Required', 'Completed', 'Closed'].includes(s.status);
 	const me = assignees.find((a) => a.personId === myPersonId);
 	const canPm = roles.some((r) => PM_ROLES.includes(r)) && s.status === 'Created';
 	const canTl = me?.role === 'lead' && s.status === 'PM Signed';
 	const canDeclare = !!me && !locked && !s.declarations.some((d) => d.personId === myPersonId);
 	const canEdit = roles.some((r) => MANAGER_ROLES.includes(r)) && !locked;
 	const busy = act.isPending;
+	// The project manager completes, then closes, a statement the team leader has signed.
+	const canAdvance = roles.some((r) => PM_ROLES.includes(r)) && (s.status === 'TL Signed' || s.status === 'Completed');
+	const advance = async () => {
+		if (s.status === 'Completed' && !(await confirm({ title: 'Close this SWMS', message: 'Closing locks the statement for good. Close it?', confirmLabel: 'Close SWMS' }))) return;
+		act.mutate({ path: '/advance', method: 'POST' }, { onSuccess: () => notify(s.status === 'TL Signed' ? 'SWMS completed' : 'SWMS closed') });
+	};
 	const hazardLabel = (k: string) => opts.data?.hazards.find((h) => h.key === k)?.label ?? k;
 
 	const sign = (as: 'pm' | 'tl', typed_name: string) =>
@@ -156,6 +164,8 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 		<Card title="Safe work method statement (SWMS)" action={<Chip status={s.status} />} label="Safe work method statement">
 			<SigningSteps pm={!!s.signoff.pm} tl={!!s.signoff.tl} crewSigned={s.declarations.length} crewTotal={assignees.length} />
 			<dl className="swms__facts">
+				<dt>SWMS number</dt>
+				<dd>{s.number || '-'}</dd>
 				<dt>Site address</dt>
 				<dd>{s.siteAddress || '-'}</dd>
 				<dt>High-risk work</dt>
@@ -178,6 +188,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 				<a className="btn btn-ghost" href={pdfUrl(`/swms/${swmsId}/pdf`)} target="_blank" rel="noreferrer"><FileDown size={16} aria-hidden="true" /> PDF</a>
 				{canPm && <button className="btn" disabled={busy} aria-pressed={dialog === 'pm'} onClick={() => setDialog(dialog === 'pm' ? null : 'pm')}>Sign as project manager</button>}
 				{canTl && <button className="btn" disabled={busy} aria-pressed={dialog === 'tl'} onClick={() => setDialog(dialog === 'tl' ? null : 'tl')}>Sign as team leader</button>}
+				{canAdvance && <button className="btn" disabled={busy} onClick={advance}>{s.status === 'TL Signed' ? 'Mark completed' : 'Close SWMS'}</button>}
 				{canDeclare && <button className="btn btn-ghost" disabled={busy} aria-pressed={dialog === 'crew'} onClick={() => setDialog(dialog === 'crew' ? null : 'crew')}>Add my declaration</button>}
 				{canEdit && <button className="btn btn-ghost" aria-expanded={editing} onClick={() => setEditing(!editing)}>{editing ? 'Close editor' : 'Edit SWMS'}</button>}
 			</div>

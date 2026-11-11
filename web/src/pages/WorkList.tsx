@@ -39,7 +39,7 @@ const viewsFor = (kind: Kind): ViewDef[] => [
 	{ key: 'progress', label: 'In progress', test: (t) => t.stage === 'In Progress' },
 	{ key: 'review', label: 'In review', test: (t) => t.stage === 'Manager Review' },
 	{ key: 'overdue', label: 'Overdue', test: late },
-	...(kind === 'install' ? [{ key: 'swms', label: 'SWMS unsigned', test: (t: WorkTask) => open(t) && !!t.swms_id && !['TL Signed', 'Not Required'].includes(t.swms_status ?? '') }] : []),
+	...(kind === 'install' ? [{ key: 'swms', label: 'SWMS unsigned', test: (t: WorkTask) => open(t) && !!t.swms_id && !['TL Signed', 'Not Required', 'Completed', 'Closed'].includes(t.swms_status ?? '') }] : []),
 	{ key: 'done', label: 'Completed', test: (t) => ['Completed', 'Approved & Completed'].includes(t.stage) },
 	{ key: 'all', label: 'Everything', test: () => true },
 ];

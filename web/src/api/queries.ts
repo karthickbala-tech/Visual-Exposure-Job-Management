@@ -165,7 +165,7 @@ export const useSwms = (id: string | undefined) =>
 export const useSwmsAction = (id: string) => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { path: '' | '/sign' | '/declare'; method: 'PATCH' | 'POST'; body?: unknown }) =>
+		mutationFn: (v: { path: '' | '/sign' | '/declare' | '/advance'; method: 'PATCH' | 'POST'; body?: unknown }) =>
 			api<{ swms: SwmsView }>('/swms/' + id + v.path, json(v.method, v.body)),
 		onSuccess: (data) => qc.setQueryData(['swms', id], data),
 	});

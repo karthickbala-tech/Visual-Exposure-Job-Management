@@ -167,7 +167,8 @@ export interface Issue {
 export interface SwmsView {
 	id: string;
 	jobId: string;
-	status: 'Created' | 'PM Signed' | 'TL Signed' | 'Not Required';
+	status: 'Created' | 'PM Signed' | 'TL Signed' | 'Not Required' | 'Completed' | 'Closed';
+	number?: string;
 	pcbu: Record<string, string>;
 	siteAddress: string;
 	ppe: string[];
@@ -312,7 +313,7 @@ export interface OutboxItem {
 export interface CompanyItem {
 	id: string;
 	name: string;
-	kind: 'subcontractor' | 'supplier' | 'client' | 'internal';
+	kind: string;
 	street?: string;
 	suburb?: string;
 	state: string;

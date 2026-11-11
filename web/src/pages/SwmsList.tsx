@@ -16,7 +16,7 @@ interface View {
 	label: string;
 	test: (s: SwmsListItem, mineIds: Set<string>) => boolean;
 }
-const done = (s: SwmsListItem) => ['TL Signed', 'Not Required'].includes(s.status);
+const done = (s: SwmsListItem) => ['TL Signed', 'Not Required', 'Completed', 'Closed'].includes(s.status);
 const VIEWS: View[] = [
 	{ key: 'all', label: 'All', test: () => true },
 	{ key: 'my_open', label: 'My open', test: (s, m) => !done(s) && !!s.task && m.has(s.task.id) },
@@ -24,6 +24,7 @@ const VIEWS: View[] = [
 	{ key: 'pm', label: 'Awaiting PM', test: (s) => s.status === 'Created' },
 	{ key: 'tl', label: 'Awaiting team leader', test: (s) => s.status === 'PM Signed' },
 	{ key: 'signed', label: 'Fully signed', test: (s) => s.status === 'TL Signed' },
+	{ key: 'finished', label: 'Completed or closed', test: (s) => s.status === 'Completed' || s.status === 'Closed' },
 ];
 
 /** Three-part bar: project manager, team leader, crew declarations. */

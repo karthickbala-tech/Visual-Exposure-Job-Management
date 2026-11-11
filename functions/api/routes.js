@@ -140,6 +140,7 @@ router.add('PATCH', '/issues/:id', withCtx(async (ctx, { req, params }) => ok(aw
 router.add('GET', '/swms/:id', withCtx(async (ctx, { params }) => ok(await swms.getSwms(ctx, params.id))));
 router.add('PATCH', '/swms/:id', withCtx(async (ctx, { req, params }) => ok(await swms.updateSwms(ctx, params.id, await readJson(req)))));
 router.add('POST', '/swms/:id/sign', withCtx(async (ctx, { req, params }) => ok(await swms.signSwms(ctx, params.id, await readJson(req)))));
+router.add('POST', '/swms/:id/advance', withCtx(async (ctx, { params }) => ok(await swms.advanceSwms(ctx, params.id))));
 router.add('POST', '/swms/:id/declare', withCtx(async (ctx, { req, params }) => created(await swms.declare(ctx, params.id, await readLooseBody(req)))));
 router.add('GET', '/swms/:id/pdf', withCtx(async (ctx, { params }) => ok(await printing.swmsPdf(ctx, params.id))));
 router.add('GET', '/issues/:id/pdf', withCtx(async (ctx, { params, url }) => ok(await printing.issuePdf(ctx, params.id, parseQuery(url)))));

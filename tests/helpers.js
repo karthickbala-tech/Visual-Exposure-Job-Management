@@ -252,6 +252,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		swms: {
 			findById: async (id) => clone(db.swms.find((s) => String(s.ROWID) === String(id))),
 			listByIds: async (ids) => db.swms.filter((s) => ids.map(String).includes(String(s.ROWID))).map(clone),
+			lastNumber: async () => db.swms.map((s) => s.swms_number).filter(Boolean).sort().pop() || null,
 			list: async ({ statuses } = {}) => db.swms.filter((s) => !statuses || !statuses.length || statuses.includes(s.swms_status)).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };

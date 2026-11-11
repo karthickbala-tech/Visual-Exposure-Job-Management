@@ -905,3 +905,25 @@ Still not done for sites: editing an existing site on screen (the form only adds
 ### 16.4 Editing companies and sites (built)
 
 The Directory lists now have an Edit button on each row (for people who can add). It opens the same dialog, prefilled, and saves with the existing PATCH routes (`/companies/:id`, `/sites/:id`). Clearing a field clears it. Checked in the browser up to the prefilled dialog; saving is covered by the backend tests, not by a browser run against the real API.
+
+---
+
+## 18. Owner answers (11 Nov 2026) and what was built
+
+| # | Question | Answer | Result |
+|---|---|---|---|
+| 1 | Checklist templates: who sees each question and which answers raise an issue | "project manager" | NOT BUILT. The answer does not say which questions go to which role. Needs the question-by-question split from `docs/DS_CHECKLISTS.md`. |
+| 2 | SWMS Completed and Closed: who sets them | the project manager, after the team leader | BUILT. A project manager marks a team-leader-signed SWMS Completed, then Closed (with a confirm). Signed, Completed and Closed statements are locked and count as signed for the checklist rule and the queues. |
+| 3 | SWMS number format | start with SWMS-0001 | BUILT. New install SWMS get SWMS-0001, SWMS-0002 and so on. A `swms_number` column was added to the Development `swms` table with the Catalyst MCP. Existing statements stay unnumbered (no backfill). Production needs the same column before deploy. |
+| 4 | Job Owner, Owner Email, Manufacturing Owner | keep hidden, backend | NOT BUILT. They stay hidden. If they are to be stored without a screen, `job.flags` (JSON) can hold them. |
+| 5 | Parent / Fab labour cost rule | okay | CONFIRMED (section 17). |
+| 6 | Personal details | by the role hierarchy | NOT BUILT. Storage exists (`person.profile_private`, encrypted). Needs a form and the role rules. |
+| 7 | Plain-text ticket logins | "all" | NOT BUILT. Plain-text passwords are a security risk. If needed, they should go in an encrypted column, visible only to managers, never in a list. |
+| 8 | Company type values | the five Creator types | BUILT. The five types are accepted by the API and offered in the form; older kinds stay valid. |
+| 9 | Site state | full form | BUILT. The site form shows the full state names and saves the short code (the column holds 10 characters). A State column shows the full name. |
+| 10 | Fab spec (CLB, field types) | yes, single | CONFIRMED. The CLB fields and single-line text fields are as built (section 2.4). |
+| 11 | Hours: rating scale, role, shift times | yes | NOT BUILT. |
+| 12 | Install kit lists, vehicles, site contact | "zoho site" | NOT BUILT. Read as: take the site contact from the CRM site. Needs the CRM site data. |
+| 13 | Company rates and do-not-contact | manager | NOT BUILT. The columns exist (`rates`, `do_not_contact`); a manager-only form is still to do. |
+| 14 | Sign and site CRM push, WorkDrive folder rename | yes | NOT BUILT. |
+| 15 | Timeline, device map, pivot reports | wanted | NOT BUILT. |

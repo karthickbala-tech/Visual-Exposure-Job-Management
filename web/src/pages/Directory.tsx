@@ -13,7 +13,11 @@ import type { GridColumn, GridLayout } from '../components/GridKit';
 
 /** The state list of the Creator company form (Companies1.State). */
 const AU_STATES = ['VIC', 'NSW', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'];
-const KINDS = ['subcontractor', 'supplier', 'client', 'internal'] as const;
+/** The company types of the Creator company form. Companies saved with an older kind keep it. */
+const KINDS = ['Local - Installer', 'Local - Fabricator', 'Local - Supplier', 'Interstate - Installer', 'Interstate - Full Service'] as const;
+/** Site states: the value saved is the short code the backend allows, the label is the full name from the Creator Sites form. */
+const STATE_NAMES: [string, string][] = [['ACT', 'Australian Capital Territory'], ['NSW', 'New South Wales'], ['NT', 'Northern Territory'], ['QLD', 'Queensland'], ['SA', 'South Australia'], ['TAS', 'Tasmania'], ['VIC', 'Victoria'], ['WA', 'Western Australia']];
+const stateName = (code?: string) => STATE_NAMES.find(([c]) => c === code)?.[1] ?? code ?? '';
 
 /** The Edit button of a row reads its handler from the list that shows it; it is hidden for people who cannot edit. */
 const CompanyEditCtx = createContext<((c: CompanyItem) => void) | null>(null);
@@ -37,6 +41,7 @@ const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
 const SITE_COLUMNS: GridColumn<SiteItem>[] = [
 	{ key: 'name', label: 'Name', width: 240, cell: (s) => <strong>{s.name}</strong> },
 	{ key: 'address', label: 'Address', width: 360, cell: (s) => s.address || '-' },
+	{ key: 'state', label: 'State', width: 200, cell: (s) => stateName(s.state) || '-' },
 	{ key: 'status', label: 'Status', width: 130, cell: (s) => <Chip status={s.isActive ? 'Active' : 'Inactive'} /> },
 	{ key: 'edit', label: 'Actions', width: 90, cell: (s) => <EditSite s={s} /> },
 ];
@@ -102,7 +107,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 	const list = useCompanies();
 	const write = useRegisterWrite(['companies']);
 	const { notify } = useToast();
-	const empty = { name: '', kind: 'subcontractor', contact_name: '', phone: '', email: '', street: '', suburb: '', state: '', post_code: '' };
+	const empty = { name: '', kind: 'Local - Installer', contact_name: '', phone: '', email: '', street: '', suburb: '', state: '', post_code: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
 	const [editing, setEditing] = useState<CompanyItem | null>(null);
@@ -147,7 +152,7 @@ function Companies({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) 
 						<label>
 							<span className="toolbar__label">Kind</span>
 							<select value={form.kind} onChange={set('kind')} style={{ width: '100%' }}>
-								{KINDS.map((k) => (
+								{[...KINDS, ...(editing && !(KINDS as readonly string[]).includes(editing.kind) ? [editing.kind] : [])].map((k) => (
 									<option key={k}>{k}</option>
 								))}
 							</select>
@@ -238,7 +243,7 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 		setEditing(x);
 		setOpen(true);
 	};
-	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
+	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 	return (
 		<>
 			<Card flush>
@@ -280,7 +285,13 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 						</label>
 						<label>
 							<span className="toolbar__label">State</span>
-							<input value={form.state} onChange={set('state')} maxLength={10} />
+							<select value={form.state} onChange={set('state')} style={{ width: '100%' }}>
+								<option value="">Choose…</option>
+								{STATE_NAMES.map(([code, name]) => (
+									<option key={code} value={code}>{name}</option>
+								))}
+								{form.state && !STATE_NAMES.some(([code]) => code === form.state) && <option value={form.state}>{form.state}</option>}
+							</select>
 						</label>
 						<label>
 							<span className="toolbar__label">Post code</span>

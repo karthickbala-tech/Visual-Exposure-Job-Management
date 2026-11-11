@@ -111,3 +111,32 @@ test('the team leader cannot finish the pre-job checklist until the SWMS is sign
 	const done = await checklists.completeChecklist(lead, checklist.id, {});
 	assert.equal(done.checklist.status, 'Completed');
 });
+
+test('rules: SWMS numbers run from SWMS-0001; a project manager completes then closes a signed statement', () => {
+	assert.equal(d.nextSwmsNumber(null), 'SWMS-0001');
+	assert.equal(d.nextSwmsNumber('SWMS-0009'), 'SWMS-0010');
+	assert.equal(d.nextSwmsNumber('SWMS-0099'), 'SWMS-0100');
+	assert.deepEqual(d.checkAdvance('TL Signed', { roles: ['project_manager'] }), { ok: true, to: 'Completed' });
+	assert.deepEqual(d.checkAdvance('Completed', { roles: ['admin'] }), { ok: true, to: 'Closed' });
+	assert.equal(d.checkAdvance('Closed', { roles: ['admin'] }).code, 'invalid_state');
+	assert.equal(d.checkAdvance('PM Signed', { roles: ['project_manager'] }).code, 'invalid_state', 'the team leader signs first');
+	assert.equal(d.checkAdvance('TL Signed', { roles: ['installer'] }).code, 'not_allowed');
+	for (const s of ['TL Signed', 'Completed', 'Closed', 'Not Required']) assert.equal(d.allowsPreJobChecklist(s), true, s);
+});
+
+test('each new install SWMS gets the next number; completing and closing works through the service', async () => {
+	const { w, task, pm, lead } = await setup();
+	await tasks.createTask(w.ctx, w.db.jobs[0].ROWID, { task_type: 'install', kind: 'VE Install', name: 'Second install' });
+	assert.deepEqual(w.db.swms.map((s) => s.swms_number), ['SWMS-0001', 'SWMS-0002']);
+	const id = String(w.db.swms[0].ROWID);
+	await rejects(swms.advanceSwms(pm, id), 409); // not signed by the team leader yet
+	await swms.signSwms(pm, id, { as: 'pm', typed_name: 'Pat PM', declaration: true });
+	await swms.signSwms(lead, id, { as: 'tl', typed_name: 'Lee Lead', declaration: true });
+	await rejects(swms.advanceSwms(lead, id), 403); // an installer cannot
+	assert.equal((await swms.advanceSwms(pm, id)).swms.status, 'Completed');
+	assert.equal((await swms.advanceSwms(pm, id)).swms.status, 'Closed');
+	await rejects(swms.advanceSwms(pm, id), 409);
+	assert.equal((await swms.getSwms(pm, id)).swms.number, 'SWMS-0001');
+	await rejects(swms.updateSwms(pm, id, { site_address: 'x' }), 409); // a closed statement is locked
+	void task;
+});

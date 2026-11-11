@@ -65,3 +65,11 @@ test('companies and sites keep the DS address and contact fields; updating one f
 	assert.equal(su.item.notes, 'Loading dock round the back');
 	await rejects(dir.createSite(w.ctx, { name: 'Bad', tenant_email: 'not-an-email' }), 400);
 });
+
+test('companies accept the Creator company types and still accept the older kinds', async () => {
+	const w = makeWorld();
+	for (const kind of ['Local - Installer', 'Local - Fabricator', 'Local - Supplier', 'Interstate - Installer', 'Interstate - Full Service', 'subcontractor']) {
+		assert.equal((await dir.createCompany(w.ctx, { name: 'Co ' + kind, kind })).item.kind, kind);
+	}
+	await rejects(dir.createCompany(w.ctx, { name: 'Bad', kind: 'Overseas' }), 400);
+});
