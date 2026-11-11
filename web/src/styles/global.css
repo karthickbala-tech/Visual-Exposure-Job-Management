@@ -767,16 +767,18 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .card--loc { --tone-bg: var(--jt-loc-bg); --tone-ink: var(--jt-loc-ink); }
 .card--sign { --tone-bg: var(--jt-sign-bg); --tone-ink: var(--jt-sign-ink); }
 .card--crm { --tone-bg: var(--jt-crm-bg); --tone-ink: var(--jt-crm-ink); }
-.card--loc > .card-head, .card--sign > .card-head, .card--crm > .card-head { background: var(--tone-bg); }
+.card--loc > .card-head, .card--sign > .card-head, .card--crm > .card-head { background: transparent; border-bottom: 0; padding: 12px 2px; }
 .card--loc > .card-head h2, .card--sign > .card-head h2, .card--crm > .card-head h2 { color: var(--tone-ink); }
 .jsec--design { --tone-bg: var(--jt-design-bg); --tone-ink: var(--jt-design-ink); }
 .jsec--fab { --tone-bg: var(--jt-fab-bg); --tone-ink: var(--jt-fab-ink); }
 .jsec--install { --tone-bg: var(--jt-install-bg); --tone-ink: var(--jt-install-ink); }
 .jh { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
-.jh__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding: 9px 18px; background: var(--jt-bar); color: #fff; }
-.jh__bar-title { display: inline-flex; align-items: center; gap: 10px; font-size: var(--fs-base); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; }
+.jh__bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 16px; padding: 9px 18px; background: var(--jt-bar); color: #fff; }
+.jh__bar-side--right { justify-self: end; }
+.jh__bar-title { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; }
 .jh__deal { padding: 2px 10px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
 .jh__body { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; padding: 14px 18px; }
+@media (max-width: 640px) { .jh__bar { grid-template-columns: 1fr; justify-items: center; } .jh__bar-side--right { justify-self: center; } }
 .jh__badge { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 3px; background: var(--brand); color: var(--on-brand); }
 .jh__main { flex: 1 1 200px; min-width: 0; }
 .jh__title { margin: 0; font-size: var(--fs-h1); overflow-wrap: anywhere; }
@@ -790,8 +792,9 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jh-ring { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--muted); }
 .jh-ring .ring { width: 56px; height: 56px; }
 .jh__actions { order: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
-.jsec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
-.jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--tone-bg); border-bottom: 1px solid var(--line); }
+/* Each table sits in a tinted band of its own colour; the table inside is a white box with a coloured header row and lines between cells */
+:is(.jsec, .card--loc, .card--sign, .card--crm) { background: var(--tone-bg); border: 1px solid color-mix(in srgb, var(--tone-ink) 30%, var(--line)); border-radius: 3px; padding: 0 12px 12px; overflow: hidden; }
+.jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 2px; }
 .jsec__badge { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--tone-ink); color: var(--tone-bg); }
 .jsec__titles { flex: 1 1 160px; min-width: 0; }
 .jsec__titles h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--tone-ink); }
@@ -805,14 +808,14 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jpill--done::before { background: var(--brand); }
 .jpill--late { border-color: var(--danger); background: var(--chip-red-bg); color: var(--chip-red-ink); }
 .jpill--late::before { background: var(--danger); }
-.jsec__meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--tone-bg); }
+.jsec__meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; padding: 0 2px 10px; }
 .jsec__meta > div { display: flex; align-items: baseline; gap: 8px; }
 .jsec__meta dt { font-size: var(--fs-xs); color: var(--muted); }
 .jsec__meta dd { margin: 0; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
-.jsec .jd-table, .jsec .jd-empty { border: 0; border-radius: 0; }
+:is(.jsec .jd-table, .jsec .jd-empty, .card--loc > div:not(.card-head), .card--sign > div:not(.card-head), .card--crm > div:not(.card-head)) { background: var(--surface); border: 1px solid var(--line-3); border-radius: 2px; }
 .jsec .jd-empty { padding: 16px; }
-.jrow-menu { width: 32px; height: 32px; color: var(--muted); }
-.jrow-menu:hover { color: var(--ink); }
+.jrow-menu { width: 30px; height: 30px; border: 1px solid var(--line-3); background: var(--surface); color: var(--ink-2); }
+.jrow-menu:hover { border-color: var(--tone-ink); color: var(--tone-ink); }
 .stage-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-ink); font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
 .stage-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .stage-pill--gray { --chip-bg: var(--chip-gray-bg); --chip-ink: var(--chip-gray-ink); }
@@ -1036,6 +1039,10 @@ body.dialog-open { overflow: hidden; }
 .jd-tasks .jd-subrow td { background: color-mix(in srgb, var(--jt-sub-bg) 70%, var(--surface)); }
 .jd-tasks .jd-subrow td:first-child { box-shadow: inset 3px 0 0 var(--jt-sub-ink); }
 .jd-tasks .jd-sub::before { color: var(--jt-sub-ink); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) thead th { background: color-mix(in srgb, var(--tone-ink) 16%, var(--surface)); color: var(--ink); border-bottom: 2px solid var(--tone-ink); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) :is(th, td) { border-right: 1px solid var(--line-2); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) :is(th, td):last-child { border-right: 0; }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) tbody td { border-bottom: 1px solid var(--line-2); }
 .jsec .jd-total td { background: var(--tone-bg); color: var(--tone-ink); border-top: 2px solid var(--tone-ink); }
 .jd-tasks tr.jd-row--late td { background: color-mix(in srgb, var(--chip-red-bg) 80%, var(--surface)); }
 .jd-tasks tr.jd-row--late td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
