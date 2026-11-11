@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, FilterBar, FilterChips, PageHeader, fmtDate } from '../components/ui';
+import { Card, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 
@@ -237,10 +237,6 @@ export function Issues() {
 	return (
 		<>
 			<PageHeader eyebrow="Safety and quality" title="Issues" subtitle="Problems found on site or in the workshop, routed to the right department.">
-				<div className="segmented" role="group" aria-label="Layout">
-					<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}>Board</button>
-					<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}>List</button>
-				</div>
 				<ListToolbarButtons
 					searchOpen={panelOpen}
 					onSearchOpen={openPanel}
@@ -266,6 +262,7 @@ export function Issues() {
 					{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
 					{ key: 'assigned', label: 'Assigned to me', count: counts.assigned },
 				]} />
+				<div className="filter-bar__end"><LayoutToggle value={layout} onChange={setLayout} /></div>
 				{isManager && board.isSuccess && (
 									<FilterChips label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} chips={board.data.departments.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
 				)}

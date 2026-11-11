@@ -583,6 +583,8 @@ body { overscroll-behavior-y: auto; }
 /* List filter chips: the first row of a list card (Issues, SWMS, Task board). Pills, not tabs, so they read as filters. */
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
 .filter-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.filter-bar__end { margin-left: auto; }
+.filter-bar__end + .filter-chips { flex-basis: 100%; }
 .filter-chips__heading { margin-right: 4px; font-size: var(--fs-xs); letter-spacing: 0.04em; color: var(--muted); }
 .fchip { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 5px 0 12px; border: 1px solid var(--line-3); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
 .fchip:hover { background: var(--surface-hover); color: var(--ink); }
