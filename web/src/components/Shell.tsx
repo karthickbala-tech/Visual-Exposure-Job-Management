@@ -246,6 +246,8 @@ function UserMenu({ name, role, collapsed }: { name: string; role: string; colla
 
 /** App frame: charcoal sidebar (a drawer on phones), top bar with search and theme toggle, and the page. */
 export function Shell() {
+	// A job record has its own sticky bar (All jobs, Job Details, Edit Job), so the app top bar steps aside.
+	const inJobRecord = /^\/jobs\/\d+/.test(useLocation().pathname);
 	const me = useMe();
 	const { theme, toggleTheme } = useTheme();
 	const navigate = useNavigate();
@@ -309,7 +311,7 @@ export function Shell() {
 			{navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
 
 			<div className="main-col">
-				<div className="topbar">
+				<div className={'topbar' + (inJobRecord ? ' topbar--hidden' : '')}>
 					<button type="button" className="icon-btn menu-btn" aria-label="Open menu" onClick={() => setNavOpen(true)}>
 						<Menu size={20} />
 					</button>

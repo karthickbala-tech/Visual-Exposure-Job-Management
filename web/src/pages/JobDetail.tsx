@@ -5,7 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import { ContextMenu } from '../components/ContextMenu';
 import type { MenuItem } from '../components/ContextMenu';
-import { ArrowLeft, Briefcase, ExternalLink, FolderOpen, Hammer, Handshake, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Briefcase, ExternalLink, FolderOpen, Hammer, Handshake, MoreHorizontal, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
 import { ApiError } from '../api/client';
@@ -120,7 +120,7 @@ export function JobDetail() {
 	/** The ⋮ button at the end of a row opens the same menu as a right-click. */
 	const actions = (t: Task) => (
 		<button type="button" className="icon-btn jrow-menu" aria-label={`Actions for ${t.name}`} aria-haspopup="menu" disabled={move.isPending} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ x: r.right - 200, y: r.bottom + 4, task: t }); }}>
-			<MoreVertical size={16} aria-hidden="true" />
+			<MoreHorizontal size={16} aria-hidden="true" />
 		</button>
 	);
 	const addForm = (type: TaskType) => adding?.type === type && <AddTaskForm jobId={id ?? ''} type={adding.type} kind={adding.kind} onClose={() => setAdding(null)} />;
@@ -146,23 +146,24 @@ export function JobDetail() {
 
 	return (
 		<>
-			<Link className="back-link" to="/jobs"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
-
-			<header className="jh">
-				<div className="jh__bar">
-					<div className="jh__bar-side">
-						{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
-					</div>
-					<span className="jh__bar-title"><Briefcase size={20} aria-hidden="true" /><span className="jh__bar-sep" aria-hidden="true" /> Job Details</span>
-					<div className="jh__bar-side jh__bar-side--right">
-						{job.crm_deal_id ? <span className="jh__deal" title="CRM deal"><Handshake size={15} aria-hidden="true" /> Deal: {job.crm_deal_id}</span> : <span>No Deal</span>}
-					</div>
+			<div className="jh__bar">
+				<div className="jh__bar-side">
+					<Link className="btn btn-sm btn-bar" to="/jobs"><ArrowLeft size={14} aria-hidden="true" /> All jobs</Link>
 				</div>
+				<span className="jh__bar-title"><Briefcase size={20} aria-hidden="true" /><span className="jh__bar-sep" aria-hidden="true" /> Job Details</span>
+				<div className="jh__bar-side jh__bar-side--right">
+					{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
+				</div>
+			</div>
+			<header className="jh">
 				<div className="jh__body">
 					<div className="jh__main">
 						<div className="jh__headline">
 							<h1 className="jh__title">{job.name}</h1>
-							{workdrive ? <a className="btn btn-soft" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
+							<div className="jh__headline-actions">
+								{job.crm_deal_id ? <span className="jh__deal" title="CRM deal"><Handshake size={15} aria-hidden="true" /> Deal: {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
+								{workdrive ? <a className="btn btn-soft" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
+							</div>
 						</div>
 						<ul className="jh__facts">
 							<li className="jh__fact"><span className="jh__fact-label">Stage</span> <StageCell stage={job.stage} pill /></li>

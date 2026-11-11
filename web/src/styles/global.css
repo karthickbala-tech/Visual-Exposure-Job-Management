@@ -62,6 +62,7 @@ h1, h2, h3, h4 { font-weight: var(--fw-bold); line-height: 1.12; }
 .search:focus-within { border-color: var(--brand-strong); box-shadow: 0 0 0 2px var(--brand-soft); }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; }
 .search kbd { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font: 700 10px var(--font); color: var(--muted); }
+.topbar--hidden { display: none; }
 .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .theme-toggle svg { transition: transform 0.25s ease; }
 .theme-toggle:hover svg { transform: rotate(20deg); }
@@ -778,11 +779,14 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jsec--design { --tone-bg: var(--jt-design-bg); --tone-ink: var(--jt-design-ink); }
 .jsec--fab { --tone-bg: var(--jt-fab-bg); --tone-ink: var(--jt-fab-ink); }
 .jsec--install { --tone-bg: var(--jt-install-bg); --tone-ink: var(--jt-install-ink); }
-.jh { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 1px 2px rgba(20, 24, 27, 0.05), 0 8px 22px rgba(20, 24, 27, 0.05); overflow: hidden; }
-.jh__bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 16px; padding: 9px 18px; background: var(--jt-bar); color: #fff; }
+.jh { background: var(--surface); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 6px 6px; box-shadow: 0 1px 2px rgba(20, 24, 27, 0.05), 0 8px 22px rgba(20, 24, 27, 0.05); overflow: hidden; }
+.jh__bar { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 16px; margin-bottom: -10px; padding: 9px 18px; border-radius: 6px 6px 0 0; background: var(--jt-bar); color: #fff; box-shadow: 0 2px 8px rgba(20, 24, 27, 0.18); }
+.btn-bar { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+.btn-bar:hover { background: rgba(255, 255, 255, 0.22); }
 .jh__bar-side--right { justify-self: end; }
 .jh__bar-title { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; }
-.jh__deal { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.jh__deal { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border: 1px solid var(--line-3); border-radius: 999px; background: var(--surface-3); color: var(--ink); font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.jh__headline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .jh__bar-sep { width: 1px; height: 22px; margin: 0 4px; background: rgba(255, 255, 255, 0.3); }
 .jh__headline .btn { min-height: 40px; padding: 0 18px; }
 .jh__headline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; }
@@ -809,7 +813,8 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jh__fact svg { flex: none; color: var(--muted); }
 .jh__fact-label { color: var(--muted); }
 @media (max-width: 760px) { .jh__body { grid-template-columns: minmax(0, 1fr); } .jh-ring { padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--line-2); margin-top: 14px; } }
-@media (max-width: 640px) { .jh__bar { grid-template-columns: 1fr; justify-items: center; } .jh__bar-side--right { justify-self: center; } }
+@media (max-width: 760px) { .jh__bar { margin-bottom: -8px; } }
+@media (max-width: 640px) { .jh__bar { grid-template-columns: auto 1fr auto; padding: 8px 12px; } .jh__bar-title { font-size: var(--fs-sm); gap: 6px; white-space: nowrap; } .jh__bar-sep { display: none; } .jh__bar-side--right { justify-self: end; } }
 /* Each table sits in a tinted band of its own colour; the table inside is a white box with a coloured header row and lines between cells */
 :is(.jsec, .card--loc, .card--sign, .card--crm) { background: var(--tone-bg); border: 1px solid color-mix(in srgb, var(--tone-ink) 30%, var(--line)); border-radius: 3px; padding: 0 12px 12px; overflow: hidden; }
 .jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 2px; }

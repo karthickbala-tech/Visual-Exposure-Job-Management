@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { AlertTriangle, Download, ExternalLink, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Download, ExternalLink, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useJobs, useMe, usePeople } from '../api/queries';
 import { useDeleteJobs } from '../api/more';
 import { num } from '../api/types';
@@ -376,7 +376,7 @@ export function Jobs() {
 						onPick={canManage ? setPicked : undefined}
 						rowMenu={canEdit || canDelete ? (j: Job) => (
 							<button type="button" className="row-menu-btn" aria-label={`Actions for ${j.name}`} aria-haspopup="menu" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ x: r.left, y: r.bottom + 4, job: j }); }}>
-								<MoreVertical size={16} aria-hidden="true" />
+								<MoreHorizontal size={16} aria-hidden="true" />
 							</button>
 						) : undefined}
 					/>
