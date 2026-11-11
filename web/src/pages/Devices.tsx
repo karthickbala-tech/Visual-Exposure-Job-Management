@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useDevices, useMe } from '../api/queries';
 import type { DeviceItem } from '../api/types';
 import { DeviceMap } from '../components/DeviceMap';
@@ -33,31 +34,44 @@ export function Devices() {
 	const allowed = (me.data?.roles ?? []).some((r) => ['admin', 'project_manager', 'fab_manager', 'install_coordinator'].includes(r));
 	const list = useDevices(allowed);
 	const grid = useGridLayout('ve.grid.devices', WIDTHS);
+	const [view, setView] = useState<'list' | 'map'>('list');
+	const showMap = view === 'map' && list.isSuccess && list.data.items.length > 0;
 
 	return (
 		<>
 			<PageHeader eyebrow="Workers" title="Devices" subtitle="Last known location of each worker device.">
 				<div className="lt-actions">
-					<ToolbarMenu label="View" ariaLabel="View options" align="right">
-						<p className="filter-pop__title">Row height</p>
-						<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
-						<div className="filter-pop__actions">
-							<button type="button" className="btn btn-ghost btn-sm" onClick={grid.reset}>Reset widths</button>
-						</div>
-					</ToolbarMenu>
+					<div className="segmented" role="group" aria-label="Devices view">
+						{(['list', 'map'] as const).map((v) => (
+							<button key={v} type="button" className={view === v ? 'on' : ''} aria-pressed={view === v} onClick={() => setView(v)}>
+								{v}
+							</button>
+						))}
+					</div>
+					{view === 'list' && (
+						<ToolbarMenu label="View" ariaLabel="View options" align="right">
+							<p className="filter-pop__title">Row height</p>
+							<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
+							<div className="filter-pop__actions">
+								<button type="button" className="btn btn-ghost btn-sm" onClick={grid.reset}>Reset widths</button>
+							</div>
+						</ToolbarMenu>
+					)}
 				</div>
 			</PageHeader>
-			{list.isSuccess && list.data.items.length > 0 && <Card title="Map"><DeviceMap devices={list.data.items} /></Card>}
-			<Card flush>
-				{!allowed && me.isSuccess && <p className="table-empty">You do not have access to devices.</p>}
-				{allowed && list.isPending && <p role="status" className="table-empty">Loading…</p>}
-				{allowed && list.isError && <p role="alert">Could not load devices.</p>}
-				{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No devices yet. They appear once the device sync is switched on.</p>}
-				{list.isSuccess && list.data.items.length > 0 && (
-					<ResizableGrid layout={grid} label="Devices" columns={COLUMNS} rows={list.data.items} rowKey={(d) => d.id} />
-				)}
-			</Card>
-			{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
+			{showMap && list.isSuccess && <Card title="Map"><DeviceMap devices={list.data.items} large /></Card>}
+			{!showMap && (
+				<Card flush>
+					{!allowed && me.isSuccess && <p className="table-empty">You do not have access to devices.</p>}
+					{allowed && list.isPending && <p role="status" className="table-empty">Loading…</p>}
+					{allowed && list.isError && <p role="alert">Could not load devices.</p>}
+					{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No devices yet. They appear once the device sync is switched on.</p>}
+					{list.isSuccess && list.data.items.length > 0 && (
+						<ResizableGrid layout={grid} label="Devices" columns={COLUMNS} rows={list.data.items} rowKey={(d) => d.id} />
+					)}
+				</Card>
+			)}
+			{list.isSuccess && !showMap && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }

@@ -12,7 +12,7 @@ type Located = DeviceItem & { lat: number; lng: number };
  * not reported for over 24 hours. The map is only built when a device has a location. Names and addresses come from the database, so
  * they go into the page as text (elements), never as HTML.
  */
-export function DeviceMap({ devices }: { devices: DeviceItem[] }) {
+export function DeviceMap({ devices, large = false }: { devices: DeviceItem[]; large?: boolean }) {
 	const box = useRef<HTMLDivElement>(null);
 	const located = useMemo(() => devices.filter((d) => d.lat !== null && d.lng !== null) as Located[], [devices]);
 	const fresh = located.filter((d) => !d.stale).length;
@@ -52,7 +52,7 @@ export function DeviceMap({ devices }: { devices: DeviceItem[] }) {
 	if (located.length === 0) return <p className="table-empty">No device has reported a location yet.</p>;
 
 	return (
-		<figure className="device-map">
+		<figure className={'device-map' + (large ? ' device-map--large' : '')}>
 			<div ref={box} className="device-map__canvas" role="region" aria-label={`Map of ${located.length} devices, ${fresh} reporting recently`} />
 			<figcaption className="muted">{fresh} of {located.length} located devices reporting. Grey pins have not reported for over 24 hours. Use the + and - buttons to zoom.</figcaption>
 		</figure>
