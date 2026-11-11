@@ -19,7 +19,8 @@ const FILL: Record<string, { bg: string; ink: string }> = {
 	Reopen: { bg: '#f7b36a', ink: '#1b1b1e' },
 };
 
-export function StageCell({ stage }: { stage: string }) {
+/** `pill` shows the stage as a compact rounded chip (job page tables) instead of filling the whole cell (lists). */
+export function StageCell({ stage, pill = false }: { stage: string; pill?: boolean }) {
 	const c = FILL[stage] ?? { bg: '#e3e3e4', ink: '#1b1b1e' };
-	return <span className="stage-cell" style={{ background: c.bg, color: c.ink }}>{stage}</span>;
+	return <span className={pill ? 'stage-pill' : 'stage-cell'} style={{ background: c.bg, color: c.ink }}>{stage}</span>;
 }

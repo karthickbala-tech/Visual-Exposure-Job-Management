@@ -5,7 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import { ContextMenu } from '../components/ContextMenu';
 import type { MenuItem } from '../components/ContextMenu';
-import { ArrowLeft, Briefcase, ExternalLink, Hammer, Network, Pencil, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Briefcase, ExternalLink, Hammer, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
 import { ApiError } from '../api/client';
@@ -27,20 +27,42 @@ const today = () => new Date().toISOString().slice(0, 10);
 const hrs = (v: unknown) => (num(v as string | number) ? num(v as string | number).toFixed(2) : '');
 const kindClass = (k?: string) => (k ? 'kind-' + k.toLowerCase().replace(/[^a-z]+/g, '-') : '');
 
-/** One coloured section of the job page: a title band, a row of buttons and numbers, then the table. */
-function Band({ tone, icon, title, children }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; title: string; children: ReactNode }) {
+const COMPLETE = ['Completed', 'Approved & Completed', 'Completed - Closed', 'Complete - Not Used'];
+
+/** One section of the job page: a tinted header (icon, title, counts, Add buttons), an optional facts row, then the table. */
+function Section({ tone, icon, title, count, pills, actions, meta, children }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; title: string; count: number; pills: ReactNode; actions?: ReactNode; meta?: ReactNode; children: ReactNode }) {
 	return (
-		<section className={'jd-band jd-band--' + tone} aria-label={title}>
-			<h2 className="jd-band__title"><span className="jd-band__icon" aria-hidden="true">{icon}</span> {title}</h2>
+		<section className={'jsec jsec--' + tone} aria-label={title}>
+			<header className="jsec__head">
+				<span className="jsec__badge" aria-hidden="true">{icon}</span>
+				<div className="jsec__titles"><h2>{title}</h2><p>{count} {count === 1 ? 'task' : 'tasks'}</p></div>
+				{pills}
+				{actions && <div className="jsec__actions">{actions}</div>}
+			</header>
+			{meta}
 			{children}
 		</section>
 	);
 }
-const Stat = ({ label, value, tone }: { label: string; value: ReactNode; tone?: 'danger' }) => (
-	<div className={'jd-stat' + (tone ? ' jd-stat--' + tone : '')}><span>{label}</span><strong className="num">{value}</strong></div>
+
+/** Open, In progress and Completed counts for one section, and Overdue when there is any. */
+function Pills({ list, late }: { list: Task[]; late: number }) {
+	const n = (f: (t: Task) => boolean) => list.filter(f).length;
+	return (
+		<div className="jpills" aria-label="Task counts">
+			<span className="jpill jpill--open"><b className="num">{n((t) => !DONE.includes(t.stage))}</b> Open</span>
+			<span className="jpill jpill--prog"><b className="num">{n((t) => t.stage === 'In Progress')}</b> In Progress</span>
+			<span className="jpill jpill--done"><b className="num">{n((t) => COMPLETE.includes(t.stage))}</b> Completed</span>
+			{late > 0 && <span className="jpill jpill--late"><b className="num">{late}</b> Overdue</span>}
+		</div>
+	);
+}
+
+const HeadStat = ({ tone, icon, label, value }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; label: string; value: number }) => (
+	<div className="jh-stat"><span className={'jh-stat__icon jsec--' + tone} aria-hidden="true">{icon}</span><div><strong className="num">{value}</strong><span>{label}</span></div></div>
 );
 
-/** The job page: header, key facts, locations and signs, then Management, Fabrication and Installation tasks in coloured sections. */
+/** The job page: header card with the task counts, locations and signs, then Design, Fabrication and Installation tasks in tinted section cards. */
 export function JobDetail() {
 	const { id } = useParams();
 	const q = useJob(id);
@@ -79,7 +101,6 @@ export function JobDetail() {
 	const canClose = canEdit && job.stage === 'Completed';
 	const inReview = tasks.filter((t) => t.stage === 'Manager Review');
 	const byType = (t: TaskType) => tasks.filter((x) => x.task_type === t);
-	const open = (list: Task[]) => list.filter((t) => !DONE.includes(t.stage));
 	const late = (t: Task) => !DONE.includes(t.stage) && !!t.required_finish && t.required_finish.slice(0, 10) < today();
 	const design = byType('design');
 	const fab = byType('fabrication');
@@ -87,12 +108,13 @@ export function JobDetail() {
 	const workdrive = (job as { workdrive_url?: string }).workdrive_url;
 	const serverPath = (job as { server_path?: string }).server_path;
 
+	/** Moves a task to one of the stages it can go to; the same moves the row buttons used to make. */
+	const moveTo = (t: Task, to: string) => move.mutate({ taskId: t.ROWID, to }, { onSuccess: () => notify(`Moved to ${to}`), onError: (e) => notify(e instanceof Error ? e.message : 'Could not move the task', 'error') });
+	/** The ⋮ button at the end of a row opens the same menu as a right-click. */
 	const actions = (t: Task) => (
-		<div className="actions">
-			{(t.nextStages ?? []).map((s) => (
-				<button key={s} className="btn btn-ghost btn-sm" disabled={move.isPending} onClick={() => move.mutate({ taskId: t.ROWID, to: s }, { onSuccess: () => notify(`Moved to ${s}`), onError: (e) => notify(e instanceof Error ? e.message : 'Could not move the task', 'error') })}>{s}</button>
-			))}
-		</div>
+		<button type="button" className="icon-btn jrow-menu" aria-label={`Actions for ${t.name}`} aria-haspopup="menu" disabled={move.isPending} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ x: r.right - 200, y: r.bottom + 4, task: t }); }}>
+			<MoreVertical size={16} aria-hidden="true" />
+		</button>
 	);
 	const addForm = (type: TaskType) => adding?.type === type && <AddTaskForm jobId={id ?? ''} type={adding.type} kind={adding.kind} onClose={() => setAdding(null)} />;
 	/** Subtasks only for open fabrication and installation tasks, on a job that is not closed. */
@@ -101,8 +123,9 @@ export function JobDetail() {
 	const menuItems = (t: Task): MenuItem[] => [
 		{ label: 'Open task', onSelect: () => navigate('/tasks/' + t.ROWID) },
 		...(canSubtask(t) ? [{ label: 'Create subtask', onSelect: () => setSubOf(t) }] : []),
+		...(t.nextStages ?? []).map((st) => ({ label: `Move to ${st}`, onSelect: () => moveTo(t, st) })),
 	];
-	const addBtn = (label: string, type: TaskType, kind = '') => canAdd && <button className="btn btn-sm jd-add" onClick={() => setAdding({ type, kind })}><Plus size={14} aria-hidden="true" /> {label}</button>;
+	const addBtn = (label: string, type: TaskType, kind = '') => canAdd && <button className="btn btn-sm" onClick={() => setAdding({ type, kind })}><Plus size={14} aria-hidden="true" /> {label}</button>;
 
 	/** Subtasks sit under their parent, as in the old list. */
 	const grouped = (list: Task[]) => {
@@ -118,23 +141,28 @@ export function JobDetail() {
 		<>
 			<Link className="back-link" to="/jobs"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
 
-			<header className="jd-head">
-				<div className="jd-head__side">{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}</div>
-				<h1 className="jd-head__title"><Briefcase size={20} aria-hidden="true" /> Job Details</h1>
-				<div className="jd-head__side jd-head__side--right">
-					{job.crm_deal_id ? <span className="jd-deal" title="CRM deal">Deal: {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
+			<header className="jh">
+				<span className="jh__badge" aria-hidden="true"><Briefcase size={22} /></span>
+				<div className="jh__main">
+					<p className="eyebrow">Job Details</p>
+					<h1 className="jh__title">{job.name}</h1>
+					<p className="jh__meta">
+						<StageCell stage={job.stage} pill />
+						<span><span className="jh__label">Location of files on VE Server</span> {serverPath || '-'}</span>
+						{job.crm_deal_id ? <span title="CRM deal"><span className="jh__label">Deal</span> {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
+					</p>
+				</div>
+				<div className="jh__stats">
+					<HeadStat tone="design" icon={<Network size={18} />} label={TASK_NAMES.design.title} value={design.length} />
+					<HeadStat tone="fab" icon={<Hammer size={18} />} label={TASK_NAMES.fabrication.title} value={fab.length} />
+					<HeadStat tone="install" icon={<Truck size={18} />} label={TASK_NAMES.install.title} value={install.length} />
+					<div className="jh-ring"><Ring value={progress.job} label="Job progress" /><span>% Job Complete</span></div>
+				</div>
+				<div className="jh__actions">
+					{canEdit && <button className="btn btn-ghost" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
+					{workdrive ? <a className="btn" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
 				</div>
 			</header>
-
-			<div className="jd-facts">
-				<div className="jd-fact jd-fact--name"><strong>{job.name}</strong><span>Job Name</span></div>
-				<div className="jd-fact"><strong>{job.stage}</strong><span>Job Stage</span></div>
-				<div className="jd-fact"><strong>{serverPath || '-'}</strong><span>Location of files on VE Server</span></div>
-				<div className="jd-fact jd-fact--action">
-					{workdrive ? <a className="btn btn-sm" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
-				</div>
-				<div className="jd-fact jd-fact--ring"><span>% Job Complete</span><Ring value={progress.job} label="Job progress" /></div>
-			</div>
 
 			{canEdit && inReview.length > 0 && (
 				<div className="attention" role="status">
@@ -182,49 +210,38 @@ export function JobDetail() {
 				<SignsPanel jobId={id ?? ''} canWrite={canAdd} />
 			</div>
 
-			<Band tone="design" icon={<Network size={18} />} title={TASK_NAMES.design.title}>
-				<div className="jd-stats">
-					{addBtn(TASK_NAMES.design.addLabel, 'design')}
-					<Stat label="Total Design Tasks" value={design.length} />
-					<Stat label="Overdue Design Tasks" value={design.filter(late).length} tone={design.some(late) ? 'danger' : undefined} />
-				</div>
+			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}>
 				{addForm('design')}
 				<TaskTable title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
-					row={(t) => [t.kind ?? '', <Link key="n" to={'/tasks/' + t.ROWID}>{t.name}</Link>, <StageCell key="s" stage={t.stage} />, fmtDate(t.required_finish), hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
-					numeric={seesMoney ? [4, 5, 6] : [4, 5]} />
-			</Band>
+					row={(t) => [t.kind ?? '', <Link key="n" to={'/tasks/' + t.ROWID}>{t.name}</Link>, <StageCell key="s" stage={t.stage} pill />, fmtDate(t.required_finish), hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+					numeric={seesMoney ? [4, 5, 6] : [4, 5]} onRowContext={openMenu} />
+			</Section>
 
-			<Band tone="fab" icon={<Hammer size={18} />} title={TASK_NAMES.fabrication.title}>
-				<div className="jd-stats">
-					{addBtn(TASK_NAMES.fabrication.addLabel, 'fabrication')}
-					<Stat label="Total Fab Tasks" value={fab.length} />
-					<Stat label="Open Fab Tasks" value={open(fab).length} tone={open(fab).length ? 'danger' : undefined} />
-					<Stat label="% of Fab Completed" value={num(progress.fab)} />
-					<Stat label="Required Fab Finish Date" value={fmtDate((job as { required_fab_finish?: string }).required_fab_finish)} />
-					<Stat label="Agreed Fab Finish Date" value={fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)} />
-				</div>
+			<Section tone="fab" icon={<Hammer size={20} />} title={TASK_NAMES.fabrication.title} count={fab.length} pills={<Pills list={fab} late={fab.filter(late).length} />} actions={addBtn(TASK_NAMES.fabrication.addLabel, 'fabrication')}
+				meta={(
+					<dl className="jsec__meta">
+						<div><dt>% of Fab Completed</dt><dd className="num">{num(progress.fab)}</dd></div>
+						<div><dt>Required Fab Finish Date</dt><dd>{fmtDate((job as { required_fab_finish?: string }).required_fab_finish)}</dd></div>
+						<div><dt>Agreed Fab Finish Date</dt><dd>{fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)}</dd></div>
+					</dl>
+				)}>
 				{addForm('fabrication')}
 				<TaskTable title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} onRowContext={openMenu} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} pill />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
 					numeric={seesMoney ? [2, 3, 7] : [2, 6]}
 					groupTotals={(list) => ['', '', hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '', '', '', hrs(sumQuoted(list)), '']} footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
-			</Band>
+			</Section>
 
-			<Band tone="install" icon={<Truck size={18} />} title={TASK_NAMES.install.title}>
-				<div className="jd-stats">
-					{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}
-					{addBtn('Add Minor Task', 'install', 'Minor Task')}
-					<Stat label="Total Install Tasks" value={install.length} />
-					<Stat label="Open Install Tasks" value={open(install).length} tone={open(install).length ? 'danger' : undefined} />
-					<div className="jd-legend" aria-label="Task kinds">{INSTALL_LEGEND.map((k) => <span key={k} className={'jd-kind ' + kindClass(k === 'Install' ? 'VE Install' : k === 'Subtask' ? 'VE Subtask' : k === 'External' ? 'External Install' : k)}>{k}</span>)}</div>
-				</div>
+			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} />}
+				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}
+				meta={<div className="jd-legend" aria-label="Task kinds">{INSTALL_LEGEND.map((k) => <span key={k} className={'jd-kind ' + kindClass(k === 'Install' ? 'VE Install' : k === 'Subtask' ? 'VE Subtask' : k === 'External' ? 'External Install' : k)}>{k}</span>)}</div>}>
 				{addForm('install')}
 				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
 					rowClass={(t) => kindClass(t.kind)}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
 					groupTotals={(list) => ['', '', '', '', '', '', hrs(sumQuoted(list)), hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '']} footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
-			</Band>
+			</Section>
 
 			{menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.task)} onClose={() => setMenu(null)} />}
 			{subOf && <AddSubtaskDialog taskId={subOf.ROWID} onClose={() => setSubOf(null)} />}
@@ -240,7 +257,6 @@ function TaskTable({ title, cols, rows, row, rowClass, footer, groupTotals, nume
 	if (rows.length === 0) return <p className="table-empty jd-empty">{empty}</p>;
 	return (
 		<div className="jd-table">
-			<h3 className="jd-table__title">{title}</h3>
 			<div className={"table-wrap" + (rows.length > 3 ? " jd-scroll" : "")}>
 				<table className="table jd-tasks">
 					<caption className="sr-only">{title}</caption>

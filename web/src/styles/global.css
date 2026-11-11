@@ -178,7 +178,7 @@ input[type='file']::file-selector-button:hover { background: var(--bg); }
 .job-head h1 { font-size: var(--fs-h1); text-transform: uppercase; }
 .job-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; color: var(--ink-2); }
 .ring { flex: none; width: 76px; height: 76px; }
-.ring-text { font-family: var(--font); font-weight: var(--fw-bold); font-size: 17px; fill: #ffffff; }
+.ring-text { font-family: var(--font); font-weight: var(--fw-bold); font-size: 17px; fill: var(--ink); }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px 24px; }
 .fact dt { font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .fact dd { margin-top: 2px; font-size: var(--fs-base); font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
@@ -763,37 +763,50 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 /* Job page: header, facts, coloured task bands (from the Creator job screen) */
 .stage-cell { display: block; padding: 4px 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); white-space: nowrap; }
 .table td:has(> .stage-cell), .grid-table td:has(> .stage-cell) { padding: 0; }
-.jd-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 8px 12px; background: var(--slate); color: #fff; border-radius: 2px; }
-.jd-head__title { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-xl); letter-spacing: 0.08em; text-transform: uppercase; color: #fff; }
-.jd-head__side--right { text-align: right; }
-.jd-deal { padding: 3px 10px; font-size: var(--fs-sm); font-weight: var(--fw-bold); background: rgba(255, 255, 255, 0.14); border-radius: 2px; }
-.jd-facts { display: grid; grid-template-columns: 2fr 1.2fr 1.6fr auto auto; gap: 8px; align-items: stretch; }
-.jd-fact { display: grid; gap: 2px; align-content: center; justify-items: center; padding: 8px 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 2px; min-width: 0; }
-.jd-fact strong { font-size: var(--fs-base); color: var(--danger); overflow-wrap: anywhere; }
-.jd-fact span { font-size: var(--fs-xs); color: var(--muted); }
-.jd-fact--name strong { font-size: var(--fs-md); }
-.jd-fact--action { padding: 8px 16px; }
-.jd-fact--ring { background: var(--slate); border-color: var(--slate); }
-.jd-fact--ring > span { color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.jd-fact--ring .ring { width: 56px; height: 56px; }
-.jd-band { display: grid; gap: 8px; padding: 10px; border-radius: 2px; border: 1px solid var(--line-3); }
-.jd-band--design { background: #e3e8fb; }
-.jd-band--fab { background: #fde3df; }
-.jd-band--install { background: #dff2dc; }
-.jd-band__title { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 6px 0; font-size: var(--fs-xl); letter-spacing: 0.04em; text-transform: uppercase; }
-.jd-band--design .jd-band__title { color: #1d3f9a; }
-.jd-band--fab .jd-band__title { color: #a1121a; }
-.jd-band--install .jd-band__title { color: #11692a; }
-.jd-band__icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; }
-.jd-band--design .jd-band__icon { background: #1d3f9a; }
-.jd-band--fab .jd-band__icon { background: #a1121a; }
-.jd-band--install .jd-band__icon { background: #11692a; }
-.jd-stats { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
-.jd-add { align-self: center; }
-.jd-stat { display: grid; gap: 2px; align-content: center; justify-items: center; min-width: 120px; padding: 6px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 2px; text-align: center; }
-.jd-stat span { font-size: var(--fs-xs); color: var(--ink-2); }
-.jd-stat strong { font-size: var(--fs-md); color: var(--danger); }
-.jd-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; flex: 1 1 280px; gap: 6px 14px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 2px; }
+/* ---------- Job page: header card, then a tinted section card per task type ---------- */
+.jsec--design { --tone-bg: var(--chip-blue-bg); --tone-ink: var(--chip-blue-ink); }
+.jsec--fab { --tone-bg: var(--chip-purple-bg); --tone-ink: var(--chip-purple-ink); }
+.jsec--install { --tone-bg: var(--chip-green-bg); --tone-ink: var(--chip-green-ink); }
+.jh { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 3px; }
+.jh__badge { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 3px; background: var(--brand); color: var(--on-brand); }
+.jh__main { flex: 1 1 200px; min-width: 0; }
+.jh__title { margin: 0; font-size: var(--fs-h1); overflow-wrap: anywhere; }
+.jh__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 6px; font-size: var(--fs-sm); color: var(--ink-2); overflow-wrap: anywhere; }
+.jh__label { margin-right: 4px; color: var(--muted); }
+.jh__stats { order: 3; flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+.jh-stat { display: flex; align-items: center; gap: 10px; }
+.jh-stat__icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--tone-bg); color: var(--tone-ink); }
+.jh-stat strong { display: block; font-size: var(--fs-xl); line-height: 1.1; }
+.jh-stat span:not(.jh-stat__icon) { font-size: var(--fs-xs); color: var(--muted); }
+.jh-ring { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--muted); }
+.jh-ring .ring { width: 56px; height: 56px; }
+.jh__actions { order: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.jsec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--tone-bg); border-bottom: 1px solid var(--line); }
+.jsec__badge { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--tone-ink); color: var(--tone-bg); }
+.jsec__titles { flex: 1 1 160px; min-width: 0; }
+.jsec__titles h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--tone-ink); }
+.jsec__titles p { margin: 2px 0 0; font-size: var(--fs-xs); color: var(--ink-2); }
+.jsec__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.jpills { display: flex; flex-wrap: wrap; gap: 6px; }
+.jpill { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--ink-2); white-space: nowrap; }
+.jpill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.jpill--open::before { background: var(--warn); }
+.jpill--prog::before { background: var(--info); }
+.jpill--done::before { background: var(--brand); }
+.jpill--late { border-color: var(--danger); color: var(--danger); }
+.jpill--late::before { background: var(--danger); }
+.jsec__meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line-2); background: var(--surface-2); }
+.jsec__meta > div { display: flex; align-items: baseline; gap: 8px; }
+.jsec__meta dt { font-size: var(--fs-xs); color: var(--muted); }
+.jsec__meta dd { margin: 0; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.jsec .jd-table, .jsec .jd-empty { border: 0; border-radius: 0; }
+.jsec .jd-empty { padding: 16px; }
+.jd-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 16px; border-bottom: 1px solid var(--line-2); background: var(--surface-2); }
+.jrow-menu { width: 32px; height: 32px; color: var(--muted); }
+.jrow-menu:hover { color: var(--ink); }
+.stage-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
+@media (max-width: 640px) { .jh__actions { width: 100%; margin-left: 0; } .jsec__actions { width: 100%; } .jsec__actions .btn { flex: 1; } }
 .jd-kind { padding: 1px 8px; font-size: var(--fs-sm); font-weight: var(--fw-bold); }
 .jd-table { background: var(--surface); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
 .jd-empty { background: var(--surface); border: 1px solid var(--line); margin: 0; }
@@ -806,8 +819,6 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .kind-print-only { background: #f6c9f2; }
 .kind-external, .kind-external-install { background: #e9f27a; }
 .jd-legend .kind-install, .jd-legend .kind-ve-install { background: #eaf5e7; }
-@media (max-width: 1000px) { .jd-facts { grid-template-columns: 1fr 1fr; } .jd-head__title { font-size: var(--fs-md); } }
-@media (max-width: 640px) { .jd-facts { grid-template-columns: 1fr; } .jd-head { grid-template-columns: 1fr auto; } .jd-head__title { grid-column: 1 / -1; order: -1; } }
 
 /* The active search shown as a removable tag, like the Creator list */
 .search-tags { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
@@ -815,7 +826,6 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .search-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; font-size: var(--fs-sm); background: var(--surface); border: 1px solid var(--line-3); border-radius: 2px; }
 .search-tag button { border: 0; background: transparent; padding: 0 4px; font-size: var(--fs-base); line-height: 1; color: var(--muted); }
 .search-tag button:hover { color: var(--ink); }
-.jd-table__title { margin: 0; padding: 8px 12px; font-size: var(--fs-base); font-weight: var(--fw-medium); letter-spacing: 0; text-transform: none; color: var(--ink-2); background: var(--surface-2); border-bottom: 1px solid var(--line); }
 
 /* Less space around the page on small screens too */
 @media (max-width: 760px) { .page { padding: 8px 8px 10px; gap: 8px; } }
@@ -835,8 +845,7 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .page > :first-child:not(.jm), .page > .jm > :first-child { margin-top: 10px; }
 .page > :is(.page-header, .back-link), .jm > :is(.page-header, .back-link) { padding-left: 12px; padding-right: 12px; }
 .page > :is(p, h1), .jm > :is(p, h1) { padding-left: 12px; padding-right: 12px; }
-:is(.page, .jm) > :is(.card, .jd-band, .jd-head, .jd-facts, .form-section, .job-form, .form-actions, .attention, .issue-board) { border-left-width: 0; border-right-width: 0; border-radius: 0; }
-:is(.page, .jm) > .jd-head, :is(.page, .jm) > .jd-facts { margin-left: 0; margin-right: 0; }
+:is(.page, .jm) > :is(.card, .form-section, .job-form, .form-actions, .attention, .issue-board) { border-left-width: 0; border-right-width: 0; border-radius: 0; }
 .page .grid-2 { gap: 8px; }
 .page .grid-2 > .card { border-left-width: 0; border-right-width: 0; border-radius: 0; }
 @media (max-width: 760px) { .page { padding: 0; gap: 8px; } }
@@ -1029,7 +1038,7 @@ body.dialog-open { overflow: hidden; }
 .board::-webkit-scrollbar-thumb, .lt-drawer__body::-webkit-scrollbar-thumb, .dialog__body::-webkit-scrollbar-thumb { background: var(--line-3); border-radius: 5px; }
 
 /* Job detail task tables: more than three tasks show three and scroll inside the table, with the header kept in view */
-.jd-scroll { max-height: 250px; overflow-y: auto; }
+.jd-scroll { max-height: 420px; overflow-y: auto; }
 .jd-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
 .jd-scroll::-webkit-scrollbar-thumb { background: var(--line-3); border-radius: 5px; }
 .jd-tasks thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
