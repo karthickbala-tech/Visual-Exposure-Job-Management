@@ -144,14 +144,17 @@ export function JobDetail() {
 			<Link className="back-link" to="/jobs"><ArrowLeft size={16} aria-hidden="true" /> All jobs</Link>
 
 			<header className="jh">
+				<div className="jh__bar">
+					<span className="jh__bar-title"><Briefcase size={18} aria-hidden="true" /> Job Details</span>
+					{job.crm_deal_id ? <span className="jh__deal" title="CRM deal">Deal: {job.crm_deal_id}</span> : <span>No Deal</span>}
+				</div>
+				<div className="jh__body">
 				<span className="jh__badge" aria-hidden="true"><Briefcase size={22} /></span>
 				<div className="jh__main">
-					<p className="eyebrow">Job Details</p>
 					<h1 className="jh__title">{job.name}</h1>
 					<p className="jh__meta">
 						<StageCell stage={job.stage} pill />
 						<span><span className="jh__label">Location of files on VE Server</span> {serverPath || '-'}</span>
-						{job.crm_deal_id ? <span title="CRM deal"><span className="jh__label">Deal</span> {job.crm_deal_id}</span> : <span className="muted">No Deal</span>}
 					</p>
 				</div>
 				<div className="jh__stats">
@@ -163,6 +166,7 @@ export function JobDetail() {
 				<div className="jh__actions">
 					{canEdit && <button className="btn btn-ghost" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
 					{workdrive ? <a className="btn" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
+				</div>
 				</div>
 			</header>
 

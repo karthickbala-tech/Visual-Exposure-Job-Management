@@ -8,6 +8,12 @@
 	--fs-h1: clamp(17px, 2vw, 20px); /* page and job headings: the one heading size */
 	--fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
 
+	/* Job page section tones (Modern Job Details Dashboard reference): tint, then the dark colour for titles and icon badges */
+	--jt-design-bg: #e7f0fe; --jt-design-ink: #1d3f9a;
+	--jt-fab-bg: #fce7e7; --jt-fab-ink: #a1121a;
+	--jt-install-bg: #e9f8ea; --jt-install-ink: #11692a;
+	--jt-bar: #323b41;
+
 	/* Brand */
 	--brand: #68b04d;
 	--brand-strong: #3f7a2b; /* green that is readable as text on light surfaces */
@@ -119,5 +125,9 @@
 	--chip-green-bg: #1c3010; --chip-green-ink: #9be06a;
 	--chip-red-bg: #3d1a18; --chip-red-ink: #ff9d97;
 	--err-bg: #3d1a18; --err-ink: #ff9d97;
+	--jt-design-bg: #17293f; --jt-design-ink: #8db8f5;
+	--jt-fab-bg: #3d1a18; --jt-fab-ink: #ff9d97;
+	--jt-install-bg: #1c3010; --jt-install-ink: #9be06a;
+	--jt-bar: #202226;
 	color-scheme: dark;
 }

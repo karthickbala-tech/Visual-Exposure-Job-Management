@@ -20,14 +20,14 @@ const FILL: Record<string, { bg: string; ink: string }> = {
 };
 
 /** The soft chip colour (from the theme's chip tokens) each stage uses when shown as a pill. */
-const TONE: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red'> = {
+const TONE: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red' | 'done'> = {
 	Preparation: 'amber',
 	'In Progress': 'blue',
 	'On Hold': 'amber',
-	Completed: 'green',
-	'Approved & Completed': 'green',
+	Completed: 'done',
+	'Approved & Completed': 'done',
 	'Completed - Closed': 'blue',
-	'Complete - Not Used': 'green',
+	'Complete - Not Used': 'done',
 	Cancelled: 'gray',
 	'Awaiting Scheduling': 'gray',
 	'To be Assigned': 'gray',
