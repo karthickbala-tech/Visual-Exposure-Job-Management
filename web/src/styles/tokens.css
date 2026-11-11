@@ -3,6 +3,10 @@
 :root {
 	--font: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
+	/* Typography scale: use these, not raw px or numbers (the site's Raleway 14px body is the base) */
+	--fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 16px; --fs-xl: 18px;
+	--fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
 	/* Brand */
 	--brand: #68b04d;
 	--brand-strong: #3f7a2b; /* green that is readable as text on light surfaces */
