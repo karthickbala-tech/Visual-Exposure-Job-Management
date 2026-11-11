@@ -13,6 +13,10 @@
 	--jt-fab-bg: #fce7e7; --jt-fab-ink: #a1121a;
 	--jt-install-bg: #e9f8ea; --jt-install-ink: #11692a;
 	--jt-bar: #323b41;
+	--jt-sub-bg: #e8ebf7; --jt-sub-ink: #4a56b8; /* subtasks: one colour in every section */
+	--jt-loc-bg: #e9edf0; --jt-loc-ink: #42484d;
+	--jt-sign-bg: #fdf3d6; --jt-sign-ink: #7a4a00;
+	--jt-crm-bg: #e2f3f3; --jt-crm-ink: #0f6b6e;
 
 	/* Brand */
 	--brand: #68b04d;
@@ -129,5 +133,9 @@
 	--jt-fab-bg: #3d1a18; --jt-fab-ink: #ff9d97;
 	--jt-install-bg: #1c3010; --jt-install-ink: #9be06a;
 	--jt-bar: #202226;
+	--jt-sub-bg: #1f2338; --jt-sub-ink: #9aa4ff;
+	--jt-loc-bg: #24272b; --jt-loc-ink: #c3c7ca;
+	--jt-sign-bg: #3a2c10; --jt-sign-ink: #f0c36d;
+	--jt-crm-bg: #11302f; --jt-crm-ink: #7fd6d2;
 	color-scheme: dark;
 }

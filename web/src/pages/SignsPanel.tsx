@@ -27,6 +27,7 @@ export function SignsPanel({ jobId, canWrite }: { jobId: string; canWrite: boole
 
 	return (
 		<Card
+			tone="sign"
 			title="Signs in this job"
 			flush
 			action={canWrite && !open ? <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}><Plus size={14} aria-hidden="true" /> Add Sign</button> : undefined}

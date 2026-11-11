@@ -18,6 +18,7 @@ export function QuotesPanel({ jobId, hasDeal, canSync }: { jobId: string; hasDea
 
 	return (
 		<Card
+			tone="crm"
 			title="Quotes from CRM"
 			flush
 			action={

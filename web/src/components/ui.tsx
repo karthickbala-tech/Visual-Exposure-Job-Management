@@ -16,9 +16,9 @@ export function PageHeader({ eyebrow, title, subtitle, children }: { eyebrow?: s
 }
 
 /** A bordered panel with an optional small uppercase title and a right-hand action. */
-export function Card({ title, action, children, flush = false, label }: { title?: string; action?: ReactNode; children: ReactNode; flush?: boolean; label?: string }) {
+export function Card({ title, action, children, flush = false, label, tone }: { title?: string; action?: ReactNode; children: ReactNode; flush?: boolean; label?: string; tone?: 'loc' | 'sign' | 'crm' }) {
 	return (
-		<section className="card" aria-label={title ?? label}>
+		<section className={'card' + (tone ? ' card--' + tone : '')} aria-label={title ?? label}>
 			{(title || action) && (
 				<div className="card-head">
 					<h2>{title}</h2>

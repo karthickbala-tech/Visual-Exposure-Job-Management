@@ -764,6 +764,11 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .stage-cell { display: block; padding: 4px 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); white-space: nowrap; }
 .table td:has(> .stage-cell), .grid-table td:has(> .stage-cell) { padding: 0; }
 /* ---------- Job page: header card, then a tinted section card per task type ---------- */
+.card--loc { --tone-bg: var(--jt-loc-bg); --tone-ink: var(--jt-loc-ink); }
+.card--sign { --tone-bg: var(--jt-sign-bg); --tone-ink: var(--jt-sign-ink); }
+.card--crm { --tone-bg: var(--jt-crm-bg); --tone-ink: var(--jt-crm-ink); }
+.card--loc > .card-head, .card--sign > .card-head, .card--crm > .card-head { background: var(--tone-bg); }
+.card--loc > .card-head h2, .card--sign > .card-head h2, .card--crm > .card-head h2 { color: var(--tone-ink); }
 .jsec--design { --tone-bg: var(--jt-design-bg); --tone-ink: var(--jt-design-ink); }
 .jsec--fab { --tone-bg: var(--jt-fab-bg); --tone-ink: var(--jt-fab-ink); }
 .jsec--install { --tone-bg: var(--jt-install-bg); --tone-ink: var(--jt-install-ink); }
@@ -1027,12 +1032,22 @@ body.dialog-open { overflow: hidden; }
 /* Job detail task tables, grouped like Creator: a parent, a grey heading, its subtasks, then a totals row */
 .jd-tasks .jd-group td { background: var(--surface-3); font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: 0.02em; padding: 6px 10px; border-bottom: 1px solid var(--line-3); }
 .jd-tasks .jd-subrow td.cell-primary { padding-left: 28px; }
+.jd-tasks .jd-group td { background: var(--jt-sub-bg); color: var(--jt-sub-ink); }
+.jd-tasks .jd-subrow td { background: color-mix(in srgb, var(--jt-sub-bg) 70%, var(--surface)); }
+.jd-tasks .jd-subrow td:first-child { box-shadow: inset 3px 0 0 var(--jt-sub-ink); }
+.jd-tasks .jd-sub::before { color: var(--jt-sub-ink); }
+.jsec .jd-total td { background: var(--tone-bg); color: var(--tone-ink); border-top: 2px solid var(--tone-ink); }
+.jd-tasks tr.jd-row--late td { background: color-mix(in srgb, var(--chip-red-bg) 80%, var(--surface)); }
+.jd-tasks tr.jd-row--late td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
+.jd-tasks tr.jd-row--review td { background: color-mix(in srgb, var(--chip-purple-bg) 55%, var(--surface)); }
+.jd-tasks tr.jd-row--review td:first-child { box-shadow: inset 3px 0 0 var(--chip-purple-ink); }
+.kind-tag--late { background: var(--chip-red-bg); color: var(--chip-red-ink); font-weight: var(--fw-semibold); }
 .jd-tasks td.cell-primary { min-width: 180px; }
 .jd-tasks th { white-space: normal; line-height: 1.25; letter-spacing: 0.04em; padding-left: 8px; padding-right: 8px; vertical-align: bottom; }
 .jd-tasks td { padding-left: 8px; padding-right: 8px; }
 .jd-tasks tbody td.num { font-weight: var(--fw-regular); }
 .jd-tasks .jd-total td.num, .jd-tasks .jd-group-total td.num { font-weight: var(--fw-semibold); }
-.jd-tasks .jd-group-total td { font-weight: var(--fw-semibold); color: var(--ink-2); background: var(--surface); border-bottom: 1px solid var(--line-2); padding-top: 4px; padding-bottom: 4px; }
+.jd-tasks .jd-group-total td { font-weight: var(--fw-semibold); color: var(--ink-2); background: color-mix(in srgb, var(--jt-sub-bg) 70%, var(--surface)); border-bottom: 1px solid var(--line-2); padding-top: 4px; padding-bottom: 4px; }
 
 /* Issues board: one row of columns like the task board. The card fills the body; the board scrolls sideways and each column scrolls inside */
 :is(.jm, .page) > .card:has(.issue-board) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }

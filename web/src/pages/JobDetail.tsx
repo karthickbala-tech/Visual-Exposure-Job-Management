@@ -104,6 +104,11 @@ export function JobDetail() {
 	const inReview = tasks.filter((t) => t.stage === 'Manager Review');
 	const byType = (t: TaskType) => tasks.filter((x) => x.task_type === t);
 	const late = (t: Task) => !DONE.includes(t.stage) && !!t.required_finish && t.required_finish.slice(0, 10) < today();
+	/** What needs attention on a row: an overdue task, or one waiting for the manager's approval. */
+	const rowFlag = (t: Task) => (late(t) ? 'jd-row--late' : t.stage === 'Manager Review' ? 'jd-row--review' : '');
+	const lateTag = (t: Task) => (late(t) ? <span className="kind-tag kind-tag--late">Overdue</span> : null);
+	/** Booked hours turn red once they pass the quoted hours. */
+	const booked = (t: Task) => <span className={num(t.quoted_hours) > 0 && num(t.booked_hours) > num(t.quoted_hours) ? 'over' : ''}>{hrs(t.booked_hours)}</span>;
 	const design = byType('design');
 	const fab = byType('fabrication');
 	const install = byType('install');
@@ -190,7 +195,7 @@ export function JobDetail() {
 			{move.isError && <Notice kind="error">{move.error.message}</Notice>}
 
 			<div className="grid-2 jd-pair">
-				<Card title="Job Locations" flush>
+				<Card title="Job Locations" tone="loc" flush>
 					{locations.length === 0 ? <p className="table-empty">No Data Available</p> : (
 						<div className="table-wrap">
 							<table className="table"><caption className="sr-only">Job Locations</caption>
@@ -218,8 +223,8 @@ export function JobDetail() {
 
 			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}>
 				{addForm('design')}
-				<TaskTable title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
-					row={(t) => [t.kind ?? '', <Link key="n" to={'/tasks/' + t.ROWID}>{t.name}</Link>, <StageCell key="s" stage={t.stage} pill />, fmtDate(t.required_finish), hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+				<TaskTable rowClass={rowFlag} title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
+					row={(t) => [t.kind ?? '', <span key="n"><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{lateTag(t)}</span>, <StageCell key="s" stage={t.stage} pill />, fmtDate(t.required_finish), hrs(t.quoted_hours), booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [4, 5, 6] : [4, 5]} onRowContext={openMenu} />
 			</Section>
 
@@ -232,8 +237,8 @@ export function JobDetail() {
 					</dl>
 				)}>
 				{addForm('fabrication')}
-				<TaskTable title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} onRowContext={openMenu} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, <StageCell key="s" stage={t.stage} pill />, hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
+				<TaskTable rowClass={rowFlag} title={TASK_NAMES.fabrication.table} empty="No fabrication tasks." rows={grouped(fab)} onRowContext={openMenu} cols={['Task Name', 'Stage', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), 'Team Leader', 'Team Member', 'Scheduled Date', 'Quoted Hours', '']}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{lateTag(t)}</span>, <StageCell key="s" stage={t.stage} pill />, booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), t.team_leader ?? '', t.team_members ?? '', fmtDate(t.scheduled_date), hrs(t.quoted_hours), actions(t)]}
 					numeric={seesMoney ? [2, 3, 7] : [2, 6]}
 					groupTotals={(list) => ['', '', hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '', '', '', hrs(sumQuoted(list)), '']} footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
 			</Section>
@@ -241,8 +246,8 @@ export function JobDetail() {
 			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} />}
 				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}>
 				{addForm('install')}
-				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{kindTag(t.kind)}</span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+				<TaskTable rowClass={rowFlag} title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{kindTag(t.kind)}{lateTag(t)}</span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
 					groupTotals={(list) => ['', '', '', '', '', '', hrs(sumQuoted(list)), hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '']} footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
 			</Section>
@@ -255,7 +260,7 @@ export function JobDetail() {
 }
 
 /** A task table: headings, rows (each a list of cells), an optional totals row, and "Showing N of N" under it. */
-function TaskTable({ title, cols, rows, row, footer, groupTotals, numeric = [], empty, onRowContext }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; footer?: ReactNode[]; numeric?: number[]; empty: string; onRowContext?: (t: Task, e: ReactMouseEvent) => void; groupTotals?: (list: Task[]) => ReactNode[] }) {
+function TaskTable({ title, cols, rows, row, rowClass, footer, groupTotals, numeric = [], empty, onRowContext }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string; onRowContext?: (t: Task, e: ReactMouseEvent) => void; groupTotals?: (list: Task[]) => ReactNode[] }) {
 	/** A subtask is a row whose parent is also in this table. Parents are drawn with their subtasks under a heading. */
 	const isChild = (t: Task) => !!t.parent_id && rows.some((r) => r.ROWID === String(t.parent_id));
 	if (rows.length === 0) return <p className="table-empty jd-empty">{empty}</p>;
@@ -275,11 +280,11 @@ function TaskTable({ title, cols, rows, row, footer, groupTotals, numeric = [], 
 							);
 							return (
 								<Fragment key={t.ROWID}>
-									{line(t)}
+									{line(t, rowClass?.(t))}
 									{kids.length > 0 && (
 										<>
 											<tr className="jd-group"><td colSpan={cols.length}>{t.name}</td></tr>
-											{kids.map((k) => line(k, 'jd-subrow'))}
+											{kids.map((k) => line(k, 'jd-subrow ' + (rowClass?.(k) ?? '')))}
 											{groupTotals && <tr className="jd-group-total">{groupTotals(kids).map((c, i) => <td key={i} className={numeric.includes(i) ? 'num' : ''}>{c}</td>)}</tr>}
 										</>
 									)}
