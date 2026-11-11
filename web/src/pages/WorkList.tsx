@@ -10,7 +10,7 @@ import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/Lis
 import { ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, PageHeader, SummaryTabs, fmtDate, TableFooter } from '../components/ui';
+import { Card, FilterBar, FilterChips, PageHeader, fmtDate, TableFooter } from '../components/ui';
 
 /** The search, type and grouping values the panel edits before they are applied. */
 interface Draft { text: string; type: string; byJob: boolean }
@@ -164,16 +164,18 @@ export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: bo
 				</PageHeader>
 			)}
 
-			{q.isSuccess && (
-				<SummaryTabs label="Summary" value={view} onChange={setView} tabs={[
-					{ key: 'open', label: 'Open', count: counts.open },
-					{ key: 'unscheduled', label: kind === 'design' ? 'To assign' : 'Unscheduled', count: counts.unscheduled },
-					{ key: 'review', label: 'Awaiting approval', count: counts.review },
-					{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
-				]} />
-			)}
 
 			<Card flush>
+				{q.isSuccess && (
+					<FilterBar>
+					<FilterChips label="Summary" value={view} onChange={setView} chips={[
+						{ key: 'open', label: 'Open', count: counts.open },
+						{ key: 'unscheduled', label: kind === 'design' ? 'To assign' : 'Unscheduled', count: counts.unscheduled },
+						{ key: 'review', label: 'Awaiting approval', count: counts.review },
+						{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
+					]} />
+					</FilterBar>
+				)}
 				<ListToolbar
 					label={`${copy.title} tasks`}
 					searchOpen={panelOpen}

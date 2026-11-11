@@ -571,13 +571,18 @@ body { overscroll-behavior-y: auto; }
 .type-tab.on { color: var(--ink); border-bottom-color: var(--brand); }
 .type-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 .type-tab:active { transform: scale(0.98); }
-/* Summary tabs (Issues, SWMS, Task board): the type-tab style with a count badge on each tab */
-.summary-tabs { margin: 0; background: var(--surface); }
-.summary-tabs__heading { align-self: center; margin-right: 6px; padding: 2px 16px 2px 14px; border-right: 1px solid var(--line-3); font-size: var(--fs-xs); font-weight: var(--fw-regular); letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
-.type-tab .tab-count { margin-left: 0; }
-.type-tab.on .tab-count { background: var(--brand); color: var(--on-brand); }
-.type-tab .tab-count--danger { background: var(--chip-red-bg); color: var(--chip-red-ink); }
-.type-tab.on .tab-count--danger { background: var(--danger); color: #fff; }
+/* List filter chips: the first row of a list card (Issues, SWMS, Task board). Pills, not tabs, so they read as filters. */
+.filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.filter-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.filter-chips__heading { margin-right: 4px; font-size: var(--fs-xs); letter-spacing: 0.04em; color: var(--muted); }
+.fchip { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 5px 0 12px; border: 1px solid var(--line-3); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
+.fchip:hover { background: var(--surface-hover); color: var(--ink); }
+.fchip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.fchip__count { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--chip-gray-bg); color: var(--chip-gray-ink); font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-align: center; }
+.fchip--danger .fchip__count { background: var(--chip-red-bg); color: var(--chip-red-ink); }
+.fchip.on { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); }
+.fchip.on .fchip__count { background: var(--brand); color: var(--on-brand); }
+.fchip.on.fchip--danger .fchip__count { background: var(--danger); color: #fff; }
 
 /* Filters menu: saved views and extra filters in one place */
 .filter-menu { position: relative; }

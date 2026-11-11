@@ -9,7 +9,7 @@ import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/Lis
 import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
-import { Card, PageHeader, SummaryTabs, fmtDate, TableFooter } from '../components/ui';
+import { Card, FilterBar, FilterChips, PageHeader, fmtDate, TableFooter } from '../components/ui';
 
 interface View {
 	key: string;
@@ -109,15 +109,17 @@ export function SwmsList() {
 					)}
 				/>
 			</PageHeader>
-			{q.isSuccess && (
-				<SummaryTabs label="Summary" value={view} onChange={setView} tabs={[
-					{ key: 'all', label: 'All statements', count: counts.all },
-					{ key: 'pm', label: 'Awaiting PM', count: counts.pm, danger: true },
-					{ key: 'tl', label: 'Awaiting team leader', count: counts.tl, danger: true },
-					{ key: 'signed', label: 'Fully signed', count: counts.signed },
-				]} />
-			)}
 			<Card flush>
+				{q.isSuccess && (
+					<FilterBar>
+					<FilterChips label="Summary" value={view} onChange={setView} chips={[
+						{ key: 'all', label: 'All statements', count: counts.all },
+						{ key: 'pm', label: 'Awaiting PM', count: counts.pm, danger: true },
+						{ key: 'tl', label: 'Awaiting team leader', count: counts.tl, danger: true },
+						{ key: 'signed', label: 'Fully signed', count: counts.signed },
+					]} />
+					</FilterBar>
+				)}
 				<ListToolbar
 					label="SWMS list"
 					searchOpen={panelOpen}

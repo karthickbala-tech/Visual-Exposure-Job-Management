@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, PageHeader, SummaryTabs, fmtDate } from '../components/ui';
+import { Card, FilterBar, FilterChips, PageHeader, fmtDate } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 
@@ -258,18 +258,19 @@ export function Issues() {
 				{<button className="btn" onClick={() => navigate('/issues/new', { state: { background: location } })}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
 			</PageHeader>
 
-			<SummaryTabs label="Summary" value={view} onChange={(k) => setView(k as typeof view)} tabs={[
-				{ key: 'open', label: 'Open', count: counts.open },
-				{ key: 'high', label: 'High priority', count: counts.high, danger: true },
-				{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
-				{ key: 'assigned', label: 'Assigned to me', count: counts.assigned },
-			]} />
-
 			<Card flush>
-
+				<FilterBar>
+				<FilterChips label="Summary" value={view} onChange={(k) => setView(k as typeof view)} chips={[
+					{ key: 'open', label: 'Open', count: counts.open },
+					{ key: 'high', label: 'High priority', count: counts.high, danger: true },
+					{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
+					{ key: 'assigned', label: 'Assigned to me', count: counts.assigned },
+				]} />
 				{isManager && board.isSuccess && (
-					<SummaryTabs label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} tabs={board.data.departments.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
+									<FilterChips label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} chips={board.data.departments.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
 				)}
+				</FilterBar>
+
 
 				<ListToolbar
 					label="Issues list"
