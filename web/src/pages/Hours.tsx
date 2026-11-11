@@ -27,8 +27,8 @@ const shift = (iso: string, days: number) => {
 };
 const dayLabel = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-/** Widths of the fixed columns. The per-day columns use DAY_WIDTH, since their keys change with the period. */
-const WIDTHS: Record<string, number> = { person: 200, fab: 110, install: 110, workshop: 120, design: 110, other: 110, unbilled: 120, total: 110, labour: 140 };
+/** Widths of the columns. Every per-day column shares the `day` width, since their keys change with the period. */
+const WIDTHS: Record<string, number> = { day: 120, person: 200, fab: 110, install: 110, workshop: 120, design: 110, other: 110, unbilled: 120, total: 110, labour: 140 };
 const DAY_WIDTH = 120;
 
 /** The table's columns for this period: the days (a week only), the types (a week shows only Unbilled), the total and the labour cost. */
@@ -36,7 +36,7 @@ function columnsFor(days: string[], perDay: boolean, money: boolean): GridColumn
 	const types = perDay ? COLS.filter((c) => c.key === 'unbilled') : COLS; // a week shows the days; the types are in the tiles below
 	return [
 		{ key: 'person', label: 'Person', width: WIDTHS.person ?? 200, cell: (r) => <strong>{r.name || 'Person ' + r.personId}</strong> },
-		...(perDay ? days.map((d): GridColumn<HoursRow> => ({ key: `day:${d}`, label: dayLabel(d), width: DAY_WIDTH, right: true, cell: (r) => hrs(r.days[d] ? sumWorked(r.days[d]) : 0) })) : []),
+		...(perDay ? days.map((d): GridColumn<HoursRow> => ({ key: `day:${d}`, label: dayLabel(d), width: WIDTHS.day, widthKey: 'day', right: true, cell: (r) => hrs(r.days[d] ? sumWorked(r.days[d]) : 0) })) : []),
 		...types.map((c): GridColumn<HoursRow> => ({ key: c.key, label: c.label, width: WIDTHS[c.key] ?? DAY_WIDTH, right: true, cell: (r) => hrs(r.totals[c.key]) })),
 		...(perDay ? [{ key: 'total', label: 'Total', width: WIDTHS.total ?? 110, right: true, cell: (r: HoursRow) => hrs(sumWorked(r.totals)) }] : []),
 		...(money ? [{ key: 'labour', label: 'Labour cost', width: WIDTHS.labour ?? 140, right: true, cell: (r: HoursRow) => (r.labourCost !== undefined ? `$${r.labourCost.toFixed(2)}` : '-') }] : []),

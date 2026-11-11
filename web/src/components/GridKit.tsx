@@ -138,6 +138,8 @@ export interface GridColumn<T> {
 	key: string;
 	label: string;
 	width: number;
+	/** Key the width is saved under, when columns share one width (for example every day column). Defaults to `key`. */
+	widthKey?: string;
 	right?: boolean;
 	cell: (row: T) => ReactNode;
 }
@@ -173,7 +175,8 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 }) {
 	if (rows.length === 0) return <p className="table-empty">{empty}</p>;
 	const checks = !!picked && !!onPick;
-	const width = (c: GridColumn<T>) => layout.widths[c.key] ?? c.width;
+	const wk = (c: GridColumn<T>) => c.widthKey ?? c.key;
+	const width = (c: GridColumn<T>) => layout.widths[wk(c)] ?? c.width;
 	const total = (checks ? CHECK_WIDTH : 0) + columns.reduce((n, c) => n + width(c), 0);
 	const allPicked = checks && rows.every((r) => picked.includes(rowKey(r)));
 	const firstLeft = checks ? CHECK_WIDTH : 0;
@@ -199,9 +202,9 @@ export function ResizableGrid<T>({ layout, columns, rows, rowKey, label, picked,
 									label={c.label}
 									width={width(c)}
 									defaultWidth={c.width}
-									onStart={(e) => layout.startResize(c.key, e)}
-									onKey={(d) => layout.setWidth(c.key, width(c) + d)}
-									onReset={() => layout.setWidth(c.key, c.width)}
+									onStart={(e) => layout.startResize(wk(c), e)}
+									onKey={(d) => layout.setWidth(wk(c), width(c) + d)}
+									onReset={() => layout.setWidth(wk(c), c.width)}
 								/>
 							</th>
 						))}
