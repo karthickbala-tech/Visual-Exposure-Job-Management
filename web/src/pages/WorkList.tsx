@@ -10,7 +10,7 @@ import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/Lis
 import { ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, Kpi, PageHeader, fmtDate, TableFooter } from '../components/ui';
+import { Card, PageHeader, SummaryTabs, fmtDate, TableFooter } from '../components/ui';
 
 /** The search, type and grouping values the panel edits before they are applied. */
 interface Draft { text: string; type: string; byJob: boolean }
@@ -165,21 +165,12 @@ export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: bo
 			)}
 
 			{q.isSuccess && (
-				<section className="kpis" aria-label="Summary">
-					<Kpi label="Open" value={counts.open} />
-					<button type="button" className="kpi kpi-btn" aria-pressed={view === 'unscheduled'} onClick={() => setView('unscheduled')}>
-						<span className="kpi-label">{kind === 'design' ? 'To assign' : 'Unscheduled'}</span>
-						<span className="kpi-value num">{counts.unscheduled}</span>
-					</button>
-					<button type="button" className="kpi kpi-btn" aria-pressed={view === 'review'} onClick={() => setView('review')}>
-						<span className="kpi-label">Awaiting approval</span>
-						<span className="kpi-value num">{counts.review}</span>
-					</button>
-					<button type="button" className={'kpi kpi-btn' + (counts.overdue ? ' kpi-danger' : '')} aria-pressed={view === 'overdue'} onClick={() => setView('overdue')}>
-						<span className="kpi-label">Overdue</span>
-						<span className="kpi-value num">{counts.overdue}</span>
-					</button>
-				</section>
+				<SummaryTabs label="Summary" value={view} onChange={setView} tabs={[
+					{ key: 'open', label: 'Open', count: counts.open },
+					{ key: 'unscheduled', label: kind === 'design' ? 'To assign' : 'Unscheduled', count: counts.unscheduled },
+					{ key: 'review', label: 'Awaiting approval', count: counts.review },
+					{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
+				]} />
 			)}
 
 			<Card flush>

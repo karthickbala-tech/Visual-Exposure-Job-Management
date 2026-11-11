@@ -49,6 +49,26 @@ export function Kpi({ label, value, note, tone, to }: { label: string; value: Re
 	);
 }
 
+export interface SummaryTab { key: string; label: string; count: number; danger?: boolean }
+
+/**
+ * A row of filter tabs with a count on each, in the same style as the Design / Fabrication / Installation tabs.
+ * The badge turns red when `danger` is set and the count is above zero. The active tab is underlined.
+ */
+export function SummaryTabs({ tabs, value, onChange, label, heading }: { tabs: SummaryTab[]; value: string; onChange: (key: string) => void; label: string; heading?: string }) {
+	return (
+		<nav className="type-tabs summary-tabs" aria-label={label}>
+			{heading && <span className="summary-tabs__heading">{heading}</span>}
+			{tabs.map((t) => (
+				<button key={t.key} type="button" className={'type-tab' + (value === t.key ? ' on' : '')} aria-pressed={value === t.key} onClick={() => onChange(t.key)}>
+					{t.label}
+					<span className={'tab-count num' + (t.danger && t.count ? ' tab-count--danger' : '')}>{t.count}</span>
+				</button>
+			))}
+		</nav>
+	);
+}
+
 /** Circular percentage, for the job header. */
 export function Ring({ value, label }: { value: number; label: string }) {
 	const v = Math.max(0, Math.min(100, Math.round(value)));

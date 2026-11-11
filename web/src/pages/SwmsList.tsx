@@ -9,7 +9,7 @@ import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/Lis
 import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
-import { Card, PageHeader, fmtDate, TableFooter } from '../components/ui';
+import { Card, PageHeader, SummaryTabs, fmtDate, TableFooter } from '../components/ui';
 
 interface View {
 	key: string;
@@ -110,14 +110,12 @@ export function SwmsList() {
 				/>
 			</PageHeader>
 			{q.isSuccess && (
-				<section className="kpis" aria-label="Summary">
-					{[['all', 'All statements'], ['pm', 'Awaiting PM'], ['tl', 'Awaiting team leader'], ['signed', 'Fully signed']].map(([k, label]) => (
-						<button key={k} type="button" className={'kpi kpi-btn' + (k !== 'all' && k !== 'signed' && counts[k] ? ' kpi-danger' : '')} aria-pressed={view === k} onClick={() => setView(k)}>
-							<span className="kpi-label">{label}</span>
-							<span className="kpi-value num">{counts[k]}</span>
-						</button>
-					))}
-				</section>
+				<SummaryTabs label="Summary" value={view} onChange={setView} tabs={[
+					{ key: 'all', label: 'All statements', count: counts.all },
+					{ key: 'pm', label: 'Awaiting PM', count: counts.pm, danger: true },
+					{ key: 'tl', label: 'Awaiting team leader', count: counts.tl, danger: true },
+					{ key: 'signed', label: 'Fully signed', count: counts.signed },
+				]} />
 			)}
 			<Card flush>
 				<ListToolbar

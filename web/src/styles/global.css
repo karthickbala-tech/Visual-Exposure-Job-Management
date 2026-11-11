@@ -442,14 +442,6 @@ body { overscroll-behavior-y: auto; }
 @media (min-width: 761px) { .next-btn { width: auto; justify-self: start; } }
 
 /* ---------- Issue board by department ---------- */
-.dept-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
-.dept-tile { display: grid; gap: 4px; padding: 10px 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line-3); border-radius: 2px; }
-.dept-tile:hover { background: var(--surface-hover); }
-.dept-tile.on { border-color: var(--brand); border-top-color: var(--brand); background: var(--brand-soft); }
-.dept-tile .kpi-value { font-size: 24px; }
-.dept-tile .dept-open { color: var(--danger); }
-.dept-tile:focus-visible { outline: 2px solid var(--brand-strong); outline-offset: 2px; }
-@media (max-width: 760px) { .dept-board { padding-left: 16px; padding-right: 16px; } }
 
 /* ---------- Grouped sidebar, settings page, no-access page, personal display choices ---------- */
 .side-group { display: grid; }
@@ -563,7 +555,7 @@ body { overscroll-behavior-y: auto; }
 .data-box h3 { margin: 0; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
 .data-box code { font-size: var(--fs-xs); word-break: break-all; }
 .data-box textarea { font-family: ui-monospace, Consolas, monospace; font-size: var(--fs-sm); }
-.slide-over:focus-visible, .issue-card:focus-visible, .dept-tile:focus-visible, .kpi-btn:focus-visible { outline: 2px solid var(--green, #68b04d); outline-offset: 2px; }
+.slide-over:focus-visible, .issue-card:focus-visible, .kpi-btn:focus-visible { outline: 2px solid var(--green, #68b04d); outline-offset: 2px; }
 @media (max-width: 760px) {
 	.list-toolbar { padding: 10px 16px; }
 	.list-toolbar .segmented { max-width: 100%; overflow-x: auto; }
@@ -573,12 +565,19 @@ body { overscroll-behavior-y: auto; }
 }
 
 /* Task board: the trade tabs lead the page */
-.type-tabs { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.type-tabs { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; }
 .type-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; background: transparent; font-size: var(--fs-sm); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .type-tab:hover { color: var(--ink); background: var(--surface-hover); }
 .type-tab.on { color: var(--ink); border-bottom-color: var(--brand); }
 .type-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 .type-tab:active { transform: scale(0.98); }
+/* Summary tabs (Issues, SWMS, Task board): the type-tab style with a count badge on each tab */
+.summary-tabs { margin: 0; background: var(--surface); }
+.summary-tabs__heading { align-self: center; margin-right: 6px; padding: 2px 16px 2px 14px; border-right: 1px solid var(--line-3); font-size: var(--fs-xs); font-weight: var(--fw-regular); letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+.type-tab .tab-count { margin-left: 0; }
+.type-tab.on .tab-count { background: var(--brand); color: var(--on-brand); }
+.type-tab .tab-count--danger { background: var(--chip-red-bg); color: var(--chip-red-ink); }
+.type-tab.on .tab-count--danger { background: var(--danger); color: #fff; }
 
 /* Filters menu: saved views and extra filters in one place */
 .filter-menu { position: relative; }
@@ -851,7 +850,6 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 
 /* The same small padding inside the other blocks (calendar, to-do list, boards, department tiles) */
 .page .cal-toolbar { padding: 8px 12px; }
-.page .dept-board { padding: 8px 12px; gap: 8px; }
 .page .todo-item { padding-left: 12px; padding-right: 12px; }
 .page .board-inline, .page .issue-board { padding: 8px 12px; }
 .page .cal-legend, .page .agenda-day { padding-left: 12px; padding-right: 12px; }

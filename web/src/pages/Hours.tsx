@@ -170,9 +170,10 @@ export function Hours() {
 			</PageHeader>
 
 			{missing.isSuccess && missing.data.total > 0 && (
-				<section className="kpis" aria-label="Hours not filled in">
-					<Kpi label="Hours not filled in" value={missing.data.total} tone="danger" note={`${missing.data.workshop} workshop, ${missing.data.other} other past fab tasks`} />
-				</section>
+				<div className="attention" role="status">
+					<strong className="num">{missing.data.total}</strong> Hours not filled in
+					<span className="muted">{missing.data.workshop} workshop, {missing.data.other} other past fab tasks</span>
+				</div>
 			)}
 
 			<Card flush>

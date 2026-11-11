@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, PageHeader, fmtDate } from '../components/ui';
+import { Card, PageHeader, SummaryTabs, fmtDate } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 
@@ -258,26 +258,17 @@ export function Issues() {
 				{<button className="btn" onClick={() => navigate('/issues/new', { state: { background: location } })}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
 			</PageHeader>
 
-			<section className="kpis" aria-label="Summary">
-				{([['open', 'Open', counts.open, ''], ['high', 'High priority', counts.high, counts.high ? 'kpi-danger' : ''], ['overdue', 'Overdue', counts.overdue, counts.overdue ? 'kpi-danger' : ''], ['assigned', 'Assigned to me', counts.assigned, '']] as const).map(([k, label, n, cls]) => (
-					<button key={k} type="button" className={'kpi kpi-btn ' + cls} aria-pressed={view === k} onClick={() => setView(k)}>
-						<span className="kpi-label">{label}</span><span className="kpi-value num">{n}</span>
-					</button>
-				))}
-			</section>
+			<SummaryTabs label="Summary" value={view} onChange={(k) => setView(k as typeof view)} tabs={[
+				{ key: 'open', label: 'Open', count: counts.open },
+				{ key: 'high', label: 'High priority', count: counts.high, danger: true },
+				{ key: 'overdue', label: 'Overdue', count: counts.overdue, danger: true },
+				{ key: 'assigned', label: 'Assigned to me', count: counts.assigned },
+			]} />
 
 			<Card flush>
 
 				{isManager && board.isSuccess && (
-					<div className="dept-board" role="group" aria-label="Open issues by department">
-						{board.data.departments.map((d) => (
-							<button key={d} type="button" className={'dept-tile' + (dept === d ? ' on' : '')} aria-pressed={dept === d} onClick={() => setDept(dept === d ? '' : d)}>
-								<span className="kpi-label">{d}</span>
-								<span className={'kpi-value num' + (deptCounts[d] ? ' dept-open' : '')}>{deptCounts[d] ?? 0}</span>
-								<small>open</small>
-							</button>
-						))}
-					</div>
+					<SummaryTabs label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} tabs={board.data.departments.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
 				)}
 
 				<ListToolbar
