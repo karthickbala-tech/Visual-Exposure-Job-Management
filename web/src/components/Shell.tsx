@@ -9,7 +9,7 @@ import { useMe } from '../api/queries';
 import { signOut } from '../auth/Login';
 import { useTheme } from './theme';
 import { usePrefs } from './prefs';
-import { flatNav, isGroup, visibleNav } from '../navConfig';
+import { flatNav, isGroup, moduleOf, visibleNav } from '../navConfig';
 import type { NavEntry, NavGroup, NavItem } from '../navConfig';
 import { NotificationBell } from './NotificationBell';
 
@@ -246,6 +246,7 @@ function UserMenu({ name, role, collapsed }: { name: string; role: string; colla
 
 /** App frame: charcoal sidebar (a drawer on phones), top bar with search and theme toggle, and the page. */
 export function Shell() {
+	const { pathname: routePath } = useLocation();
 	const me = useMe();
 	const { theme, toggleTheme } = useTheme();
 	const navigate = useNavigate();
@@ -334,7 +335,7 @@ export function Shell() {
 						</NavLink>
 					</div>
 				</div>
-				<main id="main" className="page">
+				<main id="main" className="page" data-module={moduleOf(routePath)}>
 					<Outlet />
 				</main>
 			</div>

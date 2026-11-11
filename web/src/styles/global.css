@@ -1094,3 +1094,15 @@ body.dialog-open { overflow: hidden; }
 	.main-col:has(.grid-status) > main.page, .main-col:has(.issue-board) > main.page { flex: 1 1 0; min-height: 0; overflow-y: auto; }
 }
 
+/* ---------- List pages: the colour follows the sidebar group (Work blue, Field and safety amber, Team teal, Assets slate) ---------- */
+main[data-module='work'] { --tone-bg: var(--jt-design-bg); --tone-ink: var(--jt-design-ink); }
+main[data-module='field'] { --tone-bg: var(--jt-sign-bg); --tone-ink: var(--jt-sign-ink); }
+main[data-module='people'] { --tone-bg: var(--jt-crm-bg); --tone-ink: var(--jt-crm-ink); }
+main[data-module='assets'] { --tone-bg: var(--jt-loc-bg); --tone-ink: var(--jt-loc-ink); }
+/* band: the card that holds the toolbar, tabs and grid; the grid itself stays a white box with a solid header row */
+:where(main[data-module]) > .card:has(.grid-wrap) { background: var(--tone-bg); border-color: color-mix(in srgb, var(--tone-ink) 30%, var(--line)); }
+:where(main[data-module]) .grid-wrap { background: var(--surface); }
+:where(main[data-module]) .grid-table thead th { background: var(--tone-ink); color: var(--surface); border-right-color: color-mix(in srgb, var(--surface) 28%, var(--tone-ink)); }
+:where(main[data-module]) .grid-table tbody tr:nth-child(even):not(.row-picked) td { background: color-mix(in srgb, var(--tone-bg) 45%, var(--surface)); }
+:where(main[data-module]) .grid-table tbody tr:hover:not(.row-picked) td { background: var(--surface-hover); }
+:root[data-theme='dark'] :where(main[data-module]) .grid-table thead th { background: color-mix(in srgb, var(--tone-ink) 38%, var(--surface)); color: var(--ink); border-right-color: color-mix(in srgb, var(--tone-ink) 22%, var(--surface)); }
