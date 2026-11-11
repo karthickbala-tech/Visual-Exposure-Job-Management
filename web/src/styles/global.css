@@ -677,7 +677,7 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 :is(.jm, .page) .list-toolbar { gap: 8px; padding: 8px 14px; }
 :is(.jm, .page) .bulk-bar { padding: 6px 14px; font-size: var(--fs-sm); }
 :is(.jm, .page) .toolbar__label, .jm .field-label { margin-bottom: 2px; font-size: var(--fs-xs); letter-spacing: 0.06em; }
-:is(.jm, .page) input:not([type='checkbox']):not([type='radio']):not([type='file']), .jm select { min-height: 30px; padding-top: 0; padding-bottom: 0; font-size: var(--fs-base); }
+:is(.jm, .page) input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.lt-form input), .jm select { min-height: 30px; padding-top: 0; padding-bottom: 0; font-size: var(--fs-base); }
 :is(.jm, .page) textarea { padding: 6px 10px; font-size: var(--fs-base); }
 :is(.jm, .page) .btn { min-height: 30px; padding: 0 12px; font-size: var(--fs-sm); gap: 6px; }
 :is(.jm, .page) .btn-sm { min-height: 26px; padding: 0 9px; font-size: var(--fs-xs); }
@@ -899,26 +899,26 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .lt-icon-btn:hover { background: var(--surface-hover); color: var(--ink); }
 .lt-icon-btn[aria-expanded='true'], .lt-icon-btn.is-on { border-color: var(--brand); color: var(--brand-strong); }
 .lt-icon-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
-.lt-drawer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; padding: 8px 12px 10px; background: var(--surface-2); border-bottom: 1px solid var(--line); animation: toast-in 0.15s cubic-bezier(0.23, 1, 0.32, 1); }
-.lt-drawer__body { display: contents; }
-.lt-drawer__body > .lt-form { flex: 1 1 180px; max-width: 300px; min-width: 0; }
-.lt-drawer__body > .lt-form:has(.lt-form__row) { flex: 2 1 440px; max-width: 560px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); column-gap: 8px; }
-.lt-form:has(.lt-form__row) > .toolbar__label { grid-column: 1 / -1; }
-.lt-drawer__body > .lt-section { flex: 1 1 100%; }
-.lt-drawer__foot { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-@media (max-width: 760px) { .lt-drawer__body > .lt-form, .lt-drawer__body > .lt-form:has(.lt-form__row) { flex-basis: 100%; max-width: none; grid-template-columns: minmax(0, 1fr); row-gap: 6px; } .lt-drawer__foot { margin-left: 0; width: 100%; justify-content: flex-end; } }
+/* The panel slides in from the right and leaves the list usable: header, scrolling body, sticky footer */
+.lt-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 70; display: flex; flex-direction: column; width: min(380px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); animation: toast-in 0.15s cubic-bezier(0.23, 1, 0.32, 1); }
+.lt-drawer__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+.lt-drawer__head h2 { margin: 0; font-size: var(--fs-base); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; }
+.lt-drawer__body { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 18px; padding: 16px; }
+.lt-drawer__foot { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); }
+.lt-drawer__foot .btn { width: 100%; justify-content: center; }
 .lt-form { display: grid; gap: 6px; }
+.lt-form .toolbar__label { margin: 0; }
 .lt-form__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-.lt-form select, .lt-form input { width: 100%; min-height: 36px; }
-.lt-form select { padding: 0 8px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--input-bg); color: var(--ink); }
-.lt-chip { border-color: var(--brand); }
-/* Views inside the search panel (Show: All, My open, ...) */
-.lt-views { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.lt-view { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--surface); color: var(--ink-2); font-size: var(--fs-sm); font-weight: var(--fw-semibold); cursor: pointer; }
+.lt-form select, .lt-form input { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--input-bg); color: var(--ink); }
+.lt-form select:focus-visible, .lt-form input:focus-visible { outline: 2px solid var(--brand); outline-offset: -1px; border-color: var(--brand); }
+/* Views (Show: All, My open, ...) are pills that wrap */
+.lt-views { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; }
+.lt-view { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 2px; background: var(--surface); color: var(--ink-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
 .lt-view:hover { background: var(--surface-hover); }
 .lt-view:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
-.lt-view .lt-count { margin-left: 2px; }
 .lt-view.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); font-weight: var(--fw-semibold); }
+.lt-chip { border-color: var(--brand); }
+/* Views inside the search panel (Show: All, My open, ...) */
 
 /* Jobs list: the card fills the body between the header and the bottom status bar; the table takes that height and only
    scrolls (vertically or sideways) when its rows or columns do not fit */
@@ -1041,5 +1041,3 @@ body.dialog-open { overflow: hidden; }
 	.main-col:has(.grid-status) > main.page, .main-col:has(.issue-board) > main.page { flex: 1 1 0; min-height: 0; overflow-y: auto; }
 }
 
-/* An open filter strip takes height from the table, so the grid gives it back */
-:is(.jm, .page) > .card:has(.lt-drawer) .grid-wrap { max-height: max(var(--grid-min), calc(100dvh - var(--grid-chrome) - var(--lt-open))); }

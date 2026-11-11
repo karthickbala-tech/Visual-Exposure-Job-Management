@@ -121,12 +121,14 @@ export function ListToolbar({ searchOpen, panelTitle = 'Search', panelBody, onPa
 
 			{searchOpen && (
 				<aside id="lt-panel" className="lt-drawer" role="dialog" aria-label={panelTitle}>
-					<h2 className="sr-only">{panelTitle}</h2>
+					<header className="lt-drawer__head">
+						<h2>{panelTitle}</h2>
+						<button type="button" className="lt-icon-btn" aria-label="Close search" onClick={onPanelClose}><X size={16} aria-hidden="true" /></button>
+					</header>
 					<div className="lt-drawer__body">{panelBody}</div>
 					<footer className="lt-drawer__foot">
 						{onPanelClear && <button type="button" className="btn btn-ghost" onClick={onPanelClear}>Clear</button>}
 						{onPanelApply && <button type="button" className="btn" onClick={onPanelApply}>Search</button>}
-						<button type="button" className="lt-icon-btn" aria-label="Close search" onClick={onPanelClose}><X size={16} aria-hidden="true" /></button>
 					</footer>
 				</aside>
 			)}
