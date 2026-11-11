@@ -79,7 +79,7 @@ h1, h2, h3, h4 { font-weight: var(--fw-bold); line-height: 1.12; }
 /* ---------- Page header, buttons ---------- */
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .eyebrow { margin-bottom: 3px; font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-strong); }
-.page-header h1, .page-title { font-size: clamp(22px, 2.6vw, 28px); font-weight: var(--fw-bold); line-height: 1.12; text-transform: uppercase; }
+.page-header h1, .page-title { font-size: var(--fs-h1); font-weight: var(--fw-bold); line-height: 1.12; text-transform: uppercase; }
 /* The site's section signature: a short green bar above the heading. */
 .page-header h1::before { content: ''; display: block; width: 48px; height: 6px; margin-bottom: 10px; background: var(--brand); }
 .subtitle { margin-top: 4px; color: var(--muted); font-size: var(--fs-base); max-width: 70ch; }
@@ -175,7 +175,7 @@ input[type='file']::file-selector-button:hover { background: var(--bg); }
 /* ---------- Job header, facts, panels ---------- */
 .job-head { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; padding: 18px 20px; }
 .job-head-main { flex: 1; min-width: 240px; }
-.job-head h1 { font-size: clamp(20px, 2.4vw, 26px); text-transform: uppercase; }
+.job-head h1 { font-size: var(--fs-h1); text-transform: uppercase; }
 .job-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; color: var(--ink-2); }
 .ring { flex: none; width: 76px; height: 76px; }
 .ring-text { font-family: var(--font); font-weight: var(--fw-bold); font-size: 17px; fill: #ffffff; }
@@ -644,7 +644,7 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
    One scale for every job page: 4 px grid, 12.5 px body, 11 px labels, 20 px titles, 30 px controls. Only sizes and spacing change. */
 :is(.jm, .page) { display: grid; gap: 6px; align-content: start; min-width: 0; font-size: var(--fs-base); }
 :is(.jm, .page) .page-header { gap: 8px 12px; align-items: center; }
-:is(.jm, .page) .page-header h1, .jm .page-title { font-size: clamp(17px, 2vw, 20px); letter-spacing: 0.01em; }
+:is(.jm, .page) .page-header h1, .jm .page-title { font-size: var(--fs-h1); letter-spacing: 0.01em; }
 :is(.jm, .page) .page-header h1::before { width: 32px; height: 4px; margin-bottom: 6px; }
 :is(.jm, .page) .eyebrow { margin-bottom: 1px; font-size: var(--fs-xs); letter-spacing: 0.1em; }
 :is(.jm, .page) .subtitle { margin-top: 2px; font-size: var(--fs-sm); }
@@ -662,7 +662,7 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 :is(.jm, .page) .card-body { padding: 10px 14px 12px; }
 :is(.jm, .page) .stack { gap: 12px; }
 :is(.jm, .page) .job-head { gap: 12px; padding: 12px 14px; }
-:is(.jm, .page) .job-head h1 { font-size: clamp(17px, 2vw, 20px); }
+:is(.jm, .page) .job-head h1 { font-size: var(--fs-h1); }
 :is(.jm, .page) .job-meta { gap: 4px 14px; margin-top: 6px; }
 
 :is(.jm, .page) .table th, .jm .rtable th { padding: 6px 12px; font-size: var(--fs-xs); }
