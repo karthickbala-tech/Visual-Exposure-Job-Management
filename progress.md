@@ -30,7 +30,7 @@ Branch `feat/backend-foundation`, pushed to origin at `df7b03c` (24 commits sinc
 - The dev mock (`web/dev/mock-api.mjs`) has no routes for profile, portal login, company rates or PATCH of companies and sites, so those screens only show their empty state there.
 
 ## 4. Remaining bugs and gaps
-- **Verify in Development before relying on**: the two encrypted columns (`person.profile_private`, `compliance_item.portal_login`) read and write correctly; shift times and SWMS numbers save to the new columns.
+- **Development columns checked via the MCP (11 Nov 2026)**: raw ZCQL write and read-back worked for `time_entry.start_time/end_time/break_minutes`, `swms.swms_number`, `compliance_item.portal_login` and `person.profile_private`; test rows were deleted and the person value set back to null. Still unverified: the app's own encrypt and decrypt path against the real Data Store (only the unit tests cover it), and long ciphertext sizes.
 - **Parent/Fab labour cost** rests on an assumption (sum of task labour cost by Cost Type); all six figures show zero until managers set a Cost Type on tasks.
 - Existing SWMS stay unnumbered (no backfill).
 - Variance assumptions: Creator's "Fabrication Task Variance" definition was not in the extract, so it is booked minus quoted hours; `booked_hours` on the task row is assumed to be kept current in the real Data Store (not verified). Timeline only lists tasks whose scheduled date falls in the window. Timeline and variance not checked at tablet width or in dark mode.
@@ -43,7 +43,7 @@ Branch `feat/backend-foundation`, pushed to origin at `df7b03c` (24 commits sinc
 ## 5. Tests executed and results
 - `npm test` (backend): 310 pass, 0 fail (after the last change).
 - Browser (mock API): timeline (desktop, phone) and variance page (desktop, phone) checked.
-- Catalyst MCP, read-only: the four new columns plus `swms_number` and `portal_login` accept SELECTs in Development; no write test yet.
+- Catalyst MCP (Development): SELECT, INSERT, UPDATE and DELETE of test rows confirmed on all new columns; test data removed.
 - `cd web && npx tsc -b && npm run build`: pass. `npx oxlint src`: no errors.
 - Browser (mock API :3100, Vite :5173): confirm dialog on a 15-hour shift; submit for review (cancel and submit); Edit company dialog opens prefilled. Not browser-tested: every other new screen.
 - Catalyst MCP: columns created and one read-only ZCQL SELECT (SWMS number lookup) validated.
@@ -57,5 +57,5 @@ Branch `feat/backend-foundation`, pushed to origin at `df7b03c` (24 commits sinc
 
 ## 7. Exact next step
 1. Before any deploy: add the same five columns to the Production Data Store (list in section 1), run `npm run sync`, `npm test`, then `npm run deploy:env` and `catalyst deploy --only client` only when the owner says.
-2. In Development, save and read one personal profile, one portal login, one shift with times and one new SWMS to confirm the new columns.
+2. In Development, save one profile and one portal login through the running app (needs the encryption key in `.env`) to confirm the encrypt and decrypt path; the columns themselves are confirmed.
 3. Then build the next item the owner picks: the checklist rules once the question split is supplied, or the device map once the device columns are decided.
