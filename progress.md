@@ -1,62 +1,58 @@
 # Visual Exposure - Session handover
 
-Branch `feat/backend-foundation`, pushed to origin. **Deployed to Catalyst Development on 11 Nov 2026** (api, jobs, events with the `.env` variables, and the web client, redeployed from commit `df371a0`, the web client was redeployed again from `f2845fd` on 11 Nov 2026 with the Devices List/Map toggle and the owner's page padding change, now committed). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). Detail of the Creator DS comparison is in `docs/DS_COMPARISON.md` (sections 1 to 18); do not repeat it here.
+Branch `feat/backend-foundation`, all work pushed to origin (last code commit `f2845fd`). **Deployed to Catalyst Development on 11 Nov 2026**: api, jobs, events (with the `.env` variables) and the web client. There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
-## 1. Completed work (since d22095d)
-- **Creator DS file compared** with the app: all 68 forms, 423 workflows, 186 reports. Reference extracts: `docs/DS_CHECKLISTS.md`, `docs/DS_WORKFLOWS.md`, `docs/DS_REPORTS.md`.
-- **UI pieces**: `components/Messages.tsx` (promise-based confirm and message dialogs, replaced all five `window.confirm`), `components/Notice.tsx`, warning and info toasts, `--warn` token. Submitting a task for manager review asks first.
-- **Jobs**: grid columns Design Hours Booked, Design Labour Cost, Job Completed Date, Description, six Parent/Fab labour cost columns (admin only). Task Cost Type select (Fab or Parent).
-- **Tasks**: DS fabrication spec fields added as optional keys (CCV, CNC, CLB).
-- **SWMS**: DS hazard wording, two added hazards and two added PPE items; numbers from SWMS-0001; project manager marks Completed then Closed.
-- **Issues**: Date Completed column, Locations picker, issue routing now accepts every issue department (was a bug for Workshop and VT).
-- **Directory**: companies store address, DS company types, manager-only rates; sites store DS fields (country, notes, access notes, hours, tenant and owner contacts); full state names; Edit button for companies and sites.
-- **People and compliance**: set-expiry button for three ticket types; personal details by role (`lib/domain/profile.js`); training portal logins (encrypted, managers only, logged reveal).
-- **Hours**: past shift by start, end and break (split into single, time and a half, double).
-- **Emails**: install finished on site (to PM and installation manager) and fab checklist submitted (to fab manager), from the `checklist.closed` event.
-- **Fabrication timeline** (`df7b03c`): third view on the Calendar page (28-day window, bars from scheduled date to required finish, red when late). Fabrication tasks only. `/calendar` items now carry `required_finish`; no new request.
-- **Fab variance report** (`df7b03c`): page `/variance` under Work and `GET /reports/fab-variance` (service `fabVariance`, domain `taskVariance`). Booked minus quoted hours per fabrication task and per job; anyone who can view tasks, scoped to their own tasks unless they see all. Two queries at most, capped at 300 tasks.
-- **Catalyst Development schema (via MCP)**: added `swms.swms_number`, `time_entry.start_time`, `time_entry.end_time`, `time_entry.break_minutes`, `compliance_item.portal_login` (encrypted). Nothing else changed or deleted.
+## 1. Completed work
+- **Earlier (see git log since `d22095d`)**: Creator DS comparison (68 forms, 423 workflows, 186 reports); confirm and message dialogs; Jobs grid columns and cost type; SWMS numbers, hazard wording and PM Completed/Closed; Issues fixes; directory fields and rates; personal details by role and encrypted portal logins; past-shift times on Hours; two checklist emails.
+- **This session**:
+  - **Calendar timeline**: third view, fabrication bars from scheduled date to required finish (red when late). `/calendar` items carry `required_finish`, no new request.
+  - **Fab variance report**: page `/variance` and `GET /reports/fab-variance`, booked minus quoted hours per task and job; two queries at most, capped at 300.
+  - **Hours**: day-column widths now persist (`GridColumn.widthKey`).
+  - **Checklists**: real Creator wording and the team leader / member split for install and fab, pre and post (templates v2), and install post-job v3 where a Yes to the management review raises an issue (owner answer; from the Creator workflow). All yes/no questions stay mandatory.
+  - **Devices**: List / Map toggle; the map is Leaflet 1.9.4 with OpenStreetMap tiles (owner approved the library), pins by initials, grey when stale.
+  - **Verified in Development**: the new columns, and on the deployed site the profile and portal login save, read back and are logged.
+  - **Deploy**: functions and client deployed twice, smoke-tested (app 200, unauthenticated API 401).
 
-## 2. Modified files (all committed)
-- Backend: `lib/domain/{fab,jobList,notifications,profile,reports,swms}.js`, `lib/services/dashboard.js`, `web/src/pages/{Calendar,Variance}.tsx`, `lib/services/{appSettings,compliance,dataTransfer,directory,hours,jobs,people,swms,tasks}.js`, `lib/{authz,repos/index,events/handlers}.js`, `functions/api/routes.js`.
-- Tests: new `tests/{portal,profile}.test.js`; extended `directory, hours, issues2, joblist, notifications2, swms, swms2` tests and `tests/helpers.js`.
-- Web: `api/{more,queries,types}.ts`, `App.tsx`, `components/{Messages,Notice,toast,CrewCards}.tsx`, `lib/taskKinds.ts`, `pages/{AdminData,Directory,Hours,Issues,JobDetail,Jobs,NewIssue,People,PersonDetail,SwmsList,SwmsPanel,TaskDetail,TaskManage,WorkList}.tsx`, `styles/{global,tokens}.css`.
-- Docs: `docs/DS_COMPARISON.md`, `DS_CHECKLISTS.md`, `DS_WORKFLOWS.md`, `DS_REPORTS.md`.
+## 2. Modified files (this session, all committed)
+- Backend: `lib/services/{dashboard,reports}.js`, `lib/domain/reports.js`, `lib/seed/checklistTemplates.js`, `functions/api/routes.js`.
+- Tests: `tests/reports.test.js` (extended), new `tests/checklistTemplates.test.js`.
+- Web: `pages/{Calendar,Variance,Devices,Hours}.tsx`, `components/{DeviceMap,GridKit}.tsx`, `App.tsx`, `navConfig.ts`, `api/{queries,types}.ts`, `styles/global.css`, `package.json` and lock (Leaflet), `dev/mock-api.mjs`.
+- Docs: new `docs/DS_CHECKLIST_RULES.md`; this file.
 - Not committed on purpose: `CLAUDE.md` (untracked), `ref-image/` (client screenshots, never push).
 - `functions/*/lib` are generated copies (git-ignored): run `npm run sync` after any change in `lib/`.
 
 ## 3. Current implementation status
-- Everything above is built, tested and pushed, but only against the fake test database and the dev mock. Nothing has run against the real Data Store except the schema checks and one SELECT.
-- The dev mock (`web/dev/mock-api.mjs`) has no routes for profile, portal login, company rates or PATCH of companies and sites, so those screens only show their empty state there.
+- Built, tested and deployed to Development. Almost all of it has run only against the fake test database and the dev mock; the real Data Store has had the schema checks, the encrypted-column check and template rows only.
+- **Database changes in Development (via the MCP)**: columns `swms.swms_number`, `time_entry.start_time/end_time/break_minutes`, `compliance_item.portal_login`, `person.profile_private` (both encrypted text, 10,000 chars, so the database encrypts them and no key is in `.env`); 10 new rows in `checklist_template` (v2 x8, v3 install post x2). The seed route would skip them. Test rows were deleted.
+- Older checklist rows (v1) remain; new checklists use the highest version, open ones keep their own.
+- The dev mock has no routes for profile, portal login, company rates or PATCH of companies and sites.
 
 ## 4. Remaining bugs and gaps
-- **Development columns checked via the MCP (11 Nov 2026)**: raw ZCQL write and read-back worked for `time_entry.start_time/end_time/break_minutes`, `swms.swms_number`, `compliance_item.portal_login` and `person.profile_private`; test rows were deleted and the person value set back to null. Still unverified: the app's own encrypt and decrypt path against the real Data Store (only the unit tests cover it). Both encrypted columns are `text` (a 500-character write worked); the worst-case profile is estimated at about 3,800 characters encrypted, under the 10,000 limit, but a value that large was not written.
-- **Parent/Fab labour cost** rests on an assumption (sum of task labour cost by Cost Type); all six figures show zero until managers set a Cost Type on tasks.
-- Existing SWMS stay unnumbered (no backfill).
-- Variance assumptions: Creator's "Fabrication Task Variance" definition was not in the extract, so it is booked minus quoted hours; `booked_hours` on the task row is assumed to be kept current in the real Data Store (not verified). Timeline only lists tasks whose scheduled date falls in the window. Timeline and variance not checked at tablet width or in dark mode.
-- Checklist question rules: the role split IS in the Creator file (`Creator file/Projects.ds`, the on-load show and hide scripts) and is written up in `docs/DS_CHECKLIST_RULES.md` for owner review (install pre and post, fab pre and post). Version-2 templates (real wording, leader/member split) are written in `lib/seed/checklistTemplates.js` and tested (313 tests), DEPLOYED to Development on 11 Nov 2026 and the eight v2 rows were inserted into `checklist_template` through the MCP (same content the admin seed route `POST /admin/seed-templates` would add; running the seed later skips them). New checklists use v2; open ones keep v1. Not yet tried with a real task in the app. Owner answers 11 Nov 2026: only the management review "Yes" raises an issue (from the Creator workflow: Low priority issue for the installation manager, once per task) - done as install post-job v3 (2 rows inserted in Development; fab post-job unchanged because no fab script was supplied); all yes/no questions stay mandatory; rating stays as built (managers rate crew on completed tasks, role not stored); device map: owner asked for a real map in the web app (DONE: the Devices page now has a street map, Leaflet 1.9.4 with OpenStreetMap tiles, approved by the owner; List and Map toggle on the page (list by default; the map gets the full page in Map view); pins by worker initials, grey when stale; checked on desktop and phone with the mock; no extra Catalyst requests; browsers load tiles from tile.openstreetmap.org). The seed list in the deployed api now includes v3. Left out on purpose: hours and times, Minor Task and Workshop variants, and raiseIssueOn (owner to confirm; see the open questions in the doc).
-- Not built: rating role (Team Member or Project Manager), site contact from the CRM site, CRM push of signs and sites, WorkDrive folder rename, the Job Overview pivot charts (no column definitions in the extract), equipment details in `item_data`, ticket type extras in `compliance_type.meta`, Site Code, SWMS work activity field, pay split display on the Hours table, device details (needs columns).
-- Job Owner, Owner Email, Manufacturing Owner stay hidden (owner decision); could be stored in `job.flags`.
-- Fixed: Hours day-column widths now persist (one shared `day` width via `GridColumn.widthKey`). Checked: "People list shows 10 of 13" is not a bug (10 active staff here, 2 subcontractors on their tab, 1 inactive hidden by default).
-- Older items still open: real job service may not return `parent_id` for grouped task tables; "My open" rule differs from Creator; Issues summary tiles take two rows; SWMS "My open" shows nothing for the test login; "Group by job" not browser-tested; lint warnings in `GridKit.tsx`, `AdminMore.tsx` and three `only-export-components` in `Messages.tsx`.
-- Dev mock: task detail page showed the old stage after a transition (the board was right); state resets on restart.
+- **Not yet tried with real data**: the new checklists on the live site (leader vs member, management review issue), the Devices map with real device locations (none may have reported), timeline and variance. Tablet width and dark mode were not checked for the new screens.
+- **Assumptions**: variance is booked minus quoted hours and relies on `booked_hours` being kept current; Parent/Fab labour cost (sum of task labour cost by Cost Type) shows zero until managers set a Cost Type; existing SWMS stay unnumbered.
+- **Checklist gaps**: the install post-job issue subject is the question text, not the Creator "Management Review - <task>"; fab post-job does not raise an issue (no script supplied); hours and times are not template questions; Minor Task (install) and Workshop (fab) variants are not selectable (a template is chosen by task type, phase and role only); the pre-job SWMS gate (leader cannot finish until the PM signed the SWMS) is not confirmed in the app.
+- **Not built**: rating role stored with a rating (managers already rate crew on completed tasks, 1 to 5), site contact from the CRM site, Site Code, SWMS work activity field, pay split on the Hours table, CRM push of signs and sites, WorkDrive folder rename, Job Overview pivot charts (no definitions in the extract), equipment details in `item_data`, ticket type extras in `compliance_type.meta`. Job Owner fields stay hidden (owner decision).
+- **Accepted lint warnings (10)**: eight "fast refresh" notes and two `set-state-in-effect` in `Admin.tsx` and `AdminMore.tsx`; fixing them means restructuring shared components or admin screens for no user benefit.
+- **Older items**: real job service may not return `parent_id` for grouped task tables; "My open" differs from Creator; Issues summary tiles take two rows; SWMS "My open" is empty for the test login; "Group by job" not browser-tested; the dev mock shows the old task stage after a transition and resets on restart.
+- **Security note**: ZCQL and the MCP read the encrypted columns decrypted, so anyone with Data Store access can read portal passwords.
 
 ## 5. Tests executed and results
-- `npm test` (backend): 310 pass, 0 fail (after the last change).
-- Browser (mock API): timeline (desktop, phone) and variance page (desktop, phone) checked.
-- Catalyst MCP (Development): SELECT, INSERT, UPDATE and DELETE of test rows confirmed on all new columns; test data removed.
-- `cd web && npx tsc -b && npm run build`: pass. `npx oxlint src`: no errors.
-- Browser (mock API :3100, Vite :5173): confirm dialog on a 15-hour shift; submit for review (cancel and submit); Edit company dialog opens prefilled. Not browser-tested: every other new screen.
-- Catalyst MCP: columns created and one read-only ZCQL SELECT (SWMS number lookup) validated.
+- `npm test` (backend): **314 pass, 0 fail** (before the last deploy).
+- `cd web && npx tsc -b && npm run build`: pass. `npx oxlint src`: no errors, the 10 accepted warnings only.
+- Browser (mock API, desktop 1366 and phone 390): timeline, variance, Devices list and map toggle (tiles load, four pins in the box, no sideways scroll), Hours column-width persistence.
+- Catalyst MCP (Development): write, read back and delete of test rows on all new columns; template rows read back; profile and portal login checked after saving through the deployed app, then cleared.
+- Deploy smoke checks: web app 200, unauthenticated `/reports/fab-variance` 401; no `env_variables` left in the function configs.
 
-## 6. Important decisions (owner answers, section 18 of DS_COMPARISON)
-- SWMS Completed and Closed are set by the project manager after the team leader signs; numbers start at SWMS-0001.
-- Company types are the five Creator types (older kinds still valid); site states show full names and save short codes.
-- Company rates visible and editable by managers only; personal details by role (admin all, managers four fields, the person their own); portal logins encrypted and managers only. Plain-text passwords are never stored.
-- Parent/Fab rule confirmed. Job Owner fields hidden. Rating scale 1 to 5.
-- Process: commit and push every change; never deploy without being asked; schema changes only additive, in Development, via the MCP.
+## 6. Important decisions
+- Finish on Development first, client review next, AU project later; add the new columns to AU first when it is created.
+- Free plan: use unit tests and the mock before the real Data Store; use the MCP only when the real database is the point and say the request cost first; no polling, no per-row requests, no test emails.
+- Checklist issue-raising: only the install management review "Yes" (a Low priority issue, once per task, for the installation manager). All yes/no questions mandatory.
+- Rating stays as built: managers rate crew on completed tasks, scale 1 to 5, role not stored.
+- Device map: a real street map in the web app (Leaflet and OpenStreetMap approved), toggle with the list.
+- Earlier: SWMS Completed and Closed by the project manager; company rates and portal logins managers only; personal details by role; Job Owner fields hidden; schema changes only additive, in Development, via the MCP.
+- Process: commit and push every change; deploy only when the owner says; never read `.env`; the owner's own edits are committed only when they ask.
 
 ## 7. Exact next step
-1. Deployed to Development (see the header). Redeploy only when the owner says: `npm run sync`, `npm test`, `npm run deploy:env`, then `catalyst deploy --only client`. Smoke check after deploy: unauthenticated `/reports/fab-variance` returns 401 and the web app returns 200. When the AU project is created, add the five new columns there first (list in section 1).
-2. DONE 11 Nov 2026 on the deployed site: a personal profile and a portal login were saved and read back in the app, the reveal and both changes were logged (`profile_changed`, `portal_changed`, `portal_viewed`), and test data was cleared. The two columns have the Data Store type **encrypted text** (10,000 characters), so the database encrypts them and no key is needed in `.env`. ZCQL and the MCP read them back decrypted, so anyone with Data Store access can read portal passwords; keep that access tight.
-3. Then build the next item the owner picks: the checklist rules once the question split is supplied, or the device map once the device columns are decided.
+1. **You**: on the live site, start an install or fab pre-job checklist as a team leader and as a member (the right questions each?), finish an install post-job one with the management review set to Yes (does an issue appear?), and open the Devices page. Send anything that looks wrong.
+2. **You**: pick the next small item and give its rule: Site Code, SWMS work activity, site contact from the CRM, or the Hours pay split; and say whether fab post-job should also raise an issue on the management review.
+3. Then the client review. Redeploy only when asked: `npm run sync`, `npm test`, `npm run deploy:env`, `cd web && npm run build`, `catalyst deploy --only client`.
