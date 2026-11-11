@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 /** How tall each row is: Compact fits many rows on screen, Tall gives room to read wrapped text. */
@@ -126,11 +127,40 @@ export function RowHeightPicker({ value, onChange }: { value: RowMode; onChange:
  * Status bar pinned to the bottom of the screen under a wide table: the record count. The table scrolls sideways inside its
  * own box. Render it as a direct child of the page so it sticks to the bottom of the screen while the page scrolls.
  */
-export function GridStatusBar({ text }: { text: ReactNode }) {
+export function GridStatusBar({ text, pager }: { text: ReactNode; pager?: ReactNode }) {
 	return (
 		<div className="grid-status">
 			<p className="grid-status__text">{text}</p>
+			{pager}
 		</div>
+	);
+}
+
+/** Page numbers to show: all of them when there are few, otherwise the first, the last and the ones around the current page. */
+function pageItems(page: number, count: number): (number | '…')[] {
+	if (count <= 7) return Array.from({ length: count }, (_, i) => i);
+	const nums = [...new Set([0, count - 1, page - 1, page, page + 1])].filter((n) => n >= 0 && n < count).sort((a, b) => a - b);
+	const out: (number | '…')[] = [];
+	nums.forEach((n, i) => {
+		if (i > 0 && n - nums[i - 1] > 1) out.push('…');
+		out.push(n);
+	});
+	return out;
+}
+
+/** Previous / numbered pages / Next. `page` starts at 0. Render nothing when everything fits on one page. */
+export function Pagination({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (page: number) => void }) {
+	if (pageCount <= 1) return null;
+	return (
+		<nav className="pager" aria-label="Pages">
+			<button type="button" className="pager__btn" aria-label="Previous page" disabled={page === 0} onClick={() => onPage(page - 1)}><ChevronLeft size={14} aria-hidden="true" /></button>
+			{pageItems(page, pageCount).map((p, i) =>
+				p === '…' ? <span key={'gap' + i} className="pager__gap" aria-hidden="true">…</span> : (
+					<button key={p} type="button" className="pager__btn" aria-label={'Page ' + (p + 1)} aria-current={p === page ? 'page' : undefined} onClick={() => onPage(p)}>{p + 1}</button>
+				),
+			)}
+			<button type="button" className="pager__btn" aria-label="Next page" disabled={page >= pageCount - 1} onClick={() => onPage(page + 1)}><ChevronRight size={14} aria-hidden="true" /></button>
+		</nav>
 	);
 }
 

@@ -9,7 +9,7 @@ import { StageCell } from '../components/StageCell';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
 import { Card, PageHeader } from '../components/ui';
-import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
+import { GridStatusBar, Pagination, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 
 const VIEWS: { key: keyof JobTabCounts; label: string }[] = [
 	{ key: 'all', label: 'All' },
@@ -22,6 +22,8 @@ const VIEWS: { key: keyof JobTabCounts; label: string }[] = [
 ];
 const STAGES = ['Preparation', 'In Progress', 'On Hold', 'Completed', 'Completed - Closed', 'Cancelled'];
 const COLS_KEY = 've.jobs.columns';
+/** Rows per page. The jobs are loaded once (up to 300) and paged in the browser, so changing page costs no request. */
+const PAGE_SIZE = 50;
 type SearchOp = 'contains' | 'equals' | 'starts';
 const OPS: { key: SearchOp; label: string }[] = [
 	{ key: 'contains', label: 'Contains' },
@@ -185,6 +187,14 @@ export function Jobs() {
 	const searchCol = useMemo(() => COLS.find((c) => c.key === field) ?? COLS[0], [field]);
 	const all = useMemo(() => jobs.data?.items ?? [], [jobs.data]);
 	const shown = useMemo(() => all.filter((j) => !needle || matchesOp(String(searchCol.value(j)).toLowerCase(), needle, op)), [all, needle, searchCol, op]);
+	// The page goes back to 1 whenever the search, view or filters change, without an effect: the page is only valid for the filters it was chosen under.
+	const filterKey = [view, stage, pm, fab, field, op, needle].join('|');
+	const [pageAt, setPageAt] = useState<{ key: string; page: number }>({ key: '', page: 0 });
+	const pageCount = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+	const page = Math.min(pageAt.key === filterKey ? pageAt.page : 0, pageCount - 1);
+	const pageRows = shown.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+	const rangeFrom = shown.length ? page * PAGE_SIZE + 1 : 0;
+	const rangeTo = Math.min(shown.length, (page + 1) * PAGE_SIZE);
 	const counts = jobs.data?.counts;
 	const activeFilters = [stage, pm, fab].filter(Boolean).length;
 	const managers = (people.data?.items ?? []).filter((p) => p.is_active !== false);
@@ -332,7 +342,8 @@ export function Jobs() {
 						layout={grid}
 						label="All jobs"
 						columns={cols.map((c) => ({ key: c.key, label: c.label, width: c.width, right: c.right, cell: (j: Job) => c.cell(j) }))}
-						rows={shown}
+						key={filterKey + '|' + page}
+						rows={pageRows}
 						rowKey={(j) => j.ROWID}
 						picked={canManage ? picked : undefined}
 						onPick={canManage ? setPicked : undefined}
@@ -341,7 +352,8 @@ export function Jobs() {
 			</Card>
 			{jobs.isSuccess && (
 				<GridStatusBar
-					text={<><span>Showing {shown.length} of {jobs.data.total ?? all.length}{jobs.data.truncated ? ' (the first 300 jobs)' : ''}</span><span>{chosen.length > 0 ? `${chosen.length} selected` : ''}</span></>}
+					pager={<Pagination page={page} pageCount={pageCount} onPage={(p) => setPageAt({ key: filterKey, page: p })} />}
+					text={<><span>{pageCount > 1 ? `Showing ${rangeFrom}–${rangeTo} of ${shown.length}` : `Showing ${shown.length} of ${jobs.data.total ?? all.length}`}{jobs.data.truncated ? ' (the first 300 jobs)' : ''}</span><span>{chosen.length > 0 ? `${chosen.length} selected` : ''}</span></>}
 				/>
 			)}
 		</>
