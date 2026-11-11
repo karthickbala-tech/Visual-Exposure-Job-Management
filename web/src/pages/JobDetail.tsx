@@ -5,7 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import { ContextMenu } from '../components/ContextMenu';
 import type { MenuItem } from '../components/ContextMenu';
-import { ArrowLeft, Briefcase, ExternalLink, Hammer, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Briefcase, ExternalLink, FolderOpen, Hammer, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
 import { ApiError } from '../api/client';
@@ -159,23 +159,20 @@ export function JobDetail() {
 					</div>
 				</div>
 				<div className="jh__body">
-				<span className="jh__badge" aria-hidden="true"><Briefcase size={22} /></span>
-				<div className="jh__main">
-					<h1 className="jh__title">{job.name}</h1>
-					<p className="jh__meta">
-						<StageCell stage={job.stage} pill />
-						<span><span className="jh__label">Location of files on VE Server</span> {serverPath || '-'}</span>
-					</p>
-				</div>
-				<div className="jh__stats">
-					<HeadStat tone="design" icon={<Network size={18} />} label={TASK_NAMES.design.title} value={design.length} />
-					<HeadStat tone="fab" icon={<Hammer size={18} />} label={TASK_NAMES.fabrication.title} value={fab.length} />
-					<HeadStat tone="install" icon={<Truck size={18} />} label={TASK_NAMES.install.title} value={install.length} />
+					<div className="jh__main">
+						<h1 className="jh__title">{job.name}</h1>
+						<ul className="jh__facts">
+							<li className="jh__fact"><span className="jh__fact-label">Stage</span> <StageCell stage={job.stage} pill /></li>
+							<li className="jh__fact"><FolderOpen size={15} aria-hidden="true" /> <span className="jh__fact-label">Location of files on VE Server</span> <span>{serverPath || '-'}</span></li>
+							<li className="jh__fact">{workdrive ? <a className="btn btn-sm" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}</li>
+						</ul>
+						<div className="jh__stats">
+							<HeadStat tone="design" icon={<Network size={20} />} label={TASK_NAMES.design.title} value={design.length} />
+							<HeadStat tone="fab" icon={<Hammer size={20} />} label={TASK_NAMES.fabrication.title} value={fab.length} />
+							<HeadStat tone="install" icon={<Truck size={20} />} label={TASK_NAMES.install.title} value={install.length} />
+						</div>
+					</div>
 					<div className="jh-ring"><Ring value={progress.job} label="Job progress" /><span>% Job Complete</span></div>
-				</div>
-				<div className="jh__actions">
-					{workdrive ? <a className="btn" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
-				</div>
 				</div>
 			</header>
 

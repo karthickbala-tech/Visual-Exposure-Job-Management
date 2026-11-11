@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Briefcase, Building2, CalendarDays, ClipboardList, Clock, FileCheck2, KanbanSquare, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, Boxes, Briefcase, Building2, CalendarDays, ClipboardList, Clock, Contact, FileCheck2, HardHat, KanbanSquare, Layers, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /** Roles that may open each screen. Only for showing menus and a friendly "No access" page: the server enforces access regardless. */
@@ -34,13 +34,13 @@ export interface NavGroup {
 export type NavEntry = NavItem | NavGroup;
 export const isGroup = (e: NavEntry): e is NavGroup => 'items' in e;
 
-/** The menu: a few groups so fourteen items do not sit in one long list (the same grouping the owner picked from the second design). */
+/** The menu: a few groups so fourteen items do not sit in one long list (the same grouping the owner picked from the second design). Every entry has its own icon, groups included, so none repeats. */
 export const NAV: NavEntry[] = [
 	{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
 	{
 		key: 'work',
 		label: 'Work',
-		icon: Briefcase,
+		icon: Layers,
 		items: [
 			{ to: '/jobs', label: 'Jobs', icon: Briefcase },
 			{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
@@ -51,7 +51,7 @@ export const NAV: NavEntry[] = [
 	{
 		key: 'field',
 		label: 'Field and safety',
-		icon: FileCheck2,
+		icon: HardHat,
 		items: [
 			{ to: '/swms', label: 'SWMS', icon: FileCheck2, roles: ROUTE_ROLES.swms },
 			{ to: '/reports/checklists', label: 'Checklists', icon: ClipboardList, roles: ROUTE_ROLES.checklists },
@@ -62,7 +62,7 @@ export const NAV: NavEntry[] = [
 	{
 		key: 'people',
 		label: 'People',
-		icon: Users,
+		icon: Contact,
 		items: [
 			{ to: '/people', label: 'People', icon: Users, roles: ROUTE_ROLES.people },
 			{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
@@ -72,7 +72,7 @@ export const NAV: NavEntry[] = [
 	{
 		key: 'assets',
 		label: 'Assets',
-		icon: Wrench,
+		icon: Boxes,
 		items: [
 			{ to: '/equipment', label: 'Equipment', icon: Wrench, roles: ROUTE_ROLES.equipment },
 			{ to: '/devices', label: 'Devices', icon: Smartphone, roles: ROUTE_ROLES.devices },
