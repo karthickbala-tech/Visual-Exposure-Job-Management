@@ -79,6 +79,7 @@ router.add('GET', '/jobs', withCtx(async (ctx, { url }) => ok(await jobs.listJob
 router.add('POST', '/jobs', withCtx(async (ctx, { req }) => created(await jobs.createJob(ctx, await readJson(req)))));
 router.add('GET', '/jobs/:id', withCtx(async (ctx, { params }) => ok(await jobs.getJob(ctx, params.id))));
 router.add('PATCH', '/jobs/:id', withCtx(async (ctx, { req, params }) => ok(await jobs.updateJob(ctx, params.id, await readJson(req)))));
+router.add('POST', '/jobs/delete', withCtx(async (ctx, { req }) => ok(await jobs.deleteJobs(ctx, await readJson(req)))));
 router.add('GET', '/admin/mail-templates', withCtx(async (ctx) => ok(await notifications.listTemplates(ctx))));
 router.add('PUT', '/admin/mail-templates/:name', withCtx(async (ctx, { req, params }) => ok(await notifications.updateTemplate(ctx, params.name, await readJson(req)))));
 router.add('GET', '/admin/mail-templates/:name/preview', withCtx(async (ctx, { params }) => ok(await notifications.previewTemplate(ctx, params.name))));

@@ -168,6 +168,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.activity.push(r);
 				return r;
 			},
+			insertMany: async (rows) => rows.forEach((row) => db.activity.push({ ROWID: nextId(), ...row })),
 			findById: async (id) => clone(db.activity.find((a) => String(a.ROWID) === String(id))),
 			update: async (row) => patch(db.activity, row),
 			listByEntity: async ({ entityType, entityId, activityType }) =>
