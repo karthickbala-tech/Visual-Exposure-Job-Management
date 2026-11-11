@@ -22,14 +22,14 @@ export function Admin() {
 	if (me.isSuccess && !me.data.roles.includes('admin')) {
 		return (
 			<>
-				<PageHeader eyebrow="Administration" title="Admin" />
+				<PageHeader eyebrow="System" title="Admin" />
 				<p className="table-empty">Only an administrator can open this page.</p>
 			</>
 		);
 	}
 	return (
 		<>
-			<PageHeader eyebrow="Administration" title="Admin" subtitle="Permissions, settings, emails and the queue of work for other systems." />
+			<PageHeader eyebrow="System" title="Admin" subtitle="Permissions, settings, emails and the queue of work for other systems." />
 			<div className="inline-form" role="tablist" aria-label="Admin">
 				{(['permissions', 'settings', 'roles', 'emails', 'log', 'outbox', 'integrations', 'data'] as const).map((t) => (
 					<button key={t} role="tab" aria-selected={tab === t} className={'btn' + (tab === t ? '' : ' btn-ghost')} onClick={() => setTab(t)}>

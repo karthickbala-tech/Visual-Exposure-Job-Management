@@ -57,7 +57,7 @@ export function Compliance() {
 
 	return (
 		<>
-			<PageHeader eyebrow="Workers and subcontractors" title="Compliance" subtitle="Tickets, inductions and documents, with expiry dates and reminders.">
+			<PageHeader eyebrow="Team" title="Compliance" subtitle="Tickets, inductions and documents, with expiry dates and reminders.">
 				<ListToolbarButtons
 					searchOpen={panelOpen}
 					onSearchOpen={openPanel}

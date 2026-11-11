@@ -39,7 +39,7 @@ export function Devices() {
 
 	return (
 		<>
-			<PageHeader eyebrow="Workers" title="Devices" subtitle="Last known location of each worker device.">
+			<PageHeader eyebrow="Assets" title="Devices" subtitle="Last known location of each worker device.">
 				<div className="lt-actions">
 					<div className="segmented" role="group" aria-label="Devices view">
 						{(['list', 'map'] as const).map((v) => (

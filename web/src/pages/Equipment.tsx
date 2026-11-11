@@ -153,7 +153,7 @@ export function Equipment() {
 
 	return (
 		<>
-			<PageHeader eyebrow="Workshop" title="Equipment" subtitle="Equipment checks, chemicals and where things are kept.">
+			<PageHeader eyebrow="Assets" title="Equipment" subtitle="Equipment checks, chemicals and where things are kept.">
 				<ListToolbarButtons
 					searchOpen={panelOpen}
 					onSearchOpen={openPanel}
