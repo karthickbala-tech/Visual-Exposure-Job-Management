@@ -29,3 +29,15 @@ test('WHS and OH&S details are only asked after a yes', () => {
 	assert.ok(!keysOf(t, { whs_issues: 'no' }).includes('whs_details'));
 	assert.ok(keysOf(t, { whs_issues: 'yes' }).includes('whs_details'));
 });
+
+test('version 3: a Yes to the management review raises an issue on install post-job checklists only', () => {
+	const { progressOf } = require('../lib/domain/checklistProgress');
+	for (const role of ['lead', 'member']) {
+		const t = find(`install.post.${role}@3`);
+		assert.equal(t.version_no, 3);
+		const answers = { whs_issues: 'no', area_cleaned: 'yes', management_review: 'yes' };
+		assert.deepEqual(progressOf(t.definition, answers).issues, ['management_review']);
+		assert.deepEqual(progressOf(t.definition, { ...answers, management_review: 'no' }).issues, []);
+	}
+	assert.equal(find('fabrication.post.lead@2').definition.sections[0].questions.find((q) => q.key === 'management_review').raiseIssueOn, undefined);
+});
