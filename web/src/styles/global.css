@@ -782,19 +782,19 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jh-ring .ring { width: 56px; height: 56px; }
 .jh__actions { order: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
 .jsec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
-.jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--tone-bg); border-bottom: 1px solid var(--line); }
-.jsec__badge { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--tone-ink); color: var(--tone-bg); }
+.jsec__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.jsec__badge { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--tone-bg); color: var(--tone-ink); }
 .jsec__titles { flex: 1 1 160px; min-width: 0; }
-.jsec__titles h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--tone-ink); }
+.jsec__titles h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--ink); }
 .jsec__titles p { margin: 2px 0 0; font-size: var(--fs-xs); color: var(--ink-2); }
 .jsec__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .jpills { display: flex; flex-wrap: wrap; gap: 6px; }
-.jpill { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--ink-2); white-space: nowrap; }
+.jpill { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--surface-3); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--ink-2); white-space: nowrap; }
 .jpill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
 .jpill--open::before { background: var(--warn); }
 .jpill--prog::before { background: var(--info); }
 .jpill--done::before { background: var(--brand); }
-.jpill--late { border-color: var(--danger); color: var(--danger); }
+.jpill--late { background: var(--chip-red-bg); color: var(--chip-red-ink); }
 .jpill--late::before { background: var(--danger); }
 .jsec__meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line-2); background: var(--surface-2); }
 .jsec__meta > div { display: flex; align-items: baseline; gap: 8px; }
@@ -802,23 +802,23 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 .jsec__meta dd { margin: 0; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
 .jsec .jd-table, .jsec .jd-empty { border: 0; border-radius: 0; }
 .jsec .jd-empty { padding: 16px; }
-.jd-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 16px; border-bottom: 1px solid var(--line-2); background: var(--surface-2); }
 .jrow-menu { width: 32px; height: 32px; color: var(--muted); }
 .jrow-menu:hover { color: var(--ink); }
-.stage-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
+.stage-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-ink); font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
+.stage-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.stage-pill--gray { --chip-bg: var(--chip-gray-bg); --chip-ink: var(--chip-gray-ink); }
+.stage-pill--blue { --chip-bg: var(--chip-blue-bg); --chip-ink: var(--chip-blue-ink); }
+.stage-pill--amber { --chip-bg: var(--chip-amber-bg); --chip-ink: var(--chip-amber-ink); }
+.stage-pill--purple { --chip-bg: var(--chip-purple-bg); --chip-ink: var(--chip-purple-ink); }
+.stage-pill--green { --chip-bg: var(--chip-green-bg); --chip-ink: var(--chip-green-ink); }
+.stage-pill--red { --chip-bg: var(--chip-red-bg); --chip-ink: var(--chip-red-ink); }
+.kind-tag { margin-left: 8px; padding: 1px 7px; border-radius: 2px; background: var(--tag-bg); color: var(--ink-2); font-size: var(--fs-xs); font-weight: var(--fw-medium); white-space: nowrap; }
 @media (max-width: 640px) { .jh__actions { width: 100%; margin-left: 0; } .jsec__actions { width: 100%; } .jsec__actions .btn { flex: 1; } }
-.jd-kind { padding: 1px 8px; font-size: var(--fs-sm); font-weight: var(--fw-bold); }
 .jd-table { background: var(--surface); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
 .jd-empty { background: var(--surface); border: 1px solid var(--line); margin: 0; }
 .jd-sub { padding-left: 14px; }
 .jd-sub::before { content: '↳ '; color: var(--muted); }
-.jd-total td { font-weight: var(--fw-bold); color: #1d4fb0; background: var(--surface-2); }
-.kind-install, .kind-ve-install { background: #eaf5e7; }
-.kind-subtask, .kind-ve-subtask { background: #f7f7d8; }
-.kind-minor-task { background: #fbe4e2; }
-.kind-print-only { background: #f6c9f2; }
-.kind-external, .kind-external-install { background: #e9f27a; }
-.jd-legend .kind-install, .jd-legend .kind-ve-install { background: #eaf5e7; }
+.jd-total td { font-weight: var(--fw-semibold); background: var(--surface-2); }
 
 /* The active search shown as a removable tag, like the Creator list */
 .search-tags { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
@@ -937,8 +937,11 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 @media (max-width: 760px) { :is(.jm, .page) > .card:has(.grid-wrap) .grid-wrap { flex: none; min-height: 0; } }
 
 /* Job detail: Job Locations and Signs sit side by side at equal height; their cells keep one line and scroll sideways instead of wrapping letters */
-.jd-pair { align-items: start; }
-.jd-pair .table td, .jd-pair .table th { white-space: nowrap; }
+/* Job Locations and Signs sit one above the other, each full width, so their many columns fit without clipping */
+.jd-pair { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.jd-pair .table td { white-space: nowrap; }
+.jd-pair .table th { white-space: normal; line-height: 1.25; letter-spacing: 0.04em; vertical-align: bottom; }
+.jd-pair .table th, .jd-pair .table td { padding-left: 8px; padding-right: 8px; }
 
 /* ---------- Slim rail: a group icon opens its pages in a flyout (components/Shell.tsx RailGroup) ---------- */
 .rail-flyout { position: fixed; z-index: 90; min-width: 200px; padding: 6px; background: var(--side); color: #fff; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 3px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); animation: toast-in 0.12s cubic-bezier(0.23, 1, 0.32, 1); }
@@ -1006,7 +1009,6 @@ body.dialog-open { overflow: hidden; }
 .main-col { position: relative; }
 /* Job detail: the two panels share the row equally and can shrink; their tables scroll inside them */
 .jd-pair > * { min-width: 0; }
-@media (min-width: 761px) { .jd-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 /* Slim rail group icons are buttons: give them the same look as the links (no browser button box) */
 .side-link.rail-head { appearance: none; width: 100%; margin: 0; font: inherit; color: #d3d4d5; background: transparent; border: 0; border-left: 3px solid transparent; cursor: pointer; }
 .side-link.rail-head:hover { background: var(--side-hover); color: #fff; }
@@ -1019,8 +1021,13 @@ body.dialog-open { overflow: hidden; }
 
 /* Job detail task tables, grouped like Creator: a parent, a grey heading, its subtasks, then a totals row */
 .jd-tasks .jd-group td { background: var(--surface-3); font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: 0.02em; padding: 6px 10px; border-bottom: 1px solid var(--line-3); }
-.jd-tasks .jd-subrow td.cell-primary { padding-left: 28px; background: var(--brand-soft); }
-.jd-tasks .jd-group-total td { font-weight: var(--fw-bold); color: var(--brand-strong); background: var(--surface); border-bottom: 1px solid var(--line-2); padding-top: 4px; padding-bottom: 4px; }
+.jd-tasks .jd-subrow td.cell-primary { padding-left: 28px; }
+.jd-tasks td.cell-primary { min-width: 180px; }
+.jd-tasks th { white-space: normal; line-height: 1.25; letter-spacing: 0.04em; padding-left: 8px; padding-right: 8px; vertical-align: bottom; }
+.jd-tasks td { padding-left: 8px; padding-right: 8px; }
+.jd-tasks tbody td.num { font-weight: var(--fw-regular); }
+.jd-tasks .jd-total td.num, .jd-tasks .jd-group-total td.num { font-weight: var(--fw-semibold); }
+.jd-tasks .jd-group-total td { font-weight: var(--fw-semibold); color: var(--ink-2); background: var(--surface); border-bottom: 1px solid var(--line-2); padding-top: 4px; padding-bottom: 4px; }
 
 /* Issues board: one row of columns like the task board. The card fills the body; the board scrolls sideways and each column scrolls inside */
 :is(.jm, .page) > .card:has(.issue-board) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }

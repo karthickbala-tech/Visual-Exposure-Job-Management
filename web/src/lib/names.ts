@@ -17,5 +17,3 @@ export const TASK_NAMES = {
 	install: { typeLabel: 'Install Type', dateLabel: 'Install Date', addLabel: 'Add Install Task', title: 'Installation Tasks', table: 'Page - Jobs - Install Tasks' },
 } as const;
 
-/** The kinds of install task shown in the legend under Installation Tasks. */
-export const INSTALL_LEGEND = ['Install', 'Subtask', 'Minor Task', 'Print Only', 'External'] as const;

@@ -20,12 +20,14 @@ import { useCloseJob } from '../api/more';
 import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
 import type { TaskType } from '../lib/taskKinds';
-import { INSTALL_LEGEND, TASK_NAMES } from '../lib/names';
+import { TASK_NAMES } from '../lib/names';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 const today = () => new Date().toISOString().slice(0, 10);
 const hrs = (v: unknown) => (num(v as string | number) ? num(v as string | number).toFixed(2) : '');
-const kindClass = (k?: string) => (k ? 'kind-' + k.toLowerCase().replace(/[^a-z]+/g, '-') : '');
+/** The kinds of install task that get a small tag beside the name; a plain install task needs none. */
+const KIND_TAG: Record<string, string> = { 'VE Subtask': 'Subtask', 'Minor Task': 'Minor Task', 'Print Only': 'Print Only', 'External Install': 'External' };
+const kindTag = (k?: string) => (k && KIND_TAG[k] ? <span className="kind-tag">{KIND_TAG[k]}</span> : null);
 
 const COMPLETE = ['Completed', 'Approved & Completed', 'Completed - Closed', 'Complete - Not Used'];
 
@@ -233,12 +235,10 @@ export function JobDetail() {
 			</Section>
 
 			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} />}
-				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}
-				meta={<div className="jd-legend" aria-label="Task kinds">{INSTALL_LEGEND.map((k) => <span key={k} className={'jd-kind ' + kindClass(k === 'Install' ? 'VE Install' : k === 'Subtask' ? 'VE Subtask' : k === 'External' ? 'External Install' : k)}>{k}</span>)}</div>}>
+				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}>
 				{addForm('install')}
 				<TaskTable title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
-					rowClass={(t) => kindClass(t.kind)}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link></span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{kindTag(t.kind)}</span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), hrs(t.booked_hours), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
 					groupTotals={(list) => ['', '', '', '', '', '', hrs(sumQuoted(list)), hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '']} footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
 			</Section>
@@ -251,7 +251,7 @@ export function JobDetail() {
 }
 
 /** A task table: headings, rows (each a list of cells), an optional totals row, and "Showing N of N" under it. */
-function TaskTable({ title, cols, rows, row, rowClass, footer, groupTotals, numeric = [], empty, onRowContext }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; rowClass?: (t: Task) => string; footer?: ReactNode[]; numeric?: number[]; empty: string; onRowContext?: (t: Task, e: ReactMouseEvent) => void; groupTotals?: (list: Task[]) => ReactNode[] }) {
+function TaskTable({ title, cols, rows, row, footer, groupTotals, numeric = [], empty, onRowContext }: { title: string; cols: string[]; rows: Task[]; row: (t: Task) => ReactNode[]; footer?: ReactNode[]; numeric?: number[]; empty: string; onRowContext?: (t: Task, e: ReactMouseEvent) => void; groupTotals?: (list: Task[]) => ReactNode[] }) {
 	/** A subtask is a row whose parent is also in this table. Parents are drawn with their subtasks under a heading. */
 	const isChild = (t: Task) => !!t.parent_id && rows.some((r) => r.ROWID === String(t.parent_id));
 	if (rows.length === 0) return <p className="table-empty jd-empty">{empty}</p>;
@@ -271,11 +271,11 @@ function TaskTable({ title, cols, rows, row, rowClass, footer, groupTotals, nume
 							);
 							return (
 								<Fragment key={t.ROWID}>
-									{line(t, rowClass?.(t))}
+									{line(t)}
 									{kids.length > 0 && (
 										<>
 											<tr className="jd-group"><td colSpan={cols.length}>{t.name}</td></tr>
-											{kids.map((k) => line(k, 'jd-subrow ' + (rowClass?.(k) ?? '')))}
+											{kids.map((k) => line(k, 'jd-subrow'))}
 											{groupTotals && <tr className="jd-group-total">{groupTotals(kids).map((c, i) => <td key={i} className={numeric.includes(i) ? 'num' : ''}>{c}</td>)}</tr>}
 										</>
 									)}
