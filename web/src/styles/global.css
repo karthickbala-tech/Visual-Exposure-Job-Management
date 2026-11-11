@@ -574,6 +574,12 @@ body { overscroll-behavior-y: auto; }
 .type-tab.on { color: var(--ink); border-bottom-color: var(--brand); }
 .type-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 .type-tab:active { transform: scale(0.98); }
+.type-tab { flex: none; }
+.type-tabs__end { flex: none; position: sticky; right: 0; display: flex; align-items: center; margin-left: auto; padding: 0 0 0 12px; background: var(--bg); }
+.type-tabs { scrollbar-width: none; }
+.type-tabs::-webkit-scrollbar { display: none; }
+.type-tabs__end .segmented { flex-wrap: nowrap; white-space: nowrap; }
+@media (max-width: 640px) { .type-tabs__end .seg-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
 /* List filter chips: the first row of a list card (Issues, SWMS, Task board). Pills, not tabs, so they read as filters. */
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
 .filter-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }

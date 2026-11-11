@@ -6,7 +6,7 @@ import { useMe } from '../api/queries';
 import { ROUTE_ROLES } from '../navConfig';
 import { useToast } from '../components/toast';
 import { Dialog } from '../components/Dialog';
-import { PageHeader } from '../components/ui';
+import { LayoutToggle, PageHeader } from '../components/ui';
 import { WorkList } from './WorkList';
 
 type Kind = 'design' | 'fabrication' | 'install';
@@ -52,6 +52,7 @@ export function TaskBoard() {
 	const me = useMe();
 	const [params, setParams] = useSearchParams();
 	const [adding, setAdding] = useState(false);
+	const [layout, setLayout] = useState<'list' | 'board'>('board');
 	const roles = me.data?.roles ?? [];
 	const allowed = TYPES.filter((t) => !t.roles || roles.some((r) => t.roles?.includes(r)));
 	const wanted = params.get('type');
@@ -65,9 +66,9 @@ export function TaskBoard() {
 				)}
 			</PageHeader>
 
-			{allowed.length > 1 && (
+			{active && (
 				<nav className="type-tabs" aria-label="Task type">
-					{allowed.map((t) => {
+					{allowed.length > 1 && allowed.map((t) => {
 						const Icon = t.icon;
 						return (
 							<button key={t.key} type="button" className={'type-tab' + (active?.key === t.key ? ' on' : '')} aria-current={active?.key === t.key ? 'page' : undefined} onClick={() => setParams(t.key === 'fabrication' ? {} : { type: t.key }, { replace: true })}>
@@ -75,12 +76,13 @@ export function TaskBoard() {
 							</button>
 						);
 					})}
+					<div className="type-tabs__end"><LayoutToggle value={layout} onChange={setLayout} /></div>
 				</nav>
 			)}
 
 			{adding && active?.key === 'fabrication' && <WorkshopTaskForm onClose={() => setAdding(false)} />}
 
-			{active ? <WorkList key={active.key} kind={active.key} embedded /> : me.isSuccess && <p className="table-empty">There are no task boards for your role.</p>}
+			{active ? <WorkList key={active.key} kind={active.key} embedded layout={layout} /> : me.isSuccess && <p className="table-empty">There are no task boards for your role.</p>}
 		</>
 	);
 }

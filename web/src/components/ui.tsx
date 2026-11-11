@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { Columns3, LayoutList } from 'lucide-react';
 
 /** Page title block: small green eyebrow, uppercase heading, optional subtitle and actions. */
 export function PageHeader({ eyebrow, title, subtitle, children }: { eyebrow?: string; title: string; subtitle?: string; children?: ReactNode }) {
@@ -70,6 +71,16 @@ export function FilterChips({ chips, value, onChange, label, heading }: { chips:
 					<span className="fchip__count num">{c.count}</span>
 				</button>
 			))}
+		</div>
+	);
+}
+
+/** The List / Board switch, the same control wherever a screen offers both. */
+export function LayoutToggle({ value, onChange }: { value: 'list' | 'board'; onChange: (value: 'list' | 'board') => void }) {
+	return (
+		<div className="segmented" role="group" aria-label="Layout">
+			<button type="button" className={value === 'list' ? 'on' : ''} aria-pressed={value === 'list'} onClick={() => onChange('list')}><LayoutList size={14} aria-hidden="true" /> <span className="seg-label">List</span></button>
+			<button type="button" className={value === 'board' ? 'on' : ''} aria-pressed={value === 'board'} onClick={() => onChange('board')}><Columns3 size={14} aria-hidden="true" /> <span className="seg-label">Board</span></button>
 		</div>
 	);
 }

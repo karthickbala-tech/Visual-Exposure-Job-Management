@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, LayoutList, Columns3 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMe } from '../api/queries';
 import { useWorkTasks } from '../api/more';
 import type { WorkTask } from '../api/more';
@@ -10,7 +10,7 @@ import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/Lis
 import { ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, FilterBar, FilterChips, PageHeader, fmtDate, TableFooter } from '../components/ui';
+import { Card, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate, TableFooter } from '../components/ui';
 
 /** The search, type and grouping values the panel edits before they are applied. */
 interface Draft { text: string; type: string; byJob: boolean }
@@ -69,7 +69,7 @@ function Hours({ t }: { t: WorkTask }) {
 }
 
 /** One work screen for design, fabrication or installation: saved views with counts, search, a list or a board, and the next action for each task. */
-export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: boolean }) {
+export function WorkList({ kind, embedded = false, layout: layoutFromParent }: { kind: Kind; embedded?: boolean; /** Set by the Task board, which keeps the List / Board switch in its tab row. */ layout?: 'list' | 'board' }) {
 	const copy = COPY[kind];
 	const me = useMe();
 	const myId = me.data?.person ? String(me.data.person.ROWID) : null;
@@ -77,18 +77,14 @@ export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: bo
 	const [view, setView] = useState('open');
 	const [text, setText] = useState('');
 	const [type, setType] = useState('');
-	const [layout, setLayout] = useState<'list' | 'board'>(embedded ? 'board' : 'list');
+	const [ownLayout, setLayout] = useState<'list' | 'board'>(embedded ? 'board' : 'list');
+	const layout = layoutFromParent ?? ownLayout;
 	const [byJob, setByJob] = useState(false);
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [draft, setDraft] = useState<Draft>({ text: '', type: '', byJob: false });
 
 	const views = useMemo(() => viewsFor(kind), [kind]);
-	const layoutToggle = (
-		<div className="segmented" role="group" aria-label="Layout">
-			<button className={layout === 'list' ? 'on' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><LayoutList size={14} aria-hidden="true" /> List</button>
-			<button className={layout === 'board' ? 'on' : ''} aria-pressed={layout === 'board'} onClick={() => setLayout('board')}><Columns3 size={14} aria-hidden="true" /> Board</button>
-		</div>
-	);
+	const layoutToggle = <LayoutToggle value={layout} onChange={setLayout} />;
 	const all = useMemo(() => q.data?.items ?? [], [q.data]);
 	const counts = useMemo(() => Object.fromEntries(views.map((v) => [v.key, all.filter((t) => v.test(t, myId)).length])), [views, all, myId]);
 	const kinds = useMemo(() => [...new Set(all.map((t) => t.kind).filter(Boolean))] as string[], [all]);
@@ -216,7 +212,7 @@ export function WorkList({ kind, embedded = false }: { kind: Kind; embedded?: bo
 					chips={chips}
 					onClearAll={clearAll}
 				/>
-				{embedded && <div className="list-toolbar" style={{ justifyContent: 'flex-end' }}>{layoutToggle}{toolbarButtons}</div>}
+				{embedded && <div className="list-toolbar" style={{ justifyContent: 'flex-end' }}>{layoutFromParent ? null : layoutToggle}{toolbarButtons}</div>}
 
 				{q.isPending && <p role="status" className="table-empty">Loading tasks…</p>}
 				{q.isError && <p role="alert">Could not load tasks.</p>}
