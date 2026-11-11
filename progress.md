@@ -1,6 +1,6 @@
 # Visual Exposure - Session handover
 
-Branch `feat/backend-foundation`, pushed to origin at `df7b03c` (24 commits since `d22095d`). Nothing is deployed. Detail of the Creator DS comparison is in `docs/DS_COMPARISON.md` (sections 1 to 18); do not repeat it here.
+Branch `feat/backend-foundation`, pushed to origin. **Deployed to Catalyst Development on 11 Nov 2026** (api, jobs, events with the `.env` variables, and the web client, from the code at `2f7c676`). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). Detail of the Creator DS comparison is in `docs/DS_COMPARISON.md` (sections 1 to 18); do not repeat it here.
 
 ## 1. Completed work (since d22095d)
 - **Creator DS file compared** with the app: all 68 forms, 423 workflows, 186 reports. Reference extracts: `docs/DS_CHECKLISTS.md`, `docs/DS_WORKFLOWS.md`, `docs/DS_REPORTS.md`.
@@ -56,6 +56,6 @@ Branch `feat/backend-foundation`, pushed to origin at `df7b03c` (24 commits sinc
 - Process: commit and push every change; never deploy without being asked; schema changes only additive, in Development, via the MCP.
 
 ## 7. Exact next step
-1. Before any deploy: add the same five columns to the Production Data Store (list in section 1), run `npm run sync`, `npm test`, then `npm run deploy:env` and `catalyst deploy --only client` only when the owner says.
-2. In Development, save one profile and one portal login through the running app (needs the encryption key in `.env`) to confirm the encrypt and decrypt path; the columns themselves are confirmed.
+1. Deployed to Development (see the header). Redeploy only when the owner says: `npm run sync`, `npm test`, `npm run deploy:env`, then `catalyst deploy --only client`. Smoke check after deploy: unauthenticated `/reports/fab-variance` returns 401 and the web app returns 200. When the AU project is created, add the five new columns there first (list in section 1).
+2. On the deployed site (signed in), save one personal profile and one portal login, then read `person.profile_private` and `compliance_item.portal_login` through the MCP to confirm they are stored encrypted and read back as plain text in the app. No encryption key is read from `.env` (nothing in `lib/` uses one), so find out how the column encryption is set up in the Data Store.
 3. Then build the next item the owner picks: the checklist rules once the question split is supplied, or the device map once the device columns are decided.
