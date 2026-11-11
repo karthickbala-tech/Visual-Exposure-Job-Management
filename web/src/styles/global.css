@@ -1045,12 +1045,16 @@ body.dialog-open { overflow: hidden; }
 .jd-tasks .jd-subrow td { background: color-mix(in srgb, var(--jt-sub-bg) 70%, var(--surface)); }
 .jd-tasks .jd-subrow td:first-child { box-shadow: inset 3px 0 0 var(--jt-sub-ink); }
 .jd-tasks .jd-sub::before { color: var(--jt-sub-ink); }
-:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) thead th { background: color-mix(in srgb, var(--tone-ink) 16%, var(--surface)); color: var(--ink); border-bottom: 2px solid var(--tone-ink); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) thead th { background: var(--tone-ink); color: var(--surface); border-bottom: 0; border-right-color: color-mix(in srgb, var(--surface) 28%, var(--tone-ink)); }
 :is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) :is(th, td) { border-right: 1px solid var(--line-2); }
 :is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) :is(th, td):last-child { border-right: 0; }
 :is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) tbody td { border-bottom: 1px solid var(--line-2); }
-.jsec .jd-total td { background: var(--tone-bg); color: var(--tone-ink); border-top: 2px solid var(--tone-ink); }
-.jd-tasks tr.jd-row--late td { background: color-mix(in srgb, var(--chip-red-bg) 80%, var(--surface)); }
+.jsec .jd-total td { background: color-mix(in srgb, var(--tone-ink) 16%, var(--surface)); color: var(--tone-ink); border-top: 2px solid var(--tone-ink); }
+/* Dark theme: the header row is a mid tone of the hue with light text, not the bright colour */
+:root[data-theme='dark'] :is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .rtable) thead th { background: color-mix(in srgb, var(--tone-ink) 38%, var(--surface)); color: var(--ink); border-right-color: color-mix(in srgb, var(--tone-ink) 22%, var(--surface)); }
+/* Plain tables (no subtask groups) get soft row striping in the same hue */
+:is(.card--loc, .card--sign, .card--crm) .table tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--tone-bg) 45%, var(--surface)); }
+.jd-tasks tr.jd-row--late td { background: color-mix(in srgb, var(--danger) 22%, var(--surface)); }
 .jd-tasks tr.jd-row--late td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
 .jd-tasks tr.jd-row--review td { background: color-mix(in srgb, var(--chip-purple-bg) 55%, var(--surface)); }
 .jd-tasks tr.jd-row--review td:first-child { box-shadow: inset 3px 0 0 var(--chip-purple-ink); }

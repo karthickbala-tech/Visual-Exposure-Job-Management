@@ -61,7 +61,7 @@ export const NAV: NavEntry[] = [
 	},
 	{
 		key: 'people',
-		label: 'People',
+		label: 'Team',
 		icon: Contact,
 		items: [
 			{ to: '/people', label: 'People', icon: Users, roles: ROUTE_ROLES.people },
