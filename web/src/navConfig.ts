@@ -98,13 +98,5 @@ export function visibleNav(roles: string[]): NavEntry[] {
 	return out;
 }
 
-/** The key of the sidebar group that holds this route ('work', 'field', 'people', 'assets'), or undefined for pages outside the groups. Colours follow it. */
-export function moduleOf(pathname: string): string | undefined {
-	for (const e of NAV) {
-		if (isGroup(e) && e.items.some((i) => pathname === i.to || pathname.startsWith(i.to + '/'))) return e.key;
-	}
-	return undefined;
-}
-
 /** Every item, flat (for the collapsed rail and for people who turn grouping off). */
 export const flatNav = (entries: NavEntry[]): NavItem[] => entries.flatMap((e) => (isGroup(e) ? e.items : [e]));
