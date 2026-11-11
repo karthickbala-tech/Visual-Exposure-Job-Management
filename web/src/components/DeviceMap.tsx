@@ -1,44 +1,60 @@
+import { useEffect, useMemo, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import type { DeviceItem } from '../api/types';
 
-const W = 640;
-const H = 300;
-const PAD = 40;
 const initials = (name: string | null) => (name ?? '?').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 
+type Located = DeviceItem & { lat: number; lng: number };
+
 /**
- * A schematic map: a 4 by 3 grid with one pin per located device, placed by latitude and longitude scaled to the box
- * (a single device sits in the middle). Pins show the worker's initials; grey pins have not reported for over 24 hours.
- * It is not a street map: the table under it links each device to OpenStreetMap.
+ * A street map (OpenStreetMap tiles through Leaflet) with one pin per located device. Pins show the worker's initials; grey pins have
+ * not reported for over 24 hours. The map is only built when a device has a location. Names and addresses come from the database, so
+ * they go into the page as text (elements), never as HTML.
  */
 export function DeviceMap({ devices }: { devices: DeviceItem[] }) {
-	const located = devices.filter((d) => d.lat !== null && d.lng !== null) as (DeviceItem & { lat: number; lng: number })[];
-	if (located.length === 0) return <p className="table-empty">No device has reported a location yet.</p>;
-
-	const lats = located.map((d) => d.lat);
-	const lngs = located.map((d) => d.lng);
-	const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
-	const place = (v: number, min: number, max: number, size: number) => (max === min ? size / 2 : PAD + ((v - min) / (max - min)) * (size - 2 * PAD));
+	const box = useRef<HTMLDivElement>(null);
+	const located = useMemo(() => devices.filter((d) => d.lat !== null && d.lng !== null) as Located[], [devices]);
 	const fresh = located.filter((d) => !d.stale).length;
+
+	useEffect(() => {
+		if (!box.current || located.length === 0) return;
+		const map = L.map(box.current, { scrollWheelZoom: false });
+		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+
+		for (const d of located) {
+			const pin = document.createElement('span');
+			pin.className = 'device-pin-dot' + (d.stale ? ' device-pin-dot--stale' : '');
+			pin.textContent = initials(d.personName);
+			const tip = document.createElement('span');
+			tip.textContent = `${d.personName ?? 'Unknown'}${d.address ? ', ' + d.address : ''}${d.stale ? ' (not seen for 24 h)' : ''}`;
+			L.marker([d.lat, d.lng], { icon: L.divIcon({ html: pin, className: 'device-pin-wrap', iconSize: [30, 30], iconAnchor: [15, 15] }), keyboard: false })
+				.bindTooltip(tip)
+				.addTo(map);
+		}
+
+		// Fit the pins in the box; do it again whenever the box changes size (a phone turning, the layout settling), or the pins drift out of view.
+		const fit = () => {
+			map.invalidateSize();
+			if (located.length === 1) map.setView([located[0].lat, located[0].lng], 14);
+			else map.fitBounds(L.latLngBounds(located.map((d) => [d.lat, d.lng] as [number, number])), { padding: [40, 40], maxZoom: 15 });
+		};
+		fit();
+		const watch = new ResizeObserver(fit);
+		watch.observe(box.current);
+
+		return () => {
+			watch.disconnect();
+			map.remove();
+		};
+	}, [located]);
+
+	if (located.length === 0) return <p className="table-empty">No device has reported a location yet.</p>;
 
 	return (
 		<figure className="device-map">
-			<svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Schematic map of ${located.length} devices, ${fresh} reporting recently`}>
-				<rect x="0" y="0" width={W} height={H} className="device-map__bg" />
-				{[1, 2, 3].map((i) => <line key={'v' + i} x1={(W / 4) * i} y1="0" x2={(W / 4) * i} y2={H} className="device-map__grid" />)}
-				{[1, 2].map((i) => <line key={'h' + i} x1="0" y1={(H / 3) * i} x2={W} y2={(H / 3) * i} className="device-map__grid" />)}
-				{located.map((d) => {
-					const x = place(d.lng, minLng, maxLng, W);
-					const y = H - place(d.lat, minLat, maxLat, H); // north is up
-					return (
-						<g key={d.id} transform={`translate(${x} ${y})`} className={d.stale ? 'device-pin device-pin--stale' : 'device-pin'}>
-							<title>{`${d.personName ?? 'Unknown'}${d.address ? ', ' + d.address : ''}${d.stale ? ' (not seen for 24 h)' : ''}`}</title>
-							<circle r="15" />
-							<text textAnchor="middle" dy="4">{initials(d.personName)}</text>
-						</g>
-					);
-				})}
-			</svg>
-			<figcaption className="muted">{fresh} of {located.length} located devices reporting. Grey pins have not reported for over 24 hours.</figcaption>
+			<div ref={box} className="device-map__canvas" role="region" aria-label={`Map of ${located.length} devices, ${fresh} reporting recently`} />
+			<figcaption className="muted">{fresh} of {located.length} located devices reporting. Grey pins have not reported for over 24 hours. Use the + and - buttons to zoom.</figcaption>
 		</figure>
 	);
 }
