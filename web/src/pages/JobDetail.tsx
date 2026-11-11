@@ -5,7 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import { ContextMenu } from '../components/ContextMenu';
 import type { MenuItem } from '../components/ContextMenu';
-import { ArrowLeft, Briefcase, ExternalLink, FolderOpen, Hammer, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Briefcase, ExternalLink, FolderOpen, Hammer, Handshake, MoreVertical, Network, Pencil, Plus, Truck } from 'lucide-react';
 import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
 import { ApiError } from '../api/client';
@@ -61,7 +61,7 @@ function Pills({ list, late }: { list: Task[]; late: number }) {
 }
 
 const HeadStat = ({ tone, icon, label, value }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; label: string; value: number }) => (
-	<div className="jh-stat"><span className={'jh-stat__icon jsec--' + tone} aria-hidden="true">{icon}</span><div><strong className="num">{value}</strong><span>{label}</span></div></div>
+	<div className={'jh-stat jsec--' + tone}><span className="jh-stat__icon" aria-hidden="true">{icon}</span><div className="jh-stat__text"><strong className="num">{value}</strong><span>{label}</span></div></div>
 );
 
 /** The job page: header card with the task counts, locations and signs, then Design, Fabrication and Installation tasks in tinted section cards. */
@@ -153,18 +153,20 @@ export function JobDetail() {
 					<div className="jh__bar-side">
 						{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
 					</div>
-					<span className="jh__bar-title"><Briefcase size={18} aria-hidden="true" /> Job Details</span>
+					<span className="jh__bar-title"><Briefcase size={20} aria-hidden="true" /><span className="jh__bar-sep" aria-hidden="true" /> Job Details</span>
 					<div className="jh__bar-side jh__bar-side--right">
-						{job.crm_deal_id ? <span className="jh__deal" title="CRM deal">Deal: {job.crm_deal_id}</span> : <span>No Deal</span>}
+						{job.crm_deal_id ? <span className="jh__deal" title="CRM deal"><Handshake size={15} aria-hidden="true" /> Deal: {job.crm_deal_id}</span> : <span>No Deal</span>}
 					</div>
 				</div>
 				<div className="jh__body">
 					<div className="jh__main">
-						<h1 className="jh__title">{job.name}</h1>
+						<div className="jh__headline">
+							<h1 className="jh__title">{job.name}</h1>
+							{workdrive ? <a className="btn btn-soft" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}
+						</div>
 						<ul className="jh__facts">
 							<li className="jh__fact"><span className="jh__fact-label">Stage</span> <StageCell stage={job.stage} pill /></li>
 							<li className="jh__fact"><FolderOpen size={15} aria-hidden="true" /> <span className="jh__fact-label">Location of files on VE Server</span> <span>{serverPath || '-'}</span></li>
-							<li className="jh__fact">{workdrive ? <a className="btn btn-sm" href={workdrive} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Go to Workdrive</a> : <span className="muted">Go to Workdrive (not created yet)</span>}</li>
 						</ul>
 						<div className="jh__stats">
 							<HeadStat tone="design" icon={<Network size={20} />} label={TASK_NAMES.design.title} value={design.length} />
