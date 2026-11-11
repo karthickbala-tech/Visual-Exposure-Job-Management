@@ -1,4 +1,4 @@
-import { AlertTriangle, Briefcase, Building2, CalendarDays, ClipboardList, Clock, FileCheck2, KanbanSquare, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, Briefcase, Building2, CalendarDays, ClipboardList, Clock, FileCheck2, KanbanSquare, LayoutDashboard, Settings, ShieldCheck, Smartphone, Users, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /** Roles that may open each screen. Only for showing menus and a friendly "No access" page: the server enforces access regardless. */
@@ -45,6 +45,7 @@ export const NAV: NavEntry[] = [
 			{ to: '/jobs', label: 'Jobs', icon: Briefcase },
 			{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
 			{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
+				{ to: '/variance', label: 'Fab variance', icon: BarChart3 },
 		],
 	},
 	{

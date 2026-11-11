@@ -195,6 +195,23 @@ const routes = [
 	['PATCH', /^\/checklists\/(\d+)\/answers$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); Object.assign(c.answers, b.answers); return checklistView(c); }],
 	['POST', /^\/checklists\/(\d+)\/complete$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); c.status = 'Completed'; if (b.hours) c.hours = b.hours; return checklistView(c); }],
 	['GET', /^\/reports\/checklists$/, (_, q) => { let l = S.checklists; if (q.get('phase')) l = l.filter((c) => c.phase === q.get('phase')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); return list(l.map((c) => ({ id: c.id, taskId: c.taskId, taskName: (taskById(c.taskId) || {}).name || null, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours }))); }],
+	// fabrication variance (booked against quoted hours)
+	['GET', /^\/reports\/fab-variance$/, () => {
+		const n = (v) => Number(v) || 0;
+		const tenth = (v) => Math.round(v * 10) / 10;
+		const rows = S.tasks.filter((t) => t.task_type === 'fabrication' && (isManager || mine(t)) && (n(t.quoted_hours) > 0 || n(t.booked_hours) > 0));
+		const jobName = (id) => (S.jobs.find((j) => String(j.ROWID) === String(id)) || {}).name || null;
+		const items = rows.map((t) => ({ ROWID: t.ROWID, name: t.name, job_id: t.job_id, job_name: jobName(t.job_id), stage: t.stage, quoted: n(t.quoted_hours), booked: n(t.booked_hours), variance: tenth(n(t.booked_hours) - n(t.quoted_hours)) }));
+		const by = new Map();
+		for (const i of items) {
+			const j = by.get(i.job_id) || { job_id: i.job_id, job_name: i.job_name, quoted: 0, booked: 0, variance: 0 };
+			j.quoted += i.quoted;
+			j.booked += i.booked;
+			j.variance = tenth(j.booked - j.quoted);
+			by.set(i.job_id, j);
+		}
+		return { items, jobs: [...by.values()], capped: false };
+	}],
 	// dashboards and calendar
 	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: S.tasks.filter((t) => isOpen(t) && t.scheduled_date).slice(0, 5).map(taskView), jobsByStage: Object.fromEntries(['Preparation', 'In Progress', 'On Hold', 'Completed'].map((s) => [s, S.jobs.filter((j) => j.stage === s).length])), overdueTasks: S.tasks.filter(isLate).length, openIssues: S.issues.filter((i) => ['Open', 'In Progress'].includes(i.issue_status)).length, swmsAwaiting: S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status)).length } : { scope: 'mine', today: TODAY, myTasks: myTasks().map(taskView) })],
 	['GET', /^\/dashboard\/todo$/, () => {
@@ -215,7 +232,7 @@ const routes = [
 		return { today: TODAY, total: items.length, items, generatedAt: now() };
 	}],
 	['GET', /^\/dashboards\/(\w+)$/, (m) => ({ role: m[1], today: TODAY, tiles: tilesFor(m[1]) })],
-	['GET', /^\/calendar$/, (_, q) => { const kind = q.get('kind'); return { items: S.tasks.filter((t) => t.scheduled_date && (isManager || mine(t)) && (!kind || kind === 'all' || (kind === 'install' ? t.task_type === 'install' && t.kind !== 'External Install' : t.task_type === 'fabrication'))).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, kind: t.kind })) }; }],
+	['GET', /^\/calendar$/, (_, q) => { const kind = q.get('kind'); return { items: S.tasks.filter((t) => t.scheduled_date && (isManager || mine(t)) && (!kind || kind === 'all' || (kind === 'install' ? t.task_type === 'install' && t.kind !== 'External Install' : t.task_type === 'fabrication'))).map((t) => ({ ROWID: t.ROWID, job_id: t.job_id, name: t.name, task_type: t.task_type, stage: t.stage, scheduled_date: t.scheduled_date, required_finish: t.required_finish || null, kind: t.kind })) }; }],
 	// issues
 	['GET', /^\/issues\/board$/, () => issueBoard()],
 	['GET', /^\/issues\/(\d+)\/history$/, (m) => ({ items: [{ at: now(), changes: [{ field: 'issue_status', from: 'To Be discussed', to: (S.issues.find((i) => i.ROWID === m[1]) || {}).issue_status || 'To Be discussed' }, { field: 'assigned_to_id', from: '', to: 'Rachel Barnes' }] }, ...issueHistory.filter((h) => h.id === m[1])] })],

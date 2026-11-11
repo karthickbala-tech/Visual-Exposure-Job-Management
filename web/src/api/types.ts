@@ -196,6 +196,20 @@ export interface CalendarItem {
 	task_type: 'design' | 'fabrication' | 'install';
 	stage: string;
 	scheduled_date: string;
+	required_finish?: string | null;
+}
+
+export interface VarianceLine {
+	job_id: string;
+	job_name: string | null;
+	quoted: number;
+	booked: number;
+	variance: number;
+}
+export interface FabVariance {
+	items: (VarianceLine & { ROWID: string; name: string; stage: string })[];
+	jobs: VarianceLine[];
+	capped: boolean;
 }
 
 export interface Person {

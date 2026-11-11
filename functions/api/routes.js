@@ -108,6 +108,7 @@ router.add('POST', '/admin/import/companies', withCtx(async (ctx, { req }) => ok
 router.add('GET', '/swms/options', withCtx(async (ctx) => ok(await swms.options(ctx))));
 router.add('GET', '/swms', withCtx(async (ctx, { url }) => ok(await reports.listSwms(ctx, parseQuery(url)))));
 router.add('GET', '/reports/checklists', withCtx(async (ctx, { url }) => ok(await reports.listChecklists(ctx, parseQuery(url)))));
+router.add('GET', '/reports/fab-variance', withCtx(async (ctx) => ok(await reports.fabVariance(ctx))));
 router.add('GET', '/compliance/dashboard', withCtx(async (ctx, { url }) => ok(await reports.complianceDashboard(ctx, parseQuery(url)))));
 router.add('GET', '/dashboards/:role', withCtx(async (ctx, { params }) => ok(await reports.roleDashboard(ctx, params.role))));
 router.add('POST', '/admin/reports/weekly-hours', withCtx(async (ctx) => ok(await weeklyReports.runWeeklyHoursReport(ctx))));

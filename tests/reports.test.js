@@ -162,6 +162,7 @@ test('calendars by discipline: install leaves out external and print-only work; 
 	assert.deepEqual(await names(undefined), ['Cut', 'Fit', 'Supplier']);
 	const cal = await dashboard.getCalendar(w.ctx, { from: '2026-11-01', to: '2026-11-30', kind: 'fab' });
 	assert.equal(cal.items[0].kind, 'CNC');
+	assert.equal(cal.items[0].required_finish, null, 'timeline bars use required_finish; null when not set');
 	await rejects(dashboard.getCalendar(w.ctx, { from: '2026-11-01', to: '2026-11-30', kind: 'moon' }), 400);
 });
 
@@ -294,4 +295,20 @@ test('the scheduled jobs for the weekly reports exist and run', async () => {
 	const ctx = { systemCtx: { ...w.ctx, log: quiet, mailer: { send: async () => ({ sent: true, count: 1 }) } }, log: quiet };
 	assert.deepEqual(await run('weekly-issues-report', {}, ctx), { ran: true });
 	assert.deepEqual(await run('weekly-hours-report', {}, ctx), { ran: true });
+});
+
+test('fab variance: booked against quoted per task and job; scoped to what the caller may see', async () => {
+	const w = await setup();
+	const j = await mkJob(w, 'Job');
+	const a = await mkTask(w, j, { task_type: 'fabrication', name: 'Cut', kind: 'CNC', quoted_hours: 10 });
+	const b = await mkTask(w, j, { task_type: 'fabrication', name: 'Paint', kind: 'Paint', quoted_hours: 4 });
+	await mkTask(w, j, { task_type: 'fabrication', name: 'Empty', kind: 'CNC' });
+	await mkTask(w, j, { task_type: 'design', name: 'Design', quoted_hours: 5 });
+	dbTask(w, a).booked_hours = 12.5;
+	dbTask(w, b).booked_hours = 3;
+	const v = await reports.fabVariance(w.ctx);
+	assert.deepEqual(v.items.map((i) => [i.name, i.quoted, i.booked, i.variance]).sort(), [['Cut', 10, 12.5, 2.5], ['Paint', 4, 3, -1]]);
+	assert.deepEqual(v.jobs.map((x) => [x.job_name, x.quoted, x.booked, x.variance]), [['Job', 14, 15.5, 1.5]]);
+	assert.equal(v.capped, false);
+	assert.deepEqual((await reports.fabVariance(w.as(['installer'], CREW))).items, [], 'crew see only tasks assigned to them');
 });

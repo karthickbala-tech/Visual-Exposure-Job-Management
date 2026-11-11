@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, FabVariance, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -208,6 +208,9 @@ export const useCalendar = (from: string, to: string) =>
 		queryFn: () => api<{ items: CalendarItem[] }>('/calendar?from=' + from + '&to=' + to),
 		staleTime: 30_000,
 	});
+
+export const useFabVariance = () =>
+	useQuery({ queryKey: ['fab-variance'], queryFn: () => api<FabVariance>('/reports/fab-variance'), staleTime: 60_000 });
 
 export const usePeople = (enabled: boolean) =>
 	useQuery({ queryKey: ['people'], queryFn: () => api<{ items: Person[] }>('/people?limit=300'), enabled, staleTime: 60_000 });

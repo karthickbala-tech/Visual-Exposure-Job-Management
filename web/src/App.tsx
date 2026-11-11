@@ -24,6 +24,7 @@ import { TaskDetail } from './pages/TaskDetail';
 import { ChecklistPage } from './pages/ChecklistPage';
 import { Issues } from './pages/Issues';
 import { Calendar } from './pages/Calendar';
+import { Variance } from './pages/Variance';
 import { People } from './pages/People';
 import { Compliance } from './pages/Compliance';
 import { Equipment } from './pages/Equipment';
@@ -75,6 +76,7 @@ function AppRoutes() {
 							<Route path="issues" element={<Issues />} />
 							<Route path="issues/new" element={<NewIssue />} />
 							<Route path="calendar" element={<Calendar />} />
+							<Route path="variance" element={<Variance />} />
 							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
 							<Route path="people/new" element={<Guard roles={ROUTE_ROLES.people}><NewPerson /></Guard>} />
 							<Route path="people/:id" element={<PersonDetail />} />
