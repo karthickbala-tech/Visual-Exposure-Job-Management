@@ -950,3 +950,17 @@ The Creator personal fields (Address Line 1, Date of Birth, Sex, Personal Email 
 This is my reading of "based on the role hierarchy"; the matrix is a constant in one place and easy to change. The raw column is never returned by any other people endpoint. The activity log records which fields changed, never their values. Tests cover the matrix, validation, clearing a field, and that nothing leaks (308 of 308 pass).
 
 **Not verified:** the backend tests use a fake database, so how Catalyst handles an encrypted text column on read and write has not been tested against the real Data Store. Check one save and one read in Development before relying on it. Photo (an Employee_Database field) is not included.
+
+### 18.3 Built from answer 7: training portal logins (encrypted, managers only)
+
+The DS keeps a Login and Password on each ticket and induction, in plain text. The app now keeps them as the owner asked, but not in plain text:
+
+- Stored as JSON in a new **encrypted text** column, `compliance_item.portal_login`, added to the Development table with the Catalyst MCP. **Production needs the same column before deploy.** Tickets, inductions and documents share this table, so all three can hold a login.
+- Managers only (admin, project manager, fab manager, install coordinator): everyone else gets a 403 on every call.
+- It is never in a list or in an item response (`portal_login` is also on the never-return list in `lib/authz.js`).
+- A normal read returns the login name and whether a password exists. The password is only sent by a separate Show password call, and every reveal is written to the activity log (who and when, never the value). Changes are logged by field name only.
+- On screen: editing a ticket on the person page shows a "Training portal login" block under the form, with Show password (logged).
+
+Tests cover the role check, the logged reveal, partial change and clearing, and that no list or update carries the login (309 of 309 pass).
+
+**Not verified:** as with personal details, the tests use a fake database. Save and read one login in Development to confirm the encrypted column behaves as expected.

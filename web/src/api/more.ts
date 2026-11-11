@@ -157,6 +157,18 @@ export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: 
 // ---- people ----
 export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number }
 export const usePerson = (id: string | undefined) => useGet<{ person: PersonFull }>(['person', id ?? ''], `/people/${id}`, !!id, 60_000);
+/** The training portal login of a ticket or induction (managers only). The password is only sent by an explicit, logged reveal. */
+interface Portal { itemId: string; login: string; hasPassword: boolean }
+export const usePortal = (id: string | undefined) => useGet<Portal>(['portal', id ?? ''], `/compliance/${id}/portal`, !!id, 0);
+export const useSavePortal = (id: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { login?: string; password?: string }) => api<Portal>(`/compliance/${id}/portal`, send('PATCH', body)),
+		onSuccess: (data) => qc.setQueryData(['portal', id], data),
+	});
+};
+export const useRevealPortal = (id: string) => useMutation({ mutationFn: () => api<{ itemId: string; password: string }>(`/compliance/${id}/portal/reveal`, send('POST')) });
+
 /** Personal details of a worker: the server sends only the fields the signed-in role may see, and marks the ones it may change. */
 export interface ProfileField { key: string; label: string; kind: 'text' | 'date' | 'choice' | 'email'; options?: string[]; value: string; editable: boolean }
 export const useProfile = (id: string | undefined) => useGet<{ personId: string; fields: ProfileField[] }>(['profile', id ?? ''], `/people/${id}/profile`, !!id, 60_000);

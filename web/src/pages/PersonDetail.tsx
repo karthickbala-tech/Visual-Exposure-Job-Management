@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Pencil, Plus } from 'lucide-react';
-import { useProfile, useSaveProfile, useUpdatePerson, usePerson, usePersonCompliance, useRatings } from '../api/more';
+import { usePortal, useRevealPortal, useSavePortal, useProfile, useSaveProfile, useUpdatePerson, usePerson, usePersonCompliance, useRatings } from '../api/more';
 import type { PersonFull } from '../api/more';
 import { useComplianceTypes, useCreateCompliance, useMe, useUpdateCompliance } from '../api/queries';
 import { ApiError } from '../api/client';
@@ -85,8 +85,39 @@ function EditWorker({ p, isAdmin, onClose }: { p: PersonFull; isAdmin: boolean; 
 
 interface RecordRow { id: string; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null }
 
+/** The training portal login of one ticket or induction. Managers only: hidden when the server refuses. The password is shown only after Show password, which is logged. */
+function PortalLogin({ id }: { id: string }) {
+	const q = usePortal(id);
+	const save = useSavePortal(id);
+	const reveal = useRevealPortal(id);
+	const { notify } = useToast();
+	const [login, setLogin] = useState<string | null>(null);
+	const [password, setPassword] = useState('');
+	if (!q.data) return null;
+	const shownLogin = login ?? q.data.login;
+	return (
+		<form
+			className="inline-form"
+			aria-label="Training portal login"
+			onSubmit={(e) => {
+				e.preventDefault();
+				const body: { login?: string; password?: string } = {};
+				if (login !== null && login !== q.data?.login) body.login = login;
+				if (password) body.password = password;
+				if (!Object.keys(body).length) return;
+				save.mutate(body, { onSuccess: () => { setLogin(null); setPassword(''); reveal.reset(); notify('Portal login saved'); }, onError: (er) => notify(errText(er), 'error') });
+			}}
+		>
+			<label><span className="toolbar__label">Training portal login</span><input value={shownLogin} maxLength={200} autoComplete="off" onChange={(e) => setLogin(e.target.value)} /></label>
+			<label><span className="toolbar__label">Portal password</span><input type="password" value={password} maxLength={200} autoComplete="new-password" placeholder={q.data.hasPassword ? 'Saved (leave blank to keep)' : ''} onChange={(e) => setPassword(e.target.value)} /></label>
+			{q.data.hasPassword && (reveal.data ? <output className="muted">Password: {reveal.data.password || '(none)'}</output> : <button type="button" className="btn btn-ghost btn-sm" disabled={reveal.isPending} onClick={() => reveal.mutate(undefined, { onError: (er) => notify(errText(er), 'error') })}>Show password (logged)</button>)}
+			<button className="btn" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save login'}</button>
+		</form>
+	);
+}
+
 /** Edit one ticket, induction or document: reference, issue date, expiry, with a button that suggests the expiry. */
-function EditRecord({ r, onClose }: { r: RecordRow; onClose: () => void }) {
+function EditRecordForm({ r, onClose }: { r: RecordRow; onClose: () => void }) {
 	const update = useUpdateCompliance();
 	const { notify } = useToast();
 	const [f, setF] = useState({ reference_no: r.referenceNo ?? '', issue_date: (r.issueDate ?? '').slice(0, 10), expiry_date: (r.expiryDate ?? '').slice(0, 10) });
@@ -115,6 +146,16 @@ function EditRecord({ r, onClose }: { r: RecordRow; onClose: () => void }) {
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{problem && <p role="alert">{problem}</p>}
 		</form>
+	);
+}
+
+/** The ticket form, then the training portal login under it (shown to managers only). */
+function EditRecord(props: { r: RecordRow; onClose: () => void }) {
+	return (
+		<>
+			<EditRecordForm {...props} />
+			<PortalLogin id={props.r.id} />
+		</>
 	);
 }
 
