@@ -541,9 +541,9 @@ body { overscroll-behavior-y: auto; }
 .bar-parts span.on { background: var(--brand); }
 
 /* Issues: board, cards and the side panel */
-.issue-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 14px 20px; align-items: start; }
-.issue-col { display: grid; gap: 8px; align-content: start; background: var(--surface-2); border: 1px solid var(--line); padding: 10px; min-height: 120px; }
-.issue-col h3 { margin: 0 0 4px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; }
+.issue-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(280px, 1fr); align-items: stretch; gap: 12px; padding: 12px 16px; flex: 1 1 0; min-height: 120px; overflow-x: auto; overflow-y: hidden; }
+.issue-col { display: grid; gap: 8px; align-content: start; background: var(--surface-2); border: 1px solid var(--line); padding: 10px; min-height: 0; max-height: 100%; overflow-x: hidden; overflow-y: auto; }
+.issue-col h3 { position: sticky; top: 0; z-index: 1; margin: 0; padding-bottom: 6px; background: var(--surface-2); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; }
 .issue-card { display: grid; gap: 4px; text-align: left; width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line-3); border-radius: 2px; }
 .issue-card:hover { background: var(--surface-hover); }
 .issue-card--late { border-left-color: var(--danger); }
@@ -569,7 +569,6 @@ body { overscroll-behavior-y: auto; }
 	.list-toolbar .segmented { max-width: 100%; overflow-x: auto; }
 	.list-toolbar .search { flex: 1 1 100% !important; max-width: none !important; }
 	.slide-over { width: 100vw; border-left: 0; }
-	.issue-board { padding: 12px 16px; grid-template-columns: 1fr; }
 	.inline-form > label { flex: 1 1 100% !important; }
 }
 
@@ -1014,13 +1013,6 @@ body.dialog-open { overflow: hidden; }
 /* Issues board: one row of columns like the task board. The card fills the body; the board scrolls sideways and each column scrolls inside */
 :is(.jm, .page) > .card:has(.issue-board) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 :is(.jm, .page) > .card:has(.issue-board) > div { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-.issue-board { flex: 1 1 auto; min-height: 320px; display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); align-items: stretch; gap: 12px; padding: 12px 16px; overflow-x: auto; overflow-y: hidden; }
-.issue-col { min-height: 0; max-height: 100%; overflow-y: auto; align-content: start; }
-.issue-col h3 { position: sticky; top: 0; z-index: 1; margin: 0; padding-bottom: 6px; background: var(--surface-2); }
-@media (max-width: 760px) { .issue-board { grid-template-columns: none; grid-auto-flow: column; } }
-.issue-board { flex: 1 1 0; min-height: 120px; }
-.issue-board { grid-auto-columns: minmax(280px, 1fr); }
-.issue-col { overflow-x: hidden; }
 
 /* Inside the content boxes: no vertical scrollbar (wheel and touch still scroll them, like the sidebar);
    the sideways scrollbar at the bottom stays */
