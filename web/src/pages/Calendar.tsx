@@ -151,14 +151,10 @@ export function Calendar() {
 							})}
 						</div>
 
-						<section className="cal-day" aria-label="Tasks on the selected day">
-							<h3 className="cal-day__title">
-								{fmt(utc(selectedDay), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-								{selectedDay === now && <span className="cal-day__today"> · today</span>}
-							</h3>
+						<section className="cal-day" aria-label={`Tasks on ${selectedDay}`}>
 							{selectedItems.length === 0 && <p className="table-empty">Nothing scheduled on this day.</p>}
 							{selectedItems.map((t) => (
-								<Link key={t.ROWID} className="agenda-ev" to={'/tasks/' + t.ROWID}>
+								<Link key={t.ROWID} className="agenda-ev" to={'/tasks/' + t.ROWID} target="_blank" rel="noopener noreferrer">
 									<i className={'dot dot-' + t.task_type} aria-hidden="true" />
 									{t.name}
 									<small>{TYPE_NAME[t.task_type]}</small>

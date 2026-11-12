@@ -89,7 +89,7 @@ export function Directory() {
 				panelTitle="Show"
 				onPanelClose={() => setPanelOpen(false)}
 				panelBody={(
-					<PanelSection title="Show" summary={tab === 'companies' ? 'Companies' : 'Sites'} defaultOpen={false}>
+					<PanelSection title="Show" summary={tab === 'companies' ? 'Companies' : 'Sites'} defaultOpen>
 						<div className="lt-views" role="radiogroup" aria-label="Views">
 							{(['companies', 'sites'] as const).map((t) => (
 								<button key={t} type="button" role="radio" aria-checked={tab === t} className={'lt-view' + (tab === t ? ' is-on' : '')} onClick={() => setTab(t)}>

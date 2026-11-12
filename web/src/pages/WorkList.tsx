@@ -181,7 +181,7 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 					onPanelClear={clearDraft}
 					panelBody={(
 						<>
-							<PanelSection title="Show" summary={views.find((v) => v.key === view)?.label} defaultOpen={false}>
+							<PanelSection title="Show" summary={views.find((v) => v.key === view)?.label} defaultOpen>
 								<div className="lt-views" role="radiogroup" aria-label="Views">
 									{views.map((v) => (
 										<button key={v.key} type="button" role="radio" aria-checked={view === v.key} className={'lt-view' + (view === v.key ? ' is-on' : '')} onClick={() => setView(v.key)}>

@@ -296,7 +296,7 @@ export function Jobs() {
 					onPanelClear={clearDraft}
 					panelBody={(
 						<>
-							<PanelSection title="Show" summary={VIEWS.find((v) => v.key === view)?.label} defaultOpen={false}>
+							<PanelSection title="Show" summary={VIEWS.find((v) => v.key === view)?.label} defaultOpen>
 								<div className="lt-views" role="radiogroup" aria-label="Views">
 									{VIEWS.map((v) => (
 										<button key={v.key} type="button" role="radio" aria-checked={view === v.key} className={'lt-view' + (view === v.key ? ' is-on' : '')} onClick={() => { setView(v.key); setPicked([]); }}>

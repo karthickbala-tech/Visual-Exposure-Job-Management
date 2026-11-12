@@ -119,7 +119,7 @@ export function Equipment() {
 			onPanelClear={clearDraft}
 			panelBody={onEquipment ? (
 				<>
-					<PanelSection title="Show" summary={EQ_VIEWS.find((v) => v.key === draft.view)?.label} defaultOpen={false}>
+					<PanelSection title="Show" summary={EQ_VIEWS.find((v) => v.key === draft.view)?.label} defaultOpen>
 						<div className="lt-views" role="radiogroup" aria-label="Views">
 							{EQ_VIEWS.map((v) => (
 								<button key={v.key} type="button" role="radio" aria-checked={draft.view === v.key} className={'lt-view' + (draft.view === v.key ? ' is-on' : '')} onClick={() => setDraft({ ...draft, view: v.key })}>

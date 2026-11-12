@@ -4831,11 +4831,19 @@ body.col-resizing, body.col-resizing * {
    (cards hide overflow, so their minimum height is zero inside the page's flex column). */
 .page > * { flex-shrink: 0; }
 
-/* A table card takes its natural height. The table scrolls inside its own box (up and down, and sideways with its
-   scrollbar at the bottom), and the record count sits directly under that scrollbar, inside the card. */
-.card:has(.grid-wrap) { flex: none; min-height: auto; }
-.grid-wrap { flex: none; max-height: max(260px, calc(100dvh - 300px)); }
+/* A table card fills the rest of the window, down to the bottom of the page body. The table scrolls inside the card
+   (up and down, and sideways with its scrollbar at the bottom), and the record count sits directly under that scrollbar. */
+.page > .jm:has(.grid-wrap), .page > .card:has(.grid-wrap) { flex: 1 1 auto; min-height: 0; }
+:is(.jm, .page) > .card:has(.grid-wrap) { flex: 1 1 auto; min-height: 280px; }
+/* the table's own wrapper (some pages add one) takes the card's free height too */
+.card > :not(.card-head):has(> .grid-wrap) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* the table card sits close to the bottom of the window */
+.page:has(.grid-wrap) { padding-bottom: 12px; }
 .card > .grid-status { position: static; border-top: 1px solid var(--line-2); box-shadow: none; }
+
+/* Sidebar groups: the child modules get the same roomy rows and rounded hover as the user block */
+.side-group-body { gap: 6px; margin: 4px 0 8px 14px; padding: 4px 0 4px 10px; }
+.side-link.nested { min-height: 40px; padding: 8px 12px; margin: 0 4px; border-radius: var(--radius-sm); font-size: var(--fs-sm); }
 
 /* List toolbars: the search icon and the View menu sit at the right end of the row */
 .lt-actions { margin-left: auto; }
@@ -4847,5 +4855,6 @@ body.col-resizing, body.col-resizing * {
 .cal-day__title { margin: 0 0 4px; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--ink); }
 .cal-day__today { color: var(--brand-strong); font-weight: var(--fw-semibold); }
 @media (max-width: 760px) {
+	.page > .jm:has(.grid-wrap), .page > .card:has(.grid-wrap), :is(.jm, .page) > .card:has(.grid-wrap) { flex: none; min-height: 0; }
 	.grid-wrap { max-height: 60dvh; }
 }
