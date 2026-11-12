@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Download, ExternalLink, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useJobs, useMe, usePeople } from '../api/queries';
 import { useDeleteJobs } from '../api/more';
@@ -66,11 +66,10 @@ const pct = (v: string | number | null | undefined) => (v === undefined || v ===
 /** Open and Edit links for one job, as in Creator's row actions. Edit only shows for people who may edit jobs. */
 function JobRowActions({ id }: { id: string }) {
 	const me = useMe();
-	const location = useLocation();
 	return (
 		<span className="row-actions">
 			<Link to={`/jobs/${id}`}>Open</Link>
-			{me.data?.permissions.editJob && <Link to={`/jobs/${id}/edit`} state={{ background: location }}>Edit</Link>}
+			{me.data?.permissions.editJob && <Link to={`/jobs/${id}/edit`}>Edit</Link>}
 			{me.data?.permissions.createTask && (
 				<>
 					<Link to={`/jobs/${id}?add=design`}>+ Design</Link>
@@ -191,7 +190,6 @@ export function Jobs() {
 	const seesMoney = !!me.data?.roles.includes('admin');
 	const people = usePeople(canManage);
 	const navigate = useNavigate();
-	const location = useLocation();
 
 	const cols = useMemo(() => COLS.filter((c) => visible.includes(c.key) && (!c.admin || seesMoney)), [visible, seesMoney]);
 		const needle = useMemo(() => text.trim().toLowerCase(), [text]);
@@ -228,7 +226,7 @@ export function Jobs() {
 		...(fab ? [{ key: 'fab', label: `Fab manager: ${managerName(fab)}`, onRemove: () => setFab('') }] : []),
 	];
 	const chosen = shown.filter((j) => picked.includes(j.ROWID));
-	const editJob = (id: string) => navigate(`/jobs/${id}/edit`, { state: { background: location } });
+	const editJob = (id: string) => navigate(`/jobs/${id}/edit`);
 	/** Ask first, then delete the given jobs in one request. The server says why when it refuses (booked hours, unfinished tasks). */
 	const askDelete = async (list: Job[]) => {
 		const what = list.length === 1 ? `"${list[0].name}"` : `these ${list.length} jobs`;
@@ -280,7 +278,7 @@ export function Jobs() {
 										)}
 				/>
 				{canManage && (
-					<button className="btn" onClick={() => navigate('/jobs/new', { state: { background: location } })}>
+					<button className="btn" onClick={() => navigate('/jobs/new')}>
 						<Plus size={16} aria-hidden="true" /> Add
 					</button>
 				)}

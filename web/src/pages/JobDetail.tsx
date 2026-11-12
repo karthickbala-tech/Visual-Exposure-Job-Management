@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { AddSubtaskDialog } from '../components/AddSubtaskDialog';
 import { ContextMenu } from '../components/ContextMenu';
@@ -70,7 +70,6 @@ export function JobDetail() {
 	const q = useJob(id);
 	const me = useMe();
 	const navigate = useNavigate();
-	const location = useLocation();
 	const move = useTransitionTask(id ?? '');
 	const close = useCloseJob(id ?? '');
 	const { notify } = useToast();
@@ -152,7 +151,7 @@ export function JobDetail() {
 				</div>
 				<span className="jh__bar-title"><Briefcase size={20} aria-hidden="true" /><span className="jh__bar-sep" aria-hidden="true" /> Job Details</span>
 				<div className="jh__bar-side jh__bar-side--right">
-					{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`, { state: { background: location } })}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
+					{canEdit && <button className="btn btn-sm" onClick={() => navigate(`/jobs/${job.ROWID}/edit`)}><Pencil size={14} aria-hidden="true" /> Edit Job</button>}
 				</div>
 			</div>
 			<header className="jh">

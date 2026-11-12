@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FileDown, Plus, X } from 'lucide-react';
 import { pdfUrl, useCrmDeal, useIssueBoard, useIssueHistory } from '../api/more';
 import { useIssues, useMe, usePeople, useUpdateIssue } from '../api/queries';
@@ -174,7 +174,6 @@ function IssueCard({ i, nameOf, onOpen }: { i: Who; nameOf: (id?: string | null)
 
 export function Issues() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const me = useMe();
 	const issues = useIssues();
 	const people = usePeople(true);
@@ -251,7 +250,7 @@ export function Issues() {
 						</>
 					)}
 				/>
-				{<button className="btn" onClick={() => navigate('/issues/new', { state: { background: location } })}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
+				{<button className="btn" onClick={() => navigate('/issues/new')}><Plus size={16} aria-hidden="true" /> Raise an issue</button>}
 			</PageHeader>
 
 			<Card flush>

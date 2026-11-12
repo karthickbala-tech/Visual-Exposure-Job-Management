@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useCompanies, useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
 import type { CompanyItem, ComplianceItem, Person } from '../api/types';
@@ -134,7 +134,6 @@ function AddRecord({ onClose }: { onClose: () => void }) {
 /** Everyone who works with the company, with their tickets and inductions: workers, subcontractors and the companies behind them, tickets, and company documents. */
 export function People() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const me = useMe();
 	const q = usePeople(true);
 	const items = useComplianceItems();
@@ -249,7 +248,7 @@ export function People() {
 				/>
 				{canAdd && !form && (
 					<>
-						<button className="btn" onClick={() => navigate('/people/new', { state: { background: location } })}><Plus size={16} aria-hidden="true" /> Add a person</button>
+						<button className="btn" onClick={() => navigate('/people/new')}><Plus size={16} aria-hidden="true" /> Add a person</button>
 						<button className="btn btn-ghost" onClick={() => setForm('record')}><Plus size={16} aria-hidden="true" /> Add a ticket</button>
 					</>
 				)}
