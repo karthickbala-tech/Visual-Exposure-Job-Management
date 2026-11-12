@@ -1135,3 +1135,53 @@ body.dialog-open { overflow: hidden; }
 	.main-col:has(.grid-status) > main.page, .main-col:has(.issue-board) > main.page { flex: 1 1 0; min-height: 0; overflow-y: auto; }
 }
 
+/* ---------- Polish pass (AI Studio reference, mapped onto the local tokens) ---------- */
+
+/* Status chips: a small dot in the chip's own colour; the label still carries the meaning */
+.chip-dot { display: inline-block; width: 5px; height: 5px; margin-right: 6px; vertical-align: middle; border-radius: 50%; background: currentColor; opacity: 0.85; }
+
+/* Empty states: one shared look for cards, tables and lists */
+.empty-state { display: grid; justify-items: center; gap: 6px; padding: 32px 20px; text-align: center; }
+.empty-state__icon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 50%; background: var(--surface-2); color: var(--muted); }
+.empty-state__title { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--ink); }
+.empty-state__text { max-width: 42ch; font-size: var(--fs-xs); color: var(--muted); }
+.empty-state__action { margin-top: 8px; }
+
+/* Status dots (live and state indicators) */
+.status-dot { display: inline-block; width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--muted); }
+.status-dot--ok { background: var(--brand); }
+.status-dot--danger { background: var(--danger); }
+.status-dot--warn { background: var(--warn); }
+.status-dot--info { background: var(--info); }
+.status-dot--pulse { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent); }
+
+/* Logo as a home link */
+.logo-link { display: inline-flex; align-items: center; color: inherit; text-decoration: none; }
+
+/* Calendar bars: the stage text is clipped, not wrapped */
+.tl-bar-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Task board: title row with the Overdue tag */
+.board-card__title { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+
+/* Home: two columns on wide screens, one on narrow */
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.dash-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.cell-sub { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-stage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.stage-stat-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface-2); color: inherit; text-decoration: none; transition: background 0.14s ease, border-color 0.14s ease; }
+.stage-stat-item:hover { background: var(--surface-hover); border-color: var(--line); text-decoration: none; }
+.stage-stat-chip { display: inline-flex; align-items: center; min-width: 0; }
+.stage-stat-value { margin-left: 8px; font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--ink); }
+.quick-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.quick-action-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface-2); color: var(--ink); font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-decoration: none; transition: background 0.14s ease, border-color 0.14s ease; }
+.quick-action-btn:hover { background: var(--surface-hover); border-color: var(--line); color: var(--ink); text-decoration: none; }
+.quick-action-btn svg { flex: none; color: var(--brand-strong); }
+
+@media (max-width: 1080px) {
+	.dash-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+	.dash-stage-grid, .quick-actions-grid { grid-template-columns: minmax(0, 1fr); }
+}
+

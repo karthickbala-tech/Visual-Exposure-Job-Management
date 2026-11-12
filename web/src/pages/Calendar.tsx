@@ -110,6 +110,7 @@ export function Calendar() {
 											className={'tl-bar' + (late ? ' late' : '')}
 											style={{ gridColumn: `${start + 1} / ${end + 2}` }}
 											to={'/tasks/' + t.ROWID}
+											title={`${t.name} — ${t.stage}${late ? ' (past required finish)' : ''}`}
 											aria-label={`${t.name}, ${t.stage}${late ? ', past its required finish' : ''}`}
 										>
 											{t.stage}

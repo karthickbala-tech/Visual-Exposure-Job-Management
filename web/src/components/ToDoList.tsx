@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronDown } from 'lucide-react';
 import { useTodo } from '../api/more';
-import { Card } from './ui';
+import { Card, EmptyState } from './ui';
 
 const SHOWN = 5;
 
@@ -17,10 +17,7 @@ export function ToDoList() {
 	return (
 		<Card title="To do now" action={total > 0 ? <span className="todo-count num" aria-label={`${total} items`}>{total}</span> : undefined} flush>
 			{total === 0 ? (
-				<p className="table-empty">
-					<CheckCircle2 size={16} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: 6 }} />
-					Nothing needs you right now.
-				</p>
+				<EmptyState icon={CheckCircle2} title="All caught up" description="Nothing needs you right now." />
 			) : (
 				<ul className="todo-list">
 					{shown.map((i) => (

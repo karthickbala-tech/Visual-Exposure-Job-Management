@@ -287,6 +287,8 @@ export function Shell() {
 		navigate(query.trim() ? '/jobs?q=' + encodeURIComponent(query.trim()) : '/jobs');
 	};
 
+	const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
 	return (
 		<div className={'shell' + (collapsed ? ' shell--collapsed' : '')}>
 			<a className="skip" href="#main">
@@ -294,7 +296,9 @@ export function Shell() {
 			</a>
 			<aside className={'sidebar' + (navOpen ? ' open' : '') + (collapsed ? ' collapsed' : '')} aria-label="Main navigation">
 				<div className="side-top">
-					<img className="logo-img" src={logo} alt="Visual Exposure" />
+					<NavLink to="/" className="logo-link" aria-label="Visual Exposure home">
+						<img className="logo-img" src={logo} alt="Visual Exposure" />
+					</NavLink>
 					<button type="button" className="logo-emblem" aria-label="Expand the menu" title="Expand the menu" onClick={toggleCollapsed}>
 						<img src={emblem} alt="" width={36} height={36} />
 					</button>
@@ -317,8 +321,8 @@ export function Shell() {
 					</button>
 					<form className="search" role="search" onSubmit={search}>
 						<Search size={16} aria-hidden="true" />
-						<input ref={searchRef} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search jobs" aria-label="Search jobs" />
-						<kbd>Ctrl K</kbd>
+						<input ref={searchRef} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search jobs…" aria-label="Search jobs" />
+						<kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
 					</form>
 					<div className="topbar-right">
 						<button

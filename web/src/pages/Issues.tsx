@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate } from '../components/ui';
+import { Card, EmptyState, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 
@@ -307,7 +307,9 @@ export function Issues() {
 
 				{issues.isPending && <p role="status" className="table-empty">Loading issues…</p>}
 				{issues.isError && <p role="alert">Could not load issues.</p>}
-				{issues.isSuccess && shown.length === 0 && <p className="table-empty">No issues match.</p>}
+				{issues.isSuccess && shown.length === 0 && (
+					<EmptyState title="No issues match" description="Try a different filter or search term." />
+				)}
 
 				{issues.isSuccess && shown.length > 0 && layout === 'board' && (
 					<div className="issue-board">

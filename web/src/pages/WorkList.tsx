@@ -243,7 +243,10 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 										{col.length === 0 && <p className="board-empty">Nothing here</p>}
 										{col.map((t) => (
 											<Link key={t.ROWID} to={'/tasks/' + t.ROWID} className={'board-card' + (late(t) ? ' overdue' : '')}>
-												<strong>{t.name}</strong>
+												<div className="board-card__title">
+													<strong>{t.name}</strong>
+													{late(t) && <span className="kind-tag kind-tag--late">Overdue</span>}
+												</div>
 												<small>{[t.job_name, t.kind, t.scheduled_date && fmtDate(t.scheduled_date)].filter(Boolean).join(' · ')}</small>
 											</Link>
 										))}

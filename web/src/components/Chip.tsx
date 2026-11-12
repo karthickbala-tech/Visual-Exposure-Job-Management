@@ -15,7 +15,12 @@ const TONES: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 're
 };
 
 export function Chip({ status }: { status: string }) {
-	return <span className={`chip chip-${TONES[status] ?? 'gray'}`}>{status}</span>;
+	return (
+		<span className={`chip chip-${TONES[status] ?? 'gray'}`}>
+			<span className="chip-dot" aria-hidden="true" />
+			{status}
+		</span>
+	);
 }
 
 /** Thin progress bar with a text value for screen readers and colour-blind users. `label` is shown beside it unless `single`. */

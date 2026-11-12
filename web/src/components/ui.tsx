@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Columns3, LayoutList } from 'lucide-react';
+import { Columns3, Inbox, LayoutList } from 'lucide-react';
 
 /** Page title block: small green eyebrow, uppercase heading, optional subtitle and actions. */
 export function PageHeader({ eyebrow, title, subtitle, children }: { eyebrow?: string; title: string; subtitle?: string; children?: ReactNode }) {
@@ -92,8 +92,8 @@ export function Ring({ value, label }: { value: number; label: string }) {
 	const c = 2 * Math.PI * r;
 	return (
 		<svg className="ring" viewBox="0 0 92 92" role="img" aria-label={`${label} ${v} percent`}>
-			<circle cx="46" cy="46" r={r} fill="none" stroke="var(--track)" strokeWidth="9" />
-			<circle cx="46" cy="46" r={r} fill="none" stroke="var(--brand)" strokeWidth="9" strokeLinecap="butt" strokeDasharray={`${(v / 100) * c} ${c}`} transform="rotate(-90 46 46)" />
+			<circle cx="46" cy="46" r={r} fill="none" stroke="var(--track)" strokeWidth="8" />
+			<circle cx="46" cy="46" r={r} fill="none" stroke="var(--brand)" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} transform="rotate(-90 46 46)" />
 			<text className="ring-text" x="46" y="52" textAnchor="middle">
 				{v}%
 			</text>
@@ -112,4 +112,23 @@ export function fmtDate(value: string | null | undefined): string {
 /** "Showing N of N" directly under a table, outside its scroll area, so the count always sits at the table's bottom edge. */
 export function TableFooter({ shown, total, children }: { shown: number; total?: number; children?: ReactNode }) {
 	return <p className="grid-foot">Showing {shown} of {total ?? shown}{children}</p>;
+}
+
+/** A calm zero state for cards and tables: icon, short title and an optional line of help or an action. */
+export function EmptyState({ icon: Icon = Inbox, title = 'No items found', description, action }: { icon?: typeof Inbox; title?: string; description?: string; action?: ReactNode }) {
+	return (
+		<div className="empty-state">
+			<span className="empty-state__icon" aria-hidden="true">
+				<Icon size={20} />
+			</span>
+			<strong className="empty-state__title">{title}</strong>
+			{description && <p className="empty-state__text">{description}</p>}
+			{action && <div className="empty-state__action">{action}</div>}
+		</div>
+	);
+}
+
+/** A small coloured dot for live or status indicators. Pass `pulse` for a soft halo. */
+export function StatusDot({ tone = 'ok', pulse = false }: { tone?: 'ok' | 'danger' | 'warn' | 'info' | 'muted'; pulse?: boolean }) {
+	return <span className={`status-dot status-dot--${tone}` + (pulse ? ' status-dot--pulse' : '')} aria-hidden="true" />;
 }

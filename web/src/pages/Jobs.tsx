@@ -9,7 +9,7 @@ import type { Job, JobTabCounts } from '../api/types';
 import { StageCell } from '../components/StageCell';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, PageHeader } from '../components/ui';
+import { Card, EmptyState, PageHeader } from '../components/ui';
 import { ContextMenu } from '../components/ContextMenu';
 import type { MenuItem } from '../components/ContextMenu';
 import { useConfirm } from '../components/Messages';
@@ -362,7 +362,12 @@ export function Jobs() {
 				{jobs.isError && (
 					<p role="alert">Could not load jobs. <button className="btn btn-ghost btn-sm" onClick={() => jobs.refetch()}>Try again</button></p>
 				)}
-				{jobs.isSuccess && shown.length === 0 && <p className="table-empty">{needle ? 'No jobs match that search.' : 'No jobs to show.'}</p>}
+				{jobs.isSuccess && shown.length === 0 && (
+					<EmptyState
+						title={needle ? 'No jobs match that search' : 'No jobs to show'}
+						description={needle ? 'Try different search terms or clear the filters.' : 'Jobs will appear here as they are created.'}
+					/>
+				)}
 
 				{jobs.isSuccess && shown.length > 0 && (
 					<ResizableGrid
