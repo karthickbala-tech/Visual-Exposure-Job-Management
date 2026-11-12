@@ -2642,7 +2642,6 @@ body.col-resizing, body.col-resizing * {
 	border: 1px solid var(--line);
 	border-radius: var(--radius-md);
 	color: var(--ink);
-	margin-bottom: 12px;
 	box-shadow: var(--shadow-xs);
 }
 
@@ -4854,6 +4853,18 @@ body.col-resizing, body.col-resizing * {
 .cal-day { padding: 12px 16px; border-top: 1px solid var(--line-2); display: grid; gap: 6px; }
 .cal-day__title { margin: 0 0 4px; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--ink); }
 .cal-day__today { color: var(--brand-strong); font-weight: var(--fw-semibold); }
+
+/* Job details: tighter spacing, Locations and Signs the same height, and cards that stand out from the page background */
+.page:has(.jh__bar) { gap: 10px; }
+.jh__body { padding: 14px 18px; }
+:is(.jsec, .card--loc, .card--sign, .card--crm) { margin-bottom: 0; border: 1px solid var(--line-3); }
+.jh { border-color: var(--line-3); }
+.jsec__head { padding: 10px 14px; }
+.jd-pair { gap: 10px; margin-bottom: 0; align-items: stretch; }
+.jd-pair > .card, .jd-pair > section { display: flex; flex-direction: column; margin-bottom: 0; height: 100%; min-width: 0; }
+.jd-pair > .card > div:not(.card-head), .jd-pair > section > div:not(.card-head) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.jd-pair .table-wrap { flex: 1 1 auto; }
+.jd-pair .grid-foot { margin-top: auto; }
 @media (max-width: 760px) {
 	.page > .jm:has(.grid-wrap), .page > .card:has(.grid-wrap), :is(.jm, .page) > .card:has(.grid-wrap) { flex: none; min-height: 0; }
 	.grid-wrap { max-height: 60dvh; }
