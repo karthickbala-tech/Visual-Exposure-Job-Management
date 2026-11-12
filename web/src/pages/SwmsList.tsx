@@ -64,7 +64,8 @@ const WIDTHS = gridWidths(COLUMNS);
 
 /** Safe work method statements as a signing queue: filter by what is waiting, see who has signed, open the task to sign. */
 export function SwmsList() {
-	const [view, setView] = useState('my_open');
+	// The view the person picked; until they pick one, crew start on "My open" and managers on "All" (their "My open" is empty).
+	const [pickedView, setView] = useState<string | null>(null);
 	const [text, setText] = useState('');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [draft, setDraft] = useState('');
@@ -76,18 +77,20 @@ export function SwmsList() {
 	// "mine" falls back to everything they can see.
 	const mineIds = useMemo(() => new Set(items.filter((s) => s.task).map((s) => s.task!.id)), [items]);
 	const isCrew = !(me.data?.permissions.assignPeople ?? false);
+	const defaultView = isCrew ? 'my_open' : 'all';
+	const view = pickedView ?? defaultView;
 	const counts = useMemo(() => Object.fromEntries(VIEWS.map((v) => [v.key, items.filter((s) => v.test(s, isCrew ? mineIds : new Set())).length])), [items, mineIds, isCrew]);
 	const current = VIEWS.find((v) => v.key === view) ?? VIEWS[0];
 	const needle = text.trim().toLowerCase();
 	const shown = items.filter((s) => current.test(s, isCrew ? mineIds : new Set()) && (!needle || (s.task?.name ?? '').toLowerCase().includes(needle) || (s.jobName ?? '').toLowerCase().includes(needle) || s.id.includes(needle)));
 	const viewList = VIEWS.filter((v) => !(isCrew === false && (v.key === 'my_open' || v.key === 'my_done')));
-	const searchActive = !!needle || view !== 'my_open';
+	const searchActive = !!needle || view !== defaultView;
 	const openPanel = () => { setDraft(text); setPanelOpen(true); };
 	const clearDraft = () => setDraft('');
 	const applyPanel = () => { setText(draft); setPanelOpen(false); };
-	const clearAll = () => { setView('my_open'); setText(''); };
+	const clearAll = () => { setView(null); setText(''); };
 	const chips: ActiveChip[] = [
-		...(view !== 'my_open' ? [{ key: 'view', label: `View: ${current.label}`, onRemove: () => setView('my_open') }] : []),
+		...(view !== defaultView ? [{ key: 'view', label: `View: ${current.label}`, onRemove: () => setView(null) }] : []),
 		...(needle ? [{ key: 'q', label: `Search "${text.trim()}"`, onRemove: () => setText('') }] : []),
 	];
 
@@ -154,8 +157,8 @@ export function SwmsList() {
 				{q.isSuccess && shown.length > 0 && (
 					<ResizableGrid layout={grid} label="SWMS" columns={COLUMNS} rows={shown} rowKey={(s) => s.id} />
 				)}
+				{q.isSuccess && <GridStatusBar text={`Showing ${shown.length} of ${items.length}`} />}
 			</Card>
-			{q.isSuccess && <GridStatusBar text={`Showing ${shown.length} of ${items.length}`} />}
 		</>
 	);
 }

@@ -19,7 +19,8 @@ export function DeviceMap({ devices, large = false }: { devices: DeviceItem[]; l
 
 	useEffect(() => {
 		if (!box.current || located.length === 0) return;
-		const map = L.map(box.current, { scrollWheelZoom: false });
+		// Mouse wheel zooms the map; drag moves it; the + and − buttons zoom too. Arrow keys and +/− work when the map has focus.
+		const map = L.map(box.current, { scrollWheelZoom: true, zoomControl: true, keyboard: true, dragging: true, doubleClickZoom: true });
 		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
 		for (const d of located) {

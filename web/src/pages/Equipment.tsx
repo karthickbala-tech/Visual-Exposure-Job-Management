@@ -289,8 +289,8 @@ function EquipmentTab({ canWrite, list, items, shown, grid, toolbar }: { canWrit
 			{list.isSuccess && shown.length > 0 && (
 				<ResizableGrid layout={grid} label="Equipment register" columns={columns} rows={shown} rowKey={(e) => e.id} />
 			)}
+			{list.isSuccess && items.length > 0 && <GridStatusBar text={`Showing ${shown.length} of ${items.length}`} />}
 		</Card>
-		{list.isSuccess && items.length > 0 && <GridStatusBar text={`Showing ${shown.length} of ${items.length}`} />}
 		</>
 	);
 }
@@ -379,8 +379,8 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 			{list.isSuccess && list.data.items.length > 0 && (
 				<ResizableGrid layout={grid} label="Chemical register" columns={CHEM_COLUMNS} rows={list.data.items} rowKey={(c) => c.id} />
 			)}
+			{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</Card>
-		{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }
@@ -426,8 +426,8 @@ function LocationsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 			{list.isSuccess && list.data.items.length > 0 && (
 				<ResizableGrid layout={grid} label="Workshop locations" columns={LOC_COLUMNS} rows={list.data.items} rowKey={(l) => l.id} />
 			)}
+			{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</Card>
-		{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }

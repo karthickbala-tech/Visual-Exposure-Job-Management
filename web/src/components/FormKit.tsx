@@ -1,7 +1,5 @@
 import type { FormEvent, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { PageHeader } from './ui';
+import { PageHeader, BackLink } from './ui';
 
 /**
  * The one form layout for every "add" screen: a title, grouped fields in a grid, and Submit and Reset under them.
@@ -27,7 +25,7 @@ export function FormPage({ eyebrow, title, subtitle, backTo, backLabel, onSubmit
 	};
 	return (
 		<>
-			<Link className="back-link" to={backTo}><ArrowLeft size={16} aria-hidden="true" /> {backLabel}</Link>
+			<BackLink fallback={backTo} fallbackLabel={backLabel} />
 			<PageHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
 			<form className="form-page" onSubmit={submit} onReset={(e) => { e.preventDefault(); onReset(); }} noValidate={false}>
 				{children}

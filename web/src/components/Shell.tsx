@@ -131,6 +131,12 @@ function SideNav({ entries, collapsed, grouped, onGo }: { entries: NavEntry[]; c
 	const { pathname } = useLocation();
 	const [open, setOpen] = useState<string[]>(readOpen);
 	const holds = (g: NavGroup) => g.items.some((i) => (i.end ? pathname === i.to : pathname === i.to || pathname.startsWith(i.to + '/')));
+	// Opening the group of a newly visited page is automatic; after that the person's own open and close choice rules.
+	useEffect(() => {
+		const current = entries.find((e): e is NavGroup => isGroup(e) && holds(e));
+		if (current) setOpen((cur) => (cur.includes(current.key) ? cur : [...cur, current.key]));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pathname]);
 	const toggle = (key: string) =>
 		setOpen((cur) => {
 			const next = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
@@ -162,7 +168,7 @@ function SideNav({ entries, collapsed, grouped, onGo }: { entries: NavEntry[]; c
 		<nav className="side-nav" aria-label="Main">
 			{entries.map((e) => {
 				if (!isGroup(e)) return <SideLink key={e.to} n={e} collapsed={false} onGo={onGo} />;
-				const isOpen = open.includes(e.key) || holds(e);
+				const isOpen = open.includes(e.key);
 				return (
 					<div key={e.key} className={'side-group' + (isOpen ? ' open' : '') + (holds(e) ? ' has-active' : '')}>
 						<button type="button" className="side-group-head" aria-expanded={isOpen} aria-controls={'grp-' + e.key} onClick={() => toggle(e.key)}>

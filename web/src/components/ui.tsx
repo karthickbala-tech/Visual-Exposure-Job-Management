@@ -1,6 +1,29 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { Columns3, Inbox, LayoutList } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Columns3, Inbox, LayoutList } from 'lucide-react';
+
+/**
+ * "Back" link at the top of a page. It returns to the page the person came from (browser history). If the page was opened
+ * directly (a bookmark, a new tab, a shared link) there is no history, so it goes to `fallback` with `fallbackLabel`.
+ */
+export function BackLink({ fallback, fallbackLabel }: { fallback: string; fallbackLabel: string }) {
+	const navigate = useNavigate();
+	const location = useLocation();
+	const hasHistory = location.key !== 'default';
+	return (
+		<Link
+			className="back-link"
+			to={fallback}
+			onClick={(e) => {
+				if (!hasHistory) return;
+				e.preventDefault();
+				navigate(-1);
+			}}
+		>
+			<ArrowLeft size={16} aria-hidden="true" /> {hasHistory ? 'Back' : fallbackLabel}
+		</Link>
+	);
+}
 
 /** Page title block: small green eyebrow, uppercase heading, optional subtitle and actions. */
 export function PageHeader({ eyebrow, title, subtitle, children }: { eyebrow?: string; title: string; subtitle?: string; children?: ReactNode }) {

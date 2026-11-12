@@ -296,8 +296,8 @@ export function People() {
 						<p className="table-empty">Nothing matches.</p>
 					)
 				)}
+				{barText && <GridStatusBar text={barText} />}
 			</Card>
-			{barText && <GridStatusBar text={barText} />}
 		</>
 	);
 }

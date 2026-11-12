@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+
 import { useChecklist, useCompleteChecklist, useSaveAnswers } from '../api/queries';
 import type { ShiftInput } from '../api/queries';
 import { ApiError } from '../api/client';
 import type { ChecklistView, Question } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { BackLink, Card, PageHeader } from '../components/ui';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -132,9 +132,7 @@ function Body({ data }: { data: ChecklistView }) {
 
 	return (
 		<>
-			<Link className="back-link" to={'/tasks/' + checklist.taskId}>
-				<ArrowLeft size={16} aria-hidden="true" /> Back to task
-			</Link>
+			<BackLink fallback={'/tasks/' + checklist.taskId} fallbackLabel="Back to task" />
 			<PageHeader eyebrow="Checklist" title={isPost ? 'Post-job checklist' : 'Pre-job checklist'}>
 				<Chip status={checklist.status} />
 			</PageHeader>

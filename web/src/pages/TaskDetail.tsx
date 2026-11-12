@@ -1,11 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 import { useMe, useStartChecklist, useTask, useTaskChecklists, useTransitionTask } from '../api/queries';
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader, fmtDate } from '../components/ui';
+import { BackLink, Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
 import { HoursPanel, ManagePanel, RatingPanel, StageActions } from './TaskManage';
@@ -43,9 +43,7 @@ export function TaskDetail() {
 
 	return (
 		<>
-			<Link className="back-link" to={'/jobs/' + task.job_id}>
-				<ArrowLeft size={16} aria-hidden="true" /> Back to job
-			</Link>
+			<BackLink fallback={'/jobs/' + task.job_id} fallbackLabel="Back to job" />
 
 			<PageHeader eyebrow={TYPE_LABEL[task.task_type] ?? 'Task'} title={task.name}>
 				<Chip status={task.stage} />

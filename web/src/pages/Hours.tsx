@@ -207,8 +207,8 @@ export function Hours() {
 					</div>
 				)}
 				{active.isSuccess && active.data.truncated && <p className="table-empty">Only the first 300 entries are shown. Choose a shorter period.</p>}
+				{active.isSuccess && <GridStatusBar text={`Showing ${active.data.rows.length} of ${active.data.rows.length}`} />}
 			</Card>
-			{active.isSuccess && <GridStatusBar text={`Showing ${active.data.rows.length} of ${active.data.rows.length}`} />}
 		</>
 	);
 }

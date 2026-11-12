@@ -25,6 +25,8 @@ const TIMELINE_DAYS = 28;
 export function Calendar() {
 	const [view, setView] = useState<View>('month');
 	const [anchor, setAnchor] = useState(() => today());
+	/** The day picked in the grid. Opening the calendar selects today, so its tasks show at once. */
+	const [picked, setPicked] = useState<string | null>(null);
 	const a = utc(anchor);
 
 	const first = view === 'month' ? monday(new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), 1))) : monday(a);
@@ -55,6 +57,8 @@ export function Calendar() {
 	const inMonth = (d: Date) => view === 'week' || d.getUTCMonth() === a.getUTCMonth();
 	const now = today();
 	const agendaDays = days.filter((d) => inMonth(d) && (byDay.get(iso(d))?.length ?? 0) > 0);
+		const selectedDay = picked ?? now;
+		const selectedItems = byDay.get(selectedDay) ?? [];
 
 	return (
 		<>
@@ -131,7 +135,7 @@ export function Calendar() {
 								const items = byDay.get(iso(d)) ?? [];
 								const shown = view === 'month' ? items.slice(0, MAX_PER_CELL) : items;
 								return (
-									<div key={iso(d)} className={'cal-cell' + (inMonth(d) ? '' : ' outside')} role="gridcell">
+									<div key={iso(d)} className={'cal-cell' + (inMonth(d) ? '' : ' outside') + (iso(d) === selectedDay ? ' cal-cell--selected' : '')} role="gridcell" onClick={() => setPicked(iso(d))}>
 										<span className={'cal-num' + (iso(d) === now ? ' today' : '')} aria-label={fmt(d, { day: 'numeric', month: 'long' })}>
 											{d.getUTCDate()}
 										</span>
@@ -146,6 +150,22 @@ export function Calendar() {
 								);
 							})}
 						</div>
+
+						<section className="cal-day" aria-label="Tasks on the selected day">
+							<h3 className="cal-day__title">
+								{fmt(utc(selectedDay), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+								{selectedDay === now && <span className="cal-day__today"> · today</span>}
+							</h3>
+							{selectedItems.length === 0 && <p className="table-empty">Nothing scheduled on this day.</p>}
+							{selectedItems.map((t) => (
+								<Link key={t.ROWID} className="agenda-ev" to={'/tasks/' + t.ROWID}>
+									<i className={'dot dot-' + t.task_type} aria-hidden="true" />
+									{t.name}
+									<small>{TYPE_NAME[t.task_type]}</small>
+									<Chip status={t.stage} />
+								</Link>
+							))}
+						</section>
 
 						<div className="cal-agenda">
 							{agendaDays.length === 0 && <p className="table-empty">Nothing scheduled in this {view}.</p>}

@@ -239,8 +239,8 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 						<ResizableGrid layout={grid} label="Companies" columns={COMPANY_COLUMNS} rows={list.data.items} rowKey={(c) => c.id} />
 					</CompanyEditCtx.Provider>
 				)}
+				{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 			</Card>
-			{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }
@@ -352,8 +352,8 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 						<ResizableGrid layout={grid} label="Sites" columns={SITE_COLUMNS} rows={list.data.items} rowKey={(s) => s.id} />
 					</SiteEditCtx.Provider>
 				)}
+				{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 			</Card>
-			{list.isSuccess && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }

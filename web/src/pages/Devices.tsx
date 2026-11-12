@@ -69,9 +69,9 @@ export function Devices() {
 					{list.isSuccess && list.data.items.length > 0 && (
 						<ResizableGrid layout={grid} label="Devices" columns={COLUMNS} rows={list.data.items} rowKey={(d) => d.id} />
 					)}
+					{list.isSuccess && !showMap && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 				</Card>
 			)}
-			{list.isSuccess && !showMap && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</>
 	);
 }

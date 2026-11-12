@@ -386,14 +386,14 @@ export function Jobs() {
 						) : undefined}
 					/>
 				)}
+				{jobs.isSuccess && (
+					<GridStatusBar
+						pager={<Pagination page={page} pageCount={pageCount} onPage={(p) => setPageAt({ key: filterKey, page: p })} />}
+						text={<><span>{pageCount > 1 ? `Showing ${rangeFrom}–${rangeTo} of ${shown.length}` : `Showing ${shown.length} of ${jobs.data.total ?? all.length}`}{jobs.data.truncated ? ' (the first 300 jobs)' : ''}</span><span>{chosen.length > 0 ? `${chosen.length} selected` : ''}</span></>}
+					/>
+				)}
 			</Card>
 			{menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.job)} onClose={() => setMenu(null)} />}
-			{jobs.isSuccess && (
-				<GridStatusBar
-					pager={<Pagination page={page} pageCount={pageCount} onPage={(p) => setPageAt({ key: filterKey, page: p })} />}
-					text={<><span>{pageCount > 1 ? `Showing ${rangeFrom}–${rangeTo} of ${shown.length}` : `Showing ${shown.length} of ${jobs.data.total ?? all.length}`}{jobs.data.truncated ? ' (the first 300 jobs)' : ''}</span><span>{chosen.length > 0 ? `${chosen.length} selected` : ''}</span></>}
-				/>
-			)}
 		</>
 	);
 }

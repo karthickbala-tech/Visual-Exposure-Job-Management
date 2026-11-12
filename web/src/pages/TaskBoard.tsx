@@ -10,6 +10,7 @@ import { LayoutToggle, PageHeader } from '../components/ui';
 import { WorkList } from './WorkList';
 
 type Kind = 'design' | 'fabrication' | 'install';
+const TYPE_KEY = 've.tasks.type';
 const TYPES: { key: Kind; label: string; hint: string; icon: typeof PenTool; roles: string[] | undefined }[] = [
 	{ key: 'design', label: 'Design', hint: 'Artwork and proofs, from assignment to approval.', icon: PenTool, roles: ROUTE_ROLES.design },
 	{ key: 'fabrication', label: 'Fabrication', hint: 'Everything being made in the workshop and on the CNC.', icon: Hammer, roles: ROUTE_ROLES.fabrication },
@@ -56,7 +57,9 @@ export function TaskBoard() {
 	const roles = me.data?.roles ?? [];
 	const allowed = TYPES.filter((t) => !t.roles || roles.some((r) => t.roles?.includes(r)));
 	const wanted = params.get('type');
-	const active = allowed.find((t) => t.key === wanted) ?? allowed.find((t) => t.key === 'fabrication') ?? allowed[0];
+	// No ?type= in the link: open the trade the person chose last time, else the first trade their role can see.
+	const saved = (() => { try { return localStorage.getItem(TYPE_KEY); } catch { return null; } })();
+	const active = allowed.find((t) => t.key === wanted) ?? allowed.find((t) => t.key === saved) ?? allowed[0];
 
 	return (
 		<>
@@ -71,7 +74,7 @@ export function TaskBoard() {
 					{allowed.length > 1 && allowed.map((t) => {
 						const Icon = t.icon;
 						return (
-							<button key={t.key} type="button" className={'type-tab' + (active?.key === t.key ? ' on' : '')} aria-current={active?.key === t.key ? 'page' : undefined} onClick={() => setParams(t.key === 'fabrication' ? {} : { type: t.key }, { replace: true })}>
+							<button key={t.key} type="button" className={'type-tab' + (active?.key === t.key ? ' on' : '')} aria-current={active?.key === t.key ? 'page' : undefined} onClick={() => { try { localStorage.setItem(TYPE_KEY, t.key); } catch { /* private mode: the choice is just not remembered */ } setParams({ type: t.key }, { replace: true }); }}>
 								<Icon size={16} aria-hidden="true" /> {t.label}
 							</button>
 						);

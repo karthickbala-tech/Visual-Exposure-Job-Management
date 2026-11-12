@@ -193,8 +193,8 @@ export function Compliance() {
 				{items.isSuccess && items.data.items.length > 0 && (
 					<ResizableGrid layout={grid} label="Compliance records" columns={COLUMNS} rows={items.data.items} rowKey={(i) => i.id} />
 				)}
+				{items.isSuccess && <GridStatusBar text={`Showing ${items.data.items.length} of ${items.data.items.length}`} />}
 			</Card>
-			{items.isSuccess && <GridStatusBar text={`Showing ${items.data.items.length} of ${items.data.items.length}`} />}
 		</>
 	);
 }
