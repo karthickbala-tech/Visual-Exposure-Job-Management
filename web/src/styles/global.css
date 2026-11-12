@@ -4864,6 +4864,16 @@ body.col-resizing, body.col-resizing * {
 .jd-pair > .card, .jd-pair > section { display: flex; flex-direction: column; margin-bottom: 0; height: 100%; min-width: 0; }
 .jd-pair > .card > div:not(.card-head), .jd-pair > section > div:not(.card-head) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .jd-pair .table-wrap { flex: 1 1 auto; }
+
+/* Job details: the tables sit on their own tone, so they read apart from the card and the page background */
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .grid-table) td { background: var(--surface-2); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .grid-table) th { background: var(--surface-3); }
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table, .grid-table) tbody tr:hover td { background: var(--surface-hover); }
+
+/* The job header bar stays at the top while the page scrolls, and sits directly on the body below it */
+.jh__bar { position: sticky; top: 0; z-index: 25; }
+.jm:has(> .jh__bar) { gap: 10px; }
+.jh__bar + .jh { margin-top: -10px; }
 .jd-pair .grid-foot { margin-top: auto; }
 @media (max-width: 760px) {
 	.page > .jm:has(.grid-wrap), .page > .card:has(.grid-wrap), :is(.jm, .page) > .card:has(.grid-wrap) { flex: none; min-height: 0; }
