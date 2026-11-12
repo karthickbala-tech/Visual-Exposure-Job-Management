@@ -1,69 +1,87 @@
-/* Design tokens. Brand colours come from visualexposure.com.au (docs/DESIGN_REFERENCE.md); the font is Inter, chosen by the owner on 11 Nov 2026 for an enterprise look;
-   the structure (light and dark themes, surfaces, chip tones) follows the approved Visual Exposure Projects prototype. */
+/* Design tokens. Brand colours come from visualexposure.com.au; typography is Inter;
+   structure supports Light and Dark enterprise themes, layered surfaces, micro-elevation, and semantic status tones. */
 :root {
-	--font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-	/* Typography scale: use these, not raw px or numbers (14px body is the base) */
-	--fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 16px; --fs-xl: 18px;
-	--fs-h1: clamp(17px, 2vw, 20px); /* page and job headings: the one heading size */
-	--fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+	/* Typography scale: balanced optical proportions */
+	--fs-2xs: 11px;
+	--fs-xs: 12px;
+	--fs-sm: 13px;
+	--fs-base: 14px;
+	--fs-md: 15px;
+	--fs-lg: 16px;
+	--fs-xl: 18px;
+	--fs-2xl: 22px;
+	--fs-h1: clamp(18px, 2.2vw, 22px);
+	--fw-regular: 400;
+	--fw-medium: 500;
+	--fw-semibold: 600;
+	--fw-bold: 700;
 
-	/* Job page section tones (Modern Job Details Dashboard reference): tint, then the dark colour for titles and icon badges */
-	--jt-design-bg: #e7f0fe; --jt-design-ink: #1d3f9a;
-	--jt-fab-bg: #fce7e7; --jt-fab-ink: #a1121a;
-	--jt-install-bg: #e9f8ea; --jt-install-ink: #11692a;
-	--jt-bar: #323b41;
-	--jt-sub-bg: #e8ebf7; --jt-sub-ink: #4a56b8; /* subtasks: one colour in every section */
-	--jt-loc-bg: #e9edf0; --jt-loc-ink: #42484d;
-	--jt-sign-bg: #fdf3d6; --jt-sign-ink: #7a4a00;
-	--jt-crm-bg: #e2f3f3; --jt-crm-ink: #0f6b6e;
+	/* Job section tones */
+	--jt-design-bg: #eff6ff; --jt-design-ink: #1e40af;
+	--jt-fab-bg: #fff1f2; --jt-fab-ink: #9f1239;
+	--jt-install-bg: #f0fdf4; --jt-install-ink: #166534;
+	--jt-bar: #1e2530;
+	--jt-sub-bg: #f5f3ff; --jt-sub-ink: #5b21b6;
+	--jt-loc-bg: #f1f5f9; --jt-loc-ink: #334155;
+	--jt-sign-bg: #fffbeb; --jt-sign-ink: #92400e;
+	--jt-crm-bg: #f0fdfa; --jt-crm-ink: #115e59;
 
-	/* Brand */
-	--brand: #68b04d;
-	--brand-strong: #3f7a2b; /* green that is readable as text on light surfaces */
-	--brand-soft: #e8f2e2;
-	--on-brand: var(--bg); /* text on the green is the page background colour, in both themes */
-	--brand-hover: #5a9a41;
-	--link: #4e5ac3;
+	/* Brand identity */
+	--brand: #22c55e;
+	--brand-strong: #15803d;
+	--brand-soft: #ecfdf5;
+	--on-brand: #ffffff;
+	--brand-hover: #16a34a;
+	--link: #3b82f6;
 
-	/* Surfaces and text */
-	/* Neutral greys measured from the site: #1B1B1E ink, #545456, #5D5D61, #8D8D8F, #C6C6C7, #FAFAFA. No green tint. */
-	--bg: #f4f4f5;
+	/* Surfaces and neutral palette (slate with crisp canvas contrast) */
+	--bg: #eaeff5;
 	--surface: #ffffff;
-	--surface-2: #fafafa;
-	--surface-3: #f2f2f3;
-	--surface-hover: #f8f8f9;
-	--ink: #1b1b1e;
-	--ink-2: #545456;
-	--muted: #5d5d61;
-	--line: #e3e3e4;
-	--line-2: #ededee;
-	--line-3: #c6c6c7;
-	--track: #e5e5e6;
-	--tag-bg: #ededee;
+	--surface-2: #f1f5f9;
+	--surface-3: #e2e8f0;
+	--surface-hover: #f8fafc;
+	--ink: #0f172a;
+	--ink-2: #334155;
+	--muted: #64748b;
+	--line: #cbd5e1;
+	--line-2: #e2e8f0;
+	--line-3: #94a3b8;
+	--track: #e2e8f0;
+	--tag-bg: #f1f5f9;
 	--input-bg: #ffffff;
-	--cal-out: #b0b0b0;
+	--cal-out: #94a3b8;
 
-	/* Sidebar stays dark in both themes */
-	--side: #42484d;
-	--side-hover: #4c5359;
-	--side-active: #545b61;
+	/* Sidebar: modern executive dark theme */
+	--side: #0e131f;
+	--side-hover: #171f30;
+	--side-active: #1f2a40;
+	--side-border: rgba(255, 255, 255, 0.08);
 
-	/* Status */
-	--danger: #ed1c24; /* the site's red */
-	--warn-ink: #7a4a00;
-	--warn: #d89a1c; /* warning icons and accents */
-	--info: #0088cb; /* the site's blue */
-	--chip-gray-bg: #ededee; --chip-gray-ink: #545456;
-	--chip-blue-bg: #dfeafc; --chip-blue-ink: #1d4fb0;
-	--chip-amber-bg: #fbe9c4; --chip-amber-ink: #7a4a00;
-	--chip-purple-bg: #e9e0fb; --chip-purple-ink: #5a2fb3;
-	--chip-green-bg: #dcf3cc; --chip-green-ink: #266b0e;
-	--chip-red-bg: #fde1df; --chip-red-ink: #b3261b;
-	--err-bg: #fde1df; --err-ink: #a1231a;
+	/* Status indicators */
+	--danger: #ef4444;
+	--warn-ink: #92400e;
+	--warn: #f59e0b;
+	--info: #0284c7;
 
-	/* Shape and spacing */
-	--radius: 3px;
+	--chip-gray-bg: #f1f5f9; --chip-gray-ink: #475569;
+	--chip-blue-bg: #eff6ff; --chip-blue-ink: #1d4ed8;
+	--chip-amber-bg: #fffbeb; --chip-amber-ink: #b45309;
+	--chip-purple-bg: #f5f3ff; --chip-purple-ink: #6d28d9;
+	--chip-green-bg: #ecfdf5; --chip-green-ink: #047857;
+	--chip-red-bg: #fef2f2; --chip-red-ink: #b91c1c;
+	--err-bg: #fef2f2; --err-ink: #b91c1c;
+
+	/* Shape, radius & elevation */
+	--radius-xs: 4px;
+	--radius-sm: 6px;
+	--radius: 8px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--radius-xl: 18px;
+	--radius-pill: 9999px;
+
 	--space-1: 4px;
 	--space-2: 8px;
 	--space-3: 16px;
@@ -71,71 +89,96 @@
 	--space-5: 40px;
 	--space-6: 64px;
 	--sidebar-w: 240px;
-	--grid-min: 280px; /* a data grid never gets shorter than this; the page scrolls instead */
-	--grid-chrome: 190px; /* height of the header, toolbar and pagination around a data grid */
+	--grid-min: 280px;
+	--grid-chrome: 190px;
 	--touch: 44px;
 
-	/* Older names still used by a few screens; they follow the theme */
+	/* Layered shadows */
+	--shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+	--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+	--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+	--shadow-dropdown: 0 12px 32px -4px rgba(0, 0, 0, 0.16), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+
+	/* Backward compatibility aliases */
 	--paper: var(--surface);
 	--paper-alt: var(--bg);
 	--ink-muted: var(--muted);
 	--slate: var(--side);
-	--slate-deep: #33383c;
+	--slate-deep: #090d16;
 	--grey-band: var(--line-3);
-	--grey-mid: #8d8d8f;
+	--grey-mid: #94a3b8;
 	--accent: var(--brand);
 	--accent-hover: var(--brand-hover);
 	--accent-ink: var(--on-brand);
 	--status-progress: var(--info);
-	--status-hold: #ffcb05;
+	--status-hold: #eab308;
 	--status-bad: var(--danger);
 	--status-done: var(--brand);
-	--status-prep: #8d8d8f;
+	--status-prep: #94a3b8;
 
 	color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-	--brand-strong: #86c96a;
-	--brand-soft: #1f2e18;
-	--brand-hover: #79bd5c;
-	--link: #9aa4ff;
-	--bg: #121315;
-	--surface: #1b1d20;
-	--surface-2: #202226;
-	--surface-3: #202226;
-	--surface-hover: #24272b;
-	--ink: #eceeef;
-	--ink-2: #c3c7ca;
-	--muted: #9aa0a5;
-	--line: #2e3135;
-	--line-2: #2a2d31;
-	--line-3: #3b3f44;
-	--track: #2b2e32;
-	--tag-bg: #2a2d31;
-	--input-bg: #16181a;
-	--cal-out: #5b6166;
-	--side: #17181a;
-	--side-hover: #24262a;
-	--side-active: #2b2d31;
-	--danger: #ff6b63;
-	--warn-ink: #f6d9b0;
-	--warn: #f2b84b;
-	--info: #5b9bf5;
-	--chip-gray-bg: #2b2e32; --chip-gray-ink: #c3c7ca;
-	--chip-blue-bg: #17293f; --chip-blue-ink: #8db8f5;
-	--chip-amber-bg: #3a2c10; --chip-amber-ink: #f0c36d;
-	--chip-purple-bg: #2a2040; --chip-purple-ink: #c2a6f5;
-	--chip-green-bg: #1c3010; --chip-green-ink: #9be06a;
-	--chip-red-bg: #3d1a18; --chip-red-ink: #ff9d97;
-	--err-bg: #3d1a18; --err-ink: #ff9d97;
-	--jt-design-bg: #17293f; --jt-design-ink: #8db8f5;
-	--jt-fab-bg: #3d1a18; --jt-fab-ink: #ff9d97;
-	--jt-install-bg: #1c3010; --jt-install-ink: #9be06a;
-	--jt-bar: #202226;
-	--jt-sub-bg: #1f2338; --jt-sub-ink: #9aa4ff;
-	--jt-loc-bg: #24272b; --jt-loc-ink: #c3c7ca;
-	--jt-sign-bg: #3a2c10; --jt-sign-ink: #f0c36d;
-	--jt-crm-bg: #11302f; --jt-crm-ink: #7fd6d2;
+	--brand: #22c55e;
+	--brand-strong: #4ade80;
+	--brand-soft: rgba(34, 197, 94, 0.14);
+	--brand-hover: #16a34a;
+	--link: #60a5fa;
+
+	/* Deep luxury dark surfaces */
+	--bg: #070a12;
+	--surface: #101726;
+	--surface-2: #162032;
+	--surface-3: #1e2c45;
+	--surface-hover: #192438;
+	--ink: #f8fafc;
+	--ink-2: #cbd5e1;
+	--muted: #94a3b8;
+	--line: #223048;
+	--line-2: #182337;
+	--line-3: #334466;
+	--track: #182337;
+	--tag-bg: #162032;
+	--input-bg: #0b101b;
+	--cal-out: #475569;
+
+	/* Sidebar stays dark */
+	--side: #0a0e17;
+	--side-hover: #121927;
+	--side-active: #1a2336;
+	--side-border: rgba(255, 255, 255, 0.06);
+
+	--danger: #f87171;
+	--warn-ink: #fde68a;
+	--warn: #fbbf24;
+	--info: #38bdf8;
+
+	--chip-gray-bg: #1e293b; --chip-gray-ink: #cbd5e1;
+	--chip-blue-bg: #172554; --chip-blue-ink: #93c5fd;
+	--chip-amber-bg: #451a03; --chip-amber-ink: #fcd34d;
+	--chip-purple-bg: #2e1065; --chip-purple-ink: #d8b4fe;
+	--chip-green-bg: #064e3b; --chip-green-ink: #6ee7b7;
+	--chip-red-bg: #450a0a; --chip-red-ink: #fca5a5;
+	--err-bg: #450a0a; --err-ink: #fca5a5;
+
+	--jt-design-bg: #172554; --jt-design-ink: #93c5fd;
+	--jt-fab-bg: #4c0519; --jt-fab-ink: #fda4af;
+	--jt-install-bg: #064e3b; --jt-install-ink: #6ee7b7;
+	--jt-bar: #161e2e;
+	--jt-sub-bg: #2e1065; --jt-sub-ink: #d8b4fe;
+	--jt-loc-bg: #1e283d; --jt-loc-ink: #cbd5e1;
+	--jt-sign-bg: #451a03; --jt-sign-ink: #fcd34d;
+	--jt-crm-bg: #042f2e; --jt-crm-ink: #5eead4;
+
+	--shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.25);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+	--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+	--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+	--shadow-dropdown: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 6px 16px -2px rgba(0, 0, 0, 0.4);
+
 	color-scheme: dark;
 }
