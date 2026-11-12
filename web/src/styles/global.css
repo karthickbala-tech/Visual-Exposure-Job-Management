@@ -4873,6 +4873,18 @@ body.col-resizing, body.col-resizing * {
 /* The job header bar stays at the top while the page scrolls, and sits directly on the body below it */
 .jh__bar { position: sticky; top: 0; z-index: 25; }
 .jm:has(> .jh__bar) { gap: 10px; }
+
+/* Sidebar: the job-header colour (--side) with white text, in both themes */
+.sidebar, .sidebar .side-link, .sidebar .side-link svg, .sidebar .side-group-head, .sidebar .side-group-head svg,
+.sidebar .side-label, .sidebar .user-trigger, .sidebar .user-trigger .who, .sidebar .user-trigger .chev, .sidebar .rail-head { color: #fff; }
+
+/* Job details: each table sits in its own inset panel, with padding around it, so it reads apart from the card */
+:is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table-wrap, .grid-wrap) {
+	margin: 10px 12px 12px;
+	border: 1px solid var(--line-3);
+	border-radius: var(--radius-sm);
+	overflow: auto;
+}
 .jh__bar + .jh { margin-top: -10px; }
 .jd-pair .grid-foot { margin-top: auto; }
 @media (max-width: 760px) {

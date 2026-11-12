@@ -54,9 +54,9 @@
 	--cal-out: #94a3b8;
 
 	/* Sidebar: modern executive dark theme */
-	--side: #0e131f;
-	--side-hover: #171f30;
-	--side-active: #1f2a40;
+	--side: #101726;
+	--side-hover: #1a2438;
+	--side-active: #22304a;
 	--side-border: rgba(255, 255, 255, 0.08);
 
 	/* Status indicators */
@@ -146,9 +146,9 @@
 	--cal-out: #475569;
 
 	/* Sidebar stays dark */
-	--side: #0a0e17;
-	--side-hover: #121927;
-	--side-active: #1a2336;
+	--side: #101726;
+	--side-hover: #1a2438;
+	--side-active: #22304a;
 	--side-border: rgba(255, 255, 255, 0.06);
 
 	--danger: #f87171;
