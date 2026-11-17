@@ -16,7 +16,14 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 7. Checklist photo questions upload in place (to the checklist, answer = file id); post-job shift form shows the pay split, confirms over 14 h, refuses over 16 h or unbilled over worked.
 - Tests 329 pass; build passes; oxlint 0 errors (10 accepted warnings). The running mock (PID 15392) predates these changes: restart it to see them. The mock has no file upload routes.
 - **Assumption to confirm:** Cancel removes unfinished checklists (Creator kept them, WORKFLOWS section 5 [CONFIRM]); chosen to match the existing "taking someone off a task" rule.
-- **Next: Phase 2 emails** (submitted for approval; management review / OH&S on approve; closure recipients and tables; profit changed).
+**Phase 2 done** (`9cd5032` to `30050ae`, pushed, not deployed; emails are logged and skipped until MAIL_FROM is set):
+1. "Install / Fabrication / Design Task Approval" to the job PM (install, design) or fab manager (fab) when a task reaches Manager Review; nobody on the job means everyone in that role.
+2. An approval flagged "needs management review" or OH&S Yes emails the task department's manager and inform-also list (issue routing in Admin settings). The stage-change event now carries the approval answers.
+3. Closure report: admins (directors) get hours per trade, labour cost all / Parent / Fab, purchases, and CRM revenue and profit (Total_Revenue, Job_Profit, Job_Profit1); the job PM and fab manager get hours only (JOB-9). Sent once as before.
+4. Mock API: Admin > Emails lists and previews the real templates (12).
+- **Not built on purpose:** the "profit changed" email. It is INACTIVE in Creator, and FSD section 8 rule 4 says inactive emails need client confirmation (FSD question 8). Also needs confirming: "directors" = admin role (FSD question 14), and the CRM deal field names.
+- Tests 331 pass; oxlint 10 accepted warnings.
+- **Next: Phase 3** (Admin inform-also picker; expiry-days setting used everywhere; compliance type screens and do-not-contact flags; equipment/chemical edit, off-hire, history, Responsible, location supervisor).
 
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
