@@ -2,6 +2,19 @@
 
 Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed to Catalyst Development on 11 Nov 2026**: api, jobs, events (with the `.env` variables) and the web client. There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
+## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
+
+Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last two commits, `acf7309` and `37cbab7`, which were never pushed) with web. Built the 11 small ones, one commit each, all pushed to `feat/backend-foundation` (`1572468` to `b13cd44`). **Not deployed.**
+- J10 Edit a sign (prefilled dialog); Version Number limit now 20 like the server.
+- H4 Hours "Final" column, total, tile and CSV field. H2 live pay split for timed shifts (`web/src/lib/payRules.ts`, a copy of `lib/domain/payRules.js`, checked identical over 159,600 shifts) and the 14 h / 16 h / unbilled checks for timed shifts.
+- P7 crew see Compliance as "My tickets & inductions".
+- B1 column sets on the jobs list. B5 labour cost (all, Parent, Fab) in the job page section headers for admins: **backend change**, `GET /jobs/:id` now returns the same per-trade hours and costs as the list (shared `tradeTotals`, no extra query; new test).
+- I2 photos and files on issues. I3 "Raise issue" on the task page (linked task, its department).
+- E4 location edit and equipment/chemical counts (delete not built). D3 calendar type filter. S2 Auto theme and "Show in menu".
+- Mock API: PATCH /signs/:id, POST and PATCH /locations, job page totals, issue task_id. **The mock that was already running (PID 15392) predates these; restart it** (`node web/dev/mock-api.mjs`); stopping it was blocked by the permission check this session.
+- Tests: backend 324 pass (run as `NODE_PATH=functions/api/node_modules node --test "tests/**/*.test.js"`: the root has no node_modules, which is why a plain `npm test` reports 28 "Cannot find module 'zod'" failures); `npm run build` passes; oxlint 0 errors, the 10 accepted warnings.
+- Next (batch 2, each needs a small backend change, see the extraction doc): J8 reasons for hold/cancel, J9 delete task, J7 bulk task actions, H3 hours-not-filled list, P4 missing compliance rows, E2/E3 equipment and chemical edit, D2 dashboards, D4 checklist register, B4 job cards on phones. Owner decisions still open: H1 shift clock (needed at all?), how many tasks at once for bulk actions.
+
 ## 1. Completed work
 - **Earlier (see git log since `d22095d`)**: Creator DS comparison (68 forms, 423 workflows, 186 reports); confirm and message dialogs; Jobs grid columns and cost type; SWMS numbers, hazard wording and PM Completed/Closed; Issues fixes; directory fields and rates; personal details by role and encrypted portal logins; past-shift times on Hours; two checklist emails.
 - **Earlier this sprint (committed)**:
