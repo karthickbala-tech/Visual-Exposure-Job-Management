@@ -11,7 +11,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | P4 | Blank required rows on adding a worker or company | types flagged for VE or non-VE; blank rows show "Not filled in" and count in tiles | M BE | todo |
 | P5 | Worker slide-over | 440 px sheet: company, role, phone and email links, status chip, only items needing action, "Open full profile" | L FE | todo |
 | P6 | More compliance tiles | Active VE, Active non-VE, Expired, Expires today, Within 30 days, Not filled in; each filters the tickets tab; status buckets Expired / Today / Soon (1 to 30 days) / Incomplete | M FE | |
-| P7 | Crew self-only "My tickets & inductions" | no tabs or tiles; own records with the status filter | M FE | todo |
+| P7 | Crew self-only "My tickets & inductions" | no tabs or tiles; own records with the status filter | M FE | done (server filters crew to their own; page titled "My tickets & inductions" for crew 17 Nov) |
 | P8 | Editable roles | roles cannot be removed while held | L | not needed (fixed 11 roles) |
 
 ## Hours

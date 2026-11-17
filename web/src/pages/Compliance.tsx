@@ -30,6 +30,7 @@ const WIDTHS = gridWidths(COLUMNS);
 export function Compliance() {
 	const me = useMe();
 	const canAdd = !!me.data?.permissions.createJob; // managers; the server decides for real
+	const own = me.isSuccess && !canAdd; // crew: only their own records
 	const [status, setStatus] = useState('');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [draftStatus, setDraftStatus] = useState('');
@@ -57,7 +58,12 @@ export function Compliance() {
 
 	return (
 		<>
-			<PageHeader eyebrow="Team" title="Compliance" subtitle="Tickets, inductions and documents, with expiry dates and reminders.">
+			{/* Crew only ever get their own records (the server filters them), so the page is titled as theirs. */}
+			<PageHeader
+				eyebrow="Team"
+				title={own ? 'My tickets & inductions' : 'Compliance'}
+				subtitle={own ? 'Your tickets and inductions, with their expiry dates. Ask your manager to add or update one.' : 'Tickets, inductions and documents, with expiry dates and reminders.'}
+			>
 				<ListToolbarButtons
 					searchOpen={panelOpen}
 					onSearchOpen={openPanel}
