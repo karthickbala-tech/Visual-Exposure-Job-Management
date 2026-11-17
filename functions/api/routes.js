@@ -188,6 +188,7 @@ router.add('PATCH', '/signs/:id', withCtx(async (ctx, { req, params }) => ok(awa
 router.add('GET', '/equipment', withCtx(async (ctx, { url }) => ok(await registers.listEquipment(ctx, parseQuery(url)))));
 router.add('POST', '/equipment', withCtx(async (ctx, { req }) => created(await registers.createEquipment(ctx, await readJson(req)))));
 router.add('PATCH', '/equipment/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateEquipment(ctx, params.id, await readJson(req)))));
+router.add('GET', '/equipment/:id/history', withCtx(async (ctx, { params }) => ok(await registers.equipmentHistory(ctx, params.id))));
 router.add('POST', '/equipment/:id/checked', withCtx(async (ctx, { params }) => ok(await registers.markChecked(ctx, params.id))));
 router.add('POST', '/equipment/off-hire', withCtx(async (ctx, { req }) => ok(await registers.offHireForFinishedInstall(ctx, (await readJson(req)).equipment_ids))));
 router.add('GET', '/chemicals', withCtx(async (ctx, { url }) => ok(await registers.listChemicals(ctx, parseQuery(url)))));

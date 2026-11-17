@@ -108,3 +108,30 @@ test('the permission matrix accepts the equipment and devices resources', () => 
 	const { validateMatrix } = require('../lib/domain/matrix');
 	assert.deepEqual(validateMatrix({ workshop: { equipment: { verbs: ['view'], scope: 'all' } } }), []);
 });
+
+test('equipment: a responsible person, an off-hire status, and a history of every change in plain words (demo E2)', async () => {
+	const w = makeWorld();
+	w.db.people.push({ ROWID: '105747000000900007', first_name: 'Tom', last_name: 'Hendry', email: 'tom@x.test' });
+	const { item: loc } = await reg.createLocation(w.ctx, { name: 'Main workshop' });
+	const { item: saw } = await reg.createEquipment(w.ctx, { name: 'Panel saw', frequency_days: 30 });
+
+	const { item } = await reg.updateEquipment(w.ctx, saw.id, { responsible_id: '105747000000900007', status: 'Off hire', location_id: loc.id, frequency_days: 30 });
+	assert.equal(item.responsibleName, 'Tom Hendry');
+	assert.equal(item.status, 'Off hire');
+	const listed = (await reg.listEquipment(w.ctx)).items.find((e) => e.id === saw.id);
+	assert.equal(listed.responsibleName, 'Tom Hendry', 'the list carries the name too');
+
+	await reg.markChecked(w.ctx, saw.id);
+	await reg.updateEquipment(w.ctx, saw.id, { name: 'Panel saw' }); // nothing changed: no history row
+
+	const h = await reg.equipmentHistory(w.ctx, saw.id);
+	assert.equal(h.count, 2);
+	const edit = h.items.find((i) => i.changes.some((c) => c.label === 'Status'));
+	assert.deepEqual(edit.changes, [
+		{ label: 'Location', from: 'None', to: 'Main workshop' },
+		{ label: 'Status', from: 'In service', to: 'Off hire' },
+		{ label: 'Responsible', from: 'Nobody', to: 'Tom Hendry' },
+	], 'frequency stayed 30 days, so it is not listed');
+	assert.ok(h.items.some((i) => i.changes[0].label === 'Last checked' && i.changes[0].from === 'Never'));
+	await rejects(reg.equipmentHistory(w.ctx, '105747000009999999'), 404);
+});

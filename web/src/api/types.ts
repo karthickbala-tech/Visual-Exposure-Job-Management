@@ -275,7 +275,13 @@ export interface EquipmentItem {
 	nextDue: string | null;
 	overdue: boolean;
 	daysOverdue: number;
+	/** The person responsible for the item. */
+	responsibleId?: string | null;
+	responsibleName?: string | null;
 }
+
+/** One change to an equipment item: who, when, and each field's old and new value. */
+export interface EquipmentChange { at: string | null; by: string | null; changes: { label: string; from: string; to: string }[] }
 
 export interface ChemicalItem {
 	id: string;

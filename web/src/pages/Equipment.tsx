@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Plus } from 'lucide-react';
-import { useChemicals, useEquipment, useLocations, useMe, useRegisterWrite } from '../api/queries';
+import { useChemicals, useEquipment, useEquipmentHistory, useLocations, useMe, usePeople, useRegisterWrite } from '../api/queries';
 import type { ChemicalItem, EquipmentItem, WorkshopLocation } from '../api/types';
 import { Chip } from '../components/Chip';
 import { Dialog } from '../components/Dialog';
@@ -50,7 +50,7 @@ const EQ_COLUMNS: GridColumn<EquipmentItem>[] = [
 		</>
 	) },
 ];
-const EQ_ACTION_WIDTH = 170;
+const EQ_ACTION_WIDTH = 230; // "Checked today" and Edit
 const EQ_WIDTHS = gridWidths([...EQ_COLUMNS, { key: 'action', width: EQ_ACTION_WIDTH }]);
 
 const CHEM_COLUMNS: GridColumn<ChemicalItem>[] = [
@@ -202,20 +202,52 @@ function State({ q, empty }: { q: { isPending: boolean; isError: boolean; data?:
 	return null;
 }
 
+const EQ_STATUSES = ['In service', 'Off hire', 'Out of service'] as const;
+const EQ_FORM = { name: '', type: '', location_id: '', frequency_days: '', off_hire_required: false, status: 'In service' as string, responsible_id: '' };
+
+/** The changes made to one item, newest first, inside its edit form (demo E2). */
+function EquipmentHistory({ id }: { id: string }) {
+	const h = useEquipmentHistory(id);
+	if (h.isPending) return <p role="status" className="muted">Loading history…</p>;
+	if (h.isError) return <p role="alert">Could not load the history.</p>;
+	if (!h.data.items.length) return <p className="muted">No changes recorded yet.</p>;
+	return (
+		<ul className="plain-list">
+			{h.data.items.map((c, i) => (
+				<li key={i}>
+					<span className="muted">{c.at ? c.at.slice(0, 16) : ''}{c.by ? ` · ${c.by}` : ''}: </span>
+					{c.changes.map((x) => `${x.label} ${x.from} → ${x.to}`).join('; ')}
+				</li>
+			))}
+		</ul>
+	);
+}
+
 function EquipmentTab({ canWrite, list, items, shown, grid, toolbar }: { canWrite: boolean; list: EqQuery; items: EquipmentItem[]; shown: EquipmentItem[]; grid: GridLayout; toolbar: ReactNode }) {
 	const locs = useLocations();
-	const write = useRegisterWrite(['equipment']);
+	const write = useRegisterWrite(['equipment', 'equipment-history']);
 	const { notify } = useToast();
-	const [open, setOpen] = useState(false);
-	const [form, setForm] = useState({ name: '', type: '', location_id: '', frequency_days: '', off_hire_required: false });
+	// null: no form open; 'new': adding; an item: editing it.
+	const [open, setOpen] = useState<'new' | EquipmentItem | null>(null);
+	const editing = open && open !== 'new' ? open : null;
+	const people = usePeople(!!open);
+	const [form, setForm] = useState(EQ_FORM);
+	const close = () => { setOpen(null); setForm(EQ_FORM); };
+	const startEdit = (e: EquipmentItem) => {
+		setForm({ name: e.name, type: e.type, location_id: e.locationId ?? '', frequency_days: e.frequencyDays ? String(e.frequencyDays) : '', off_hire_required: e.offHireRequired, status: e.status, responsible_id: e.responsibleId ?? '' });
+		setOpen(e);
+	};
 	const checked = (id: string) => write.mutate({ method: 'POST', path: `/equipment/${id}/checked` }, { onSuccess: () => notify('Marked as checked today') });
 	const columns: GridColumn<EquipmentItem>[] = canWrite
 		? [...EQ_COLUMNS, { key: 'action', label: 'Action', width: EQ_ACTION_WIDTH, cell: (e) => (
-			e.status === 'In service' ? (
-				<button className="btn btn-ghost" onClick={() => checked(e.id)} disabled={write.isPending}>
-					<Check size={15} aria-hidden="true" /> Checked today
-				</button>
-			) : null
+			<>
+				{e.status === 'In service' && (
+					<button className="btn btn-ghost" onClick={() => checked(e.id)} disabled={write.isPending}>
+						<Check size={15} aria-hidden="true" /> Checked today
+					</button>
+				)}
+				<button className="btn btn-ghost btn-sm" onClick={() => startEdit(e)} aria-label={`Edit ${e.name}`}>Edit</button>
+			</>
 		) }]
 		: EQ_COLUMNS;
 
@@ -225,35 +257,49 @@ function EquipmentTab({ canWrite, list, items, shown, grid, toolbar }: { canWrit
 			{canWrite && (
 				<div className="inline-form">
 					{!open && (
-						<button className="btn" onClick={() => setOpen(true)}>
+						<button className="btn" onClick={() => { setForm(EQ_FORM); setOpen('new'); }}>
 							<Plus size={16} aria-hidden="true" /> Add equipment
 						</button>
 					)}
 				</div>
 			)}
 			{canWrite && open && (
-				<Dialog title="Add equipment" onClose={() => setOpen(false)}>
+				<Dialog title={editing ? `Edit ${editing.code}: ${editing.name}` : 'Add equipment'} onClose={close}>
 				<form
 					className="inline-form"
 					onSubmit={(e) => {
 						e.preventDefault();
 						write.mutate(
-							{
-								method: 'POST',
-								path: '/equipment',
-								body: {
-									name: form.name,
-									type: form.type || undefined,
-									location_id: form.location_id || undefined,
-									frequency_days: form.frequency_days ? Number(form.frequency_days) : undefined,
-									off_hire_required: form.off_hire_required,
+							editing
+								? {
+									method: 'PATCH',
+									path: '/equipment/' + editing.id,
+									body: {
+										name: form.name,
+										type: form.type,
+										location_id: form.location_id || null,
+										frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
+										off_hire_required: form.off_hire_required,
+										status: form.status,
+										responsible_id: form.responsible_id || null,
+									},
+								}
+								: {
+									method: 'POST',
+									path: '/equipment',
+									body: {
+										name: form.name,
+										type: form.type || undefined,
+										location_id: form.location_id || undefined,
+										frequency_days: form.frequency_days ? Number(form.frequency_days) : undefined,
+										off_hire_required: form.off_hire_required,
+										responsible_id: form.responsible_id || undefined,
+									},
 								},
-							},
 							{
 								onSuccess: () => {
-									setOpen(false);
-									setForm({ name: '', type: '', location_id: '', frequency_days: '', off_hire_required: false });
-									notify('Equipment added');
+									notify(editing ? 'Equipment saved' : 'Equipment added');
+									close();
 								},
 							},
 						);
@@ -282,17 +328,40 @@ function EquipmentTab({ canWrite, list, items, shown, grid, toolbar }: { canWrit
 						<span className="toolbar__label">Check every (days)</span>
 						<input type="number" min={1} max={3650} value={form.frequency_days} onChange={(e) => setForm({ ...form, frequency_days: e.target.value })} />
 					</label>
+					<label>
+						<span className="toolbar__label">Responsible</span>
+						<select value={form.responsible_id} onChange={(e) => setForm({ ...form, responsible_id: e.target.value })} style={{ width: '100%' }}>
+							<option value="">Nobody</option>
+							{(people.data?.items ?? []).filter((p) => p.is_active !== false || p.ROWID === form.responsible_id).map((p) => (
+								<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+							))}
+						</select>
+					</label>
+					{editing && (
+						<label>
+							<span className="toolbar__label">Status</span>
+							<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={{ width: '100%' }}>
+								{EQ_STATUSES.map((s) => <option key={s}>{s}</option>)}
+							</select>
+						</label>
+					)}
 					<label className="login__check">
 						<input type="checkbox" checked={form.off_hire_required} onChange={(e) => setForm({ ...form, off_hire_required: e.target.checked })} /> Hired (off hire when the job ends)
 					</label>
 					<button className="btn" disabled={write.isPending}>
 						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
-					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+					<button type="button" className="btn btn-ghost" onClick={close}>
 						Cancel
 					</button>
 					{write.isError && <p role="alert">{write.error.message}</p>}
 				</form>
+				{editing && (
+					<>
+						<h3>History</h3>
+						<EquipmentHistory id={editing.id} />
+					</>
+				)}
 				</Dialog>
 			)}
 			<State q={list} empty="No equipment yet." />

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, FabVariance, ChemicalItem, DeviceItem, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, FabVariance, ChemicalItem, DeviceItem, EquipmentChange, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -211,6 +211,10 @@ export const useCalendar = (from: string, to: string) =>
 
 export const useFabVariance = () =>
 	useQuery({ queryKey: ['fab-variance'], queryFn: () => api<FabVariance>('/reports/fab-variance'), staleTime: 60_000 });
+
+/** The change history of one equipment item, fetched only while its edit form is open. */
+export const useEquipmentHistory = (id: string | null) =>
+	useQuery({ queryKey: ['equipment-history', id], queryFn: () => api<{ items: EquipmentChange[] }>('/equipment/' + id + '/history'), enabled: !!id, staleTime: 30_000 });
 
 export const usePeople = (enabled: boolean) =>
 	useQuery({ queryKey: ['people'], queryFn: () => api<{ items: Person[] }>('/people?limit=300'), enabled, staleTime: 60_000 });
