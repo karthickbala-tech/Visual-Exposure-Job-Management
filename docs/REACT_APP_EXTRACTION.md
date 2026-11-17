@@ -34,7 +34,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | J7 | Bulk task actions | schedule crew and date, hold, cancel with one reason, "N of M done, M skipped" | M FE | todo |
 | J8 | Reasons for hold, cancel, not-used, reset; hold returns to the stage it came from | needs a `held_from` column | M BE | todo |
 | J9 | Delete task (soft) | admin only when hours are booked | M BE | todo |
-| J10 | Sign stages and edit | Deal, Artwork, Manufacturing, Install stage columns | M BE | todo |
+| J10 | Sign stages and edit | Deal, Artwork, Manufacturing, Install stage columns | M BE | done (stages already built; Edit added 17 Nov, prefilled dialog like Directory) |
 | J11 | Crew flag "needs management review"; team leader rating 1 to 10 | needs a decision on the scale (ours is 1 to 5) | M | todo |
 
 ## Issues, equipment, devices, dashboards

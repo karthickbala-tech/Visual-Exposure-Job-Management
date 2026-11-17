@@ -125,6 +125,9 @@ const SWMS_OPTIONS = {
 
 const list = (items) => ({ items, count: items.length });
 const patch = (obj, body, keys) => { for (const k of keys) if (body[k] !== undefined) obj[k] = body[k]; return obj; };
+/** Sign fields arrive in API names (snake case) and are kept as the API returns them (camel case). */
+const SIGN_KEYS = { name: 'name', revision: 'revision', sign_number: 'signNumber', qty: 'qty', medium: 'medium', finishing: 'finishing', install_date: 'installDate', deal_stage: 'dealStage', artwork_stage: 'artworkStage', manufacturing_stage: 'manufacturingStage', install_stage: 'installStage' };
+const signPatch = (s, body) => { for (const [k, v] of Object.entries(SIGN_KEYS)) if (body[k] !== undefined) s[v] = body[k]; return s; };
 
 const routes = [
 	// who am I
@@ -279,7 +282,8 @@ const routes = [
 	['POST', /^\/companies$/, (_, __, b) => { const c = { id: id(), name: b.name, kind: b.kind || 'subcontractor', state: b.state || '', contactName: b.contact_name || '', phone: b.phone || '', email: b.email || '', notes: b.notes || '', isActive: true }; S.companies.push(c); return { item: c }; }],
 	['GET', /^\/sites$/, () => list(S.sites)],
 	['POST', /^\/sites$/, (_, __, b) => { const s = { id: id(), name: b.name, address: [b.street, b.suburb, b.state].filter(Boolean).join(', '), contactName: b.contact_name || '', phone: b.phone || '', isActive: true }; S.sites.push(s); return { item: s }; }],
-	['POST', /^\/signs$/, (_, __, b) => { const s = { id: id(), jobId: b.job_id, name: b.name, revision: b.revision || 'A', qty: b.qty || 1, medium: b.medium || '', finishing: b.finishing || '', installDate: null }; S.signs.push(s); return { item: s }; }],
+	['POST', /^\/signs$/, (_, __, b) => { const s = signPatch({ id: id(), jobId: b.job_id, name: '', revision: 'A', qty: 1, medium: '', finishing: '', installDate: null }, b); S.signs.push(s); return { item: s }; }],
+	['PATCH', /^\/signs\/(\d+)$/, (m, _, b) => { const s = S.signs.find((x) => x.id === m[1]); if (!s) throw Object.assign(new Error('Sign not found'), { status: 404 }); return { item: signPatch(s, b) }; }],
 	// assets
 	['GET', /^\/equipment$/, () => list(S.equipment)],
 	['POST', /^\/equipment\/(\d+)\/checked$/, (m) => { const e = S.equipment.find((x) => x.id === m[1]); if (e) { e.lastChecked = TODAY; e.nextDue = e.frequencyDays ? day(e.frequencyDays) : null; e.overdue = false; e.daysOverdue = 0; } return { item: e }; }],
