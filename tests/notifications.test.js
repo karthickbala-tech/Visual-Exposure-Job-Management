@@ -111,3 +111,31 @@ test('a task submitted for approval emails the job PM (install, design) or fab m
 	await dispatch('task.stage_changed', { taskId: String(inst.ROWID), to: 'Manager Review' }, ctx);
 	assert.deepEqual([...sent[2].to].sort(), ['other-pm@x.com', 'pm@x.com'], 'no PM on the job: every project manager');
 });
+
+test('an approval flagged for management review or OH&S emails the department manager and inform-also list; an unflagged one sends nothing', async () => {
+	const appSettings = require('../lib/services/appSettings');
+	const { w, ctx, sent } = setup();
+	w.db.people.push(
+		{ ROWID: '105747000000900020', email: 'install-mgr@x.com', roles: ['install_coordinator'] },
+		{ ROWID: '105747000000900021', email: 'safety@x.com', roles: ['viewer'] },
+	);
+	await appSettings.updateSettings(w.ctx, { issue_routing: { Install: { manager_id: '105747000000900020', inform_also: ['105747000000900021'] } } });
+	const { job } = await jobs.createJob(w.ctx, { name: 'Harbour job' });
+	const task = (await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: 'Install pylon' })).task;
+	const id = String(task.ROWID);
+
+	await dispatch('task.stage_changed', { taskId: id, to: 'Completed', ohs: 'No', managementReview: false }, ctx);
+	assert.equal(sent.length, 0, 'a plain approval tells nobody');
+
+	await dispatch('task.stage_changed', { taskId: id, to: 'Completed', ohs: 'Yes', managementReview: true, comment: 'Ladder footing was poor' }, ctx);
+	assert.deepEqual([...sent[0].to].sort(), ['install-mgr@x.com', 'safety@x.com']);
+	assert.match(sent[0].subject, /OH&S concern on an approved task: Install pylon/);
+	assert.match(sent[0].html, /needs a management review/);
+	assert.match(sent[0].html, /Ladder footing was poor/);
+
+	// The approval itself publishes the flags with the stage change.
+	w.db.tasks.find((t) => String(t.ROWID) === id).stage = 'Manager Review';
+	await tasks.transitionTask(w.ctx, id, { to: 'Completed', ohs: 'Yes', management_review: false, comment: 'Near miss' });
+	const ev = w.published.filter((e) => e.type === 'task.stage_changed').pop();
+	assert.deepEqual([ev.payload.ohs, ev.payload.managementReview, ev.payload.comment], ['Yes', false, 'Near miss']);
+});
