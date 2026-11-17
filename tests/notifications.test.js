@@ -84,3 +84,30 @@ test('missing email setup is skipped quietly, never thrown', async () => {
 	assert.equal(r.sent, false);
 	assert.equal(logged[0][0], 'email skipped');
 });
+
+test('a task submitted for approval emails the job PM (install, design) or fab manager (fab); with none set, everyone in that role', async () => {
+	const { w, ctx, sent } = setup();
+	w.db.people.push(
+		{ ROWID: '105747000000900010', email: 'pm@x.com', roles: ['project_manager'] },
+		{ ROWID: '105747000000900011', email: 'fabm@x.com', roles: ['fab_manager'] },
+		{ ROWID: '105747000000900012', email: 'other-pm@x.com', roles: ['project_manager'] },
+	);
+	const { job } = await jobs.createJob(w.ctx, { name: 'Harbour job' });
+	w.db.jobs[0].pm_id = '105747000000900010';
+	w.db.jobs[0].fab_manager_id = '105747000000900011';
+	const inst = (await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: 'Install pylon' })).task;
+	const fab = (await tasks.createTask(w.ctx, job.ROWID, { task_type: 'fabrication', name: 'Cut letters' })).task;
+
+	await dispatch('task.stage_changed', { taskId: String(inst.ROWID), to: 'Manager Review' }, ctx);
+	assert.deepEqual(sent[0].to, ['pm@x.com']);
+	assert.equal(sent[0].subject, 'Install Task Approval: Install pylon');
+	assert.match(sent[0].html, /Harbour job/);
+
+	await dispatch('task.stage_changed', { taskId: String(fab.ROWID), to: 'Manager Review' }, ctx);
+	assert.deepEqual(sent[1].to, ['fabm@x.com']);
+	assert.equal(sent[1].subject, 'Fabrication Task Approval: Cut letters');
+
+	w.db.jobs[0].pm_id = null;
+	await dispatch('task.stage_changed', { taskId: String(inst.ROWID), to: 'Manager Review' }, ctx);
+	assert.deepEqual([...sent[2].to].sort(), ['other-pm@x.com', 'pm@x.com'], 'no PM on the job: every project manager');
+});
