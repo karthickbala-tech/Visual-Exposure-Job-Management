@@ -2,6 +2,22 @@
 
 Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed to Catalyst Development on 11 Nov 2026**: api, jobs, events (with the `.env` variables) and the web client. There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
+## 0a. 17 Nov 2026 (Kalyani's session, later): FSD audit and Phase 1 task rules
+
+**Direction (Kalyani, 17 Nov):** web/ (Karthick's app) is the final application; react-app is reference only. Work is driven by `docs/FSD.md`. A full FSD check (every numbered requirement plus sections 5.12 to 14, in code, not from the status docs) gave six phases: 1 task rules, 2 missing emails, 3 admin/compliance/equipment, 4 screens (role dashboards and more), 5 integrations (CRM fields, Assets, Sites, WorkDrive per task, store SWMS PDF), 6 go-live (crons, concurrency, CI, migration). Blocked on the client: email sender, Stratus CORS, Creator export, MDM credentials, checklist and SWMS wording, the ~18 hidden issue fields and 5 print layouts, CRM field names, FSD questions 2, 6, 8, 9, 10, 12, 13, 15, 17, 20, and training-portal passwords vs CMP-5.
+
+**Phase 1 done** (`f394a69` to `b1bdb64`, pushed, not deployed; one commit each, backend test for each rule; screens use existing components only):
+1. Close task for External Install / Print Only now appears (`taskRules.stageOptions`); before, the server allowed it but no button was offered (INS-6).
+2. Scheduled needs a date and a team leader (date only for close-only kinds); design Assigned needs someone on the task (`readinessProblem`, 409 not_ready) (TSK-3, DES-1).
+3. Cancel / Not used / Reset assignment take the crew off with their unfinished checklists (finished kept); Cancel also clears the date and sets quoted hours to 0 (`cleanupFor`). New design move Assigned to To be Assigned (TSK-2/3).
+4. A reason is required for On Hold, Cancelled, Complete - Not Used and a reset. Job page menu opens the task page with the reason form ready (`?move=`).
+5. Job page: the close strip no longer promises to close with tasks in Manager Review (the server refuses); Close job now asks first (JOB-5).
+6. Checklists offered per kind: none for External Install / Print Only, post only for Workshop (`checklistPhases`) on server, next-step and task page.
+7. Checklist photo questions upload in place (to the checklist, answer = file id); post-job shift form shows the pay split, confirms over 14 h, refuses over 16 h or unbilled over worked.
+- Tests 329 pass; build passes; oxlint 0 errors (10 accepted warnings). The running mock (PID 15392) predates these changes: restart it to see them. The mock has no file upload routes.
+- **Assumption to confirm:** Cancel removes unfinished checklists (Creator kept them, WORKFLOWS section 5 [CONFIRM]); chosen to match the existing "taking someone off a task" rule.
+- **Next: Phase 2 emails** (submitted for approval; management review / OH&S on approve; closure recipients and tables; profit changed).
+
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
 Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last two commits, `acf7309` and `37cbab7`, which were never pushed) with web. Built the 11 small ones, one commit each, all pushed to `feat/backend-foundation` (`1572468` to `b13cd44`). **Not deployed.**
