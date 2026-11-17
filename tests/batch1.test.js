@@ -115,19 +115,36 @@ test('closing a job: needs every task finished, closes once, tells the CRM, emai
 	await rejects(jobs.closeJob(w.ctx, '105747000009999999'), 404);
 });
 
-test('the closure email goes to the job project manager and every project manager, in one message', async () => {
-	const { w, jobId } = await setup();
+test('the closure report: admins get hours, cost, purchases and CRM profit; the job PM and fab manager get hours only (WORKFLOWS 13, JOB-9)', async () => {
+	const { w, jobId } = await setup({ crm_deal_id: '1482987000000548231' });
 	w.db.people.push({ ROWID: 'pm1', first_name: 'Rachel', email: 'rachel@example.test', roles: ['project_manager'], is_active: 'true' });
 	w.db.people.push({ ROWID: 'pm2', first_name: 'Tom', email: 'tom@example.test', roles: ['project_manager'], is_active: 'true' });
-	w.db.jobs[0].pm_id = 'pm1';
-	w.db.jobs[0].completed_date = '2026-11-04';
+	w.db.people.push({ ROWID: 'fm1', first_name: 'Jo', email: 'jo@example.test', roles: ['fab_manager'], is_active: 'true' });
+	w.db.people.push({ ROWID: 'ad1', first_name: 'Dee', email: 'director@example.test', roles: ['admin'], is_active: 'true' });
+	Object.assign(w.db.jobs[0], { pm_id: 'pm1', fab_manager_id: 'fm1', completed_date: '2026-11-04', total_purchases: 1250, stock_purchases: 300 });
+	const add = (t) => w.db.tasks.push({ ROWID: String(8000 + w.db.tasks.length), job_id: jobId, is_deleted: 'false', stage: 'Completed', ...t });
+	add({ task_type: 'fabrication', quoted_hours: 30, booked_hours: 28, labour_cost: 1120, cost_type: 'Parent' });
+	add({ task_type: 'install', quoted_hours: 16, booked_hours: 18, labour_cost: 756, cost_type: 'Fab' });
 	const sent = [];
-	const ctx = { ...w.ctx, log: { info() {}, warn() {}, error() {} }, mailer: { send: async (m) => (sent.push(m), { sent: true, count: m.to.length }) } };
+	const deal = { Total_Revenue: '9800', Job_Profit: 5674, Job_Profit1: 57.9 };
+	const ctx = { ...w.ctx, zoho: { crm: { getDeal: async (id) => (id === '1482987000000548231' ? deal : null) } }, log: { info() {}, warn() {}, error() {} }, mailer: { send: async (m) => (sent.push(m), { sent: true, count: m.to.length }) } };
 	await handlers['job.closed']({ jobId }, ctx);
-	assert.equal(sent.length, 1, 'one email, not one per person');
-	assert.deepEqual(sent[0].to.sort(), ['rachel@example.test', 'tom@example.test']);
-	assert.match(sent[0].subject, /Job closed: Pylon refresh/);
-	assert.match(sent[0].html, /2026-11-04/);
+
+	assert.equal(sent.length, 2, 'one email for the administrators, one for the job managers');
+	const [full, hours] = sent;
+	assert.deepEqual(full.to, ['director@example.test']);
+	assert.match(full.subject, /Job closed: Pylon refresh/);
+	for (const bit of ['Fabrication: 30 / 28 h', 'Install: 16 / 18 h', 'Fabrication: $1,120.00 (Parent $1,120.00, Fab $0.00)', 'Purchases: $1,250.00 (stock $300.00)', 'Revenue (CRM deal): $9,800.00', 'Profit (CRM deal): $5,674.00 (57.9%)']) {
+		assert.ok(full.html.includes(bit), `admin copy shows "${bit}"`);
+	}
+	assert.deepEqual([...hours.to].sort(), ['jo@example.test', 'rachel@example.test'], 'the job PM and fab manager, not every PM');
+	assert.ok(hours.html.includes('Fabrication: 30 / 28 h'));
+	assert.equal(/\$|Purchases|Revenue|Profit/.test(hours.html), false, 'no money for non-admins');
+	assert.match(hours.html, /2026-11-04/);
+
+	sent.length = 0;
+	await handlers['job.closed']({ jobId }, { ...ctx, zoho: { crm: { getDeal: async () => { throw new Error('CRM down'); } } } });
+	assert.ok(sent[0].html.includes('Revenue and profit could not be read from the CRM deal.'), 'a CRM failure still sends the report');
 	assert.equal(render('jobClosed', { job: { name: '<b>x</b>' } }).html.includes('<b>x</b>'), false, 'names are escaped');
 });
 
