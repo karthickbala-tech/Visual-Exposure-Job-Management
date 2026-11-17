@@ -5,6 +5,9 @@
 //   second_ic, installer, fab_worker, workshop, viewer; or several, comma separated)
 import http from 'node:http';
 import * as S from './seed.mjs';
+import { createRequire } from 'node:module';
+// The real email templates (lib/domain/notifications.js), so Admin > Emails lists and previews the emails the server sends.
+const N = createRequire(import.meta.url)('../../lib/domain/notifications.js');
 
 const { day } = S;
 const roles = (process.env.MOCK_ROLES || 'admin').split(',');
@@ -125,7 +128,7 @@ const checklistView = (c) => {
 	return { checklist: { id: c.id, taskId: c.taskId, phase: c.phase, status: c.status, role: c.role, hours: c.hours }, definition: S.checklistDefinition, answers: c.answers, progress: { total, answered: Math.min(answered, total), percent: Math.round((Math.min(answered, total) / total) * 100), missing: [], issues: [], canComplete: answered >= total }, next };
 };
 
-const templates = ['issueRaised', 'issueUpdated', 'taskSentBack', 'jobClosed', 'equipmentOffHire', 'complianceDue', 'weeklyHours', 'weeklyIssues'].map((name) => ({ name, label: name.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()), placeholders: ['job', 'subject', 'link'], override: name === 'jobClosed' ? { intro: 'Well done team.' } : null }));
+const templates = Object.keys(N.TEMPLATE_INFO).map((name) => ({ name, label: N.TEMPLATE_INFO[name].label, placeholders: N.placeholdersOf(name), override: null }));
 let settings = { workshop_job_id: '1001', pay_period: { start_date: days[0], length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd', Address: '532 Somerville Road, Sunshine West VIC 3020', Phone: '03 9311 5722' }, hours_report_recipients: ['501', '502'], hours_cutoff_date: null };
 
 const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
@@ -332,7 +335,7 @@ const routes = [
 	['PUT', /^\/admin\/settings$/, (_, __, b) => { settings = { ...settings, ...b }; return { settings }; }],
 	['GET', /^\/admin\/mail-templates$/, () => ({ items: templates })],
 	['PUT', /^\/admin\/mail-templates\/(\w+)$/, (m, _, b) => { const t = templates.find((x) => x.name === m[1]); t.override = Object.values(b).some(Boolean) ? b : null; return { template: t }; }],
-	['GET', /^\/admin\/mail-templates\/(\w+)\/preview$/, () => ({ subject: 'Preview', html: '<div style="font-family:Raleway,Arial,sans-serif"><h2 style="margin:0 0 12px">Preview</h2><p>This is how the email looks, with sample data.</p><p><a href="#">Open in Visual Exposure</a></p></div>' })],
+	['GET', /^\/admin\/mail-templates\/(\w+)\/preview$/, (m) => { const t = templates.find((x) => x.name === m[1]); const info = N.TEMPLATE_INFO[m[1]]; const msg = N.applyOverrides(N.render(m[1], info.sample), t && t.override, m[1], info.sample); return { subject: msg.subject, html: msg.html }; }],
 	['GET', /^\/admin\/notifications$/, (_, q) => list(S.notifications.filter((n) => !q.get('status') || n.status === q.get('status')))],
 	['POST', /^\/admin\/notifications\/\d+\/retry$/, () => ({ sent: true, reason: null })],
 	['POST', /^\/admin\/reports\/weekly-(hours|issues)$/, () => ({ ran: true, sent: true })],
