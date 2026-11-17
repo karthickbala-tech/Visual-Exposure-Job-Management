@@ -2627,7 +2627,7 @@ body.col-resizing, body.col-resizing * {
 .jh {
 	background: var(--surface);
 	border: 1px solid var(--line);
-	border-radius: var(--radius-md);
+	border-radius: 0px 0px 10px 10px;
 	box-shadow: var(--shadow-sm);
 	overflow: hidden;
 }
@@ -2638,10 +2638,10 @@ body.col-resizing, body.col-resizing * {
 	align-items: center;
 	gap: 8px 16px;
 	padding: 10px 18px;
-	background: var(--surface);
+	background: #101726;
 	border: 1px solid var(--line);
-	border-radius: var(--radius-md);
-	color: var(--ink);
+	border-radius: 10px 10px 0px 0px;
+	color: #ffffff;
 	box-shadow: var(--shadow-xs);
 }
 
