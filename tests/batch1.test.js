@@ -270,3 +270,34 @@ test('the checklists a task has: none for External Install and Print Only, post-
 	await rejects(checklists.startChecklist(w.ctx, ext, { phase: 'post' }), 409, 'no_checklists');
 	assert.deepEqual(await checklists.nextStep(w.ctx, ext), { phase: null, action: 'done', checklistId: null, next: null });
 });
+
+test('a task can be added with its location, sign group, fab spec and crew; with a date and a team leader it starts Scheduled (TSK-3, TSK-6, JOB-4)', async () => {
+	const { w, jobId } = await setup();
+	const CREW = '105747000000900002';
+	w.db.people.push({ ROWID: CREW, first_name: 'Sam', last_name: 'Crew', email: 'sam@example.test', is_active: 'true', is_deleted: 'false' });
+	w.db.sites.push({ ROWID: '105747000000700001', name: 'Collins Street Tower', is_deleted: 'false' });
+	w.db.signGroups.push({ ROWID: '105747000000710001', job_id: jobId, name: 'Pylon faces' }, { ROWID: '105747000000710002', job_id: '999', name: 'Another job' });
+
+	const fab = (await tasks.createTask(w.ctx, jobId, {
+		task_type: 'fabrication', name: 'Route faces', kind: 'CNC', scheduled_date: '2026-11-20', site_id: '105747000000700001', sign_group_id: '105747000000710001',
+		spec: { material: 'ACM', thickness_mm: 3 }, crew: [{ person_id: CREW, role: 'member' }, { person_id: ME, role: 'lead' }],
+	})).task;
+	assert.equal(fab.stage, 'Scheduled', 'date and team leader: scheduled straight away');
+	const row = dbTask(w, fab.ROWID);
+	assert.deepEqual(JSON.parse(row.spec), { material: 'ACM', thickness_mm: 3 });
+	assert.equal(String(row.lead_id), ME);
+	assert.equal(w.db.links.filter((l) => String(l.task_id) === String(fab.ROWID)).length, 2);
+	assert.equal(String(row.sign_group_id), '105747000000710001');
+
+	const noDate = (await tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'Fit', crew: [{ person_id: ME, role: 'lead' }] })).task;
+	assert.equal(noDate.stage, 'Awaiting Scheduling', 'no date: waits to be scheduled');
+
+	const design = (await tasks.createTask(w.ctx, jobId, { task_type: 'design', name: 'Artwork', kind: 'Artwork Sign Off', crew: [{ person_id: ME, role: 'lead' }] })).task;
+	assert.equal(design.stage, 'Assigned', 'a design task with its designer is assigned');
+
+	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'X', spec: { material: 'ACM' } }), 400);
+	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'X', sign_group_id: '105747000000710002' }), 400);
+	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'X', crew: [{ person_id: ME, role: 'lead' }, { person_id: CREW, role: 'lead' }] }), 400);
+	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'X', site_id: '105747000000799999' }), 404);
+	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'fabrication', name: 'X', kind: 'CNC', spec: { thickness_mm: 'thick' } }), 400);
+});

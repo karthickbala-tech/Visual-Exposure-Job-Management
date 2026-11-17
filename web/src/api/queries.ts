@@ -48,7 +48,7 @@ export const useCreateJob = () => {
 export const useCreateTask = (jobId: string) => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (input: { task_type: string; name: string; kind?: string; scheduled_date?: string; required_finish?: string; quoted_hours?: number; proposed_hours?: number; description?: string }) => api('/jobs/' + jobId + '/tasks', json('POST', input)),
+		mutationFn: (input: { task_type: string; name: string; kind?: string; scheduled_date?: string; required_finish?: string; quoted_hours?: number; proposed_hours?: number; description?: string; site_id?: string; sign_group_id?: string; cost_type?: 'Fab' | 'Parent'; spec?: Record<string, string | number>; crew?: { person_id: string; role: 'lead' | 'member' }[] }) => api('/jobs/' + jobId + '/tasks', json('POST', input)),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['job', jobId] }),
 	});
 };
