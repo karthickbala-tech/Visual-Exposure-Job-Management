@@ -41,7 +41,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | # | Item | Rules | Value | Status |
 |---|---|---|---|---|
 | I1 | Seven issue print layouts | Summary, Full, Install, Workshop, Civic Billboards, Management, VT/Digital Screens; names are placeholders until the client confirms | M | waiting on the client |
-| I2 | Issue photo attachments | not really built in her demo | L | todo |
+| I2 | Issue photo attachments | not really built in her demo | L | done 17 Nov: "Photos and files" in the issue side panel (backend already accepted issue files); real uploads still need CORS on the Stratus bucket |
 | I3 | Related task picker and review options by task | install: Management Review or WHS Reported; fab: Management Review or OH&S Reported | L FE | todo |
 | E1 | Hired equipment picked on install tasks | on Finished On Site, off-hire-required items go Off hire and managers get one email | H FE | todo |
 | E2 | Equipment register | KPI tiles, type filter, search, status tabs, columns last checked / every N days / responsible / N days late; edit with history; Off hire toggle | M FE+BE | todo |

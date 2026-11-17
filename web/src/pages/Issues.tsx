@@ -12,6 +12,7 @@ import type { ActiveChip } from '../components/ListToolbar';
 import { Card, EmptyState, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
+import { FilesPanel } from './FilesPanel';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
 const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
@@ -74,8 +75,8 @@ function History({ id }: { id: string }) {
 	);
 }
 
-/** The side panel: change status with the notes the rules ask for, assign, set the due date, see the history. */
-function QuickPanel({ issue, isManager, onClose }: { issue: Who; isManager: boolean; onClose: () => void }) {
+/** The side panel: change status with the notes the rules ask for, assign, set the due date, add photos, see the history. */
+function QuickPanel({ issue, isManager, myId, onClose }: { issue: Who; isManager: boolean; myId: string; onClose: () => void }) {
 	const update = useUpdateIssue();
 	const deal = useCrmDeal();
 	const people = usePeople(true);
@@ -154,6 +155,8 @@ function QuickPanel({ issue, isManager, onClose }: { issue: Who; isManager: bool
 					{issue.next_step && <p><strong>Next step:</strong> {issue.next_step}</p>}
 				</>
 			)}
+			{/* Managers add files to any issue; others only to issues they reported (the server checks the same rule). */}
+			<FilesPanel entityType="issue" entityId={issue.ROWID} canUpload={isManager || (!!myId && issue.reported_by_id === myId)} />
 			<h3>History</h3>
 			<History id={issue.ROWID} />
 		</aside>
@@ -333,7 +336,7 @@ export function Issues() {
 				{issues.isSuccess && layout === 'list' && <GridStatusBar text={`Showing ${shown.length} of ${all.length}`} />}
 			</Card>
 
-			{current && <QuickPanel key={current.ROWID} issue={current} isManager={isManager} onClose={() => setSelected(null)} />}
+			{current && <QuickPanel key={current.ROWID} issue={current} isManager={isManager} myId={myId} onClose={() => setSelected(null)} />}
 		</>
 	);
 }
