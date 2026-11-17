@@ -301,3 +301,13 @@ test('a task can be added with its location, sign group, fab spec and crew; with
 	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'install', name: 'X', site_id: '105747000000799999' }), 404);
 	await rejects(tasks.createTask(w.ctx, jobId, { task_type: 'fabrication', name: 'X', kind: 'CNC', spec: { thickness_mm: 'thick' } }), 400);
 });
+
+test('the task list (detail) carries each task\'s sign group name, for grouping by sign group (FSD section 12)', async () => {
+	const { w, jobId } = await setup();
+	w.db.signGroups.push({ ROWID: '105747000000710001', job_id: jobId, name: 'Pylon faces' });
+	const a = await mk(w, jobId, { task_type: 'fabrication', name: 'Route', kind: 'CNC', sign_group_id: '105747000000710001' });
+	const b = await mk(w, jobId, { task_type: 'fabrication', name: 'Paint', kind: 'Paint' });
+	const items = (await tasks.listTasks(w.ctx, { job_id: jobId, detail: 'true' })).items;
+	assert.equal(items.find((t) => String(t.ROWID) === a).sign_group_name, 'Pylon faces');
+	assert.equal(items.find((t) => String(t.ROWID) === b).sign_group_name, null);
+});

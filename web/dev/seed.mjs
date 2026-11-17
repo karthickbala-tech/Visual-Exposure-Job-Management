@@ -55,8 +55,8 @@ let tid = 2000;
 const T = (job_id, task_type, name, kind, stage, sched, finish, extra = {}) => ({ ROWID: String(++tid), job_id, task_type, name, kind, stage, scheduled_date: sched, required_finish: finish, quoted_hours: extra.q ?? 0, booked_hours: extra.b ?? 0, description: extra.d || '', swms_id: extra.swms, assignees: extra.who || [] });
 export const tasks = [
 	T('1042', 'design', 'Pylon face artwork', null, 'Completed', day(-50), day(-45), { q: 12, b: 11, who: [['512', 'lead']] }),
-	T('1042', 'fabrication', 'Cut and route ACM faces', 'CNC', 'In Progress', day(-2), day(-1), { q: 30, b: 22, who: [['506', 'lead'], ['507', 'member']] }),
-	T('1042', 'fabrication', 'Paint pylon frames', 'Paint', 'Scheduled', day(1), day(6), { q: 24, who: [['507', 'lead']] }),
+	{ ...T('1042', 'fabrication', 'Cut and route ACM faces', 'CNC', 'In Progress', day(-2), day(-1), { q: 30, b: 22, who: [['506', 'lead'], ['507', 'member']] }), sign_group_id: '1601' },
+	{ ...T('1042', 'fabrication', 'Paint pylon frames', 'Paint', 'Scheduled', day(1), day(6), { q: 24, who: [['507', 'lead']] }), sign_group_id: '1601' },
 	T('1042', 'install', 'Install pylon faces', 'VE Install', 'Awaiting Scheduling', null, day(20), { q: 40, swms: '3001', who: [] }),
 	T('1047', 'design', 'Sign family artwork', null, 'Completed', day(-70), day(-62), { q: 20, b: 22 }),
 	T('1047', 'fabrication', 'Fabricate directional signs', 'Metal', 'Completed', day(-30), day(-20), { q: 60, b: 64, who: [['506', 'lead']] }),

@@ -13,7 +13,7 @@ import type { ActiveChip } from '../components/ListToolbar';
 import { Card, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate, TableFooter } from '../components/ui';
 
 /** The search, type and grouping values the panel edits before they are applied. */
-interface Draft { text: string; type: string; byJob: boolean }
+interface Draft { text: string; type: string; byJob: boolean; bySign: boolean }
 
 type Kind = 'design' | 'fabrication' | 'install';
 const COPY: Record<Kind, { eyebrow: string; title: string; subtitle: string }> = {
@@ -80,8 +80,11 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 	const [ownLayout, setLayout] = useState<'list' | 'board'>(embedded ? 'board' : 'list');
 	const layout = layoutFromParent ?? ownLayout;
 	const [byJob, setByJob] = useState(false);
+	// Fabrication lists can also be grouped by sign group (FSD section 12); one grouping at a time.
+	const [bySign, setBySign] = useState(false);
 	const [panelOpen, setPanelOpen] = useState(false);
-	const [draft, setDraft] = useState<Draft>({ text: '', type: '', byJob: false });
+	const [draft, setDraft] = useState<Draft>({ text: '', type: '', byJob: false, bySign: false });
+	const signName = (t: WorkTask) => t.sign_group_name ?? '';
 
 	const views = useMemo(() => viewsFor(kind), [kind]);
 	const layoutToggle = <LayoutToggle value={layout} onChange={setLayout} />;
@@ -94,19 +97,20 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 		() =>
 			all
 				.filter((t) => current.test(t, myId) && (!type || t.kind === type) && (!needle || t.name.toLowerCase().includes(needle) || (t.job_name ?? '').toLowerCase().includes(needle)))
-				.sort((a, b) => (byJob ? (a.job_name ?? '').localeCompare(b.job_name ?? '') : 0) || (a.scheduled_date ?? '9999').localeCompare(b.scheduled_date ?? '9999')),
-		[all, current, myId, type, needle, byJob],
+				.sort((a, b) => (byJob ? (a.job_name ?? '').localeCompare(b.job_name ?? '') : 0) || (bySign ? (signName(a) || '\uffff').localeCompare(signName(b) || '\uffff') : 0) || (a.scheduled_date ?? '9999').localeCompare(b.scheduled_date ?? '9999')),
+		[all, current, myId, type, needle, byJob, bySign],
 	);
-	const searchActive = !!needle || !!type || view !== 'open' || byJob;
-	const openPanel = () => { setDraft({ text, type, byJob }); setPanelOpen(true); };
-	const clearDraft = () => setDraft({ text: '', type: '', byJob: false });
-	const applyPanel = () => { setText(draft.text); setType(draft.type); setByJob(draft.byJob); setPanelOpen(false); };
-	const clearAll = () => { setView('open'); setText(''); setType(''); setByJob(false); };
+	const searchActive = !!needle || !!type || view !== 'open' || byJob || bySign;
+	const openPanel = () => { setDraft({ text, type, byJob, bySign }); setPanelOpen(true); };
+	const clearDraft = () => setDraft({ text: '', type: '', byJob: false, bySign: false });
+	const applyPanel = () => { setText(draft.text); setType(draft.type); setByJob(draft.byJob); setBySign(draft.bySign); setPanelOpen(false); };
+	const clearAll = () => { setView('open'); setText(''); setType(''); setByJob(false); setBySign(false); };
 	const chips: ActiveChip[] = [
 		...(view !== 'open' ? [{ key: 'view', label: `View: ${views.find((v) => v.key === view)?.label ?? view}`, onRemove: () => setView('open') }] : []),
 		...(needle ? [{ key: 'q', label: `Search "${text.trim()}"`, onRemove: () => setText('') }] : []),
 		...(type ? [{ key: 'type', label: `Type: ${type}`, onRemove: () => setType('') }] : []),
 		...(byJob ? [{ key: 'job', label: 'Grouped by job', onRemove: () => setByJob(false) }] : []),
+		...(bySign ? [{ key: 'sign', label: 'Grouped by sign group', onRemove: () => setBySign(false) }] : []),
 	];
 	const grid = useGridLayout('ve.grid.work', WORK_WIDTHS);
 	const workColumns: GridColumn<WorkTask>[] = [
@@ -206,7 +210,10 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 									</select>
 								</div>
 							)}
-							<label className="check"><input type="checkbox" checked={draft.byJob} onChange={(e) => setDraft({ ...draft, byJob: e.target.checked })} /> Group by job</label>
+							<label className="check"><input type="checkbox" checked={draft.byJob} onChange={(e) => setDraft({ ...draft, byJob: e.target.checked, bySign: e.target.checked ? false : draft.bySign })} /> Group by job</label>
+							{kind === 'fabrication' && (
+								<label className="check"><input type="checkbox" checked={draft.bySign} onChange={(e) => setDraft({ ...draft, bySign: e.target.checked, byJob: e.target.checked ? false : draft.byJob })} /> Group by sign group</label>
+							)}
 						</>
 					)}
 					chips={chips}
@@ -226,7 +233,13 @@ export function WorkList({ kind, embedded = false, layout: layoutFromParent }: {
 							columns={workColumns}
 							rows={shown}
 							rowKey={(t) => t.ROWID}
-							groupOf={byJob ? (t, i, rows) => (i === 0 || rows[i - 1].job_id !== t.job_id ? <Link to={'/jobs/' + t.job_id}>{t.job_name ?? 'Job ' + t.job_id}</Link> : undefined) : undefined}
+							groupOf={
+								byJob
+									? (t, i, rows) => (i === 0 || rows[i - 1].job_id !== t.job_id ? <Link to={'/jobs/' + t.job_id}>{t.job_name ?? 'Job ' + t.job_id}</Link> : undefined)
+									: bySign
+										? (t, i, rows) => (i === 0 || signName(rows[i - 1]) !== signName(t) ? <>{signName(t) || 'No sign group'}{t.job_name ? <span className="muted"> · {t.job_name}</span> : null}</> : undefined)
+										: undefined
+							}
 						/>
 						<TableFooter shown={shown.length} />
 					</>

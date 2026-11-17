@@ -24,6 +24,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 	const repos = {
 		signGroups: {
 			listByJob: async (jobId) => db.signGroups.filter((g) => String(g.job_id) === String(jobId)).map(clone),
+			findByIds: async (ids) => db.signGroups.filter((g) => ids.map(String).includes(String(g.ROWID))).map(clone),
 			insertMany: async (rows) => rows.forEach((row) => db.signGroups.push({ ROWID: nextId(), ...row })),
 			update: async (rows) => patch(db.signGroups, rows),
 		},

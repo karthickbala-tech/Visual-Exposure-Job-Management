@@ -245,7 +245,7 @@ const routes = [
 		if (q.get('kind')) l = l.filter((t) => t.kind === q.get('kind'));
 		if (q.get('assignee') === 'me') l = l.filter((t) => t.assignees.some(([p]) => p === ME));
 		if (q.get('open') === 'true') l = l.filter((t) => !['Completed', 'Approved & Completed', 'Complete - Not Used', 'Cancelled'].includes(t.stage));
-		return list(l.map((t) => (q.get('detail') ? { ...taskView(t), job_name: (jobById(t.job_id) || {}).name || null, swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, crew: t.assignees.map(([p, role]) => ({ personId: p, name: S.nameOf(p), role })) } : taskView(t))));
+		return list(l.map((t) => (q.get('detail') ? { ...taskView(t), job_name: (jobById(t.job_id) || {}).name || null, sign_group_id: t.sign_group_id || null, sign_group_name: t.sign_group_id ? (S.signGroups.find((g) => g.id === t.sign_group_id) || {}).name || null : null, swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, crew: t.assignees.map(([p, role]) => ({ personId: p, name: S.nameOf(p), role })) } : taskView(t))));
 	}],
 	// checklists
 	['GET', /^\/checklists\/(\d+)$/, (m) => checklistView(S.checklists.find((c) => c.id === m[1]) || S.checklists[0])],

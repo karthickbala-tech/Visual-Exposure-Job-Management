@@ -214,6 +214,9 @@ export interface WorkTask {
 	booked_hours?: string | number;
 	swms_id?: string | null;
 	swms_status?: string | null;
+	/** The sign group, for grouping fabrication lists by sign group (FSD section 12). */
+	sign_group_id?: string | null;
+	sign_group_name?: string | null;
 	crew?: { personId: string; name: string | null; role: string }[];
 }
 /** One request gives the whole screen: the tasks with job name, crew and SWMS status. Views, counts and search are worked out here. */
