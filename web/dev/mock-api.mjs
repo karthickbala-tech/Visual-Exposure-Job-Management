@@ -125,6 +125,24 @@ const SWMS_OPTIONS = {
 
 const list = (items) => ({ items, count: items.length });
 const patch = (obj, body, keys) => { for (const k of keys) if (body[k] !== undefined) obj[k] = body[k]; return obj; };
+/**
+ * Hours booked per trade, and for admins the labour cost (40 an hour, as the task rows use) split by Cost Type,
+ * so the job page has the same fields as GET /jobs/:id. Tasks with no Cost Type count as Parent here (sample data only).
+ */
+const jobTotals = (tasks) => {
+	const r2 = (n) => Math.round(n * 100) / 100;
+	const out = {};
+	for (const [type, key] of [['fabrication', 'fab'], ['install', 'install'], ['design', 'design']]) {
+		const own = tasks.filter((t) => t.task_type === type);
+		const hrs = (list) => list.reduce((n, t) => n + Number(t.booked_hours || 0), 0);
+		out[key + '_hours_booked'] = Math.round(hrs(own) * 10) / 10;
+		if (!isAdmin) continue;
+		out[key + '_labour_cost'] = r2(hrs(own) * 40);
+		out[key + '_labour_cost_parent'] = r2(hrs(own.filter((t) => (t.cost_type || 'Parent') === 'Parent')) * 40);
+		out[key + '_labour_cost_fab'] = r2(hrs(own.filter((t) => t.cost_type === 'Fab')) * 40);
+	}
+	return out;
+};
 /** Sign fields arrive in API names (snake case) and are kept as the API returns them (camel case). */
 const SIGN_KEYS = { name: 'name', revision: 'revision', sign_number: 'signNumber', qty: 'qty', medium: 'medium', finishing: 'finishing', install_date: 'installDate', deal_stage: 'dealStage', artwork_stage: 'artworkStage', manufacturing_stage: 'manufacturingStage', install_stage: 'installStage' };
 const signPatch = (s, body) => { for (const [k, v] of Object.entries(SIGN_KEYS)) if (body[k] !== undefined) s[v] = body[k]; return s; };
@@ -181,7 +199,7 @@ const routes = [
 	}],
 	['POST', /^\/jobs\/(\d+)\/close$/, (m) => { const j = jobById(m[1]); if (j) j.stage = 'Completed - Closed'; return { job: j }; }],
 	['POST', /^\/jobs\/(\d+)\/tasks$/, (m, _, b) => { const t = { ROWID: id(), job_id: m[1], task_type: b.task_type, name: b.name, kind: b.kind || null, stage: b.task_type === 'design' ? 'To be Assigned' : 'Awaiting Scheduling', scheduled_date: b.scheduled_date || null, required_finish: b.required_finish || null, quoted_hours: b.quoted_hours || 0, booked_hours: 0, description: b.description || '', swms_id: undefined, assignees: [] }; S.tasks.push(t); return { task: taskView(t) }; }],
-	['GET', /^\/jobs\/(\d+)$/, (m) => { const job = jobById(m[1]) || S.jobs[0]; const tasks = S.tasks.filter((t) => t.job_id === job.ROWID); const withTeam = (t) => { const v = taskView(t); const names = (role) => t.assignees.filter(([, r]) => (role === 'lead' ? r === 'lead' : r !== 'lead')).map(([p]) => S.nameOf(p)).join(', '); return { ...v, team_leader: names('lead'), team_members: names('member'), swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, labour_cost: isAdmin ? Math.round(Number(t.booked_hours || 0) * 40 * 100) / 100 : undefined }; }; return { job: { ...job, workdrive_url: job.workdrive_url || (job.ROWID < '1050' ? 'https://workdrive.zoho.com.au/folder/example-' + job.ROWID : ''), closure_email_sent: job.stage === 'Completed - Closed', close_triggered: job.stage === 'Completed - Closed', total_purchases: isAdmin ? 1250 : undefined, stock_purchases: isAdmin ? 300 : undefined }, tasks: tasks.map(withTeam), progress: { fab: job.percent_fab, install: job.percent_install, job: job.percent_job }, locations: [{ id: '1001', name: 'Collins Street Tower', street: '12 Collins St', city: 'Melbourne', address: '12 Collins St, Melbourne, VIC, 3000', mapUrl: 'https://www.google.com/maps/search/?api=1&query=12%20Collins%20St%20Melbourne', crmSiteId: '4590000000771', addedTime: '2026-06-12 15:39:18' }], kpis: kpisFor(job.ROWID) }; }],
+	['GET', /^\/jobs\/(\d+)$/, (m) => { const job = jobById(m[1]) || S.jobs[0]; const tasks = S.tasks.filter((t) => t.job_id === job.ROWID); const withTeam = (t) => { const v = taskView(t); const names = (role) => t.assignees.filter(([, r]) => (role === 'lead' ? r === 'lead' : r !== 'lead')).map(([p]) => S.nameOf(p)).join(', '); return { ...v, team_leader: names('lead'), team_members: names('member'), swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, labour_cost: isAdmin ? Math.round(Number(t.booked_hours || 0) * 40 * 100) / 100 : undefined }; }; return { job: { ...job, ...jobTotals(tasks), workdrive_url: job.workdrive_url || (job.ROWID < '1050' ? 'https://workdrive.zoho.com.au/folder/example-' + job.ROWID : ''), closure_email_sent: job.stage === 'Completed - Closed', close_triggered: job.stage === 'Completed - Closed', total_purchases: isAdmin ? 1250 : undefined, stock_purchases: isAdmin ? 300 : undefined }, tasks: tasks.map(withTeam), progress: { fab: job.percent_fab, install: job.percent_install, job: job.percent_job }, locations: [{ id: '1001', name: 'Collins Street Tower', street: '12 Collins St', city: 'Melbourne', address: '12 Collins St, Melbourne, VIC, 3000', mapUrl: 'https://www.google.com/maps/search/?api=1&query=12%20Collins%20St%20Melbourne', crmSiteId: '4590000000771', addedTime: '2026-06-12 15:39:18' }], kpis: kpisFor(job.ROWID) }; }],
 	['PATCH', /^\/jobs\/(\d+)$/, (m, _, b) => { const j = jobById(m[1]); if (!b.expected_finish && !j.expected_finish) throw Object.assign(new Error('Please fill the mandatory fields: name, expected finish and file location on the VE server'), { status: 400 }); patch(j, b, ['name', 'description', 'expected_finish', 'agreed_fab_finish', 'required_fab_finish', 'server_path', 'crm_deal_id', 'quote_ref', 'pm_id', 'fab_manager_id', 'workdrive_url', 'profit_email_at', 'total_purchases', 'stock_purchases']); return { job: j }; }],
 	// tasks
 	['GET', /^\/tasks\/board$/, (_, q) => board(q.get('type') || 'fabrication')],

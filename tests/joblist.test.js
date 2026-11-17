@@ -110,3 +110,28 @@ test('labour cost is split by the task cost type (Parent and Fab), per trade', (
 	assert.deepEqual(L.costByType(t, 'install'), { parent: 10, fab: 0 });
 	assert.deepEqual(L.costByType([], 'design'), { parent: 0, fab: 0 });
 });
+
+test('the job page carries the same hours and labour cost as the jobs list; costs for admins only', async () => {
+	const w = makeWorld({ roles: ['admin'] });
+	const { job } = await jobs.createJob(w.ctx, { name: 'Pylon', expected_finish: '2026-12-31' });
+	const add = (t) => w.db.tasks.push({ ROWID: String(9000 + w.db.tasks.length), job_id: job.ROWID, is_deleted: 'false', stage: 'In Progress', ...t });
+	add({ task_type: 'fabrication', booked_hours: 6, labour_cost: 300, cost_type: 'Parent' });
+	add({ task_type: 'fabrication', booked_hours: 2.5, labour_cost: 125, cost_type: 'Fab' });
+	add({ task_type: 'install', booked_hours: 4, labour_cost: 200, cost_type: 'Parent' });
+	add({ task_type: 'design', booked_hours: 1, labour_cost: 50 });
+
+	const page = (await jobs.getJob(w.ctx, job.ROWID)).job;
+	const row = (await jobs.listJobs(w.ctx, {})).items.find((j) => j.ROWID === job.ROWID);
+	const keys = Object.keys(row).filter((k) => /_hours_booked$|_labour_cost/.test(k));
+	assert.equal(keys.length, 12, 'three hours and nine cost figures');
+	for (const k of keys) assert.equal(page[k], row[k], k);
+	assert.equal(page.fab_hours_booked, 8.5);
+	assert.equal(page.fab_labour_cost, 425);
+	assert.equal(page.fab_labour_cost_parent, 300);
+	assert.equal(page.fab_labour_cost_fab, 125);
+	assert.equal(page.install_labour_cost_parent, 200);
+
+	const pm = (await jobs.getJob(w.as(['project_manager']), job.ROWID)).job;
+	assert.equal(pm.fab_hours_booked, 8.5, 'hours are not money: managers see them');
+	assert.equal(Object.keys(pm).some((k) => k.includes('labour_cost')), false, 'no labour cost for non-admins');
+});

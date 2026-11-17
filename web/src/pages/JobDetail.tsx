@@ -10,7 +10,7 @@ import { useJob, useMe, useTransitionTask } from '../api/queries';
 import { AddTaskForm } from '../components/AddTaskForm';
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
-import type { Task } from '../api/types';
+import type { Job, Task } from '../api/types';
 import { StageCell } from '../components/StageCell';
 import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
@@ -32,6 +32,20 @@ const kindTag = (k?: string) => (k && KIND_TAG[k] ? <span className="kind-tag">{
 const COMPLETE = ['Completed', 'Approved & Completed', 'Completed - Closed', 'Complete - Not Used'];
 
 /** One section of the job page: a tinted header (icon, title, counts, Add buttons), an optional facts row, then the table. */
+/** Labour cost of one trade for the section header: all, Parent and Fab by Cost Type, as on the jobs list. Admins only (the server sends it only to them). */
+function CostMeta({ job, trade }: { job: Job; trade: 'design' | 'fab' | 'install' }) {
+	const pick = (k: string) => (job as unknown as Record<string, number | undefined>)[`${trade}_${k}`];
+	const cost = (v: number | undefined) => (v === undefined || v === null ? '-' : '$' + Number(v).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+	if (pick('labour_cost') === undefined) return null;
+	return (
+		<>
+			<div><dt>Labour Cost</dt><dd className="num">{cost(pick('labour_cost'))}</dd></div>
+			<div><dt>Labour Cost - Parent</dt><dd className="num">{cost(pick('labour_cost_parent'))}</dd></div>
+			<div><dt>Labour Cost - Fab</dt><dd className="num">{cost(pick('labour_cost_fab'))}</dd></div>
+		</>
+	);
+}
+
 function Section({ tone, icon, title, count, pills, actions, meta, children }: { tone: 'design' | 'fab' | 'install'; icon: ReactNode; title: string; count: number; pills: ReactNode; actions?: ReactNode; meta?: ReactNode; children: ReactNode }) {
 	return (
 		<section className={'jsec jsec--' + tone} aria-label={title}>
@@ -224,7 +238,8 @@ export function JobDetail() {
 				<SignsPanel jobId={id ?? ''} canWrite={canAdd} />
 			</div>
 
-			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}>
+			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}
+				meta={seesMoney ? <dl className="jsec__meta"><CostMeta job={job} trade="design" /></dl> : undefined}>
 				{addForm('design')}
 				<TaskTable rowClass={rowFlag} title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
 					row={(t) => [t.kind ?? '', <span key="n"><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{lateTag(t)}</span>, <StageCell key="s" stage={t.stage} pill />, fmtDate(t.required_finish), hrs(t.quoted_hours), booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
@@ -237,6 +252,7 @@ export function JobDetail() {
 						<div><dt>% of Fab Completed</dt><dd className="num">{num(progress.fab)}</dd></div>
 						<div><dt>Required Fab Finish Date</dt><dd>{fmtDate((job as { required_fab_finish?: string }).required_fab_finish)}</dd></div>
 						<div><dt>Agreed Fab Finish Date</dt><dd>{fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)}</dd></div>
+						{seesMoney && <CostMeta job={job} trade="fab" />}
 					</dl>
 				)}>
 				{addForm('fabrication')}
@@ -247,6 +263,7 @@ export function JobDetail() {
 			</Section>
 
 			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} />}
+				meta={seesMoney ? <dl className="jsec__meta"><CostMeta job={job} trade="install" /></dl> : undefined}
 				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}>
 				{addForm('install')}
 				<TaskTable rowClass={rowFlag} title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
