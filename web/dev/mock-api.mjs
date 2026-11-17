@@ -339,8 +339,8 @@ const routes = [
 	['POST', /^\/chemicals$/, (_, __, b) => { const c = chemPatch({ id: id(), code: 'CH-' + String(S.chemicals.length + 1).padStart(2, '0'), name: '', locationId: null, sdsUrl: '', reviewDate: null, stock: null, unit: '', hazardClass: '', supplier: '' }, b); S.chemicals.push(c); return { item: c }; }],
 	['PATCH', /^\/chemicals\/(\d+)$/, (m, _, b) => { const c = S.chemicals.find((x) => x.id === m[1]); if (!c) throw Object.assign(new Error('Chemical not found'), { status: 404 }); return { item: chemPatch(c, b) }; }],
 	['GET', /^\/locations$/, () => list(S.locations)],
-	['POST', /^\/locations$/, (_, __, b) => { const l = { id: id(), name: b.name, description: b.description || '', supervisorId: null, supervisorName: null }; S.locations.push(l); return { item: l }; }],
-	['PATCH', /^\/locations\/(\d+)$/, (m, _, b) => { const l = S.locations.find((x) => x.id === m[1]); if (!l) throw Object.assign(new Error('Workshop location not found'), { status: 404 }); if (b.name !== undefined) l.name = b.name; if (b.description !== undefined) l.description = b.description; return { item: l }; }],
+	['POST', /^\/locations$/, (_, __, b) => { const l = { id: id(), name: b.name, description: b.description || '', supervisorId: b.supervisor_id || null, supervisorName: b.supervisor_id ? S.nameOf(b.supervisor_id) : null }; S.locations.push(l); return { item: l }; }],
+	['PATCH', /^\/locations\/(\d+)$/, (m, _, b) => { const l = S.locations.find((x) => x.id === m[1]); if (!l) throw Object.assign(new Error('Workshop location not found'), { status: 404 }); if (b.name !== undefined) l.name = b.name; if (b.description !== undefined) l.description = b.description; if (b.supervisor_id !== undefined) { l.supervisorId = b.supervisor_id; l.supervisorName = b.supervisor_id ? S.nameOf(b.supervisor_id) : null; } return { item: l }; }],
 	['GET', /^\/devices$/, () => list(S.devices)],
 	['GET', /^\/files$/, (_, q) => list(S.files.filter((f) => f.entityType === q.get('entity_type') && f.entityId === q.get('entity_id')))],
 	// admin

@@ -503,17 +503,18 @@ function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolea
 	const { notify } = useToast();
 	// null: no form open; 'new': adding; a location: editing it.
 	const [open, setOpen] = useState<'new' | WorkshopLocation | null>(null);
-	const [form, setForm] = useState({ name: '', description: '' });
+	const [form, setForm] = useState({ name: '', description: '', supervisor_id: '' });
 	const editing = open && open !== 'new' ? open : null;
+	const people = usePeople(!!open);
 	const counts = useMemo(() => ({ eq: countBy(equipment), chem: chemicals.data ? countBy(chemicals.data.items) : null }), [equipment, chemicals.data]);
-	const columns = locColumns(counts, canWrite ? (l) => { setForm({ name: l.name, description: l.description ?? '' }); setOpen(l); } : null);
+	const columns = locColumns(counts, canWrite ? (l) => { setForm({ name: l.name, description: l.description ?? '', supervisor_id: l.supervisorId ?? '' }); setOpen(l); } : null);
 	const close = () => setOpen(null);
 	return (
 		<>
 		<Card flush>
 			{canWrite && !open && (
 				<div className="inline-form">
-					<button className="btn" onClick={() => { setForm({ name: '', description: '' }); setOpen('new'); }}>
+					<button className="btn" onClick={() => { setForm({ name: '', description: '', supervisor_id: '' }); setOpen('new'); }}>
 						<Plus size={16} aria-hidden="true" /> Add location
 					</button>
 				</div>
@@ -524,7 +525,7 @@ function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolea
 					className="inline-form"
 					onSubmit={(e) => {
 						e.preventDefault();
-						const body = { name: form.name.trim(), description: form.description.trim() };
+						const body = { name: form.name.trim(), description: form.description.trim(), supervisor_id: form.supervisor_id || null };
 						write.mutate(editing ? { method: 'PATCH', path: '/locations/' + editing.id, body } : { method: 'POST', path: '/locations', body }, {
 							onSuccess: () => { close(); notify(editing ? 'Location saved' : 'Location added'); },
 							onError: (er) => notify(er instanceof Error ? er.message : 'Could not save the location', 'error'),
@@ -538,6 +539,15 @@ function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolea
 					<label style={{ flex: '2 1 260px' }}>
 						<span className="toolbar__label">Description</span>
 						<input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={1000} />
+					</label>
+					<label>
+						<span className="toolbar__label">Area supervisor</span>
+						<select value={form.supervisor_id} onChange={(e) => setForm({ ...form, supervisor_id: e.target.value })} style={{ width: '100%' }}>
+							<option value="">Nobody</option>
+							{(people.data?.items ?? []).filter((p) => p.is_active !== false || p.ROWID === form.supervisor_id).map((p) => (
+								<option key={p.ROWID} value={p.ROWID}>{`${p.first_name} ${p.last_name ?? ''}`.trim()}</option>
+							))}
+						</select>
 					</label>
 					<button className="btn" disabled={write.isPending || !form.name.trim()}>
 						{editing ? (write.isPending ? 'Saving…' : 'Save') : <><Plus size={16} aria-hidden="true" /> Add</>}

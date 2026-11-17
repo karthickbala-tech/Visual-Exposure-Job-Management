@@ -145,3 +145,14 @@ test('chemicals: supplier, stock and unit are kept, and an edit changes only wha
 	await rejects(reg.updateChemical(w.ctx, c.id, { sds_url: 'ftp://x' }), 400);
 	await rejects(reg.updateChemical(w.ctx, c.id, { stock: -1 }), 400);
 });
+
+test('workshop locations: the area supervisor can be set, changed and cleared; an unknown person is refused (EQP-5)', async () => {
+	const w = makeWorld();
+	w.db.people.push({ ROWID: '105747000000900007', first_name: 'Jo', last_name: 'Patel', email: 'jo@x.test' });
+	const { item: l } = await reg.createLocation(w.ctx, { name: 'Chemical store' });
+	await reg.updateLocation(w.ctx, l.id, { supervisor_id: '105747000000900007' });
+	assert.equal((await reg.listLocations(w.ctx)).items[0].supervisorName, 'Jo Patel');
+	await rejects(reg.updateLocation(w.ctx, l.id, { supervisor_id: '105747000009999999' }), 400);
+	await reg.updateLocation(w.ctx, l.id, { supervisor_id: null });
+	assert.equal((await reg.listLocations(w.ctx)).items[0].supervisorName, null);
+});
