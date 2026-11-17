@@ -239,6 +239,10 @@ const routes = [
 	['GET', /^\/tasks$/, (_, q) => {
 		let l = S.tasks.filter((t) => isManager || mine(t));
 		if (q.get('type')) l = l.filter((t) => t.task_type === q.get('type'));
+		// The same filters as the server's task list (lib/services/tasks.js listQuery): kind, assignee=me, open.
+		if (q.get('kind')) l = l.filter((t) => t.kind === q.get('kind'));
+		if (q.get('assignee') === 'me') l = l.filter((t) => t.assignees.some(([p]) => p === ME));
+		if (q.get('open') === 'true') l = l.filter((t) => !['Completed', 'Approved & Completed', 'Complete - Not Used', 'Cancelled'].includes(t.stage));
 		return list(l.map((t) => (q.get('detail') ? { ...taskView(t), job_name: (jobById(t.job_id) || {}).name || null, swms_status: t.swms_id ? (S.swms.find((s) => s.id === t.swms_id) || {}).status || null : null, crew: t.assignees.map(([p, role]) => ({ personId: p, name: S.nameOf(p), role })) } : taskView(t))));
 	}],
 	// checklists

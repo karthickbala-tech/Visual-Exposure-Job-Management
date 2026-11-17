@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react';
 import { useAddShift, useBookableTasks, useHoursNotFilled, usePayPeriodHours, useWeeklyHours } from '../api/more';
@@ -162,7 +163,9 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 
 /** Hours: one week at a time (Monday to Sunday), or the pay period. Crew see their own; managers see everyone. */
 export function Hours() {
-	const [view, setView] = useState<'week' | 'eight' | 'this' | 'last'>('week');
+	// ?view=this or ?view=last opens a pay period (the Install Coordinator dashboard's buttons, FSD 5.12 / HRS-3).
+	const [params] = useSearchParams();
+	const [view, setView] = useState<'week' | 'eight' | 'this' | 'last'>(() => (params.get('view') === 'this' || params.get('view') === 'last' ? (params.get('view') as 'this' | 'last') : 'week'));
 	const [adding, setAdding] = useState(false);
 	const [week, setWeek] = useState<string | undefined>(undefined);
 	const grid = useGridLayout('ve.grid.hours', WIDTHS);

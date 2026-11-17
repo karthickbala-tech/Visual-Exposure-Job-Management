@@ -6,6 +6,7 @@ import { Card, EmptyState, Kpi, PageHeader, fmtDate } from '../components/ui';
 import { useRoleDashboard } from '../api/more';
 import { CrewTasks } from '../components/CrewCards';
 import { ToDoList } from '../components/ToDoList';
+import { RoleDashboard } from '../components/RoleDashboard';
 
 /** Where a tile goes when it is tapped. */
 const TILE_LINK = (key: string): string | undefined => {
@@ -57,6 +58,8 @@ export function Home() {
 			<PageHeader eyebrow={q.data ? longDate(q.data.today) : 'Dashboard'} title={first ? `Hello, ${first}` : 'Dashboard'} />
 
 			{me.isSuccess && <RoleTiles roles={me.data.roles} />}
+			{/* FSD 5.12: the role's own calendars, tables and buttons. */}
+			{me.isSuccess && q.isSuccess && <RoleDashboard roles={me.data.roles} today={q.data.today} myId={me.data.person ? String((me.data.person as { ROWID?: string }).ROWID ?? '') : ''} />}
 
 			{q.isPending && <p role="status" className="table-empty">Loading your dashboard…</p>}
 			{q.isError && <p role="alert" className="form-error">Could not load the dashboard.</p>}

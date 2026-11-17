@@ -18,7 +18,8 @@ const TYPES: { key: Kind; label: string; hint: string; icon: typeof PenTool; rol
 ];
 
 /** A repeating or one-off task for the workshop itself (cleaning, servicing), not tied to a customer job. */
-function WorkshopTaskForm({ onClose }: { onClose: () => void }) {
+// Also used on the Fab Manager and Workshop dashboards (FAB-5).
+export function WorkshopTaskForm({ onClose }: { onClose: () => void }) {
 	const make = useCreateWorkshopTask();
 	const { notify } = useToast();
 	const [f, setF] = useState({ name: '', scheduled_date: '', every: '', unit: 'weeks' });

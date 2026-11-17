@@ -197,6 +197,8 @@ export interface CalendarItem {
 	stage: string;
 	scheduled_date: string;
 	required_finish?: string | null;
+	/** The task's kind (fab type or install type), for the calendars. */
+	kind?: string | null;
 }
 
 export interface VarianceLine {
