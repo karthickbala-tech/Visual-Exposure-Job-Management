@@ -175,3 +175,52 @@ test('a task is scheduled with its date and team leader, and a design task is as
 	await tasks.addAssignee(w.ctx, d, { person_id: ME, role: 'other' });
 	assert.equal((await tasks.transitionTask(w.ctx, d, { to: 'Assigned' })).task.stage, 'Assigned');
 });
+
+test('cancel, not used and reset take the crew off with their unfinished checklists; cancel also clears the date and quoted hours', async () => {
+	const { w, jobId } = await setup();
+	const CREW = '105747000000900002';
+	w.db.people.push({ ROWID: CREW, first_name: 'Sam', last_name: 'Crew', email: 'sam@example.test', is_active: 'true', is_deleted: 'false' });
+	const planned = async (name, extra = {}) => {
+		const id = await mk(w, jobId, { task_type: 'fabrication', name, kind: 'CNC', quoted_hours: 12, scheduled_date: '2026-11-20', ...extra });
+		await tasks.addAssignee(w.ctx, id, { person_id: ME, role: 'lead' });
+		await tasks.addAssignee(w.ctx, id, { person_id: CREW, role: 'member' });
+		await tasks.transitionTask(w.ctx, id, { to: 'Scheduled' });
+		w.db.checklists.push({ ROWID: id + '01', task_id: id, assignee_id: ME, phase: 'pre', checklist_status: 'Completed' });
+		w.db.checklists.push({ ROWID: id + '02', task_id: id, assignee_id: CREW, phase: 'pre', checklist_status: 'Not Completed' });
+		return id;
+	};
+	const crewOn = (id) => w.db.links.filter((a) => String(a.task_id) === id).length;
+	const lists = (id) => w.db.checklists.filter((c) => String(c.task_id) === id).map((c) => c.checklist_status);
+
+	const cancelled = await planned('Cancel me');
+	await tasks.transitionTask(w.ctx, cancelled, { to: 'Cancelled', comment: 'Client dropped it' });
+	assert.equal(crewOn(cancelled), 0);
+	assert.deepEqual(lists(cancelled), ['Completed'], 'the finished checklist stays, the unfinished one goes');
+	assert.equal(dbTask(w, cancelled).lead_id, null);
+	assert.equal(dbTask(w, cancelled).scheduled_date, null);
+	assert.equal(dbTask(w, cancelled).quoted_hours, 0);
+
+	const unused = await planned('Not needed');
+	await tasks.transitionTask(w.ctx, unused, { to: 'Complete - Not Used', comment: 'Covered by the other sign' });
+	assert.equal(crewOn(unused), 0);
+	assert.deepEqual(lists(unused), ['Completed']);
+	assert.equal(dbTask(w, unused).scheduled_date, '2026-11-20', 'not used keeps its date');
+	assert.equal(dbTask(w, unused).quoted_hours, 12, 'and its quoted hours');
+
+	const reset = await planned('Plan again');
+	await tasks.transitionTask(w.ctx, reset, { to: 'Awaiting Scheduling', comment: 'Wrong crew' });
+	assert.equal(crewOn(reset), 0);
+	assert.equal(dbTask(w, reset).lead_id, null);
+	assert.equal(dbTask(w, reset).stage, 'Awaiting Scheduling');
+
+	const held = await planned('Hold me');
+	await tasks.transitionTask(w.ctx, held, { to: 'On Hold', comment: 'Waiting for the client' });
+	assert.equal(crewOn(held), 2, 'a hold keeps the crew');
+
+	const d = await mk(w, jobId, { task_type: 'design', name: 'Artwork', kind: 'Artwork Sign Off' });
+	await tasks.addAssignee(w.ctx, d, { person_id: ME, role: 'other' });
+	await tasks.transitionTask(w.ctx, d, { to: 'Assigned' });
+	assert.ok((await tasks.getTask(w.ctx, d)).nextStages.includes('To be Assigned'), 'a manager can unassign the designer');
+	await tasks.transitionTask(w.ctx, d, { to: 'To be Assigned', comment: 'Designer on leave' });
+	assert.equal(crewOn(d), 0);
+});
