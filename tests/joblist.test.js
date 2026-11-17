@@ -135,3 +135,17 @@ test('the job page carries the same hours and labour cost as the jobs list; cost
 	assert.equal(pm.fab_hours_booked, 8.5, 'hours are not money: managers see them');
 	assert.equal(Object.keys(pm).some((k) => k.includes('labour_cost')), false, 'no labour cost for non-admins');
 });
+
+test('the job page lists fabrication tasks in the FAB-2 order: parent then its subtasks, by stage order, then date', async () => {
+	const w = makeWorld({ roles: ['admin'] });
+	const { job } = await jobs.createJob(w.ctx, { name: 'Pylon' });
+	const add = (t) => { const ROWID = String(9100 + w.db.tasks.length); w.db.tasks.push({ ROWID, job_id: job.ROWID, is_deleted: 'false', task_type: 'fabrication', ...t }); return ROWID; };
+	const later = add({ name: 'Paint', stage: 'Scheduled', scheduled_date: '2026-11-20' });
+	const busy = add({ name: 'Cut', stage: 'In Progress', scheduled_date: '2026-11-25' });
+	const sooner = add({ name: 'Weld', stage: 'Scheduled', scheduled_date: '2026-11-10' });
+	const sub = add({ name: 'Cut extra', stage: 'Scheduled', scheduled_date: '2026-11-26', parent_id: busy });
+	add({ task_type: 'install', name: 'Fit', stage: 'Scheduled' });
+
+	const fab = (await jobs.getJob(w.ctx, job.ROWID)).tasks.filter((t) => t.task_type === 'fabrication').map((t) => t.ROWID);
+	assert.deepEqual(fab, [busy, sub, sooner, later], 'In Progress before Scheduled; the subtask right after its parent; then by date');
+});
