@@ -28,7 +28,7 @@ const shift = (iso: string, days: number) => {
 const dayLabel = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** Widths of the columns. Every per-day column shares the `day` width, since their keys change with the period. */
-const WIDTHS: Record<string, number> = { day: 120, person: 200, fab: 110, install: 110, workshop: 120, design: 110, other: 110, unbilled: 120, total: 110, labour: 140 };
+const WIDTHS: Record<string, number> = { day: 120, person: 200, fab: 110, install: 110, workshop: 120, design: 110, other: 110, unbilled: 120, total: 110, final: 110, labour: 140 };
 const DAY_WIDTH = 120;
 
 /** The table's columns for this period: the days (a week only), the types (a week shows only Unbilled), the total and the labour cost. */
@@ -39,6 +39,7 @@ function columnsFor(days: string[], perDay: boolean, money: boolean): GridColumn
 		...(perDay ? days.map((d): GridColumn<HoursRow> => ({ key: `day:${d}`, label: dayLabel(d), width: WIDTHS.day, widthKey: 'day', right: true, cell: (r) => hrs(r.days[d] ? sumWorked(r.days[d]) : 0) })) : []),
 		...types.map((c): GridColumn<HoursRow> => ({ key: c.key, label: c.label, width: WIDTHS[c.key] ?? DAY_WIDTH, right: true, cell: (r) => hrs(r.totals[c.key]) })),
 		...(perDay ? [{ key: 'total', label: 'Total', width: WIDTHS.total ?? 110, right: true, cell: (r: HoursRow) => hrs(sumWorked(r.totals)) }] : []),
+		{ key: 'final', label: 'Final', width: WIDTHS.final ?? 110, right: true, cell: (r: HoursRow) => hrs(finalOf(r.totals)) },
 		...(money ? [{ key: 'labour', label: 'Labour cost', width: WIDTHS.labour ?? 140, right: true, cell: (r: HoursRow) => (r.labourCost !== undefined ? `$${r.labourCost.toFixed(2)}` : '-') }] : []),
 	];
 }
@@ -51,6 +52,7 @@ function totalsFor(report: HoursReport, perDay: boolean, money: boolean): ReactN
 		...(perDay ? (report.days ?? []).map((d) => hrs(report.rows.reduce((n, r) => n + (r.days[d] ? sumWorked(r.days[d]) : 0), 0))) : []),
 		...types.map((c) => hrs(report.totals[c.key])),
 		...(perDay ? [hrs(sumWorked(report.totals))] : []),
+		hrs(finalOf(report.totals)),
 		...(money ? [''] : []),
 	];
 }
@@ -70,9 +72,11 @@ function Table({ report, perDay, grid }: { report: HoursReport; perDay: boolean;
 	);
 }
 const sumWorked = (c: HourCell) => c.fab + c.install + c.workshop + c.design + c.other;
+/** Final = hours worked minus unbilled hours. The server sends it; older responses without it are worked out the same way. */
+const finalOf = (c: HourCell) => c.final ?? Math.max(0, Math.round((sumWorked(c) - c.unbilled) * 100) / 100);
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-/** CSV with one line per person: the days (when shown), the types, and the total. Cells that start like a formula are neutralised. */
+/** CSV with one line per person: the days (when shown), the types, the total and the final hours. Cells that start like a formula are neutralised. */
 function downloadCsv(report: HoursReport, name: string) {
 	const cell = (v: string | number) => {
 		let t = String(v);
@@ -80,8 +84,8 @@ function downloadCsv(report: HoursReport, name: string) {
 		return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
 	};
 	const days = report.days ?? [];
-	const head = ['Person', ...days, ...COLS.map((c) => c.label), 'Total worked'];
-	const lines = report.rows.map((r) => [r.name || r.personId, ...days.map((d) => (r.days[d] ? sumWorked(r.days[d]) : 0)), ...COLS.map((c) => r.totals[c.key] ?? 0), sumWorked(r.totals)]);
+	const head = ['Person', ...days, ...COLS.map((c) => c.label), 'Total worked', 'Final'];
+	const lines = report.rows.map((r) => [r.name || r.personId, ...days.map((d) => (r.days[d] ? sumWorked(r.days[d]) : 0)), ...COLS.map((c) => r.totals[c.key] ?? 0), sumWorked(r.totals), finalOf(r.totals)]);
 	const csv = [head, ...lines].map((l) => l.map(cell).join(',')).join('\r\n');
 	const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
 	const a = document.createElement('a');
@@ -204,6 +208,7 @@ export function Hours() {
 				{active.isSuccess && perDay && (
 					<div className="kpis" style={{ padding: '16px 20px' }}>
 						{COLS.filter((c) => c.key !== 'unbilled' && (active.data.totals[c.key] ?? 0) > 0).map((c) => <Kpi key={c.key} label={c.label} value={hrs(active.data.totals[c.key])} />)}
+						<Kpi label="Final" note="Worked minus unbilled" value={hrs(finalOf(active.data.totals))} />
 					</div>
 				)}
 				{active.isSuccess && active.data.truncated && <p className="table-empty">Only the first 300 entries are shown. Choose a shorter period.</p>}
