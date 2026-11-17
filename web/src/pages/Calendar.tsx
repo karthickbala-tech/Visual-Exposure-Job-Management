@@ -19,6 +19,7 @@ const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TYPE_NAME = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;
 
 type View = 'month' | 'week' | 'timeline';
+type Only = 'all' | keyof typeof TYPE_NAME;
 const TIMELINE_DAYS = 28;
 
 /** Scheduled work as a month or week grid (an agenda list on phones). The server limits it to what you may see. */
@@ -27,6 +28,8 @@ export function Calendar() {
 	const [anchor, setAnchor] = useState(() => today());
 	/** The day picked in the grid. Opening the calendar selects today, so its tasks show at once. */
 	const [picked, setPicked] = useState<string | null>(null);
+	/** Month and week can show one kind of work only. The timeline is fabrication work anyway. */
+	const [only, setOnly] = useState<Only>('all');
 	const a = utc(anchor);
 
 	const first = view === 'month' ? monday(new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), 1))) : monday(a);
@@ -35,7 +38,7 @@ export function Calendar() {
 	const q = useCalendar(iso(days[0]), iso(days[count - 1]));
 
 	const byDay = new Map<string, CalendarItem[]>();
-	for (const item of q.data?.items ?? []) byDay.set(item.scheduled_date, [...(byDay.get(item.scheduled_date) ?? []), item]);
+	for (const item of (q.data?.items ?? []).filter((t) => only === 'all' || t.task_type === only)) byDay.set(item.scheduled_date, [...(byDay.get(item.scheduled_date) ?? []), item]);
 
 	const step = (dir: -1 | 1) => {
 		if (view === 'week') setAnchor(iso(addDays(a, dir * 7)));
@@ -78,6 +81,15 @@ export function Calendar() {
 						</button>
 						<h2 className="cal-label">{label}</h2>
 					</div>
+					{view !== 'timeline' && (
+						<div className="segmented" role="group" aria-label="Show tasks of type">
+							{(['all', 'design', 'fabrication', 'install'] as const).map((t) => (
+								<button key={t} type="button" className={only === t ? 'on' : ''} aria-pressed={only === t} onClick={() => setOnly(t)}>
+									{t !== 'all' && <i className={'dot dot-' + t} aria-hidden="true" />} {t === 'all' ? 'All' : TYPE_NAME[t]}
+								</button>
+							))}
+						</div>
+					)}
 					<div className="segmented" role="group" aria-label="Calendar view">
 						{(['month', 'week', 'timeline'] as const).map((v) => (
 							<button key={v} type="button" className={view === v ? 'on' : ''} aria-pressed={view === v} onClick={() => setView(v)}>

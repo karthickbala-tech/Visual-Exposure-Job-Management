@@ -49,7 +49,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | E4 | Locations | edit, delete refused while items remain, counts | L | partly, 17 Nov: edit (name and description) and equipment and chemical counts per location; delete not built (needs a DELETE route with the "items still here" check) |
 | D1 | Device schematic map | SVG pins from lat/lng, grey when stale over 24 h, legend with OpenStreetMap link | M FE | todo |
 | D2 | Role dashboards | PM open jobs with bars; workshop overdue checks with Mark checked; crew "My Day" with inline hour booking, one-line next step, sent-back reason | M to H FE | todo |
-| D3 | Calendar | day view, type colours legend, event drawer, type filter | L | todo |
+| D3 | Calendar | day view, type colours legend, event drawer, type filter | L | done: day panel and legend earlier; type filter (All, Design, Fabrication, Install) on month and week 17 Nov; the event drawer stays a link to the task (decision 8) |
 | D4 | Checklist register | per-person progress, views by role, Continue | L | todo |
 | S1 | SWMS task table | Task, hazards and risks, control measures, person responsible, stored in `swms_tasks` | M BE | todo (needs real client wording) |
 | S2 | Settings extras | auto theme, accent swatches, hide menu items | L FE | todo |
