@@ -22,7 +22,9 @@ const taskById = (i) => S.tasks.find((t) => t.ROWID === String(i));
 
 const isOpen = (t) => !['Completed', 'Cancelled', 'Complete - Not Used', 'Approved & Completed'].includes(t.stage);
 const isLate = (t) => isOpen(t) && t.required_finish && t.required_finish < TODAY;
-const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: S.nextStages(t.stage) });
+/** Stage buttons, plus Close (Completed) for a manager on External Install or Print Only, as lib/domain/taskRules.js stageOptions. */
+const taskStages = (t) => { const out = S.nextStages(t.stage); if (isManager && t.task_type === 'install' && ['External Install', 'Print Only'].includes(t.kind) && ['Awaiting Scheduling', 'Scheduled', 'In Progress'].includes(t.stage) && !out.includes('Completed')) out.push('Completed'); return out; };
+const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: taskStages(t) });
 const mine = (t) => t.assignees.some(([p]) => p === ME);
 const myTasks = () => S.tasks.filter((t) => isOpen(t) && (isManager ? mine(t) || false : mine(t)));
 
@@ -214,7 +216,7 @@ const routes = [
 	['POST', /^\/tasks\/(\d+)\/ratings$/, () => ({ ok: true })],
 	['POST', /^\/tasks\/(\d+)\/subtasks$/, (m, _, b) => { const p = taskById(m[1]); const t = { ...p, ROWID: id(), name: b.name, stage: 'Awaiting Scheduling', assignees: [], swms_id: undefined }; S.tasks.push(t); return { task: taskView(t) }; }],
 	['GET', /^\/tasks\/(\d+)\/history$/, (m) => { const t = taskById(m[1]); return { items: [{ at: now(), from: 'Awaiting Scheduling', to: t ? t.stage : 'Scheduled', comment: null, by: S.nameOf(ME) }], count: 1 }; }],
-	['GET', /^\/tasks\/(\d+)$/, (m) => { const t = taskById(m[1]) || S.tasks[0]; return { task: taskView(t), assignees: t.assignees.map(([p, role], i) => ({ linkId: `${t.ROWID}-${i}`, personId: p, role, name: S.nameOf(p) })), nextStages: S.nextStages(t.stage) }; }],
+	['GET', /^\/tasks\/(\d+)$/, (m) => { const t = taskById(m[1]) || S.tasks[0]; return { task: taskView(t), assignees: t.assignees.map(([p, role], i) => ({ linkId: `${t.ROWID}-${i}`, personId: p, role, name: S.nameOf(p) })), nextStages: taskStages(t) }; }],
 	['PATCH', /^\/tasks\/(\d+)$/, (m, _, b) => { const t = taskById(m[1]); patch(t, b, ['scheduled_date', 'required_finish', 'quoted_hours', 'description', 'name']); return { task: taskView(t) }; }],
 	['GET', /^\/tasks$/, (_, q) => {
 		let l = S.tasks.filter((t) => isManager || mine(t));

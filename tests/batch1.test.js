@@ -130,3 +130,19 @@ test('the closure email goes to the job project manager and every project manage
 	assert.match(sent[0].html, /2026-11-04/);
 	assert.equal(render('jobClosed', { job: { name: '<b>x</b>' } }).html.includes('<b>x</b>'), false, 'names are escaped');
 });
+
+test('close-only tasks offer "Completed" to managers on the task and job pages (INS-6); not to crew, not to other kinds, not once closed', async () => {
+	const { w, jobId } = await setup();
+	const ext = await mk(w, jobId, { task_type: 'install', name: 'Supplier install', kind: 'External Install' });
+	const ve = await mk(w, jobId, { task_type: 'install', name: 'Our install', kind: 'VE Install' });
+	assert.ok((await tasks.getTask(w.ctx, ext)).nextStages.includes('Completed'), 'task page, manager');
+	assert.equal((await tasks.getTask(w.ctx, ve)).nextStages.includes('Completed'), false, 'a VE Install still follows the flow');
+	const onJob = (await jobs.getJob(w.ctx, jobId)).tasks.find((t) => String(t.ROWID) === ext);
+	assert.ok(onJob.nextStages.includes('Completed'), 'job page, manager');
+
+	await tasks.addAssignee(w.ctx, ext, { person_id: ME, role: 'lead' });
+	assert.equal((await tasks.getTask(w.as(['installer']), ext)).nextStages.includes('Completed'), false, 'crew cannot close it');
+
+	const done = await tasks.transitionTask(w.ctx, ext, { to: 'Completed' });
+	assert.equal(done.nextStages.includes('Completed'), false, 'nothing to close once it is closed');
+});

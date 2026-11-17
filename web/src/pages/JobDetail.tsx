@@ -21,6 +21,7 @@ import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
 import type { TaskType } from '../lib/taskKinds';
 import { TASK_NAMES } from '../lib/names';
+import { CLOSE_CONFIRM, isDirectClose } from '../lib/stageActions';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -143,7 +144,9 @@ export function JobDetail() {
 	const menuItems = (t: Task): MenuItem[] => [
 		{ label: 'Open task', onSelect: () => navigate('/tasks/' + t.ROWID) },
 		...(canSubtask(t) ? [{ label: 'Create subtask', onSelect: () => setSubOf(t) }] : []),
-		...(t.nextStages ?? []).map((st) => ({ label: `Move to ${st}`, onSelect: () => moveTo(t, st) })),
+		...(t.nextStages ?? []).map((st) => (isDirectClose(t.stage, st)
+			? { label: 'Close task', onSelect: async () => { if (await confirm(CLOSE_CONFIRM)) moveTo(t, st); } }
+			: { label: `Move to ${st}`, onSelect: () => moveTo(t, st) })),
 	];
 	const addBtn = (label: string, type: TaskType, kind = '') => canAdd && <button className="btn btn-sm" onClick={() => setAdding({ type, kind })}><Plus size={14} aria-hidden="true" /> {label}</button>;
 

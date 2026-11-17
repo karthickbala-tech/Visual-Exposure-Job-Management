@@ -8,6 +8,7 @@ import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 import { Dialog } from '../components/Dialog';
+import { CLOSE_CONFIRM, isDirectClose } from '../lib/stageActions';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 const today = () => new Date().toISOString().slice(0, 10);
@@ -204,6 +205,7 @@ export function StageActions({ taskId, stage, nextStages, move, onDone }: { task
 	const choose = async (s: string) => {
 		if (NEEDS_COMMENT.includes(s) || (stage === 'Manager Review' && APPROVE_TO.includes(s))) return setAsk(ask === s ? null : s);
 		if (s === 'Manager Review' && !(await confirm({ title: 'Submit for manager review', message: 'The task will move to Manager Review, and the manager will check it next.', confirmLabel: 'Submit for review' }))) return;
+		if (isDirectClose(stage, s) && !(await confirm(CLOSE_CONFIRM))) return;
 		go(s);
 	};
 
@@ -212,7 +214,7 @@ export function StageActions({ taskId, stage, nextStages, move, onDone }: { task
 			<div className="actions">
 				{nextStages.map((s) => (
 					<button key={s} className={'btn ' + (APPROVE_TO.includes(s) && stage === 'Manager Review' ? '' : 'btn-ghost')} aria-pressed={ask === s} disabled={move.isPending} onClick={() => choose(s)}>
-						{stage === 'Manager Review' && APPROVE_TO.includes(s) ? 'Approve' : s}
+						{stage === 'Manager Review' && APPROVE_TO.includes(s) ? 'Approve' : isDirectClose(stage, s) ? 'Close task' : s}
 					</button>
 				))}
 			</div>
