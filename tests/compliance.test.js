@@ -226,3 +226,22 @@ test('do-not-contact: the item can leave out the worker, the managers or both; a
 	assert.equal((await directory.updateCompany(w.ctx, co.id, { do_not_contact: false })).item.doNotContact, false);
 	await rejects(compliance.updateItem(w.ctx, worker, { do_not_contact: { everyone: true } }), 400);
 });
+
+test('compliance types: administrators add and edit them; names are unique; a used type keeps its kind; no own days means the Admin setting', async () => {
+	const w = makeWorld();
+	const { item: t } = await compliance.createType(w.ctx, { compliance_kind: 'ticket', name: 'Forklift licence', requires_expiry: true, is_mandatory_type: false, reminder_offsets: [14, 60, 30, 30] });
+	assert.deepEqual(t.ownOffsets, [60, 30, 14], 'sorted, duplicates dropped');
+	await rejects(compliance.createType(w.ctx, { compliance_kind: 'ticket', name: 'forklift LICENCE', requires_expiry: true, is_mandatory_type: false, reminder_offsets: [] }), 400);
+	await rejects(compliance.createType(w.as(['project_manager']), { compliance_kind: 'ticket', name: 'X', requires_expiry: true, is_mandatory_type: false, reminder_offsets: [] }), 403);
+	await rejects(compliance.createType(w.ctx, { compliance_kind: 'licence', name: 'X', requires_expiry: true, is_mandatory_type: false, reminder_offsets: [] }), 400);
+
+	const edited = (await compliance.updateType(w.ctx, t.id, { reminder_offsets: [], is_mandatory_type: true })).item;
+	assert.deepEqual(edited.ownOffsets, [], 'no own days: follows the Admin setting');
+	assert.equal(edited.mandatory, true);
+	assert.equal((await compliance.listTypes(w.ctx)).items.find((x) => x.id === t.id).name, 'Forklift licence');
+
+	assert.equal((await compliance.updateType(w.ctx, t.id, { compliance_kind: 'induction' })).item.kind, 'induction', 'unused: the kind can change');
+	await compliance.createItem(w.ctx, { type_id: t.id, person_id: ME, expiry_date: '2027-01-01' });
+	await rejects(compliance.updateType(w.ctx, t.id, { compliance_kind: 'company_document' }), 400);
+	await rejects(compliance.updateType(w.ctx, '105747000009999999', { name: 'Nope' }), 404);
+});

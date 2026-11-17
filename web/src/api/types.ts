@@ -230,6 +230,8 @@ export interface ComplianceType {
 	requiresExpiry: boolean;
 	mandatory: boolean;
 	offsets: number[];
+	/** The type's own reminder days; empty when it follows the Admin setting. */
+	ownOffsets?: number[];
 }
 
 export interface ComplianceItem {

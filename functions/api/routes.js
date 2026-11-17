@@ -163,6 +163,8 @@ router.add('PATCH', '/people/:id/profile', withCtx(async (ctx, { req, params }) 
 router.add('GET', '/people/:id', withCtx(async (ctx, { params }) => ok(await people.getPerson(ctx, params.id))));
 router.add('PATCH', '/people/:id', withCtx(async (ctx, { req, params }) => ok(await people.updatePerson(ctx, params.id, await readJson(req)))));
 router.add('GET', '/compliance/types', withCtx(async (ctx) => ok(await compliance.listTypes(ctx))));
+router.add('POST', '/compliance/types', withCtx(async (ctx, { req }) => created(await compliance.createType(ctx, await readJson(req)))));
+router.add('PATCH', '/compliance/types/:id', withCtx(async (ctx, { req, params }) => ok(await compliance.updateType(ctx, params.id, await readJson(req)))));
 router.add('GET', '/compliance', withCtx(async (ctx, { url }) => ok(await compliance.listItems(ctx, parseQuery(url)))));
 router.add('GET', '/compliance/:id/portal', withCtx(async (ctx, { params }) => ok(await compliance.getPortal(ctx, params.id))));
 router.add('POST', '/compliance/:id/portal/reveal', withCtx(async (ctx, { params }) => ok(await compliance.revealPortalPassword(ctx, params.id))));
