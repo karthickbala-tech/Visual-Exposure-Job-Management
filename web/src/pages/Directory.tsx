@@ -118,7 +118,8 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 	const [editing, setEditing] = useState<CompanyItem | null>(null);
 	const [rates, setRates] = useState<Record<string, string>>({});
 	const [billing, setBilling] = useState('');
-	const close = () => { setOpen(false); setEditing(null); setForm(empty); setRates({}); setBilling(''); };
+	const [noContact, setNoContact] = useState(false);
+	const close = () => { setOpen(false); setEditing(null); setForm(empty); setRates({}); setBilling(''); setNoContact(false); };
 	/** The rates to send: numbers for the filled boxes, null for a cleared one. Nothing for people who cannot see rates. */
 	const ratesBody = () => {
 		if (!canRates) return undefined;
@@ -131,6 +132,7 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 		setForm({ name: c.name, kind: c.kind, contact_name: c.contactName, phone: c.phone, email: c.email, street: c.street ?? '', suburb: c.suburb ?? '', state: c.state, post_code: c.postCode ?? '' });
 		setRates(Object.fromEntries(RATE_FIELDS.map(([k]) => [k, c.rates?.[k] == null ? '' : String(c.rates[k])])));
 		setBilling(String(c.rates?.billing_notes ?? ''));
+		setNoContact(!!c.doNotContact);
 		setEditing(c);
 		setOpen(true);
 	};
@@ -152,7 +154,7 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 						onSubmit={(e) => {
 							e.preventDefault();
 							write.mutate(
-								editing ? { method: 'PATCH', path: '/companies/' + editing.id, body: { ...form, rates: ratesBody() } } : { method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined, rates: ratesBody() } },
+								editing ? { method: 'PATCH', path: '/companies/' + editing.id, body: { ...form, rates: ratesBody(), do_not_contact: noContact } } : { method: 'POST', path: '/companies', body: { name: form.name, kind: form.kind, contact_name: form.contact_name || undefined, phone: form.phone || undefined, email: form.email || undefined, street: form.street || undefined, suburb: form.suburb || undefined, state: form.state || undefined, post_code: form.post_code || undefined, rates: ratesBody(), do_not_contact: noContact || undefined } },
 								{
 									onSuccess: () => {
 										close();
@@ -185,6 +187,9 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 						<label>
 							<span className="toolbar__label">Email</span>
 							<input type="email" value={form.email} onChange={set('email')} maxLength={200} />
+						</label>
+						<label className="check" style={{ flex: '0 1 auto' }}>
+							<input type="checkbox" checked={noContact} onChange={(e) => setNoContact(e.target.checked)} /> Don't email this company about expiring documents (managers are still told)
 						</label>
 						<label>
 							<span className="toolbar__label">Street Address</span>

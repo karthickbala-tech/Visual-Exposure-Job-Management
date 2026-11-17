@@ -83,7 +83,7 @@ function EditWorker({ p, isAdmin, onClose }: { p: PersonFull; isAdmin: boolean; 
 	);
 }
 
-interface RecordRow { id: string; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null }
+interface RecordRow { id: string; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null; doNotContact?: { worker: boolean; managers: boolean } }
 
 /** The training portal login of one ticket or induction. Managers only: hidden when the server refuses. The password is shown only after Show password, which is logged. */
 function PortalLogin({ id }: { id: string }) {
@@ -121,6 +121,9 @@ function EditRecordForm({ r, onClose }: { r: RecordRow; onClose: () => void }) {
 	const update = useUpdateCompliance();
 	const { notify } = useToast();
 	const [f, setF] = useState({ reference_no: r.referenceNo ?? '', issue_date: (r.issueDate ?? '').slice(0, 10), expiry_date: (r.expiryDate ?? '').slice(0, 10) });
+	// DS "Do not contact the worker / manager about this": stops those reminder emails for this record only.
+	const [quiet, setQuiet] = useState({ worker: !!r.doNotContact?.worker, managers: !!r.doNotContact?.managers });
+	const quietChanged = quiet.worker !== !!r.doNotContact?.worker || quiet.managers !== !!r.doNotContact?.managers;
 	const years = validityYears(r.typeName);
 	const problem = f.issue_date > todayIso() ? 'The issue date cannot be in the future.' : f.issue_date && f.expiry_date && f.expiry_date <= f.issue_date ? 'The expiry date must be after the issue date.' : '';
 	return (
@@ -129,7 +132,7 @@ function EditRecordForm({ r, onClose }: { r: RecordRow; onClose: () => void }) {
 			onSubmit={(e) => {
 				e.preventDefault();
 				update.mutate(
-					{ id: r.id, reference_no: f.reference_no.trim(), issue_date: f.issue_date || null, expiry_date: f.expiry_date || null },
+					{ id: r.id, reference_no: f.reference_no.trim(), issue_date: f.issue_date || null, expiry_date: f.expiry_date || null, ...(quietChanged ? { do_not_contact: quiet } : {}) },
 					{ onSuccess: () => { notify('Record saved'); onClose(); }, onError: (er) => notify(errText(er), 'error') },
 				);
 			}}
@@ -142,6 +145,8 @@ function EditRecordForm({ r, onClose }: { r: RecordRow; onClose: () => void }) {
 					Set expiry {years} {years === 1 ? 'year' : 'years'} after issue
 				</button>
 			)}
+			<label className="check" style={{ flex: '0 1 auto' }}><input type="checkbox" checked={quiet.worker} onChange={(e) => setQuiet({ ...quiet, worker: e.target.checked })} /> Don't email the worker about this</label>
+			<label className="check" style={{ flex: '0 1 auto' }}><input type="checkbox" checked={quiet.managers} onChange={(e) => setQuiet({ ...quiet, managers: e.target.checked })} /> Don't email the managers about this</label>
 			<button className="btn" disabled={update.isPending || !!problem}>{update.isPending ? 'Saving…' : 'Save'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{problem && <p role="alert">{problem}</p>}

@@ -246,6 +246,8 @@ export interface ComplianceItem {
 	expiryDate: string | null;
 	daysLeft: number | null;
 	status: 'Valid' | 'Expiring' | 'Expired' | 'No expiry';
+	/** Reminder emails left out for this item: the worker (or company), the managers. */
+	doNotContact?: { worker: boolean; managers: boolean };
 }
 
 export interface FileItem {
@@ -339,6 +341,8 @@ export interface CompanyItem {
 	email: string;
 	notes: string;
 	isActive: boolean;
+	/** Do not email this company about its expiring documents. */
+	doNotContact?: boolean;
 }
 
 export interface SiteItem {

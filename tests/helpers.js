@@ -218,6 +218,9 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.ctypes.push(r);
 				return clone(r);
 			},
+			update: async (rowOrRows) => {
+				for (const row of Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows]) Object.assign(db.ctypes.find((t) => String(t.ROWID) === String(row.ROWID)), row);
+			},
 		},
 		compliance: {
 			findById: async (id) => clone(db.citems.find((i) => String(i.ROWID) === String(id))),

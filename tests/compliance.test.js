@@ -18,13 +18,18 @@ function addType(w, over = {}) {
 }
 
 test('seeded compliance types are valid and the seed can be repeated', async () => {
-	for (const t of TYPES) assert.ok(t.name && ['ticket', 'induction', 'document'].includes(t.compliance_kind), t.name);
+	for (const t of TYPES) assert.ok(t.name && ['ticket', 'induction', 'company_document'].includes(t.compliance_kind), t.name);
 	const w = makeWorld();
 	const a = await compliance.seedComplianceTypes(w.ctx);
 	assert.equal(a.added.length, TYPES.length);
 	const b = await compliance.seedComplianceTypes(w.ctx);
 	assert.equal(b.added.length, 0);
 	assert.equal(w.db.ctypes[1].requires_expiry, 'true', 'booleans go to Catalyst as strings');
+	// A row saved by the earlier seed with the kind "document" is repaired by running the seed again.
+	w.db.ctypes.find((t) => t.name === 'Public liability insurance').compliance_kind = 'document';
+	const c = await compliance.seedComplianceTypes(w.ctx);
+	assert.deepEqual(c.repaired, ['Public liability insurance']);
+	assert.equal(w.db.ctypes.find((t) => t.name === 'Public liability insurance').compliance_kind, 'company_document');
 	await rejects(compliance.seedComplianceTypes(w.as(['project_manager'])), 403);
 });
 
@@ -187,4 +192,37 @@ test('the job runner calls the compliance job with injected parts', async () => 
 	const out = await run('compliance-due', {}, ctx);
 	assert.deepEqual(out, { ran: true });
 	assert.equal(sent.length, 1);
+});
+
+test('do-not-contact: the item can leave out the worker, the managers or both; a company can opt out; the company email field is used', async () => {
+	const directory = require('../lib/services/directory');
+	const { w, type, sent, ctx } = jobSetup();
+	const { item: co } = await directory.createCompany(w.ctx, { name: 'Lift Hire Co', kind: 'subcontractor', email: 'office@lifthire.test' });
+	const mk = async (over) => (await compliance.createItem(w.ctx, { type_id: type.ROWID, expiry_date: '2026-12-02', ...over })).item.id;
+	const worker = await mk({ person_id: ME });
+	const managers = await mk({ person_id: ME });
+	const both = await mk({ person_id: ME });
+	const docType = addType(w, { ROWID: '105747000001500002', name: 'Public liability insurance', compliance_kind: 'company_document' });
+	const doc = await mk({ company_id: co.id, type_id: docType.ROWID });
+
+	await compliance.updateItem(w.ctx, worker, { do_not_contact: { worker: true } });
+	await compliance.updateItem(w.ctx, managers, { do_not_contact: { managers: true } });
+	const b = await compliance.updateItem(w.ctx, both, { do_not_contact: { worker: true, managers: true } });
+	assert.deepEqual(b.item.doNotContact, { worker: true, managers: true });
+
+	const r = await runComplianceDue(ctx);
+	// Items go in creation order: worker-flagged, managers-flagged, both (nothing sent), then the company document.
+	assert.deepEqual(r, { checked: 4, sent: 3, skipped: 1, failed: 0 });
+	const to = sent.map((m) => [...m.to].sort());
+	assert.deepEqual(to[0], ['pm@x.com'], 'worker left out, managers still told');
+	assert.deepEqual(to[1], ['worker@x.com'], 'managers left out');
+	assert.deepEqual(to[2], ['office@lifthire.test', 'pm@x.com'], 'the company is emailed at its email field');
+	assert.ok(!sent.some((m) => m.to.length === 0), 'nobody to tell: nothing sent');
+	const bothRow = w.db.citems.find((c) => String(c.ROWID) === String(both));
+	assert.equal(bothRow.meta, '{"lastSent":30}', 'and that reminder counts as handled, so it is not retried every day');
+
+	const off = await directory.updateCompany(w.ctx, co.id, { do_not_contact: true });
+	assert.equal(off.item.doNotContact, true);
+	assert.equal((await directory.updateCompany(w.ctx, co.id, { do_not_contact: false })).item.doNotContact, false);
+	await rejects(compliance.updateItem(w.ctx, worker, { do_not_contact: { everyone: true } }), 400);
 });

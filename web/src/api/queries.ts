@@ -228,7 +228,7 @@ export const useComplianceItems = (status?: string) =>
 export const useUpdateCompliance = () => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (v: { id: string; reference_no?: string; issue_date?: string | null; expiry_date?: string | null; is_active?: boolean }) => {
+		mutationFn: (v: { id: string; reference_no?: string; issue_date?: string | null; expiry_date?: string | null; is_active?: boolean; do_not_contact?: { worker?: boolean; managers?: boolean } }) => {
 			const { id, ...patch } = v;
 			return api('/compliance/' + id, json('PATCH', patch));
 		},
