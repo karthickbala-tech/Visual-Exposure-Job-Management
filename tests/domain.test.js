@@ -135,5 +135,5 @@ test('progressFor splits fab and install and includes design in the job figure',
 		{ task_type: 'install', stage: 'Scheduled', quoted_hours: 10 },
 		{ task_type: 'design', stage: 'Approved & Completed', quoted_hours: 20 },
 	];
-	assert.deepEqual(progressFor(tasks), { fab: 100, install: 0, job: 75 });
+	assert.deepEqual(progressFor(tasks), { fab: 100, install: 0, design: 100, job: 75 });
 });

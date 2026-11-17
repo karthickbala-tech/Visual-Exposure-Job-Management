@@ -80,6 +80,8 @@ export interface Task {
 export interface Progress {
 	fab: number;
 	install: number;
+	/** Design tasks' completion (quoted hours), shown on the job page (JOB-3). */
+	design?: number;
 	job: number;
 }
 

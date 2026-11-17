@@ -63,14 +63,19 @@ function Section({ tone, icon, title, count, pills, actions, meta, children }: {
 }
 
 /** Open, In progress and Completed counts for one section, and Overdue when there is any. */
-function Pills({ list, late }: { list: Task[]; late: number }) {
+/**
+ * JOB-3: per discipline, open, in progress, completed, overdue (always shown, 0 included) and the percent complete. The total is
+ * in the section title. The percent is the FSD completion figure (weighted by quoted hours), the same one the job uses.
+ */
+function Pills({ list, late, percent }: { list: Task[]; late: number; percent?: number }) {
 	const n = (f: (t: Task) => boolean) => list.filter(f).length;
 	return (
 		<div className="jpills" aria-label="Task counts">
 			<span className="jpill jpill--open"><b className="num">{n((t) => !DONE.includes(t.stage))}</b> Open</span>
 			<span className="jpill jpill--prog"><b className="num">{n((t) => t.stage === 'In Progress')}</b> In Progress</span>
 			<span className="jpill jpill--done"><b className="num">{n((t) => COMPLETE.includes(t.stage))}</b> Completed</span>
-			{late > 0 && <span className="jpill jpill--late"><b className="num">{late}</b> Overdue</span>}
+			<span className={'jpill' + (late > 0 ? ' jpill--late' : '')}><b className="num">{late}</b> Overdue</span>
+			{list.length > 0 && percent !== undefined && <span className="jpill"><b className="num">{num(percent)}%</b> Complete</span>}
 		</div>
 	);
 }
@@ -249,7 +254,7 @@ export function JobDetail() {
 				<SignsPanel jobId={id ?? ''} canWrite={canAdd} />
 			</div>
 
-			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}
+			<Section tone="design" icon={<Network size={20} />} title={TASK_NAMES.design.title} count={design.length} pills={<Pills list={design} late={design.filter(late).length} percent={progress.design} />} actions={addBtn(TASK_NAMES.design.addLabel, 'design')}
 				meta={seesMoney ? <dl className="jsec__meta"><CostMeta job={job} trade="design" /></dl> : undefined}>
 				{addForm('design')}
 				<TaskTable rowClass={rowFlag} title={TASK_NAMES.design.table} empty="No design tasks." rows={design} cols={['Design Type', 'Task Name', 'Stage', 'Required Finish', 'Quoted Hours', 'Booked Hours', ...(seesMoney ? ['Labour Cost'] : []), '']}
@@ -257,7 +262,7 @@ export function JobDetail() {
 					numeric={seesMoney ? [4, 5, 6] : [4, 5]} onRowContext={openMenu} />
 			</Section>
 
-			<Section tone="fab" icon={<Hammer size={20} />} title={TASK_NAMES.fabrication.title} count={fab.length} pills={<Pills list={fab} late={fab.filter(late).length} />} actions={addBtn(TASK_NAMES.fabrication.addLabel, 'fabrication')}
+			<Section tone="fab" icon={<Hammer size={20} />} title={TASK_NAMES.fabrication.title} count={fab.length} pills={<Pills list={fab} late={fab.filter(late).length} percent={progress.fab} />} actions={addBtn(TASK_NAMES.fabrication.addLabel, 'fabrication')}
 				meta={(
 					<dl className="jsec__meta">
 						<div><dt>% of Fab Completed</dt><dd className="num">{num(progress.fab)}</dd></div>
@@ -273,7 +278,7 @@ export function JobDetail() {
 					groupTotals={(list) => ['', '', hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '', '', '', hrs(sumQuoted(list)), '']} footer={['Total', '', hrs(sumBooked(fab)), ...(seesMoney ? [hrs(sumCost(fab))] : []), '', '', '', hrs(sumQuoted(fab)), '']} />
 			</Section>
 
-			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} />}
+			<Section tone="install" icon={<Truck size={20} />} title={TASK_NAMES.install.title} count={install.length} pills={<Pills list={install} late={install.filter(late).length} percent={progress.install} />}
 				meta={seesMoney ? <dl className="jsec__meta"><CostMeta job={job} trade="install" /></dl> : undefined}
 				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}>
 				{addForm('install')}
