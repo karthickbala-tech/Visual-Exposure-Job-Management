@@ -8,7 +8,7 @@ import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 import { Dialog } from '../components/Dialog';
-import { CLOSE_CONFIRM, RESET_CONFIRM, isDirectClose, isReset } from '../lib/stageActions';
+import { CLOSE_CONFIRM, clearsNote, isDirectClose, isReset, reasonFor } from '../lib/stageActions';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 const today = () => new Date().toISOString().slice(0, 10);
@@ -184,15 +184,15 @@ export function RatingPanel({ taskId, assignees }: { taskId: string; assignees: 
 }
 
 const APPROVE_TO = ['Completed', 'Approved & Completed'];
-const NEEDS_COMMENT = ['Rejected', 'Reopen'];
 type Mover = ReturnType<typeof import('../api/queries').useTransitionTask>;
 
 /**
  * Move a task to its next stage. Approving from Manager Review asks the PM-review questions (OH&S incident, needs management review);
- * sending back or reopening needs a reason. Everything else is one click. The server checks each move again.
+ * sending back, reopening, holding, cancelling, not used and a reset need a reason. Everything else is one click. The server checks each
+ * move again. `preset` opens the form for that move at once (the job page's menu links here with ?move=).
  */
-export function StageActions({ taskId, stage, nextStages, move, onDone }: { taskId: string; stage: string; nextStages: string[]; move: Mover; onDone: (to: string) => void }) {
-	const [ask, setAsk] = useState<string | null>(null);
+export function StageActions({ taskId, stage, nextStages, move, onDone, preset }: { taskId: string; stage: string; nextStages: string[]; move: Mover; onDone: (to: string) => void; preset?: string | null }) {
+	const [ask, setAsk] = useState<string | null>(() => (preset && nextStages.includes(preset) ? preset : null));
 	const [comment, setComment] = useState('');
 	const [ohs, setOhs] = useState<'Yes' | 'No'>('No');
 	const [review, setReview] = useState(false);
@@ -203,10 +203,9 @@ export function StageActions({ taskId, stage, nextStages, move, onDone }: { task
 		move.mutate({ taskId, to, ...extra }, { onSuccess: () => { setAsk(null); setComment(''); onDone(to); }, onError: (e) => notify(errText(e), 'error') });
 	// Sending a task for manager review is the DS "Awaiting Submission" step: ask first, because the manager then takes over the task.
 	const choose = async (s: string) => {
-		if (NEEDS_COMMENT.includes(s) || (stage === 'Manager Review' && APPROVE_TO.includes(s))) return setAsk(ask === s ? null : s);
+		if (reasonFor(stage, s) || (stage === 'Manager Review' && APPROVE_TO.includes(s))) return setAsk(ask === s ? null : s);
 		if (s === 'Manager Review' && !(await confirm({ title: 'Submit for manager review', message: 'The task will move to Manager Review, and the manager will check it next.', confirmLabel: 'Submit for review' }))) return;
 		if (isDirectClose(stage, s) && !(await confirm(CLOSE_CONFIRM))) return;
-		if (isReset(stage, s) && !(await confirm(RESET_CONFIRM))) return;
 		go(s);
 	};
 
@@ -242,12 +241,13 @@ export function StageActions({ taskId, stage, nextStages, move, onDone }: { task
 							<label className="check"><input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} /> Needs a management review</label>
 						</>
 					)}
+					{clearsNote(stage, ask) && <p className="muted">{clearsNote(stage, ask)}</p>}
 					<label>
-						<span className="toolbar__label">{approving ? 'Comment (optional)' : NEEDS_COMMENT.includes(ask) ? `Why? (needed to ${ask === 'Rejected' ? 'send it back' : 'reopen'})` : 'Comment'}</span>
-						<textarea rows={2} value={comment} maxLength={2000} onChange={(e) => setComment(e.target.value)} required={NEEDS_COMMENT.includes(ask)} />
+						<span className="toolbar__label">{approving ? 'Comment (optional)' : reasonFor(stage, ask) ? `Why? (needed to ${reasonFor(stage, ask)})` : 'Comment'}</span>
+						<textarea rows={2} value={comment} maxLength={2000} onChange={(e) => setComment(e.target.value)} required={!!reasonFor(stage, ask)} autoFocus={!approving} />
 					</label>
 					<div className="actions">
-						<button className="btn" disabled={move.isPending}>{move.isPending ? 'Saving…' : approving ? 'Approve task' : `Confirm: ${ask}`}</button>
+						<button className="btn" disabled={move.isPending}>{move.isPending ? 'Saving…' : approving ? 'Approve task' : `Confirm: ${isReset(stage, ask) ? 'Reset assignment' : ask}`}</button>
 						<button type="button" className="btn btn-ghost" onClick={() => setAsk(null)}>Cancel</button>
 					</div>
 				</form>

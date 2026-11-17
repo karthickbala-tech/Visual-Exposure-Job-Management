@@ -89,7 +89,7 @@ test('crew declarations are recorded once each; outsiders get 404', async () => 
 
 test('a task that is not used no longer needs its SWMS', async () => {
 	const { w, task } = await setup();
-	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Complete - Not Used' });
+	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Complete - Not Used', comment: 'Client cancelled this sign' });
 	assert.equal(w.db.swms[0].swms_status, 'Not Required');
 });
 

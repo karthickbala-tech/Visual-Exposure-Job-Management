@@ -224,3 +224,16 @@ test('cancel, not used and reset take the crew off with their unfinished checkli
 	await tasks.transitionTask(w.ctx, d, { to: 'To be Assigned', comment: 'Designer on leave' });
 	assert.equal(crewOn(d), 0);
 });
+
+test('hold, cancel, not used and reset need a reason, which is kept with the stage change (TSK-2)', async () => {
+	const { w, jobId } = await setup();
+	const t = await mk(w, jobId, { task_type: 'fabrication', name: 'Cut', kind: 'CNC', scheduled_date: '2026-11-20' });
+	await tasks.addAssignee(w.ctx, t, { person_id: ME, role: 'lead' });
+	await tasks.transitionTask(w.ctx, t, { to: 'Scheduled' });
+	for (const to of ['On Hold', 'Cancelled', 'Complete - Not Used']) await rejects(tasks.transitionTask(w.ctx, t, { to }), 400);
+	await rejects(tasks.transitionTask(w.ctx, t, { to: 'Awaiting Scheduling' }), 400); // a reset
+	await tasks.transitionTask(w.ctx, t, { to: 'On Hold', comment: 'Waiting for material' });
+	assert.equal(w.db.activity.filter((a) => a.comment_text === 'Waiting for material').length, 1);
+	await tasks.transitionTask(w.ctx, t, { to: 'Scheduled' });
+	assert.equal(dbTask(w, t).stage, 'Scheduled', 'taking it off hold needs no reason');
+});

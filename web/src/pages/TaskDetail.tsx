@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ClipboardCheck } from 'lucide-react';
 import { useMe, useStartChecklist, useTask, useTaskChecklists, useTransitionTask } from '../api/queries';
 import { ApiError } from '../api/client';
@@ -20,6 +20,7 @@ const TYPE_LABEL: Record<string, string> = { design: 'Design task', fabrication:
 
 export function TaskDetail() {
 	const { id } = useParams();
+	const [params] = useSearchParams();
 	const navigate = useNavigate();
 	const me = useMe();
 	const q = useTask(id);
@@ -77,7 +78,7 @@ export function TaskDetail() {
 				</dl>
 			</Card>
 
-			{nextStages.length > 0 && <StageActions taskId={task.ROWID} stage={task.stage} nextStages={nextStages} move={move} onDone={(to) => notify(`Moved to ${to}`)} />}
+			{nextStages.length > 0 && <StageActions taskId={task.ROWID} stage={task.stage} nextStages={nextStages} move={move} preset={params.get('move')} onDone={(to) => notify(`Moved to ${to}`)} />}
 
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
 				<ManagePanel taskId={task.ROWID} costType={task.cost_type} scheduled={task.scheduled_date} finish={task.required_finish} quoted={num(task.quoted_hours)} assignees={assignees} canSubtask={task.task_type === 'fabrication' || task.task_type === 'install'} />
