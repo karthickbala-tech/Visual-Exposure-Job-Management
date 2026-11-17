@@ -88,6 +88,8 @@ test('devices: PMs may view, workers may not; stale and map link are derived', a
 	assert.ok(out.items[0].mapUrl.includes('openstreetmap'));
 	assert.equal(out.items[1].stale, true);
 	assert.equal(out.items[1].lat, null);
+	assert.equal(out.items[0].personId, '105747000000900001', 'the person id, for workers with and without a device (EQP-4)');
+	assert.equal(out.items[1].personId, null);
 	await rejects(reg.listDevices(w.as(['installer'])), 403);
 });
 

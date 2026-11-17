@@ -347,7 +347,8 @@ const routes = [
 	['GET', /^\/locations$/, () => list(S.locations)],
 	['POST', /^\/locations$/, (_, __, b) => { const l = { id: id(), name: b.name, description: b.description || '', supervisorId: b.supervisor_id || null, supervisorName: b.supervisor_id ? S.nameOf(b.supervisor_id) : null }; S.locations.push(l); return { item: l }; }],
 	['PATCH', /^\/locations\/(\d+)$/, (m, _, b) => { const l = S.locations.find((x) => x.id === m[1]); if (!l) throw Object.assign(new Error('Workshop location not found'), { status: 404 }); if (b.name !== undefined) l.name = b.name; if (b.description !== undefined) l.description = b.description; if (b.supervisor_id !== undefined) { l.supervisorId = b.supervisor_id; l.supervisorName = b.supervisor_id ? S.nameOf(b.supervisor_id) : null; } return { item: l }; }],
-	['GET', /^\/devices$/, () => list(S.devices)],
+	// The sample devices carry names; the person id is found by name, as the server returns it (EQP-4 workers view).
+	['GET', /^\/devices$/, () => list(S.devices.map((d) => ({ ...d, personId: (S.people.find((p) => `${p.first_name} ${p.last_name ?? ''}`.trim() === d.personName) || {}).ROWID || null })))],
 	['GET', /^\/files$/, (_, q) => list(S.files.filter((f) => f.entityType === q.get('entity_type') && f.entityId === q.get('entity_id')))],
 	// admin
 	['POST', /^\/admin\/import\/(people|companies)$/, (m, _, b) => { const bad = []; let created = 0; (b.rows || []).forEach((r, i) => { const key = m[1] === 'people' ? r.first_name : r.name; if (!key) bad.push({ row: i + 1, reason: (m[1] === 'people' ? 'first_name' : 'name') + ': Required' }); else created += 1; }); return { created, skipped: bad }; }],

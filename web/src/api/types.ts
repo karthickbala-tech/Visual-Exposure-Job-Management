@@ -316,6 +316,7 @@ export interface WorkshopLocation {
 
 export interface DeviceItem {
 	id: string;
+	personId?: string | null;
 	personName: string | null;
 	model: string;
 	os: string;
