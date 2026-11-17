@@ -33,7 +33,15 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 - Mock API gained: company, chemical, equipment and compliance type edit routes, location supervisor, item flags.
 - Not done: a person-level do-not-contact needs a new person column (Catalyst console / MCP); location delete; equipment history is not written by the automatic off-hire switch (EQP-2) or maintenance tasks.
 - Tests 337 pass; oxlint 10 accepted warnings.
-- **Next: Phase 4** (screens: role dashboards, job page totals and activity, task form fields, task delete and bulk actions, hours-not-filled list, compliance "Not filled in", devices without a device, issue print picker, calendar day view, group by sign group, automatic stage moves from checklists).
+**Phase 4, FSD-required only** (`605313d` to `18f22d4`, pushed, not deployed). Kalyani (17 Nov): build only what the FSD needs and the client does not have to approve; optional react-app extras wait for the client review.
+1. Role dashboards (5.12) under the tiles: PM, Fab Manager (Create Workshop Task, FAB-5), 2IC, Install Coordinator (pay-period buttons: Hours reads ?view=this|last), Installer, Fab Worker, Workshop (Create Workshop Task, overdue checks). One shared calendar request per page; tables are list requests cached a minute.
+2. Job page (JOB-3): Overdue always shown and "% Complete" per discipline (design % added to progressFor, shown only).
+3. FAB-2: GET /jobs/:id returns fab tasks in groupAndSort order.
+4. Add task (TSK-6, JOB-4): location, sign group, cost type, fab spec, crew (designer for design). POST /jobs/:id/tasks accepts spec and crew; with date and team leader it starts Scheduled (design with designer: Assigned) through the normal move (TSK-3).
+5. INS-2: install sub-stage shown on the task and job pages (no "Team Briefed", no automatic stage moves: client).
+6. Calendar Day view. 7. Fab lists grouped by sign group (task detail carries sign_group_name). 8. Devices: Workers view, with / without a device (device list carries personId).
+- Tests 340 pass; oxlint 10 accepted warnings. Mock now runs as project_manager (MOCK_ROLES) to show a role dashboard.
+- **Left for the client review (optional, not FSD):** bulk task actions, job activity feed, job On Hold / Cancel by hand, hours-not-filled list, compliance "Not filled in" rows and clickable tiles, task delete from the app.
 
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
