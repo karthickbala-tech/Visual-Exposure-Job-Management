@@ -203,11 +203,17 @@ export function JobDetail() {
 					{inReview.slice(0, 3).map((t) => <Link key={t.ROWID} to={'/tasks/' + t.ROWID}>Review {t.name}</Link>)}
 				</div>
 			)}
-			{canClose && (
+			{/* JOB-5: the server closes a job only when every task is finished, so tasks still in Manager Review must be approved first. */}
+			{canClose && inReview.length > 0 && (
+				<div className="attention" role="status">
+					All the work is done. Approve the {inReview.length === 1 ? 'task' : `${inReview.length} tasks`} in Manager Review, then the job can be closed.
+				</div>
+			)}
+			{canClose && inReview.length === 0 && (
 				<div className="attention" role="status">
 					Every task is finished.
 					<button className="btn btn-sm" disabled={close.isPending} onClick={async () => {
-							if (inReview.length && !(await confirm({ message: `${inReview.length} ${inReview.length === 1 ? 'task is' : 'tasks are'} still in Manager Review. Closing will not wait for approval. Close the job anyway?`, confirmLabel: 'Close job' }))) return;
+							if (!(await confirm({ title: 'Close this job', message: 'The job becomes Completed - Closed, the closure report is emailed and the CRM deal is updated. Its tasks can no longer change.', confirmLabel: 'Close job' }))) return;
 							close.mutate(undefined, { onSuccess: () => notify('Job closed'), onError: (e) => notify(e instanceof Error ? e.message : 'Could not close the job', 'error') });
 						}}>
 						{close.isPending ? 'Closing…' : 'Close job'}
