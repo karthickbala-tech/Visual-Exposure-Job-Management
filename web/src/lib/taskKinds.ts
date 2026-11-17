@@ -58,3 +58,13 @@ export const parseSpec = (v: unknown): Record<string, unknown> => {
 		return {};
 	}
 };
+
+/**
+ * The checklists a task has, as the server decides (lib/domain/taskRules.js checklistPhases): none for External Install and
+ * Print Only (a manager closes them), the post-job one only for Workshop fabrication tasks, otherwise pre-job then post-job.
+ */
+export function checklistPhases(task: { task_type: string; kind?: string | null }): ('pre' | 'post')[] {
+	if (task.task_type === 'install' && (task.kind === 'External Install' || task.kind === 'Print Only')) return [];
+	if (task.task_type === 'fabrication' && task.kind === 'Workshop') return ['post'];
+	return ['pre', 'post'];
+}

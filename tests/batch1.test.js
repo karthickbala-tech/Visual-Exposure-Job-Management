@@ -237,3 +237,19 @@ test('hold, cancel, not used and reset need a reason, which is kept with the sta
 	await tasks.transitionTask(w.ctx, t, { to: 'Scheduled' });
 	assert.equal(dbTask(w, t).stage, 'Scheduled', 'taking it off hold needs no reason');
 });
+
+test('the checklists a task has: none for External Install and Print Only, post-job only for Workshop (INS-6, CHK-4)', async () => {
+	const { checklistPhases } = require('../lib/domain/taskRules');
+	assert.deepEqual(checklistPhases({ task_type: 'install', kind: 'External Install' }), []);
+	assert.deepEqual(checklistPhases({ task_type: 'install', kind: 'Print Only' }), []);
+	assert.deepEqual(checklistPhases({ task_type: 'fabrication', kind: 'Workshop' }), ['post']);
+	assert.deepEqual(checklistPhases({ task_type: 'install', kind: 'VE Install' }), ['pre', 'post']);
+	assert.deepEqual(checklistPhases({ task_type: 'fabrication', kind: 'CNC' }), ['pre', 'post']);
+
+	const checklists = require('../lib/services/checklists');
+	const { w, jobId } = await setup();
+	const ext = await mk(w, jobId, { task_type: 'install', name: 'Supplier', kind: 'External Install' });
+	await tasks.addAssignee(w.ctx, ext, { person_id: ME, role: 'lead' });
+	await rejects(checklists.startChecklist(w.ctx, ext, { phase: 'post' }), 409, 'no_checklists');
+	assert.deepEqual(await checklists.nextStep(w.ctx, ext), { phase: null, action: 'done', checklistId: null, next: null });
+});

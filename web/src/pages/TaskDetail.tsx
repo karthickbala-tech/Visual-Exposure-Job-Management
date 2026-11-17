@@ -12,6 +12,7 @@ import { HoursPanel, ManagePanel, RatingPanel, StageActions } from './TaskManage
 import { TaskDetailsPanel } from '../components/TaskDetailsPanel';
 import { TaskHistory } from '../components/TaskHistory';
 import { NextStepCard } from '../components/CrewCards';
+import { checklistPhases } from '../lib/taskKinds';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 
@@ -93,9 +94,11 @@ export function TaskDetail() {
 			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
 
 			<Card title="Checklists">
-				{iAmAssigned ? (
+				{checklistPhases(task).length === 0 ? (
+					<p className="muted">External Install and Print Only tasks have no checklists. A manager closes them.</p>
+				) : iAmAssigned ? (
 					<div className="actions">
-						{(['pre', 'post'] as const).map((p) => {
+						{checklistPhases(task).map((p) => {
 							const c = existing(p);
 							return c ? (
 								<Link key={p} className="btn" to={'/checklists/' + c.id}>
