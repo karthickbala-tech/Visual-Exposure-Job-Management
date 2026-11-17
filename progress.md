@@ -23,7 +23,17 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 4. Mock API: Admin > Emails lists and previews the real templates (12).
 - **Not built on purpose:** the "profit changed" email. It is INACTIVE in Creator, and FSD section 8 rule 4 says inactive emails need client confirmation (FSD question 8). Also needs confirming: "directors" = admin role (FSD question 14), and the CRM deal field names.
 - Tests 331 pass; oxlint 10 accepted warnings.
-- **Next: Phase 3** (Admin inform-also picker; expiry-days setting used everywhere; compliance type screens and do-not-contact flags; equipment/chemical edit, off-hire, history, Responsible, location supervisor).
+**Phase 3 done** (`3e21869` to `2dda232`, pushed, not deployed):
+1. Admin settings: "also informed" tick list per department (the server already used it).
+2. "Expiring" uses each item's own window everywhere (type's reminder days, else Admin's "Reminder days before expiry", else defaults): chips, compliance dashboard, to-do ("expire soon"), reminder emails. Count field renamed within30 -> expiring.
+3. Do-not-contact: per item {worker, managers} (two ticks on the record form; older plain values still mean "not the worker") and per company (tick on the company form). Nobody left to tell: the reminder counts as handled.
+   Fixes: company reminders now use the company email field (the old contact JSON was never filled, so companies were never emailed); the seed saved document types as "document" instead of "company_document", so they could not be attached to a company. Seed fixed, and Admin > Compliance types > "Load the starter types" repairs saved rows. **Run that once in Development** (one update).
+4. Admin > Compliance types: add and edit ticket, induction and document types (POST/PATCH /compliance/types, admins; unique names; a used type keeps its kind).
+5. Equipment: Edit (status incl. Off hire, Responsible person in item data), history of every edit and "Checked today" (GET /equipment/:id/history). Chemicals: Edit with supplier, stock and unit. Locations: area supervisor.
+- Mock API gained: company, chemical, equipment and compliance type edit routes, location supervisor, item flags.
+- Not done: a person-level do-not-contact needs a new person column (Catalyst console / MCP); location delete; equipment history is not written by the automatic off-hire switch (EQP-2) or maintenance tasks.
+- Tests 337 pass; oxlint 10 accepted warnings.
+- **Next: Phase 4** (screens: role dashboards, job page totals and activity, task form fields, task delete and bulk actions, hours-not-filled list, compliance "Not filled in", devices without a device, issue print picker, calendar day view, group by sign group, automatic stage moves from checklists).
 
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
