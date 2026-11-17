@@ -60,7 +60,7 @@ test('rules: job tabs, discipline numbers, kanban overdue flags, calendars', () 
 test('rules: compliance counts and the tiles of every dashboard', () => {
 	const item = (kind, expiry, active = true) => ({ compliance_kind: kind, expiry_date: expiry, is_active: active });
 	const c = R.complianceCounts([item('ticket', '2026-10-30'), item('ticket', '2026-11-02'), item('ticket', '2026-11-20'), item('ticket', '2027-03-01'), item('induction', '2026-11-30'), item('document', null), item('ticket', '2026-10-01', false)], '2026-11-02', true);
-	assert.deepEqual(c, { ticket: { overdue: 1, today: 1, within30: 1 }, induction: { overdue: 0, today: 0, within30: 1 } });
+	assert.deepEqual(c, { ticket: { overdue: 1, today: 1, expiring: 1 }, induction: { overdue: 0, today: 0, expiring: 1 } });
 	assert.equal(R.complianceCounts([item('ticket', '2026-10-01', false)], '2026-11-02', false).ticket.overdue, 1, 'inactive counted when asked');
 
 	const t = (type, stage, over = {}) => ({ ROWID: String(Math.random()), task_type: type, stage, job_id: 'j1', kind: null, scheduled_date: '2026-11-02', required_finish: null, ...over });
@@ -201,7 +201,7 @@ test('compliance dashboard: counts by kind and bucket, worker counts, and the ac
 	w.db.people[1].is_active = false;
 
 	const on = await reports.complianceDashboard(w.ctx, {});
-	assert.deepEqual(on.counts, { ticket: { overdue: 1, today: 1, within30: 0 }, induction: { overdue: 0, today: 0, within30: 1 } });
+	assert.deepEqual(on.counts, { ticket: { overdue: 1, today: 1, expiring: 0 }, induction: { overdue: 0, today: 0, expiring: 1 } });
 	assert.deepEqual(on.workers, { ve: 0, other: 2 }, 'active people only: the test user and the crew member; the inactive (VE) project manager is left out');
 	const all = await reports.complianceDashboard(w.ctx, { active: 'false' });
 	assert.equal(all.counts.ticket.overdue, 2, 'inactive records included when asked');
@@ -311,4 +311,28 @@ test('fab variance: booked against quoted per task and job; scoped to what the c
 	assert.deepEqual(v.jobs.map((x) => [x.job_name, x.quoted, x.booked, x.variance]), [['Job', 14, 15.5, 1.5]]);
 	assert.equal(v.capped, false);
 	assert.deepEqual((await reports.fabVariance(w.as(['installer'], CREW))).items, [], 'crew see only tasks assigned to them');
+});
+
+test('expiring follows each item\'s own reminder window (its type, else the Admin setting): chips, counts and the to-do agree', async () => {
+	const compliance = require('../lib/services/compliance');
+	const { figuresMemo } = require('../lib/caches');
+	const w = await setup();
+	await appSettings.updateSettings(w.ctx, { expiry_reminder_days: [10, 0] });
+	w.db.ctypes.push(
+		{ ROWID: 't60', compliance_kind: 'ticket', name: 'Working at Heights', requires_expiry: 'true', reminder_offsets: '[60,30,14,0]' },
+		{ ROWID: 't0', compliance_kind: 'ticket', name: 'Forklift', requires_expiry: 'true', reminder_offsets: '[]' },
+	);
+	const item = (id, type, expiry) => ({ ROWID: id, compliance_kind: 'ticket', type_id: type, expiry_date: expiry, is_active: 'true', person_id: ME });
+	// Today is 2026-11-02 in the test world.
+	w.db.citems.push(item('c1', 't60', '2026-12-17'), item('c2', 't0', '2026-11-22'), item('c3', 't0', '2026-11-09'));
+
+	const status = Object.fromEntries((await compliance.listItems(w.ctx, {})).items.map((i) => [i.id, i.status]));
+	assert.deepEqual(status, { c1: 'Expiring', c2: 'Valid', c3: 'Expiring' }, '45 days is inside the 60-day type window; a type with no days of its own uses the Admin setting (10)');
+
+	const dash = await reports.complianceDashboard(w.ctx, {});
+	assert.deepEqual(dash.counts.ticket, { overdue: 0, today: 0, expiring: 2 }, 'the counts match the chips');
+
+	figuresMemo.clear();
+	const todo = await dashboard.getTodo(w.ctx);
+	assert.equal(todo.items.find((i) => i.id === 'soon').title, '2 compliance items expire soon');
 });

@@ -61,7 +61,8 @@ export const useChecklistReport = (phase: string, status: string) => useGet<{ it
 // ---- dashboards and compliance ----
 export interface Tile { key: string; label: string; value: number }
 export const useRoleDashboard = (role: string | undefined) => useGet<{ role: string; tiles: Tile[] }>(['role-dashboard', role ?? ''], `/dashboards/${role}`, !!role, 60_000);
-export interface ComplianceCounts { [kind: string]: { overdue: number; today: number; within30: number } }
+/** Per kind: expired, expiring today, and expiring (inside each item's reminder window: its type's days, else the Admin setting). */
+export interface ComplianceCounts { [kind: string]: { overdue: number; today: number; expiring: number } }
 export const useComplianceDashboard = (active: boolean, enabled: boolean) =>
 	useGet<{ today: string; counts: ComplianceCounts; workers: { ve: number; other: number } }>(['compliance-dash', active], '/compliance/dashboard' + qs({ active: String(active) }), enabled, 60_000);
 

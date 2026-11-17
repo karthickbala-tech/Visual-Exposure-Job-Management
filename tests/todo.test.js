@@ -33,7 +33,7 @@ test('the to-do list names up to 3 items per kind, folds the rest, and puts the 
 	assert.ok(ids.includes('review-more') && out.find((i) => i.id === 'review-more').title.startsWith('2 more'));
 	assert.ok(!ids.includes('issue-10') && !ids.includes('issue-11'), 'only open high priority issues');
 	assert.equal(out.find((i) => i.id === 'expired').title, '1 compliance item has expired');
-	assert.equal(out.find((i) => i.id === 'soon').title, '2 compliance items expire within 30 days');
+	assert.equal(out.find((i) => i.id === 'soon').title, '2 compliance items expire soon');
 	assert.equal(out.find((i) => i.id === 'swms').detail, '1 not signed yet, 1 signed by the project manager only');
 	const tones = out.map((i) => i.tone);
 	assert.deepEqual(tones, [...tones].sort((a, b) => ({ danger: 0, warn: 1, info: 2 }[a] - { danger: 0, warn: 1, info: 2 }[b])), 'danger, then warn, then info');

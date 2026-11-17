@@ -38,7 +38,7 @@ const addYears = (iso: string, years: number) => {
 	const [y, m, d] = iso.split('-').map(Number);
 	return new Date(Date.UTC(y + years, m - 1, d)).toISOString().slice(0, 10);
 };
-const STATUS_OPTIONS: [string, string][] = [['Expired', 'Expired'], ['Today', 'Expires today'], ['Expiring', 'Within 30 days'], ['Valid', 'Valid'], ['No expiry', 'No expiry']];
+const STATUS_OPTIONS: [string, string][] = [['Expired', 'Expired'], ['Today', 'Expires today'], ['Expiring', 'Expiring soon'], ['Valid', 'Valid'], ['No expiry', 'No expiry']];
 
 /** The search and filter values of the people lists. The panel edits a draft; Search applies it. */
 interface PeopleFilter { text: string; status: string; activeOnly: boolean }
@@ -259,7 +259,7 @@ export function People() {
 					<FilterChips label="Expiry" heading="Tickets and inductions" value={tab === 'tickets' ? applied.status : ''} onChange={(k) => (tab === 'tickets' && applied.status === k ? setApplied({ ...applied, status: '' }) : goStatus(k))} chips={[
 						{ key: 'Expired', label: 'Expired', count: expired, danger: true },
 						{ key: 'Today', label: 'Expires today', count: today0, danger: true },
-						{ key: 'Expiring', label: 'Expiring within 30 days', count: expiring },
+						{ key: 'Expiring', label: 'Expiring soon', count: expiring },
 					]} />
 				</FilterBar>
 				{form === 'record' && canAdd && <AddRecord onClose={() => setForm(null)} />}

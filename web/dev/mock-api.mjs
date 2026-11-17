@@ -112,8 +112,8 @@ const complianceDash = () => {
 	const counts = {};
 	for (const c of S.complianceItems) {
 		const v = complianceView(c); if (!v.expiryDate) continue;
-		const k = (counts[v.kind] = counts[v.kind] || { overdue: 0, today: 0, within30: 0 });
-		if (v.daysLeft < 0) k.overdue += 1; else if (v.daysLeft === 0) k.today += 1; else if (v.daysLeft <= 30) k.within30 += 1;
+		const k = (counts[v.kind] = counts[v.kind] || { overdue: 0, today: 0, expiring: 0 });
+		if (v.daysLeft < 0) k.overdue += 1; else if (v.daysLeft === 0) k.today += 1; else if (v.status === 'Expiring') k.expiring += 1; // the same rule as the chip
 	}
 	return { today: TODAY, activeOnly: true, counts, workers: { ve: S.people.filter((p) => p.is_active && p.person_kind === 'staff').length, other: S.people.filter((p) => p.is_active && p.person_kind !== 'staff').length }, truncated: false };
 };
@@ -271,9 +271,9 @@ const routes = [
 		if (late) items.push({ id: 'overdue', tone: 'danger', title: `${late} tasks are past the required finish`, detail: '', to: '/tasks', action: 'Open board' });
 		S.issues.filter((i) => i.issue_priority === 'High' && i.issue_status !== 'Completed').slice(0, 3).forEach((i) => items.push({ id: 'issue-' + i.ROWID, tone: 'danger', title: `${i.issue_priority} issue: ${i.subject}`, detail: `${i.department} · ${i.issue_status}`, to: '/issues', action: 'Open issues' }));
 		const dash = complianceDash();
-		const exp = Object.values(dash.counts).reduce((n, c) => n + c.overdue, 0); const soon = Object.values(dash.counts).reduce((n, c) => n + c.today + c.within30, 0);
+		const exp = Object.values(dash.counts).reduce((n, c) => n + c.overdue, 0); const soon = Object.values(dash.counts).reduce((n, c) => n + c.today + c.expiring, 0);
 		if (exp) items.push({ id: 'expired', tone: 'danger', title: `${exp} compliance items have expired`, detail: 'Tickets, inductions or company documents', to: '/compliance', action: 'Open compliance' });
-		if (soon) items.push({ id: 'soon', tone: 'warn', title: `${soon} compliance items expire within 30 days`, detail: '', to: '/compliance', action: 'Open compliance' });
+		if (soon) items.push({ id: 'soon', tone: 'warn', title: `${soon} compliance items expire soon`, detail: '', to: '/compliance', action: 'Open compliance' });
 		S.tasks.filter((t) => t.task_type === 'install' && t.stage === 'Awaiting Scheduling').slice(0, 3).forEach((t) => items.push({ id: 'schedule-' + t.ROWID, tone: 'info', title: `Schedule: ${t.name}`, detail: 'Install task waiting for a date and a crew', to: '/tasks/' + t.ROWID, action: 'Schedule' }));
 		const order = { danger: 0, warn: 1, info: 2 };
 		items.sort((a, b) => order[a.tone] - order[b.tone]);

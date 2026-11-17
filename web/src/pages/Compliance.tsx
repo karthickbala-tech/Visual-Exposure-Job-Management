@@ -88,8 +88,8 @@ export function Compliance() {
 			{canAdd && dash.isSuccess && (
 				<>
 					<section className="kpis" aria-label="Expiry overview">
-						{(Object.entries(dash.data.counts) as [string, { overdue: number; today: number; within30: number }][]).map(([kind, c]) => (
-							<Kpi key={kind} label={`${KIND_LABEL[kind] ?? kind} overdue`} value={c.overdue} tone={c.overdue ? 'danger' : 'ok'} note={`${c.today} expire today, ${c.within30} within 30 days`} />
+						{(Object.entries(dash.data.counts) as [string, { overdue: number; today: number; expiring: number }][]).map(([kind, c]) => (
+							<Kpi key={kind} label={`${KIND_LABEL[kind] ?? kind} overdue`} value={c.overdue} tone={c.overdue ? 'danger' : 'ok'} note={`${c.today} expire today, ${c.expiring} expiring soon`} />
 						))}
 						<Kpi label="Active workers" value={dash.data.workers.ve + dash.data.workers.other} note={`${dash.data.workers.ve} Visual Exposure, ${dash.data.workers.other} others`} />
 					</section>
