@@ -146,6 +146,18 @@ function exportCsv(rows: Job[], cols: Col[]) {
 	URL.revokeObjectURL(url);
 }
 
+/**
+ * Ready-made column sets for the column picker, so nobody has to tick 30 boxes. Cost columns in a set still show for admins only.
+ * The name and actions columns are in every set.
+ */
+const COLUMN_SETS: { key: string; label: string; cols: string[] }[] = [
+	{ key: 'standard', label: 'Standard', cols: ['name', 'stage', 'pfab', 'pjob', 'pinst', 'pm', 'fabm', 'created', 'exp', 'actions'] },
+	{ key: 'hours', label: 'Hours and cost', cols: ['name', 'stage', 'dh', 'dc', 'dcp', 'dcf', 'fh', 'fc', 'fcp', 'fcf', 'ih', 'ic', 'icp', 'icf', 'actions'] },
+	{ key: 'links', label: 'Links and status', cols: ['name', 'id', 'deal', 'wd', 'path', 'status', 'closure', 'modified', 'actions'] },
+	{ key: 'all', label: 'All fields', cols: [] }, // filled with every column below
+];
+const setCols = (set: (typeof COLUMN_SETS)[number]) => (set.key === 'all' ? COLS.map((c) => c.key) : set.cols);
+
 /** Columns added after the first release: shown by default for everyone, even when a list was saved before they existed. */
 const NEW_COLS = ['exp', 'afab', 'rfab', 'quote'];
 
@@ -241,12 +253,16 @@ export function Jobs() {
 		...(canDelete ? [{ label: 'Delete', onSelect: () => askDelete([job]) }] : []),
 	];
 
-	const toggleCol = (key: string) => {
-		const next = visible.includes(key) ? visible.filter((k) => k !== key) : [...visible, key];
-		if (next.length === 0) return;
+	const saveCols = (next: string[]) => {
 		setVisible(next);
 		try { localStorage.setItem(COLS_KEY, JSON.stringify({ visible: next, known: COLS.map((c) => c.key) })); } catch { /* not saved */ }
 	};
+	const toggleCol = (key: string) => {
+		const next = visible.includes(key) ? visible.filter((k) => k !== key) : [...visible, key];
+		if (next.length > 0) saveCols(next);
+	};
+	/** The set the visible columns match exactly, if any, so its button shows as chosen. */
+	const currentSet = COLUMN_SETS.find((set) => { const want = setCols(set); return want.length === visible.length && want.every((k) => visible.includes(k)); })?.key;
 
 	return (
 		<>
@@ -259,6 +275,12 @@ export function Jobs() {
 											<>
 												<p className="filter-pop__title">Row height</p>
 												<RowHeightPicker value={grid.rows} onChange={grid.setRows} />
+												<p className="filter-pop__title">Column set</p>
+												<div className="segmented" role="group" aria-label="Column set">
+													{COLUMN_SETS.map((set) => (
+														<button key={set.key} type="button" className={currentSet === set.key ? 'on' : ''} aria-pressed={currentSet === set.key} onClick={() => saveCols(setCols(set))}>{set.label}</button>
+													))}
+												</div>
 												<p className="filter-pop__title">Columns</p>
 												<div className="lt-cols">
 													{COLS.filter((c) => !c.admin || seesMoney).map((c) => (

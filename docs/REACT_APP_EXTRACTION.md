@@ -54,6 +54,17 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | S1 | SWMS task table | Task, hazards and risks, control measures, person responsible, stored in `swms_tasks` | M BE | todo (needs real client wording) |
 | S2 | Settings extras | auto theme, accent swatches, hide menu items | L FE | todo |
 
+## From the demo's last two commits (6 Nov, never pushed, so not in `backup-files/react-app/`)
+Kalyani's local commits `acf7309` (Creator Jobs report fields) and `37cbab7` (shadcn ui-kit). Compared with web on 17 Nov: every Creator column, the admin-only costs and the CSV were already in web (with Parent/Fab by Cost Type, which matches Creator better than the demo's guess). `37cbab7` does not apply (web has no Tailwind).
+
+| # | Item | Rules from her demo | Value | Status |
+|---|---|---|---|---|
+| B1 | Column sets on the jobs list | Standard; Hours and labour cost; Links and status; All Creator fields | M FE | done 17 Nov (in the column picker; cost columns still admin only) |
+| B2 | Group headings above the job columns | Job, Progress, People, Install, Fabrication, Links, Record | L FE | optional |
+| B3 | Sticky job name with scroll arrows | name column stays while scrolling sideways | L FE | sticky column already in web; arrows optional |
+| B4 | Phone cards for jobs | one card per job: stage, status, three progress bars, PM and fab manager, "All job details" | M FE | todo |
+| B5 | Hours and labour cost on the job page | install and fab hours booked, labour cost, Parent and Fab | M FE | todo |
+
 Already taken earlier (see `UI_MERGE_PLAN.md`): grouped sidebar, settings icon, dashboard to-do list, jobs list, work modules, SWMS signing, People tabs, Issues board and rules, Hours range and CSV, Admin data tab.
 
 ## Progress on 2026-11-10 (before `react-app/` moved to `backup-files/`)
