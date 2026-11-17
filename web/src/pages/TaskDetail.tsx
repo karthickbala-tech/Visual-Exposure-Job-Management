@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ClipboardCheck } from 'lucide-react';
+import { AlertTriangle, ClipboardCheck } from 'lucide-react';
 import { useMe, useStartChecklist, useTask, useTaskChecklists, useTransitionTask } from '../api/queries';
 import { ApiError } from '../api/client';
 import { num } from '../api/types';
@@ -47,6 +47,10 @@ export function TaskDetail() {
 
 			<PageHeader eyebrow={TYPE_LABEL[task.task_type] ?? 'Task'} title={task.name}>
 				<Chip status={task.stage} />
+				{/* Viewers and contractors cannot raise issues; the server checks it too. */}
+				{(me.data?.roles ?? []).some((r) => r !== 'viewer' && r !== 'contractor') && (
+					<Link className="btn btn-ghost btn-sm" to={'/issues/new?task=' + task.ROWID}><AlertTriangle size={14} aria-hidden="true" /> Raise issue</Link>
+				)}
 			</PageHeader>
 			{task.description && <p className="lead">{task.description}</p>}
 
