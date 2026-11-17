@@ -10,6 +10,7 @@ import { Card, Kpi, PageHeader } from '../components/ui';
 import { ListToolbarButtons } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
 import type { GridColumn, GridLayout } from '../components/GridKit';
+import { splitPayHours } from '../lib/payRules';
 
 const COLS: { key: keyof HourCell; label: string }[] = [
 	{ key: 'fab', label: 'Fab' },
@@ -95,7 +96,10 @@ function downloadCsv(report: HoursReport, name: string) {
 	URL.revokeObjectURL(url);
 }
 
-/** Add a past shift: a task, a day, hours. Over 14 hours asks to confirm; over 16 is refused (the server enforces it too). */
+/**
+ * Add a past shift: a task, a day, and either hours or a start and end time. Over 14 hours asks to confirm; over 16 is refused
+ * (the server enforces it too). With times, the split into single, time and a half and double is shown before saving.
+ */
 function ShiftForm({ onClose }: { onClose: () => void }) {
 	const tasks = useBookableTasks(true);
 	const confirm = useConfirm();
@@ -106,15 +110,24 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 	const u = f.unbilled ? Number(f.unbilled) : 0;
 	// A start and end time replace the hours box; the server splits them into single, time and a half, and double.
 	const byTimes = !!f.start && !!f.end;
-	const timesProblem = !!f.start !== !!f.end ? 'Give both the start and the end time.' : byTimes && f.end <= f.start ? 'The end time must be after the start time.' : '';
-	const problem = !f.hours ? '' : h < 0.25 ? 'Enter at least 0.25 hours.' : h > 16 ? 'A shift cannot be longer than 16 hours.' : u > h ? 'Unbilled hours cannot be more than the hours worked.' : f.date > todayIso() ? 'Choose a day that has already happened.' : '';
+	const split = byTimes ? splitPayHours(f.date, f.start, f.end, f.brk ? Number(f.brk) : 0) : null;
+	const pay = split && !('error' in split) ? split : null;
+	const timesProblem = !!f.start !== !!f.end ? 'Give both the start and the end time.' : split && 'error' in split ? split.error : '';
+	// Hours worked: the typed hours, or the length of the timed shift less the break.
+	const worked = byTimes ? (pay ? pay.total : 0) : h;
+	const problem = f.date > todayIso() ? 'Choose a day that has already happened.'
+		: !byTimes && !f.hours ? ''
+		: !byTimes && h < 0.25 ? 'Enter at least 0.25 hours.'
+		: byTimes && !pay ? ''
+		: worked > 16 ? 'A shift cannot be longer than 16 hours.'
+		: u > worked ? 'Unbilled hours cannot be more than the hours worked.' : '';
 	return (
 		<Dialog title="Add shift" onClose={onClose}>
 		<form
 			className="inline-form"
 			onSubmit={async (e) => {
 				e.preventDefault();
-				if (!byTimes && h > 14 && !(await confirm({ message: `${h} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
+				if (worked > 14 && !(await confirm({ message: `${worked} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
 				add.mutate(
 					{ taskId: f.taskId, work_date: f.date, ...(byTimes ? { start_time: f.start, end_time: f.end, break_minutes: f.brk ? Number(f.brk) : undefined } : { hours: h }), unbilled_hours: u || undefined },
 					{ onSuccess: () => { notify('Shift added'); onClose(); }, onError: (er) => notify(er instanceof Error ? er.message : 'Could not add the shift', 'error') },
@@ -136,7 +149,12 @@ function ShiftForm({ onClose }: { onClose: () => void }) {
 			<label style={{ flex: '0 1 110px' }}><span className="toolbar__label">Break Minutes</span><input type="number" min="0" max="600" step="5" value={f.brk} onChange={(e) => setF({ ...f, brk: e.target.value })} /></label>
 			<button className="btn" disabled={add.isPending || !f.taskId || (!f.hours && !byTimes) || !!problem || !!timesProblem}>{add.isPending ? 'Saving…' : 'Add shift'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-			{(problem || timesProblem) && <p role="alert">{problem || timesProblem}</p>}
+			{pay && !problem && (
+				<p className="muted" role="status" style={{ flexBasis: '100%', margin: 0 }}>
+					{pay.total} h worked: {pay.single} h single, {pay.x1_5} h time and a half, {pay.x2} h double.
+				</p>
+			)}
+			{(problem || timesProblem) && <p role="alert">{timesProblem || problem}</p>}
 		</form>
 		</Dialog>
 	);

@@ -18,7 +18,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | # | Item | Rules | Value | Status |
 |---|---|---|---|---|
 | H1 | Shift clock | check in, start/end break, check out; one open shift per worker; stored with date, start, end, break minutes, status, notes, single / x1.5 / x2 pay; timesheet tab (all staff for managers) | H BE | todo (needs a `timesheet` table) |
-| H2 | Past shift with times | start and end times, break minutes, live pay-split preview; no future; end after start; over 16 h refused; over 14 h needs a tick | M | todo |
+| H2 | Past shift with times | start and end times, break minutes, live pay-split preview; no future; end after start; over 16 h refused; over 14 h needs a tick | M | done (times 11 Nov; live pay-split preview, 14 h confirm and 16 h / unbilled checks for timed shifts 17 Nov) |
 | H3 | Hours not filled list | per person: fab tasks before today and on or after the cutoff whose completed post-job checklist has 0 hours; "Enter hours" per row | M FE+BE | todo |
 | H4 | Weekly roll-up | "Final = total minus unbilled"; entries table for the period | L | done 17 Nov: Final column, total, tile and CSV field (week, 8 days, pay periods); per-entry table not built |
 
