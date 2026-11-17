@@ -73,17 +73,35 @@ export function SettingsTab() {
 			</Card>
 
 			<Card title="Who hears about issues">
-				<p className="lead">For each department, choose the manager. A department with none goes to every project manager.</p>
-				<div className="inline-form" style={{ background: 'transparent', border: 0, padding: '12px 0 0' }}>
-					{DEPARTMENTS.map((d) => (
-						<label key={d}><span className="toolbar__label">{d}</span>
-							<select value={route(d).manager_id ?? ''} onChange={(e) => setRoute(d, { manager_id: e.target.value || null })}>
-								<option value="">All project managers</option>
-								{list.map((p) => <option key={p.ROWID} value={p.ROWID}>{fullName(p)}</option>)}
-							</select>
-						</label>
-					))}
-				</div>
+				<p className="lead">For each department, choose the manager and anyone else to keep informed. A department with nobody chosen goes to every project manager. The same people hear about approvals flagged for a management review or OH&amp;S.</p>
+				{DEPARTMENTS.map((d) => {
+					const also = route(d).inform_also ?? [];
+					return (
+						<div key={d} className="inline-form" style={{ background: 'transparent', border: 0, padding: '12px 0 0' }}>
+							<label><span className="toolbar__label">{d}: manager</span>
+								<select value={route(d).manager_id ?? ''} onChange={(e) => setRoute(d, { manager_id: e.target.value || null })}>
+									<option value="">All project managers</option>
+									{list.map((p) => <option key={p.ROWID} value={p.ROWID}>{fullName(p)}</option>)}
+								</select>
+							</label>
+							<fieldset style={{ flex: '2 1 280px', border: 0, padding: 0, margin: 0 }}>
+								<legend className="toolbar__label">{d}: also informed{also.length ? ` (${also.length})` : ''}</legend>
+								<div className="check-list">
+									{list.map((p) => {
+										const on = also.includes(p.ROWID);
+										return (
+											<label key={p.ROWID} className="check">
+												{/* The server keeps up to 20 people per department. */}
+												<input type="checkbox" checked={on} disabled={!on && also.length >= 20} onChange={(e) => setRoute(d, { inform_also: e.target.checked ? [...also, p.ROWID] : also.filter((x) => x !== p.ROWID) })} />
+												{fullName(p)}
+											</label>
+										);
+									})}
+								</div>
+							</fieldset>
+						</div>
+					);
+				})}
 			</Card>
 
 			<Card title="Reminders and reports">
