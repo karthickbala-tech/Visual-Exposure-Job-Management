@@ -56,6 +56,8 @@ const EQ_WIDTHS = gridWidths([...EQ_COLUMNS, { key: 'action', width: EQ_ACTION_W
 const CHEM_COLUMNS: GridColumn<ChemicalItem>[] = [
 	{ key: 'name', label: 'Name', width: 260, cell: (c) => <strong>{c.name}</strong> },
 	{ key: 'location', label: 'Location', width: 180, cell: (c) => c.locationName ?? '-' },
+	{ key: 'supplier', label: 'Supplier', width: 180, cell: (c) => c.supplier || '-' },
+	{ key: 'stock', label: 'Stock', width: 120, right: true, cell: (c) => (c.stock !== null && c.stock !== undefined ? `${c.stock}${c.unit ? ' ' + c.unit : ''}` : '-') },
 	{ key: 'hazard', label: 'Hazard class', width: 170, cell: (c) => c.hazardClass || '-' },
 	{ key: 'sds', label: 'Safety data sheet', width: 260, cell: (c) => (
 		<>
@@ -64,7 +66,7 @@ const CHEM_COLUMNS: GridColumn<ChemicalItem>[] = [
 		</>
 	) },
 ];
-const CHEM_WIDTHS = gridWidths(CHEM_COLUMNS);
+const CHEM_WIDTHS = gridWidths([...CHEM_COLUMNS, { key: 'edit', width: 90 }]);
 
 /** Location columns: how many equipment items and chemicals are kept there, and Edit for managers. */
 function locColumns(counts: { eq: Map<string, number>; chem: Map<string, number> | null }, onEdit: ((l: WorkshopLocation) => void) | null): GridColumn<WorkshopLocation>[] {
@@ -381,38 +383,54 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 	const locs = useLocations();
 	const write = useRegisterWrite(['chemicals']);
 	const { notify } = useToast();
-	const [open, setOpen] = useState(false);
-	const empty = { name: '', location_id: '', sds_url: '', review_date: '', hazard_class: '' };
+	const empty = { name: '', location_id: '', sds_url: '', review_date: '', hazard_class: '', supplier: '', stock: '', unit: '' };
+	// null: no form open; 'new': adding; a chemical: editing it.
+	const [open, setOpen] = useState<'new' | ChemicalItem | null>(null);
+	const editing = open && open !== 'new' ? open : null;
 	const [form, setForm] = useState(empty);
 	const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
+	const close = () => { setOpen(null); setForm(empty); };
+	const startEdit = (c: ChemicalItem) => {
+		setForm({ name: c.name, location_id: c.locationId ?? '', sds_url: c.sdsUrl, review_date: (c.reviewDate ?? '').slice(0, 10), hazard_class: c.hazardClass, supplier: c.supplier ?? '', stock: c.stock !== null && c.stock !== undefined ? String(c.stock) : '', unit: c.unit });
+		setOpen(c);
+	};
+	const columns: GridColumn<ChemicalItem>[] = canWrite
+		? [...CHEM_COLUMNS, { key: 'edit', label: 'Actions', width: 90, cell: (c) => <button type="button" className="btn btn-ghost btn-sm" onClick={() => startEdit(c)} aria-label={`Edit ${c.name}`}>Edit</button> }]
+		: CHEM_COLUMNS;
 
 	return (
 		<>
 		<Card flush>
 			{canWrite && !open && (
 				<div className="inline-form">
-					<button className="btn" onClick={() => setOpen(true)}>
+					<button className="btn" onClick={() => { setForm(empty); setOpen('new'); }}>
 						<Plus size={16} aria-hidden="true" /> Add chemical
 					</button>
 				</div>
 			)}
 			{canWrite && open && (
-				<Dialog title="Add chemical" onClose={() => setOpen(false)}>
+				<Dialog title={editing ? `Edit chemical: ${editing.name}` : 'Add chemical'} onClose={close}>
 				<form
 					className="inline-form"
 					onSubmit={(e) => {
 						e.preventDefault();
+						const stock = form.stock === '' ? null : Number(form.stock);
 						write.mutate(
-							{
-								method: 'POST',
-								path: '/chemicals',
-								body: { name: form.name, location_id: form.location_id || undefined, sds_url: form.sds_url, review_date: form.review_date || undefined, hazard_class: form.hazard_class || undefined },
-							},
+							editing
+								? {
+									method: 'PATCH',
+									path: '/chemicals/' + editing.id,
+									body: { name: form.name, location_id: form.location_id || null, sds_url: form.sds_url, review_date: form.review_date || null, hazard_class: form.hazard_class, supplier: form.supplier, stock, unit: form.unit },
+								}
+								: {
+									method: 'POST',
+									path: '/chemicals',
+									body: { name: form.name, location_id: form.location_id || undefined, sds_url: form.sds_url, review_date: form.review_date || undefined, hazard_class: form.hazard_class || undefined, supplier: form.supplier || undefined, stock: stock ?? undefined, unit: form.unit || undefined },
+								},
 							{
 								onSuccess: () => {
-									setOpen(false);
-									setForm(empty);
-									notify('Chemical added');
+									notify(editing ? 'Chemical saved' : 'Chemical added');
+									close();
 								},
 							},
 						);
@@ -445,10 +463,22 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 						<span className="toolbar__label">Hazard class</span>
 						<input value={form.hazard_class} onChange={set('hazard_class')} maxLength={100} />
 					</label>
+					<label>
+						<span className="toolbar__label">Supplier</span>
+						<input value={form.supplier} onChange={set('supplier')} maxLength={200} />
+					</label>
+					<label>
+						<span className="toolbar__label">Stock</span>
+						<input type="number" min={0} step="any" value={form.stock} onChange={set('stock')} />
+					</label>
+					<label>
+						<span className="toolbar__label">Unit</span>
+						<input value={form.unit} onChange={set('unit')} maxLength={20} placeholder="L, kg, cans" />
+					</label>
 					<button className="btn" disabled={write.isPending}>
 						{write.isPending ? 'Saving…' : 'Save'}
 					</button>
-					<button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+					<button type="button" className="btn btn-ghost" onClick={close}>
 						Cancel
 					</button>
 					{write.isError && <p role="alert">{write.error.message}</p>}
@@ -458,7 +488,7 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 			<State q={list} empty="No chemicals yet." />
 			{list.isSuccess && list.data.items.length > 0 && toolbar}
 			{list.isSuccess && list.data.items.length > 0 && (
-				<ResizableGrid layout={grid} label="Chemical register" columns={CHEM_COLUMNS} rows={list.data.items} rowKey={(c) => c.id} />
+				<ResizableGrid layout={grid} label="Chemical register" columns={columns} rows={list.data.items} rowKey={(c) => c.id} />
 			)}
 			{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</Card>

@@ -132,6 +132,8 @@ const templates = Object.keys(N.TEMPLATE_INFO).map((name) => ({ name, label: N.T
 let settings = { workshop_job_id: '1001', pay_period: { start_date: days[0], length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd', Address: '532 Somerville Road, Sunshine West VIC 3020', Phone: '03 9311 5722' }, hours_report_recipients: ['501', '502'], hours_cutoff_date: null };
 
 const equipmentHistory = [];
+const CHEM_KEYS = { name: 'name', location_id: 'locationId', sds_url: 'sdsUrl', review_date: 'reviewDate', stock: 'stock', unit: 'unit', hazard_class: 'hazardClass', supplier: 'supplier' };
+const chemPatch = (c, b) => { for (const [k, v] of Object.entries(CHEM_KEYS)) if (b[k] !== undefined) c[v] = b[k]; c.locationName = c.locationId ? (S.locations.find((l) => l.id === c.locationId) || {}).name || null : null; c.sdsMissing = !c.sdsUrl; return c; };
 const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
 const matrix = () => Object.fromEntries(RESOURCES.map((r) => [r, Object.fromEntries(S.ROLE_KEYS.map((role) => [role, role === 'admin' ? { verbs: ['view', 'create', 'edit', 'delete'], scope: 'all' } : ['project_manager', 'fab_manager', 'install_coordinator'].includes(role) ? { verbs: ['view', 'create', 'edit'], scope: 'all' } : role === 'viewer' ? { verbs: ['view'], scope: 'all' } : { verbs: ['view'], scope: 'assigned' }]))]));
 
@@ -333,6 +335,9 @@ const routes = [
 	['POST', /^\/equipment\/(\d+)\/checked$/, (m) => { const e = S.equipment.find((x) => x.id === m[1]); if (e) { e.lastChecked = TODAY; e.nextDue = e.frequencyDays ? day(e.frequencyDays) : null; e.overdue = false; e.daysOverdue = 0; } return { item: e }; }],
 	['POST', /^\/equipment$/, (_, __, b) => { const e = { id: id(), code: b.code || '', name: b.name, type: b.type || '', locationId: b.location_id || null, locationName: null, status: 'In service', offHireRequired: !!b.off_hire_required, frequencyDays: b.frequency_days || null, lastChecked: null, nextDue: null, overdue: false, daysOverdue: 0 }; S.equipment.push(e); return { item: e }; }],
 	['GET', /^\/chemicals$/, () => list(S.chemicals)],
+	// Chemical fields arrive in API names and are kept as the API returns them (as the server's presentChemical).
+	['POST', /^\/chemicals$/, (_, __, b) => { const c = chemPatch({ id: id(), code: 'CH-' + String(S.chemicals.length + 1).padStart(2, '0'), name: '', locationId: null, sdsUrl: '', reviewDate: null, stock: null, unit: '', hazardClass: '', supplier: '' }, b); S.chemicals.push(c); return { item: c }; }],
+	['PATCH', /^\/chemicals\/(\d+)$/, (m, _, b) => { const c = S.chemicals.find((x) => x.id === m[1]); if (!c) throw Object.assign(new Error('Chemical not found'), { status: 404 }); return { item: chemPatch(c, b) }; }],
 	['GET', /^\/locations$/, () => list(S.locations)],
 	['POST', /^\/locations$/, (_, __, b) => { const l = { id: id(), name: b.name, description: b.description || '', supervisorId: null, supervisorName: null }; S.locations.push(l); return { item: l }; }],
 	['PATCH', /^\/locations\/(\d+)$/, (m, _, b) => { const l = S.locations.find((x) => x.id === m[1]); if (!l) throw Object.assign(new Error('Workshop location not found'), { status: 404 }); if (b.name !== undefined) l.name = b.name; if (b.description !== undefined) l.description = b.description; return { item: l }; }],

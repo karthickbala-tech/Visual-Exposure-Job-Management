@@ -135,3 +135,13 @@ test('equipment: a responsible person, an off-hire status, and a history of ever
 	assert.ok(h.items.some((i) => i.changes[0].label === 'Last checked' && i.changes[0].from === 'Never'));
 	await rejects(reg.equipmentHistory(w.ctx, '105747000009999999'), 404);
 });
+
+test('chemicals: supplier, stock and unit are kept, and an edit changes only what is sent (demo E3)', async () => {
+	const w = makeWorld();
+	const { item: c } = await reg.createChemical(w.ctx, { name: 'Isopropyl alcohol', sds_url: 'https://example.test/ipa.pdf', supplier: 'Chem Supplies', stock: 4, unit: 'L' });
+	assert.deepEqual([c.supplier, c.stock, c.unit], ['Chem Supplies', 4, 'L']);
+	const { item: e } = await reg.updateChemical(w.ctx, c.id, { stock: 2.5, supplier: 'Bulk Chem' });
+	assert.deepEqual([e.supplier, e.stock, e.unit, e.sdsUrl], ['Bulk Chem', 2.5, 'L', 'https://example.test/ipa.pdf']);
+	await rejects(reg.updateChemical(w.ctx, c.id, { sds_url: 'ftp://x' }), 400);
+	await rejects(reg.updateChemical(w.ctx, c.id, { stock: -1 }), 400);
+});
