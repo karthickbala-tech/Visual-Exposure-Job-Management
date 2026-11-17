@@ -18,7 +18,7 @@ const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('en
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TYPE_NAME = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;
 
-type View = 'month' | 'week' | 'timeline';
+type View = 'month' | 'week' | 'day' | 'timeline';
 type Only = 'all' | keyof typeof TYPE_NAME;
 const TIMELINE_DAYS = 28;
 
@@ -32,8 +32,8 @@ export function Calendar() {
 	const [only, setOnly] = useState<Only>('all');
 	const a = utc(anchor);
 
-	const first = view === 'month' ? monday(new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), 1))) : monday(a);
-	const count = view === 'month' ? 42 : view === 'week' ? 7 : TIMELINE_DAYS;
+	const first = view === 'month' ? monday(new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), 1))) : view === 'day' ? a : monday(a);
+	const count = view === 'month' ? 42 : view === 'week' ? 7 : view === 'day' ? 1 : TIMELINE_DAYS;
 	const days = Array.from({ length: count }, (_, i) => addDays(first, i));
 	const q = useCalendar(iso(days[0]), iso(days[count - 1]));
 
@@ -42,11 +42,12 @@ export function Calendar() {
 
 	const step = (dir: -1 | 1) => {
 		if (view === 'week') setAnchor(iso(addDays(a, dir * 7)));
+		else if (view === 'day') setAnchor(iso(addDays(a, dir)));
 		else if (view === 'timeline') setAnchor(iso(addDays(a, dir * TIMELINE_DAYS)));
 		else setAnchor(iso(new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth() + dir, 1))));
 	};
-	const label = view === 'month' ? fmt(a, { month: 'long', year: 'numeric' }) : `${fmt(days[0], { day: 'numeric', month: 'short' })} to ${fmt(days[count - 1], { day: 'numeric', month: 'short', year: 'numeric' })}`;
-	const unitLabel = view === 'month' ? 'month' : view === 'week' ? 'week' : 'four weeks';
+	const label = view === 'month' ? fmt(a, { month: 'long', year: 'numeric' }) : view === 'day' ? fmt(a, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : `${fmt(days[0], { day: 'numeric', month: 'short' })} to ${fmt(days[count - 1], { day: 'numeric', month: 'short', year: 'numeric' })}`;
+	const unitLabel = view === 'month' ? 'month' : view === 'week' ? 'week' : view === 'day' ? 'day' : 'four weeks';
 	// Timeline: fabrication work only (the Creator "Fabrication WIP" report). A bar runs from the scheduled day to the required finish, cut to the window.
 	const bars = (q.data?.items ?? [])
 		.filter((t) => t.task_type === 'fabrication')
@@ -91,7 +92,7 @@ export function Calendar() {
 						</div>
 					)}
 					<div className="segmented" role="group" aria-label="Calendar view">
-						{(['month', 'week', 'timeline'] as const).map((v) => (
+						{(['month', 'week', 'day', 'timeline'] as const).map((v) => (
 							<button key={v} type="button" className={view === v ? 'on' : ''} aria-pressed={view === v} onClick={() => setView(v)}>
 								{v}
 							</button>
@@ -135,6 +136,28 @@ export function Calendar() {
 								</div>
 							))}
 						</div>
+					) : view === 'day' ? (
+					<>
+						{/* Day view (FSD 5.12 CalendarView "week and day"): one day's work as a list. */}
+						<section className="cal-day" aria-label={`Tasks on ${label}`}>
+							{(byDay.get(iso(a)) ?? []).length === 0 && <p className="table-empty">Nothing scheduled on this day.</p>}
+							{(byDay.get(iso(a)) ?? []).map((t) => (
+								<Link key={t.ROWID} className="agenda-ev" to={'/tasks/' + t.ROWID}>
+									<i className={'dot dot-' + t.task_type} aria-hidden="true" />
+									{t.name}
+									<small>{TYPE_NAME[t.task_type]}</small>
+									<Chip status={t.stage} />
+								</Link>
+							))}
+						</section>
+						<div className="cal-legend">
+							{(['design', 'fabrication', 'install'] as const).map((t) => (
+								<span key={t}>
+									<i className={'dot dot-' + t} aria-hidden="true" /> {TYPE_NAME[t]}
+								</span>
+							))}
+						</div>
+					</>
 					) : (
 					<>
 						<div className={'cal-grid' + (view === 'week' ? ' cal-week' : '')} role="grid" aria-label={label}>
