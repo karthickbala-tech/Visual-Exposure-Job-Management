@@ -29,6 +29,8 @@ const hrs = (v: unknown) => (num(v as string | number) ? num(v as string | numbe
 /** The kinds of install task that get a small tag beside the name; a plain install task needs none. */
 const KIND_TAG: Record<string, string> = { 'VE Subtask': 'Subtask', 'Minor Task': 'Minor Task', 'Print Only': 'Print Only', 'External Install': 'External' };
 const kindTag = (k?: string) => (k && KIND_TAG[k] ? <span className="kind-tag">{KIND_TAG[k]}</span> : null);
+/** INS-2: where an install crew is (On Site, Finished On Site), while the task is still being worked on. */
+const subStageTag = (t: { sub_stage?: string | null; stage: string }) => (t.sub_stage && !COMPLETE.includes(t.stage) && t.stage !== 'Cancelled' ? <span className="kind-tag">{t.sub_stage}</span> : null);
 
 const COMPLETE = ['Completed', 'Approved & Completed', 'Completed - Closed', 'Complete - Not Used'];
 
@@ -283,7 +285,7 @@ export function JobDetail() {
 				actions={<>{addBtn(TASK_NAMES.install.addLabel, 'install', 'VE Install')}{addBtn('Add Minor Task', 'install', 'Minor Task')}</>}>
 				{addForm('install')}
 				<TaskTable rowClass={rowFlag} title={TASK_NAMES.install.table} empty="No installation tasks." rows={grouped(install)} onRowContext={openMenu} cols={['Task Name', 'Install Date', 'Stage', 'Team Leader', 'Team Member', 'SWMS Status', 'Quoted Man Hours', 'Booked Hours', ...(seesMoney ? ['Total Labour Cost'] : []), '']}
-					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{kindTag(t.kind)}{lateTag(t)}</span>, fmtDate(t.scheduled_date), <StageCell key="s" stage={t.stage} pill />, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
+					row={(t) => [<span key="n" className={t.parent_id ? 'jd-sub' : ''}><Link to={'/tasks/' + t.ROWID}>{t.name}</Link>{kindTag(t.kind)}{lateTag(t)}</span>, fmtDate(t.scheduled_date), <span key="s"><StageCell stage={t.stage} pill />{subStageTag(t)}</span>, t.team_leader ?? '', t.team_members ?? '', t.swms_status ?? '', hrs(t.quoted_hours), booked(t), ...(seesMoney ? [hrs(t.labour_cost)] : []), actions(t)]}
 					numeric={seesMoney ? [6, 7, 8] : [6, 7]}
 					groupTotals={(list) => ['', '', '', '', '', '', hrs(sumQuoted(list)), hrs(sumBooked(list)), ...(seesMoney ? [hrs(sumCost(list))] : []), '']} footer={['Total', '', '', '', '', '', hrs(sumQuoted(install)), hrs(sumBooked(install)), ...(seesMoney ? [hrs(sumCost(install))] : []), '']} />
 			</Section>

@@ -63,6 +63,8 @@ export interface Task {
 	name: string;
 	kind?: string;
 	cost_type?: string | null;
+	/** Install tasks: On Site, then Finished On Site, from the team leader's checklists (INS-2). */
+	sub_stage?: string | null;
 	stage: string;
 	quoted_hours?: string | number;
 	booked_hours?: string | number;

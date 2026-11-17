@@ -41,7 +41,7 @@ const readiness = (t, to) => {
 };
 /** Stage buttons, plus Close (Completed) for a manager on External Install or Print Only, as lib/domain/taskRules.js stageOptions. */
 const taskStages = (t) => { const out = S.nextStages(t.stage); if (isManager && t.task_type === 'install' && ['External Install', 'Print Only'].includes(t.kind) && ['Awaiting Scheduling', 'Scheduled', 'In Progress'].includes(t.stage) && !out.includes('Completed')) out.push('Completed'); return out; };
-const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: taskStages(t) });
+const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, sub_stage: t.sub_stage ?? null, nextStages: taskStages(t) });
 const mine = (t) => t.assignees.some(([p]) => p === ME);
 const myTasks = () => S.tasks.filter((t) => isOpen(t) && (isManager ? mine(t) || false : mine(t)));
 
@@ -250,7 +250,7 @@ const routes = [
 	// checklists
 	['GET', /^\/checklists\/(\d+)$/, (m) => checklistView(S.checklists.find((c) => c.id === m[1]) || S.checklists[0])],
 	['PATCH', /^\/checklists\/(\d+)\/answers$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); Object.assign(c.answers, b.answers); return checklistView(c); }],
-	['POST', /^\/checklists\/(\d+)\/complete$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); c.status = 'Completed'; if (b.hours) c.hours = b.hours; return checklistView(c); }],
+	['POST', /^\/checklists\/(\d+)\/complete$/, (m, _, b) => { const c = S.checklists.find((x) => x.id === m[1]); c.status = 'Completed'; if (b.hours) c.hours = b.hours; const t = taskById(c.taskId); if (t && t.task_type === 'install' && c.role === 'lead') t.sub_stage = c.phase === 'pre' ? 'On Site' : 'Finished On Site'; return checklistView(c); }], // INS-2, as the server
 	['GET', /^\/reports\/checklists$/, (_, q) => { let l = S.checklists; if (q.get('phase')) l = l.filter((c) => c.phase === q.get('phase')); if (q.get('status')) l = l.filter((c) => c.status === q.get('status')); return list(l.map((c) => ({ id: c.id, taskId: c.taskId, taskName: (taskById(c.taskId) || {}).name || null, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours }))); }],
 	// fabrication variance (booked against quoted hours)
 	['GET', /^\/reports\/fab-variance$/, () => {

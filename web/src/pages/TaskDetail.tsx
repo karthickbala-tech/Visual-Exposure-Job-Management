@@ -49,6 +49,8 @@ export function TaskDetail() {
 
 			<PageHeader eyebrow={TYPE_LABEL[task.task_type] ?? 'Task'} title={task.name}>
 				<Chip status={task.stage} />
+				{/* INS-2: the install sub-stage from the team leader's checklists. */}
+				{task.task_type === 'install' && task.sub_stage && !['Completed', 'Complete - Not Used', 'Cancelled'].includes(task.stage) && <span className="kind-tag">{task.sub_stage}</span>}
 				{/* Viewers and contractors cannot raise issues; the server checks it too. */}
 				{(me.data?.roles ?? []).some((r) => r !== 'viewer' && r !== 'contractor') && (
 					<Link className="btn btn-ghost btn-sm" to={'/issues/new?task=' + task.ROWID}><AlertTriangle size={14} aria-hidden="true" /> Raise issue</Link>
