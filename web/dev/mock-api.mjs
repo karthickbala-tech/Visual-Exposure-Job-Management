@@ -22,6 +22,18 @@ const taskById = (i) => S.tasks.find((t) => t.ROWID === String(i));
 
 const isOpen = (t) => !['Completed', 'Cancelled', 'Complete - Not Used', 'Approved & Completed'].includes(t.stage);
 const isLate = (t) => isOpen(t) && t.required_finish && t.required_finish < TODAY;
+/** Same messages as lib/domain/taskRules.js readinessProblem: Scheduled needs a date and a team leader, design Assigned needs a designer. */
+const readiness = (t, to) => {
+	if (to === 'Scheduled' && ['install', 'fabrication'].includes(t.task_type)) {
+		const noDate = !t.scheduled_date;
+		const noLead = !['External Install', 'Print Only'].includes(t.kind) && !t.assignees.some(([, r]) => r === 'lead');
+		if (noDate && noLead) return 'Set the scheduled date and add a team leader before scheduling this task.';
+		if (noDate) return 'Set the scheduled date before scheduling this task.';
+		if (noLead) return 'Add a team leader before scheduling this task.';
+	}
+	if (to === 'Assigned' && t.task_type === 'design' && t.assignees.length === 0) return 'Add the designer to this task before moving it to Assigned.';
+	return null;
+};
 /** Stage buttons, plus Close (Completed) for a manager on External Install or Print Only, as lib/domain/taskRules.js stageOptions. */
 const taskStages = (t) => { const out = S.nextStages(t.stage); if (isManager && t.task_type === 'install' && ['External Install', 'Print Only'].includes(t.kind) && ['Awaiting Scheduling', 'Scheduled', 'In Progress'].includes(t.stage) && !out.includes('Completed')) out.push('Completed'); return out; };
 const taskView = (t) => ({ ROWID: t.ROWID, job_id: t.job_id, parent_id: t.parent_id ?? null, parent_or_sub: t.parent_or_sub ?? null, task_type: t.task_type, name: t.name, kind: t.kind, stage: t.stage, quoted_hours: t.quoted_hours, booked_hours: t.booked_hours, scheduled_date: t.scheduled_date, required_finish: t.required_finish, description: t.description, swms_id: t.swms_id, nextStages: taskStages(t) });
@@ -209,7 +221,7 @@ const routes = [
 	['GET', /^\/tasks\/(\d+)\/checklist\/next$/, (m) => { const t = taskById(m[1]); const my = S.checklists.filter((c) => c.taskId === m[1] && c.assigneeId === ME); const pre = my.find((c) => c.phase === 'pre'); const post = my.find((c) => c.phase === 'post'); const skip = t && t.kind === 'Workshop'; for (const [phase, c] of skip ? [['post', post]] : [['pre', pre], ['post', post]]) { if (c && c.status === 'Completed') continue; return c ? { phase, action: 'continue', checklistId: c.id, next: checklistView(c).next } : { phase, action: 'start', checklistId: null, next: null }; } return { phase: null, action: 'done', checklistId: null, next: null }; }],
 	['GET', /^\/tasks\/(\d+)\/checklists$/, (m) => ({ items: S.checklists.filter((c) => c.taskId === m[1]).map((c) => ({ id: c.id, phase: c.phase, status: c.status, assigneeId: c.assigneeId, role: c.role, hours: c.hours })) })],
 	['POST', /^\/tasks\/(\d+)\/checklists$/, (m, _, b) => { const c = { id: id(), taskId: m[1], phase: b.phase, status: 'In Progress', assigneeId: ME, role: 'lead', hours: null, answers: {} }; S.checklists.push(c); return checklistView(c); }],
-	['POST', /^\/tasks\/(\d+)\/transition$/, (m, _, b) => { const t = taskById(m[1]); t.stage = b.to; return { task: taskView(t) }; }],
+	['POST', /^\/tasks\/(\d+)\/transition$/, (m, _, b) => { const t = taskById(m[1]); const notReady = readiness(t, b.to); if (notReady) throw Object.assign(new Error(notReady), { status: 409 }); t.stage = b.to; return { task: taskView(t) }; }],
 	['POST', /^\/tasks\/(\d+)\/assignees$/, (m, _, b) => { const t = taskById(m[1]); t.assignees.push([b.person_id, b.role]); return { ok: true }; }],
 	['DELETE', /^\/tasks\/(\d+)\/assignees\/(\d+)$/, (m) => { const t = taskById(m[1]); t.assignees = t.assignees.filter(([p]) => p !== m[2]); return { removed: true }; }],
 	['POST', /^\/tasks\/(\d+)\/hours$/, (m, _, b) => { const t = taskById(m[1]); t.booked_hours = Number(t.booked_hours || 0) + Number(b.hours || 0); return { entry: { hours: b.hours }, task: { bookedHours: t.booked_hours } }; }],

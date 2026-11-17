@@ -146,3 +146,32 @@ test('close-only tasks offer "Completed" to managers on the task and job pages (
 	const done = await tasks.transitionTask(w.ctx, ext, { to: 'Completed' });
 	assert.equal(done.nextStages.includes('Completed'), false, 'nothing to close once it is closed');
 });
+
+test('a task is scheduled with its date and team leader, and a design task is assigned with its designer (TSK-3, DES-1)', async () => {
+	const { w, jobId } = await setup();
+	const t = await mk(w, jobId, { task_type: 'install', name: 'Install', kind: 'VE Install' });
+	await rejects(tasks.transitionTask(w.ctx, t, { to: 'Scheduled' }), 409, 'not_ready');
+	const msg = async (id) => (await tasks.transitionTask(w.ctx, id, { to: 'Scheduled' }).catch((e) => e)).message;
+	assert.equal(await msg(t), 'Set the scheduled date and add a team leader before scheduling this task.');
+	dbTask(w, t).scheduled_date = '2026-11-20';
+	assert.equal(await msg(t), 'Add a team leader before scheduling this task.');
+	await tasks.addAssignee(w.ctx, t, { person_id: ME, role: 'member' });
+	assert.equal(await msg(t), 'Add a team leader before scheduling this task.', 'a crew member is not a team leader');
+	await tasks.removeAssignee(w.ctx, t, ME);
+	await tasks.addAssignee(w.ctx, t, { person_id: ME, role: 'lead' });
+	assert.equal((await tasks.transitionTask(w.ctx, t, { to: 'Scheduled' })).task.stage, 'Scheduled');
+
+	const fab = await mk(w, jobId, { task_type: 'fabrication', name: 'Cut', kind: 'CNC' });
+	await tasks.addAssignee(w.ctx, fab, { person_id: ME, role: 'lead' });
+	assert.equal(await msg(fab), 'Set the scheduled date before scheduling this task.', 'fabrication follows the same rule');
+
+	const ext = await mk(w, jobId, { task_type: 'install', name: 'Supplier', kind: 'External Install' });
+	assert.equal(await msg(ext), 'Set the scheduled date before scheduling this task.', 'External Install needs no crew, only the date');
+	dbTask(w, ext).scheduled_date = '2026-11-21';
+	assert.equal((await tasks.transitionTask(w.ctx, ext, { to: 'Scheduled' })).task.stage, 'Scheduled');
+
+	const d = await mk(w, jobId, { task_type: 'design', name: 'Artwork', kind: 'Artwork Sign Off' });
+	await rejects(tasks.transitionTask(w.ctx, d, { to: 'Assigned' }), 409, 'not_ready');
+	await tasks.addAssignee(w.ctx, d, { person_id: ME, role: 'other' });
+	assert.equal((await tasks.transitionTask(w.ctx, d, { to: 'Assigned' })).task.stage, 'Assigned');
+});

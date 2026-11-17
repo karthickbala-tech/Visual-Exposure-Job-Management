@@ -8,9 +8,16 @@ const tasks = require('../lib/services/tasks');
 
 async function jobWithTask(world, type = 'install', extra = {}) {
 	const { job } = await jobs.createJob(world.ctx, { name: 'Pylon refresh' });
-	const { task } = await tasks.createTask(world.ctx, job.ROWID, { task_type: type, name: 'Install pylon', quoted_hours: 10, ...extra });
+	const { task } = await tasks.createTask(world.ctx, job.ROWID, { task_type: type, name: 'Install pylon', quoted_hours: 10, scheduled_date: '2026-11-02', ...extra });
 	return { job, task };
 }
+/**
+ * Puts a team leader on record so the task may be Scheduled (TSK-3), without a crew link: tests that are not about the crew
+ * then have no closure step to wait for at Manager Review.
+ */
+const withLeader = (world, task) => {
+	world.db.tasks.find((t) => String(t.ROWID) === String(task.ROWID)).lead_id = '105747000000900001';
+};
 
 // ---------- jobs ----------
 
@@ -110,6 +117,7 @@ test('a closed job refuses new tasks and stage changes (409)', async () => {
 test('transition: valid move is saved, logged, published, and the job is recalculated', async () => {
 	const w = makeWorld();
 	const { job, task } = await jobWithTask(w);
+	withLeader(w, task);
 	const res = await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Scheduled' });
 	assert.equal(res.task.stage, 'Scheduled');
 	assert.equal(res.job.stage, 'In Progress', 'job moves to In Progress when work is scheduled');
@@ -132,6 +140,7 @@ test('transition: impossible moves are 409, unknown stages 400', async () => {
 test('transition: reject and reopen need a comment', async () => {
 	const w = makeWorld();
 	const { task } = await jobWithTask(w);
+	withLeader(w, task);
 	for (const to of ['Scheduled', 'In Progress', 'Manager Review']) await tasks.transitionTask(w.ctx, task.ROWID, { to });
 	await rejects(tasks.transitionTask(w.ctx, task.ROWID, { to: 'Rejected' }), 400);
 	const res = await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Rejected', comment: 'Wrong colour' });
@@ -165,6 +174,7 @@ test('completing one of two tasks moves progress by quoted hours', async () => {
 	const w = makeWorld();
 	const { job, task } = await jobWithTask(w, 'install', { quoted_hours: 30 });
 	await tasks.createTask(w.ctx, job.ROWID, { task_type: 'fabrication', name: 'Fab', quoted_hours: 70 });
+	withLeader(w, task);
 	for (const to of ['Scheduled', 'In Progress', 'Manager Review', 'Completed']) {
 		await tasks.transitionTask(w.ctx, task.ROWID, { to });
 	}
@@ -177,6 +187,7 @@ test('completing one of two tasks moves progress by quoted hours', async () => {
 test('reopening a completed task reopens the finished job', async () => {
 	const w = makeWorld();
 	const { task } = await jobWithTask(w);
+	withLeader(w, task);
 	for (const to of ['Scheduled', 'In Progress', 'Manager Review', 'Completed']) await tasks.transitionTask(w.ctx, task.ROWID, { to });
 	assert.equal(w.db.jobs[0].stage, 'Completed');
 	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Reopen', comment: 'Client found a fault' });
@@ -244,6 +255,7 @@ test('the real context swallows a failed event publish and logs a warning', asyn
 test('task history lists the stage moves with who, from, to and the reason', async () => {
 	const w = makeWorld();
 	const { task } = await jobWithTask(w);
+	withLeader(w, task);
 	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Scheduled' });
 	const h = await tasks.taskHistory(w.ctx, task.ROWID);
 	assert.equal(h.count, 1);

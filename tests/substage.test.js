@@ -18,7 +18,7 @@ async function setup() {
 	const w = makeWorld();
 	w.db.people[0].hourly_rate = 40;
 	const { job } = await jobs.createJob(w.ctx, { name: 'Pylon refresh' });
-	const { task } = await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: 'Install pylon', kind: 'Minor Task', quoted_hours: 8 });
+	const { task } = await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: 'Install pylon', kind: 'Minor Task', quoted_hours: 8, scheduled_date: '2026-11-02' });
 	await tasks.addAssignee(w.ctx, task.ROWID, { person_id: CREW, role: 'lead' });
 	await tasks.transitionTask(w.ctx, task.ROWID, { to: 'Scheduled' });
 	const tpl = (phase, def, key) => ({ template_key: key, task_type: 'install', phase, assignee_role: 'lead', version_no: 1, definition: JSON.stringify(def) });

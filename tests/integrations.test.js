@@ -119,7 +119,7 @@ test('a job moving stage queues exactly one CRM update, only when it came from a
 	const w = makeWorld();
 	const make = async (name, extra) => {
 		const { job } = await jobs.createJob(w.ctx, { name, ...extra });
-		const { task } = await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: name + ' install' });
+		const { task } = await tasks.createTask(w.ctx, job.ROWID, { task_type: 'install', name: name + ' install', scheduled_date: '2026-11-02' });
 		await tasks.addAssignee(w.ctx, task.ROWID, { person_id: '105747000000900001', role: 'lead' });
 		return { job, task };
 	};
