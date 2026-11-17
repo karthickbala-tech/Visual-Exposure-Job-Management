@@ -66,16 +66,28 @@ const CHEM_COLUMNS: GridColumn<ChemicalItem>[] = [
 ];
 const CHEM_WIDTHS = gridWidths(CHEM_COLUMNS);
 
-const LOC_COLUMNS: GridColumn<WorkshopLocation>[] = [
-	{ key: 'name', label: 'Name', width: 300, cell: (l) => (
-		<>
-			<strong>{l.name}</strong>
-			{l.description && <div className="muted">{l.description}</div>}
-		</>
-	) },
-	{ key: 'supervisor', label: 'Area supervisor', width: 220, cell: (l) => l.supervisorName ?? '-' },
-];
-const LOC_WIDTHS = gridWidths(LOC_COLUMNS);
+/** Location columns: how many equipment items and chemicals are kept there, and Edit for managers. */
+function locColumns(counts: { eq: Map<string, number>; chem: Map<string, number> | null }, onEdit: ((l: WorkshopLocation) => void) | null): GridColumn<WorkshopLocation>[] {
+	return [
+		{ key: 'name', label: 'Name', width: 300, cell: (l) => (
+			<>
+				<strong>{l.name}</strong>
+				{l.description && <div className="muted">{l.description}</div>}
+			</>
+		) },
+		{ key: 'supervisor', label: 'Area supervisor', width: 220, cell: (l) => l.supervisorName ?? '-' },
+		{ key: 'eqCount', label: 'Equipment', width: 120, right: true, cell: (l) => counts.eq.get(l.id) ?? 0 },
+		{ key: 'chemCount', label: 'Chemicals', width: 120, right: true, cell: (l) => (counts.chem ? counts.chem.get(l.id) ?? 0 : '…') },
+		...(onEdit ? [{ key: 'edit', label: 'Actions', width: 90, cell: (l: WorkshopLocation) => <button type="button" className="btn btn-ghost btn-sm" onClick={() => onEdit(l)} aria-label={`Edit ${l.name}`}>Edit</button> }] : []),
+	];
+}
+const LOC_WIDTHS = gridWidths(locColumns({ eq: new Map(), chem: new Map() }, () => undefined));
+/** How many rows sit in each location. */
+const countBy = (rows: { locationId: string | null }[]) => {
+	const m = new Map<string, number>();
+	for (const r of rows) if (r.locationId) m.set(r.locationId, (m.get(r.locationId) ?? 0) + 1);
+	return m;
+};
 
 /** Equipment register, chemicals with safety data sheet (SDS) links, and workshop locations. */
 export function Equipment() {
@@ -178,7 +190,7 @@ export function Equipment() {
 			</div>
 			{tab === 'equipment' && <EquipmentTab canWrite={canWrite} list={eq} items={items} shown={shown} grid={eqGrid} toolbar={toolbar} />}
 			{tab === 'chemicals' && <ChemicalsTab canWrite={canWrite} grid={chemGrid} toolbar={toolbar} />}
-			{tab === 'locations' && <LocationsTab canWrite={canWrite} grid={locGrid} toolbar={toolbar} />}
+			{tab === 'locations' && <LocationsTab canWrite={canWrite} grid={locGrid} toolbar={toolbar} equipment={items} />}
 		</>
 	);
 }
@@ -385,46 +397,60 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 	);
 }
 
-function LocationsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: GridLayout; toolbar: ReactNode }) {
+function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolean; grid: GridLayout; toolbar: ReactNode; equipment: EquipmentItem[] }) {
 	const list = useLocations();
+	const chemicals = useChemicals();
 	const write = useRegisterWrite(['locations']);
 	const { notify } = useToast();
-	const [name, setName] = useState('');
-	const [open, setOpen] = useState(false);
+	// null: no form open; 'new': adding; a location: editing it.
+	const [open, setOpen] = useState<'new' | WorkshopLocation | null>(null);
+	const [form, setForm] = useState({ name: '', description: '' });
+	const editing = open && open !== 'new' ? open : null;
+	const counts = useMemo(() => ({ eq: countBy(equipment), chem: chemicals.data ? countBy(chemicals.data.items) : null }), [equipment, chemicals.data]);
+	const columns = locColumns(counts, canWrite ? (l) => { setForm({ name: l.name, description: l.description ?? '' }); setOpen(l); } : null);
+	const close = () => setOpen(null);
 	return (
 		<>
 		<Card flush>
 			{canWrite && !open && (
 				<div className="inline-form">
-					<button className="btn" onClick={() => setOpen(true)}>
+					<button className="btn" onClick={() => { setForm({ name: '', description: '' }); setOpen('new'); }}>
 						<Plus size={16} aria-hidden="true" /> Add location
 					</button>
 				</div>
 			)}
 			{canWrite && open && (
-				<Dialog title="Add location" onClose={() => setOpen(false)}>
+				<Dialog title={editing ? `Edit location: ${editing.name}` : 'Add location'} onClose={close}>
 				<form
 					className="inline-form"
 					onSubmit={(e) => {
 						e.preventDefault();
-						write.mutate({ method: 'POST', path: '/locations', body: { name } }, { onSuccess: () => { setName(''); setOpen(false); notify('Location added'); } });
+						const body = { name: form.name.trim(), description: form.description.trim() };
+						write.mutate(editing ? { method: 'PATCH', path: '/locations/' + editing.id, body } : { method: 'POST', path: '/locations', body }, {
+							onSuccess: () => { close(); notify(editing ? 'Location saved' : 'Location added'); },
+							onError: (er) => notify(er instanceof Error ? er.message : 'Could not save the location', 'error'),
+						});
 					}}
 				>
 					<label>
-						<span className="toolbar__label">New location</span>
-						<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
+						<span className="toolbar__label">Name *</span>
+						<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={200} autoFocus />
 					</label>
-					<button className="btn" disabled={write.isPending}>
-						<Plus size={16} aria-hidden="true" /> Add
+					<label style={{ flex: '2 1 260px' }}>
+						<span className="toolbar__label">Description</span>
+						<input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={1000} />
+					</label>
+					<button className="btn" disabled={write.isPending || !form.name.trim()}>
+						{editing ? (write.isPending ? 'Saving…' : 'Save') : <><Plus size={16} aria-hidden="true" /> Add</>}
 					</button>
-					{write.isError && <p role="alert">{write.error.message}</p>}
+					<button type="button" className="btn btn-ghost" onClick={close}>Cancel</button>
 				</form>
 				</Dialog>
 			)}
 			<State q={list} empty="No workshop locations yet." />
 			{list.isSuccess && list.data.items.length > 0 && toolbar}
 			{list.isSuccess && list.data.items.length > 0 && (
-				<ResizableGrid layout={grid} label="Workshop locations" columns={LOC_COLUMNS} rows={list.data.items} rowKey={(l) => l.id} />
+				<ResizableGrid layout={grid} label="Workshop locations" columns={columns} rows={list.data.items} rowKey={(l) => l.id} />
 			)}
 			{list.isSuccess && list.data.items.length > 0 && <GridStatusBar text={`Showing ${list.data.items.length} of ${list.data.items.length}`} />}
 		</Card>

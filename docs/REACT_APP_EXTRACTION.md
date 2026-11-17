@@ -46,7 +46,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | E1 | Hired equipment picked on install tasks | on Finished On Site, off-hire-required items go Off hire and managers get one email | H FE | todo |
 | E2 | Equipment register | KPI tiles, type filter, search, status tabs, columns last checked / every N days / responsible / N days late; edit with history; Off hire toggle | M FE+BE | todo |
 | E3 | Chemicals | supplier, stock and unit, SDS review overdue, SDS link http/https only | M BE | todo |
-| E4 | Locations | edit, delete refused while items remain, counts | L | todo |
+| E4 | Locations | edit, delete refused while items remain, counts | L | partly, 17 Nov: edit (name and description) and equipment and chemical counts per location; delete not built (needs a DELETE route with the "items still here" check) |
 | D1 | Device schematic map | SVG pins from lat/lng, grey when stale over 24 h, legend with OpenStreetMap link | M FE | todo |
 | D2 | Role dashboards | PM open jobs with bars; workshop overdue checks with Mark checked; crew "My Day" with inline hour booking, one-line next step, sent-back reason | M to H FE | todo |
 | D3 | Calendar | day view, type colours legend, event drawer, type filter | L | todo |

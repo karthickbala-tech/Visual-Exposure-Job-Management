@@ -308,6 +308,8 @@ const routes = [
 	['POST', /^\/equipment$/, (_, __, b) => { const e = { id: id(), code: b.code || '', name: b.name, type: b.type || '', locationId: b.location_id || null, locationName: null, status: 'In service', offHireRequired: !!b.off_hire_required, frequencyDays: b.frequency_days || null, lastChecked: null, nextDue: null, overdue: false, daysOverdue: 0 }; S.equipment.push(e); return { item: e }; }],
 	['GET', /^\/chemicals$/, () => list(S.chemicals)],
 	['GET', /^\/locations$/, () => list(S.locations)],
+	['POST', /^\/locations$/, (_, __, b) => { const l = { id: id(), name: b.name, description: b.description || '', supervisorId: null, supervisorName: null }; S.locations.push(l); return { item: l }; }],
+	['PATCH', /^\/locations\/(\d+)$/, (m, _, b) => { const l = S.locations.find((x) => x.id === m[1]); if (!l) throw Object.assign(new Error('Workshop location not found'), { status: 404 }); if (b.name !== undefined) l.name = b.name; if (b.description !== undefined) l.description = b.description; return { item: l }; }],
 	['GET', /^\/devices$/, () => list(S.devices)],
 	['GET', /^\/files$/, (_, q) => list(S.files.filter((f) => f.entityType === q.get('entity_type') && f.entityId === q.get('entity_id')))],
 	// admin
