@@ -1,18 +1,68 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Camera, FileText } from 'lucide-react';
 
-import { useChecklist, useCompleteChecklist, useSaveAnswers } from '../api/queries';
+import { getDownloadUrl, useChecklist, useCompleteChecklist, useSaveAnswers, useUploadFile } from '../api/queries';
 import type { ShiftInput } from '../api/queries';
 import { ApiError } from '../api/client';
 import type { ChecklistView, Question } from '../api/types';
 import { Chip, Progress } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { BackLink, Card, PageHeader } from '../components/ui';
+import { useConfirm } from '../components/Messages';
+import { splitPayHours } from '../lib/payRules';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * A photo question (CHK-8): the photo is uploaded to this checklist and its file id saved as the answer, which the server checks
+ * belongs to this checklist. On a phone the picker offers the camera.
+ */
+function PhotoField({ checklistId, label, value, disabled, onChange }: { checklistId: string; label: React.ReactNode; value: string | number | undefined; disabled: boolean; onChange: (v: string | null) => void }) {
+	const upload = useUploadFile('checklist', checklistId);
+	const input = useRef<HTMLInputElement>(null);
+	const { notify } = useToast();
+	const view = async () => {
+		const { url } = await getDownloadUrl(String(value));
+		window.open(url, '_blank', 'noopener');
+	};
+	return (
+		<div className="q">
+			{label}
+			{value !== undefined && (
+				<p>
+					<button type="button" className="btn btn-ghost btn-sm" onClick={view}><FileText size={14} aria-hidden="true" /> View photo</button>
+					{!disabled && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange(null)}>Remove</button>}
+				</p>
+			)}
+			{!disabled && (
+				<label className="btn btn-ghost btn-sm">
+					<Camera size={14} aria-hidden="true" /> {upload.isPending ? 'Uploading…' : value === undefined ? 'Add photo' : 'Replace photo'}
+					<input
+						ref={input}
+						type="file"
+						accept="image/jpeg,image/png,image/webp,image/heic"
+						capture="environment"
+						className="sr-only"
+						disabled={upload.isPending}
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (!file) return;
+							upload.mutate(file, {
+								onSuccess: (r) => onChange(r.file.id),
+								onError: (er) => notify(er instanceof Error ? er.message : 'The photo did not upload', 'error'),
+								onSettled: () => { if (input.current) input.current.value = ''; },
+							});
+						}}
+					/>
+				</label>
+			)}
+		</div>
+	);
+}
+
 /** One question, sized for a thumb. Saves as soon as the answer changes. */
-function Field({ q, value, disabled, onChange }: { q: Question; value: string | number | undefined; disabled: boolean; onChange: (v: string | number | null) => void }) {
+function Field({ q, value, disabled, onChange, checklistId }: { q: Question; value: string | number | undefined; disabled: boolean; onChange: (v: string | number | null) => void; checklistId: string }) {
 	const label = (
 		<span className="q__label">
 			{q.label}
@@ -48,14 +98,7 @@ function Field({ q, value, disabled, onChange }: { q: Question; value: string | 
 			</label>
 		);
 	}
-	if (q.type === 'photo') {
-		return (
-			<div className="q">
-				{label}
-				<p className="q__hint">Add photos on the task page, under Photos and files.</p>
-			</div>
-		);
-	}
+	if (q.type === 'photo') return <PhotoField checklistId={checklistId} label={label} value={value} disabled={disabled} onChange={onChange} />;
 	return (
 		<label className="q">
 			{label}
@@ -74,15 +117,26 @@ function Field({ q, value, disabled, onChange }: { q: Question; value: string | 
 	);
 }
 
+/**
+ * The shift on a post-job checklist (CHK-6, HRS-2). Shows the hours worked and the pay split before saving, asks to confirm a
+ * shift over 14 hours and refuses one over 16 hours or with more unbilled hours than worked. The server checks the same.
+ */
 function ShiftForm({ taskBusy, onSubmit, error }: { taskBusy: boolean; onSubmit: (s: ShiftInput) => void; error?: string }) {
 	const [s, setS] = useState({ work_date: today(), start: '07:00', end: '15:30', break_minutes: 30, unbilled_hours: 0 });
 	const set = (k: keyof typeof s) => (e: React.ChangeEvent<HTMLInputElement>) =>
 		setS({ ...s, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value });
+	const confirm = useConfirm();
+	const split = splitPayHours(s.work_date, s.start, s.end, s.break_minutes || 0);
+	const pay = 'error' in split ? null : split;
+	const problem = 'error' in split ? split.error
+		: split.total > 16 ? 'A shift cannot be longer than 16 hours.'
+		: s.unbilled_hours > split.total ? 'Unbilled hours cannot be more than the hours worked.' : '';
 
 	return (
 		<form
-			onSubmit={(e) => {
+			onSubmit={async (e) => {
 				e.preventDefault();
+				if (pay && pay.total > 14 && !(await confirm({ message: `${pay.total} hours is a very long shift. Save it anyway?`, confirmLabel: 'Save shift' }))) return;
 				onSubmit(s);
 			}}
 		>
@@ -108,8 +162,14 @@ function ShiftForm({ taskBusy, onSubmit, error }: { taskBusy: boolean; onSubmit:
 					<input type="number" min={0} max={16} step={0.25} value={s.unbilled_hours} onChange={set('unbilled_hours')} />
 				</label>
 			</div>
+			{pay && !problem && (
+				<p className="muted" role="status">
+					{pay.total} h worked: {pay.single} h single, {pay.x1_5} h time and a half, {pay.x2} h double.
+				</p>
+			)}
+			{problem && <p role="alert">{problem}</p>}
 			{error && <p role="alert">{error}</p>}
-			<button className="btn btn-primary" disabled={taskBusy}>
+			<button className="btn btn-primary" disabled={taskBusy || !!problem}>
 				{taskBusy ? 'Saving…' : 'Complete checklist'}
 			</button>
 		</form>
@@ -146,7 +206,7 @@ function Body({ data }: { data: ChecklistView }) {
 			{definition.sections.map((s) => (
 				<Card key={s.key} title={s.title ?? 'Questions'}>
 					{s.questions.filter(visible).map((q) => (
-						<Field key={q.key} q={q} value={answers[q.key]} disabled={locked || save.isPending} onChange={(v) => save.mutate({ [q.key]: v })} />
+						<Field key={q.key} q={q} checklistId={checklist.id} value={answers[q.key]} disabled={locked || save.isPending} onChange={(v) => save.mutate({ [q.key]: v })} />
 					))}
 				</Card>
 			))}
