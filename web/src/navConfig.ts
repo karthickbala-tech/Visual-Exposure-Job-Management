@@ -82,16 +82,22 @@ export const NAV: NavEntry[] = [
 ];
 
 const sees = (item: NavItem, roles: string[]) => !item.roles || item.roles.some((r) => roles.includes(r));
+/** The Dashboard always stays in the menu, so the menu is never empty. */
+export const canHide = (item: NavItem) => item.to !== '/';
 
-/** What this person's roles may see: items they cannot open are dropped; an empty group disappears; a group with one item shows that item alone. */
-export function visibleNav(roles: string[]): NavEntry[] {
+/**
+ * What this person's roles may see, less the pages they hid in Settings: items they cannot open are dropped; an empty group
+ * disappears; a group with one item shows that item alone.
+ */
+export function visibleNav(roles: string[], hidden: string[] = []): NavEntry[] {
+	const shows = (i: NavItem) => sees(i, roles) && !(canHide(i) && hidden.includes(i.to));
 	const out: NavEntry[] = [];
 	for (const e of NAV) {
 		if (!isGroup(e)) {
-			if (sees(e, roles)) out.push(e);
+			if (shows(e)) out.push(e);
 			continue;
 		}
-		const items = e.items.filter((i) => sees(i, roles));
+		const items = e.items.filter(shows);
 		if (items.length === 1) out.push(items[0]);
 		else if (items.length > 1) out.push({ ...e, items });
 	}

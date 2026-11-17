@@ -6,8 +6,10 @@ export interface Prefs {
 	density: 'comfortable' | 'compact';
 	text: 'normal' | 'large';
 	groupedNav: boolean;
+	/** Menu pages this person hid from the sidebar (paths). The pages still open from a link. */
+	hiddenNav: string[];
 }
-const DEFAULTS: Prefs = { density: 'comfortable', text: 'normal', groupedNav: true };
+const DEFAULTS: Prefs = { density: 'comfortable', text: 'normal', groupedNav: true, hiddenNav: [] };
 const KEY = 've.prefs';
 
 function read(): Prefs {
@@ -18,6 +20,7 @@ function read(): Prefs {
 			density: v.density === 'compact' ? 'compact' : 'comfortable',
 			text: v.text === 'large' ? 'large' : 'normal',
 			groupedNav: v.groupedNav === false ? false : true,
+			hiddenNav: Array.isArray(v.hiddenNav) ? v.hiddenNav.filter((x): x is string => typeof x === 'string') : [],
 		};
 	} catch {
 		return DEFAULTS;

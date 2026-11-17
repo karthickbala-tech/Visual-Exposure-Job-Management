@@ -272,8 +272,8 @@ export function Shell() {
 	const searchRef = useRef<HTMLInputElement>(null);
 
 	const roles = me.data?.roles ?? [];
-	const entries = visibleNav(roles);
 	const { prefs } = usePrefs();
+	const entries = visibleNav(roles, prefs.hiddenNav);
 	const name = me.data ? `${me.data.user.firstName} ${me.data.user.lastName}`.trim() || me.data.user.email : '';
 
 	// Ctrl or Cmd + K jumps to the search box.

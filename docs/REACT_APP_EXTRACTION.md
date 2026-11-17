@@ -52,7 +52,7 @@ Three read-only audits compared the colleague's demo (`backup-files/react-app/`)
 | D3 | Calendar | day view, type colours legend, event drawer, type filter | L | done: day panel and legend earlier; type filter (All, Design, Fabrication, Install) on month and week 17 Nov; the event drawer stays a link to the task (decision 8) |
 | D4 | Checklist register | per-person progress, views by role, Continue | L | todo |
 | S1 | SWMS task table | Task, hazards and risks, control measures, person responsible, stored in `swms_tasks` | M BE | todo (needs real client wording) |
-| S2 | Settings extras | auto theme, accent swatches, hide menu items | L FE | todo |
+| S2 | Settings extras | auto theme, accent swatches, hide menu items | L FE | done 17 Nov: Auto theme (follows the device, live) and "Show in menu" ticks to hide sidebar pages; accent colours skipped (they would fight the brand tokens) |
 
 ## From the demo's last two commits (6 Nov, never pushed, so not in `backup-files/react-app/`)
 Kalyani's local commits `acf7309` (Creator Jobs report fields) and `37cbab7` (shadcn ui-kit). Compared with web on 17 Nov: every Creator column, the admin-only costs and the CSV were already in web (with Parent/Fab by Cost Type, which matches Creator better than the demo's guess). `37cbab7` does not apply (web has no Tailwind).
