@@ -219,6 +219,7 @@ function EquipmentHistory({ id }: { id: string }) {
 				<li key={i}>
 					<span className="muted">{c.at ? c.at.slice(0, 16) : ''}{c.by ? ` · ${c.by}` : ''}: </span>
 					{c.changes.map((x) => `${x.label} ${x.from} → ${x.to}`).join('; ')}
+					{c.reason ? <span className="muted"> ({c.reason})</span> : null}
 				</li>
 			))}
 		</ul>

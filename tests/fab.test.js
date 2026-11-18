@@ -159,6 +159,9 @@ test('FAB-4: due equipment gets one Maintenance task and its next due date moves
 	assert.equal(items.find((i) => i.id === old.id).nextDue, '2026-12-02');
 	assert.equal(items.find((i) => i.id === fresh.id).lastChecked, '2026-10-30', 'not due, so untouched');
 	assert.equal(items.find((i) => i.id === hired.id).lastChecked, '2026-01-01', 'off hire is never checked');
+	const made = (await registers.equipmentHistory(w.ctx, old.id)).items;
+	assert.equal(made[0].reason, 'Maintenance task created', 'the history says why the check date moved');
+	assert.equal(made[0].changes[0].to, '2026-11-02');
 
 	assert.equal((await generateMaintenanceTasks(w.ctx)).created, 0, 'a rerun the same day makes nothing');
 	assert.equal(w.db.tasks.filter((x) => x.kind === 'Maintenance').length, 1);
@@ -172,6 +175,7 @@ test('FAB-4: due equipment gets one Maintenance task and its next due date moves
 	await tasks.transitionTask(w.ctx, id, { to: 'Manager Review' });
 	await tasks.transitionTask(w.ctx, id, { to: 'Completed' });
 	assert.equal((await registers.listEquipment(w.ctx)).items.find((i) => i.id === old.id).lastChecked, '2026-11-02');
+	assert.ok((await registers.equipmentHistory(w.ctx, old.id)).items.some((h) => h.reason === 'Maintenance task finished' && h.changes[0].from === '2026-10-01'));
 });
 
 test('FAB-2: the task list can come back grouped, parents with their subtasks', async () => {

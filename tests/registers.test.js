@@ -78,6 +78,14 @@ test('off hire switches the flagged equipment and reports it', async () => {
 	const res = await reg.offHireForFinishedInstall(w.ctx, [a.item.id, b.item.id]);
 	assert.deepEqual(res.switched.map((s) => s.id), [a.item.id]);
 	assert.equal((await reg.listEquipment(w.ctx)).items.find((i) => i.id === a.item.id).status, 'Off hire');
+	const h = (await reg.equipmentHistory(w.ctx, a.item.id)).items;
+	assert.deepEqual(h[0].changes, [{ label: 'Status', from: 'In service', to: 'Off hire' }]);
+	assert.equal(h[0].reason, 'Install finished on site');
+	assert.equal((await reg.equipmentHistory(w.ctx, b.item.id)).items.length, 0, 'nothing logged for equipment that stayed');
+	// done by the platform (nobody signed in): shown as Automatic
+	const c = await reg.createEquipment(w.ctx, { name: 'Hired boom', off_hire_required: true });
+	await reg.switchOffHire({ ...w.ctx, actor: { roles: [], person: null } }, [c.item.id]);
+	assert.equal((await reg.equipmentHistory(w.ctx, c.item.id)).items[0].by, 'Automatic');
 });
 
 test('devices: PMs may view, workers may not; stale and map link are derived', async () => {

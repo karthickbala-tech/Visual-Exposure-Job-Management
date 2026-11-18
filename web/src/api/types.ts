@@ -288,7 +288,7 @@ export interface EquipmentItem {
 }
 
 /** One change to an equipment item: who, when, and each field's old and new value. */
-export interface EquipmentChange { at: string | null; by: string | null; changes: { label: string; from: string; to: string }[] }
+export interface EquipmentChange { at: string | null; by: string | null; reason?: string | null; changes: { label: string; from: string; to: string }[] }
 
 /** A chemical in the register; stock, unit and supplier are optional (demo E3). */
 export interface ChemicalItem {
