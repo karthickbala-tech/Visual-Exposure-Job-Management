@@ -5,6 +5,7 @@ import { SPEC_FIELDS, TASK_KINDS, parseSpec } from '../lib/taskKinds';
 import type { TaskType } from '../lib/taskKinds';
 import { Card } from './ui';
 import { useToast } from './toast';
+import { afterSave, editDiff } from '../lib/editDiff';
 
 interface Props {
 	taskId: string;
@@ -34,6 +35,8 @@ export function TaskDetailsPanel({ taskId, type, name, kind, description, propos
 	const hiredList = (equipment.data?.items ?? []).filter((e) => e.offHireRequired || hired.includes(e.id));
 	const hoursBad = f.proposed !== '' && !(Number(f.proposed) >= 0);
 	const kinds = TASK_KINDS[type];
+	// What this form first showed: an edit sends only what differs from it, and the server refuses it if someone else changed the same field.
+	const [seen, setSeen] = useState<Record<string, unknown>>(() => ({ name, kind: kind ?? '', description: description ?? '', proposed_hours: proposedHours ?? '', spec: saved }));
 
 	const save = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -46,7 +49,15 @@ export function TaskDetailsPanel({ taskId, type, name, kind, description, propos
 			);
 		}
 		if (type === 'install') body.hired_equipment = hired;
-		update.mutate(body, { onSuccess: () => notify('Task details saved'), onError: (er) => notify(er instanceof Error ? er.message : 'Could not save', 'error') });
+		const changes = editDiff(seen, body, ['hired_equipment']);
+		if (!changes) return notify('Nothing to save');
+		update.mutate(changes, {
+			onSuccess: () => {
+				setSeen((s) => afterSave(s, changes));
+				notify('Task details saved');
+			},
+			onError: (er) => notify(er instanceof Error ? er.message : 'Could not save', 'error'),
+		});
 	};
 
 	return (

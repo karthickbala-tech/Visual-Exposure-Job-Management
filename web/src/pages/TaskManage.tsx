@@ -8,6 +8,7 @@ import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
 import { Dialog } from '../components/Dialog';
+import { afterSave, editDiff } from '../lib/editDiff';
 import { CLOSE_CONFIRM, clearsNote, isDirectClose, isReset, reasonFor } from '../lib/stageActions';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
@@ -25,6 +26,8 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 	const confirm = useConfirm();
 	const [dates, setDates] = useState({ scheduled_date: scheduled?.slice(0, 10) ?? '', required_finish: finish?.slice(0, 10) ?? '', quoted_hours: String(quoted || '') });
 	const [cost, setCost] = useState(costType ?? '');
+	// What the form first showed, for the server's "someone else changed it" check (see lib/editDiff).
+	const [seen, setSeen] = useState<Record<string, unknown>>(() => ({ scheduled_date: scheduled ?? '', required_finish: finish ?? '', quoted_hours: quoted || '', cost_type: costType ?? '' }));
 	const [person, setPerson] = useState('');
 	const [role, setRole] = useState('member');
 	const [addingCrew, setAddingCrew] = useState(false);
@@ -44,7 +47,15 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 						if (dates.required_finish) body.required_finish = dates.required_finish;
 						if (dates.quoted_hours) body.quoted_hours = Number(dates.quoted_hours);
 						if (cost !== (costType ?? '')) body.cost_type = cost || null;
-						update.mutate(body, { onSuccess: () => notify('Task saved'), onError: (er) => notify(errText(er), 'error') });
+						const changes = editDiff(seen, body);
+						if (!changes) return notify('Nothing to save');
+						update.mutate(changes, {
+							onSuccess: () => {
+								setSeen((s) => afterSave(s, changes));
+								notify('Task saved');
+							},
+							onError: (er) => notify(errText(er), 'error'),
+						});
 					}}
 				>
 					<label><span className="toolbar__label">Scheduled</span><input type="date" value={dates.scheduled_date} onChange={(e) => setDates({ ...dates, scheduled_date: e.target.value })} /></label>

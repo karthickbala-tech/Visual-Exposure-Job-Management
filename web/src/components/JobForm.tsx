@@ -9,6 +9,7 @@ import type { Job } from '../api/types';
 import { Chip } from './Chip';
 import { Field, FormPage, ReadOnlyField } from './FormKit';
 import { useToast } from './toast';
+import { editDiff } from '../lib/editDiff';
 
 const STAGES_AT_START = ['Preparation', 'In Progress', 'On Hold'];
 const d10 = (v?: string | null) => (v ?? '').slice(0, 10);
@@ -67,6 +68,8 @@ export function JobForm({ job, isAdmin }: { job?: Job; isAdmin: boolean }) {
 	const navigate = useNavigate();
 	const { notify } = useToast();
 	const [f, setF] = useState<FormState>(blank(job));
+	// The job as this form first showed it: an edit sends only what differs, and the server refuses it if someone else changed the same field.
+	const [seen] = useState<Record<string, unknown>>(() => ({ ...(job ?? {}) }));
 	const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((s) => ({ ...s, [k]: v }));
 
 	const staff = (people.data?.items ?? []).filter((p) => p.is_active !== false);
@@ -97,7 +100,9 @@ export function JobForm({ job, isAdmin }: { job?: Job; isAdmin: boolean }) {
 			if (f.closure_email_sent !== was.closure_email_sent) body.closure_email_sent = f.closure_email_sent;
 			if (f.close_triggered !== was.close_triggered) body.close_triggered = f.close_triggered;
 		}
-		save.mutate(body, {
+		const changes = editing ? editDiff(seen, body, ['closure_email_sent', 'close_triggered']) : body;
+		if (!changes) return navigate('/jobs/' + job?.ROWID);
+		save.mutate(changes, {
 			onSuccess: (r) => {
 				notify(editing ? 'Job saved' : 'Job created');
 				navigate('/jobs/' + (job?.ROWID ?? r.job?.ROWID ?? r.ROWID));
