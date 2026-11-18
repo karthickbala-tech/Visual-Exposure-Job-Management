@@ -5,6 +5,7 @@ import { useChemicals, useEquipment, useEquipmentHistory, useLocations, useMe, u
 import type { ChemicalItem, EquipmentItem, WorkshopLocation } from '../api/types';
 import { Chip } from '../components/Chip';
 import { Dialog } from '../components/Dialog';
+import { useConfirm } from '../components/Messages';
 import { useToast } from '../components/toast';
 import { Card, PageHeader } from '../components/ui';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
@@ -192,7 +193,7 @@ export function Equipment() {
 			</div>
 			{tab === 'equipment' && <EquipmentTab canWrite={canWrite} list={eq} items={items} shown={shown} grid={eqGrid} toolbar={toolbar} />}
 			{tab === 'chemicals' && <ChemicalsTab canWrite={canWrite} grid={chemGrid} toolbar={toolbar} />}
-			{tab === 'locations' && <LocationsTab canWrite={canWrite} grid={locGrid} toolbar={toolbar} equipment={items} />}
+			{tab === 'locations' && <LocationsTab canWrite={canWrite} canDelete={(me.data?.roles ?? []).includes('admin')} grid={locGrid} toolbar={toolbar} equipment={items} />}
 		</>
 	);
 }
@@ -497,11 +498,12 @@ function ChemicalsTab({ canWrite, grid, toolbar }: { canWrite: boolean; grid: Gr
 	);
 }
 
-function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolean; grid: GridLayout; toolbar: ReactNode; equipment: EquipmentItem[] }) {
+function LocationsTab({ canWrite, canDelete, grid, toolbar, equipment }: { canWrite: boolean; canDelete: boolean; grid: GridLayout; toolbar: ReactNode; equipment: EquipmentItem[] }) {
 	const list = useLocations();
 	const chemicals = useChemicals();
 	const write = useRegisterWrite(['locations']);
 	const { notify } = useToast();
+	const confirm = useConfirm();
 	// null: no form open; 'new': adding; a location: editing it.
 	const [open, setOpen] = useState<'new' | WorkshopLocation | null>(null);
 	const [form, setForm] = useState({ name: '', description: '', supervisor_id: '' });
@@ -554,6 +556,24 @@ function LocationsTab({ canWrite, grid, toolbar, equipment }: { canWrite: boolea
 						{editing ? (write.isPending ? 'Saving…' : 'Save') : <><Plus size={16} aria-hidden="true" /> Add</>}
 					</button>
 					<button type="button" className="btn btn-ghost" onClick={close}>Cancel</button>
+					{editing && canDelete && (
+						<button
+							type="button"
+							className="btn btn-ghost btn-danger"
+							disabled={write.isPending}
+							onClick={async () => {
+								const inUse = (counts.eq.get(editing.id) ?? 0) + (counts.chem?.get(editing.id) ?? 0);
+								if (inUse) return notify(`${editing.name} still has ${inUse} item${inUse === 1 ? '' : 's'}. Move them to another location first.`, 'error');
+								if (!(await confirm({ message: `Delete the location ${editing.name}? This cannot be undone.`, confirmLabel: 'Delete location', danger: true }))) return;
+								write.mutate({ method: 'DELETE', path: '/locations/' + editing.id }, {
+									onSuccess: () => { close(); notify('Location deleted'); },
+									onError: (er) => notify(er instanceof Error ? er.message : 'Could not delete the location', 'error'),
+								});
+							}}
+						>
+							Delete
+						</button>
+					)}
 				</form>
 				</Dialog>
 			)}

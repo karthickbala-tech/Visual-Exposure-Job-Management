@@ -81,6 +81,9 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return clone(r);
 			},
 			update: async (row) => patch(db.locations, row),
+			remove: async (id) => {
+				db.locations = db.locations.filter((r) => String(r.ROWID) !== String(id));
+			},
 		},
 		devices: { list: async () => db.devices.map(clone) },
 		jobs: {

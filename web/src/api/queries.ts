@@ -266,7 +266,7 @@ export const useDevices = (enabled: boolean) => useList<DeviceItem>('devices', '
 export const useRegisterWrite = (invalidate: string[]) => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ method, path, body }: { method: 'POST' | 'PATCH'; path: string; body?: unknown }) => api(path, json(method, body ?? {})),
+		mutationFn: ({ method, path, body }: { method: 'POST' | 'PATCH' | 'DELETE'; path: string; body?: unknown }) => api(path, method === 'DELETE' ? { method } : json(method, body ?? {})),
 		onSuccess: () => invalidate.forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
 	});
 };

@@ -208,6 +208,7 @@ router.add('PATCH', '/chemicals/:id', withCtx(async (ctx, { req, params }) => ok
 router.add('GET', '/locations', withCtx(async (ctx) => ok(await registers.listLocations(ctx))));
 router.add('POST', '/locations', once(async (ctx, { body }) => await registers.createLocation(ctx, body)));
 router.add('PATCH', '/locations/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateLocation(ctx, params.id, await readJson(req)))));
+router.add('DELETE', '/locations/:id', withCtx(async (ctx, { params }) => ok(await registers.deleteLocation(ctx, params.id))));
 router.add('GET', '/devices', withCtx(async (ctx, { url }) => ok(await registers.listDevices(ctx, parseQuery(url)))));
 
 

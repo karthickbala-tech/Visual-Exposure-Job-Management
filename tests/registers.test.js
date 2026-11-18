@@ -166,3 +166,16 @@ test('workshop locations: the area supervisor can be set, changed and cleared; a
 	await reg.updateLocation(w.ctx, l.id, { supervisor_id: null });
 	assert.equal((await reg.listLocations(w.ctx)).items[0].supervisorName, null);
 });
+
+test('a workshop location is deleted only by an administrator and only when nothing is kept there', async () => {
+	const w = makeWorld();
+	const empty = (await reg.createLocation(w.ctx, { name: 'Old shed' })).item;
+	const busy = (await reg.createLocation(w.ctx, { name: 'Main bay' })).item;
+	await reg.createEquipment(w.ctx, { name: 'Saw', location_id: busy.id });
+	await rejects(reg.deleteLocation(w.as(['project_manager']), empty.id), 403);
+	const err = await rejects(reg.deleteLocation(w.ctx, busy.id), 409, 'location_in_use');
+	assert.match(err.message, /1 equipment item/);
+	assert.deepEqual(await reg.deleteLocation(w.ctx, empty.id), { deleted: true, id: empty.id });
+	assert.deepEqual((await reg.listLocations(w.ctx)).items.map((l) => l.name), ['Main bay']);
+	await rejects(reg.deleteLocation(w.ctx, empty.id), 404);
+});
