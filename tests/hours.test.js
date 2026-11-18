@@ -55,6 +55,23 @@ test('rules: hours roll up by day and kind; workshop counts in the total; final 
 	assert.equal(H.aggregateHours([e('p', 't1', '2026-11-02', 1, { unbilled_hours: 5 })], tasks, '2026-11-02', '2026-11-08')[0].totals.final, 0, 'final never goes below zero');
 });
 
+test('rules: the pay split adds up the stored single, x1.5 and x2 of timed shifts; plain hours count as no times', () => {
+	const tasks = new Map([['t1', { task_type: 'install', kind: 'VE Install' }]]);
+	const e = (over) => ({ person_id: 'p1', task_id: 't1', work_date: '2026-11-03', hours_single: 0, hours_x1_5: 0, hours_x2: 0, unbilled_hours: 0, ...over });
+	const rows = H.aggregateHours(
+		[
+			e({ start_time: '06:00', end_time: '17:00', hours_single: 8, hours_x1_5: 2, hours_x2: 1 }), // a timed manual shift
+			e({ entry_source: 'checklist', hours_single: 4, hours_x2: 0.5 }), // post-job checklist: times were used, not stored
+			e({ entry_source: 'manual', hours_single: 3 }), // plain hours: no real split
+		],
+		tasks,
+		'2026-11-02',
+		'2026-11-08'
+	);
+	assert.deepEqual(rows[0].pay, { single: 12, x1_5: 2, x2: 1.5, noTimes: 3 });
+	assert.deepEqual(H.sumPay([rows[0].pay, { single: 1, x1_5: 0, x2: 0, noTimes: 0 }]), { single: 13, x1_5: 2, x2: 1.5, noTimes: 3 });
+});
+
 test('rules: hours not filled counts past fabrication work with no finished post-job checklist, workshop split out', () => {
 	const t = (id, kind, date, stage = 'Scheduled', type = 'fabrication') => ({ ROWID: id, task_type: type, kind, scheduled_date: date, stage });
 	const list = [t('1', 'CNC', '2026-10-30'), t('2', 'Workshop', '2026-10-31'), t('3', 'CNC', '2026-10-29'), t('4', 'CNC', '2026-11-05'), t('5', 'CNC', '2026-11-02'), t('6', 'CNC', '2026-10-01'), t('7', 'CNC', '2026-10-30', 'Cancelled'), t('8', 'VE Install', '2026-10-30', 'Scheduled', 'install'), t('9', 'CNC', null)];

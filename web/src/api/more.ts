@@ -14,8 +14,10 @@ const qs = (o: Record<string, string | undefined>) => {
 
 // ---- hours ----
 export interface HourCell { fab: number; install: number; workshop: number; design: number; other: number; unbilled: number; final?: number }
-export interface HoursRow { personId: string; name: string; days: Record<string, HourCell>; totals: HourCell; labourCost?: number }
-export interface HoursReport { rows: HoursRow[]; totals: HourCell; truncated: boolean; weekStart?: string; days?: string[]; period?: { start: string; end: string }; which?: string }
+/** Pay split: hours at single time, x1.5 and x2 from shifts with start and end times; plain hours booked with no times apart. */
+export interface PaySplit { single: number; x1_5: number; x2: number; noTimes: number }
+export interface HoursRow { personId: string; name: string; days: Record<string, HourCell>; totals: HourCell; pay?: PaySplit; labourCost?: number }
+export interface HoursReport { rows: HoursRow[]; totals: HourCell; pay?: PaySplit; truncated: boolean; weekStart?: string; days?: string[]; period?: { start: string; end: string }; which?: string }
 export const useWeeklyHours = (week?: string, range?: { from: string; to: string }) => useGet<HoursReport>(['hours-week', week ?? '', range?.from ?? '', range?.to ?? ''], '/hours/weekly' + qs({ week, from: range?.from, to: range?.to }));
 /** The tasks the person could book a past shift on: crew get their own, managers everyone's open ones (one request, cached). */
 export const useBookableTasks = (enabled: boolean) => useGet<{ items: { ROWID: string; name: string; task_type: string; job_name?: string; stage: string }[] }>(['bookable-tasks'], '/tasks?detail=true&limit=120', enabled, 60_000);

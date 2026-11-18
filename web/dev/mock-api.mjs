@@ -59,6 +59,9 @@ const week = () => { const d = new Date(); const dow = (d.getUTCDay() + 6) % 7; 
 const days = week();
 const cell = (fab = 0, install = 0, workshop = 0, design = 0, unbilled = 0) => ({ fab, install, workshop, design, other: 0, unbilled, final: fab + install + workshop + design });
 const sum = (cells) => cells.reduce((a, c) => ({ fab: a.fab + c.fab, install: a.install + c.install, workshop: a.workshop + c.workshop, design: a.design + c.design, other: 0, unbilled: a.unbilled + c.unbilled, final: a.final + c.final }), cell());
+/** Sample pay split per person: each day's hours as a weekday shift (8 h single, 2 h x1.5, the rest x2); one person booked plain hours. */
+const payOf = (cells, plain) => { const p = { single: 0, x1_5: 0, x2: 0, noTimes: 0 }; for (const c of cells) { const h = c.total; if (plain) p.noTimes += h; else { p.single += Math.min(h, 8); p.x1_5 += Math.min(Math.max(h - 8, 0), 2); p.x2 += Math.max(h - 10, 0); } } return p; };
+const sumPay = (list) => list.reduce((t, p) => ({ single: t.single + p.single, x1_5: t.x1_5 + p.x1_5, x2: t.x2 + p.x2, noTimes: t.noTimes + p.noTimes }), { single: 0, x1_5: 0, x2: 0, noTimes: 0 });
 const hoursRows = () => {
 	const rows = [
 		['506', { [days[0]]: cell(8), [days[1]]: cell(8.5), [days[2]]: cell(8, 0, 0, 0, 1) }, 62],
@@ -66,10 +69,10 @@ const hoursRows = () => {
 		['508', { [days[0]]: cell(0, 9), [days[1]]: cell(0, 9.5), [days[2]]: cell(0, 4) }, 64],
 		['509', { [days[0]]: cell(0, 0, 8), [days[1]]: cell(0, 0, 8) }, 48],
 		['512', { [days[1]]: cell(0, 0, 0, 6) }, 70],
-	].map(([pid, d, rate]) => { const totals = sum(Object.values(d)); return { personId: pid, name: S.nameOf(pid), days: d, totals, labourCost: Math.round(totals.final * rate * 100) / 100 }; });
+	].map(([pid, d, rate]) => { const totals = sum(Object.values(d)); return { personId: pid, name: S.nameOf(pid), days: d, totals, pay: payOf(Object.values(d), pid === '512'), labourCost: Math.round(totals.final * rate * 100) / 100 }; });
 	return isManager ? rows : rows.filter((r) => r.personId === ME).map(({ labourCost, ...r }) => r);
 };
-const hoursReport = () => { const rows = hoursRows(); return { weekStart: days[0], days, rows, totals: sum(rows.map((r) => r.totals)), truncated: false, period: { start: days[0], end: day(13 - ((new Date().getUTCDay() + 6) % 7)) } }; };
+const hoursReport = () => { const rows = hoursRows(); return { weekStart: days[0], days, rows, totals: sum(rows.map((r) => r.totals)), pay: sumPay(rows.map((r) => r.pay)), truncated: false, period: { start: days[0], end: day(13 - ((new Date().getUTCDay() + 6) % 7)) } }; };
 
 const board = (type) => {
 	const stages = type === 'design' ? ['To be Assigned', 'In Progress', 'Manager Review', 'Completed'] : ['Awaiting Scheduling', 'Scheduled', 'In Progress', 'Manager Review', 'On Hold', 'Completed'];
