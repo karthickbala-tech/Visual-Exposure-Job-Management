@@ -81,6 +81,7 @@ function QuickPanel({ issue, isManager, myId, onClose }: { issue: Who; isManager
 	const deal = useCrmDeal();
 	const people = usePeople(true);
 	const { notify } = useToast();
+	const [seen] = useState(issue); // the issue as this dialog first showed it
 	const [status, setStatus] = useState(issue.issue_status);
 	const [nextStep, setNextStep] = useState(issue.next_step ?? '');
 	const [done, setDone] = useState(issue.work_completed ?? '');
@@ -105,7 +106,9 @@ function QuickPanel({ issue, isManager, myId, onClose }: { issue: Who; isManager
 		if (civic && site.trim() !== (issue.billboard_site ?? '')) patch.billboard_site = site.trim();
 		if (civic && face !== (issue.billboard_face ?? '')) patch.billboard_face = face;
 		if (Object.keys(patch).length === 0) return onClose();
-		update.mutate({ id: issue.ROWID, patch }, { onSuccess: () => { notify('Issue updated'); onClose(); }, onError: (e) => notify(errText(e), 'error') });
+		// The values this dialog first showed, so the server can refuse the save if someone else changed the same field meanwhile.
+		const expected = Object.fromEntries(Object.keys(patch).map((k) => [k, (seen as unknown as Record<string, unknown>)[k] ?? null]));
+		update.mutate({ id: issue.ROWID, patch: { ...patch, expected } }, { onSuccess: () => { notify('Issue updated'); onClose(); }, onError: (e) => notify(errText(e), 'error') });
 	};
 
 	return (

@@ -145,7 +145,7 @@ export const useCreateIssue = () => {
 	});
 };
 
-export type IssuePatch = Partial<{ issue_status: string; issue_priority: string; assigned_to_id: string | null; owner_id: string | null; department: string; description: string; next_step: string; work_completed: string; due_date: string | null; billboard_site: string; billboard_face: string; review_needed: string }>;
+export type IssuePatch = Partial<{ issue_status: string; issue_priority: string; assigned_to_id: string | null; owner_id: string | null; department: string; description: string; next_step: string; work_completed: string; due_date: string | null; billboard_site: string; billboard_face: string; review_needed: string; expected: Record<string, unknown> }>;
 export const useUpdateIssue = () => {
 	const qc = useQueryClient();
 	return useMutation({

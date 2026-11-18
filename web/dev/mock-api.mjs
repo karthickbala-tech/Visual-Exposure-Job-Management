@@ -299,7 +299,7 @@ const routes = [
 	['POST', /^\/issues\/(\d+)\/crm-deal$/, () => ({ created: true, dealId: '4590000000999' })],
 	['GET', /^\/issues$/, (_, q) => { let l = S.issues; if (q.get('status')) l = l.filter((i) => i.issue_status === q.get('status')); return list(l.map(issueView)); }],
 	['POST', /^\/issues$/, (_, __, b) => { const i = { ROWID: id(), subject: b.subject, department: b.department || 'Management', issue_status: 'To Be discussed', issue_priority: b.issue_priority || 'Medium', description: b.description || '', task_id: b.task_id || '', reported_by_id: ME, CREATEDTIME: now() }; S.issues.unshift(i); return { issue: issueView(i) }; }],
-	['PATCH', /^\/issues\/(\d+)$/, (m, _, b) => { const i = S.issues.find((x) => x.ROWID === m[1]); if (b.issue_status) { issueHistory.push({ id: m[1], at: now(), changes: [{ field: 'issue_status', from: i.issue_status, to: b.issue_status }] }); i.issue_status = b.issue_status; } return { issue: issueView(i) }; }],
+	['PATCH', /^\/issues\/(\d+)$/, (m, _, b) => { const i = S.issues.find((x) => x.ROWID === m[1]); notChanged(i, b, 'issue'); if (b.issue_status) { issueHistory.push({ id: m[1], at: now(), changes: [{ field: 'issue_status', from: i.issue_status, to: b.issue_status }] }); i.issue_status = b.issue_status; } return { issue: issueView(i) }; }],
 	// swms
 	['GET', /^\/swms$/, (_, q) => { let l = swmsList(); const v = q.get('view'); if (v === 'open') l = l.filter((s) => ['Created', 'PM Signed'].includes(s.status)); if (v === 'completed') l = l.filter((s) => ['TL Signed', 'Not Required'].includes(s.status)); return list(l); }],
 

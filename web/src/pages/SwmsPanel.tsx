@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { editDiff } from '../lib/editDiff';
 import { FileDown, PenLine } from 'lucide-react';
 import { useSwms, useSwmsAction } from '../api/queries';
 import { pdfUrl, useSwmsOptions } from '../api/more';
@@ -72,12 +73,13 @@ function SignDialog({ as, summary, onCancel, onSign, busy }: { as: 'pm' | 'tl' |
 }
 
 /** The edit form for a SWMS: site, high-risk work (ticking one ticks the PPE it needs), PPE, and the work steps. */
-function EditForm({ s, busy, onSave }: { s: SwmsView; busy: boolean; onSave: (body: Record<string, unknown>) => void }) {
+function EditForm({ s, busy, onSave, onCancel }: { s: SwmsView; busy: boolean; onSave: (body: Record<string, unknown>) => void; onCancel: () => void }) {
 	const opts = useSwmsOptions();
 	const [address, setAddress] = useState(s.siteAddress);
 	const [hazards, setHazards] = useState<string[]>(s.hazards ?? []);
 	const [ppe, setPpe] = useState<string[]>(s.ppe);
 	const [steps, setSteps] = useState(s.tasks.map((t) => t.task).join('\n'));
+	const [seen] = useState<Record<string, unknown>>(() => ({ site_address: s.siteAddress, hazards: s.hazards ?? [], ppe: s.ppe, swms_tasks: s.tasks }));
 	const locked = new Set(s.ppe); // PPE already saved only ever grows
 	const toggleHazard = (key: string, on: boolean) => {
 		setHazards(on ? [...hazards, key] : hazards.filter((h) => h !== key));
@@ -90,7 +92,10 @@ function EditForm({ s, busy, onSave }: { s: SwmsView; busy: boolean; onSave: (bo
 			className="swms-edit"
 			onSubmit={(e) => {
 				e.preventDefault();
-				onSave({ site_address: address, hazards, ppe, swms_tasks: steps.split('\n').map((l) => l.trim()).filter(Boolean).map((task) => ({ task })) });
+				// Only what changed is sent, with the values first shown, so a save never overwrites someone else's change unseen.
+				const changes = editDiff(seen, { site_address: address, hazards, ppe, swms_tasks: steps.split('\n').map((l) => l.trim()).filter(Boolean).map((task) => ({ task })) });
+				if (changes) onSave(changes);
+				else onCancel();
 			}}
 		>
 			<label>
@@ -202,7 +207,7 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 				/>
 			)}
 			{act.isError && <p role="alert" style={{ marginTop: 12 }}>{act.error.message}</p>}
-			{canEdit && editing && <EditForm s={s} busy={busy} onSave={(body) => act.mutate({ path: '', method: 'PATCH', body }, { onSuccess: () => { setEditing(false); notify('SWMS saved'); } })} />}
+			{canEdit && editing && <EditForm s={s} busy={busy} onCancel={() => setEditing(false)} onSave={(body) => act.mutate({ path: '', method: 'PATCH', body }, { onSuccess: () => { setEditing(false); notify('SWMS saved'); } })} />}
 		</Card>
 	);
 }

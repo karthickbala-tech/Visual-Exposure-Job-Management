@@ -67,3 +67,25 @@ test('a fab spec edit changes only the fields sent; an empty one is removed', as
 	await tasks.updateTask(w.ctx, id, { spec: { [a]: null } });
 	assert.deepEqual(row(), { [b]: val(b, 3) });
 });
+
+test('concurrency: an issue edit is refused when someone else changed the same field', async () => {
+	const issues = require('../lib/services/issues');
+	const w = makeWorld();
+	const id = String((await issues.createIssue(w.ctx, { subject: 'Bracket missing' })).issue.ROWID);
+	await issues.updateIssue(w.ctx, id, { next_step: 'Order a bracket', expected: { next_step: '' } });
+	const err = await rejects(issues.updateIssue(w.ctx, id, { next_step: 'Call the client', expected: { next_step: '' } }), 409);
+	assert.match(err.message, /next step/);
+	assert.ok((await issues.updateIssue(w.ctx, id, { billboard_site: 'North', expected: { billboard_site: '' } })).issue);
+});
+
+test('concurrency: a SWMS edit compares its lists (hazards, steps) whole', async () => {
+	const swms = require('../lib/services/swms');
+	const w = makeWorld();
+	const job = String((await jobs.createJob(w.ctx, { name: 'J' })).job.ROWID);
+	await tasks.createTask(w.ctx, job, { task_type: 'install', name: 'Fit', kind: 'VE Install' });
+	const id = String(w.db.swms[0].ROWID);
+	await swms.updateSwms(w.ctx, id, { swms_tasks: [{ task: 'Erect scaffold' }], expected: { swms_tasks: [] } });
+	await rejects(swms.updateSwms(w.ctx, id, { swms_tasks: [{ task: 'Lift sign' }], expected: { swms_tasks: [] } }), 409);
+	assert.ok((await swms.updateSwms(w.ctx, id, { swms_tasks: [{ task: 'Lift sign' }], expected: { swms_tasks: [{ task: 'Erect scaffold' }] } })).swms);
+	assert.ok((await swms.updateSwms(w.ctx, id, { site_address: '1 Test St', expected: { site_address: '' } })).swms);
+});
