@@ -318,7 +318,7 @@ const routes = [
 	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
 	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2007', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2008', rating: 4, comment: '', ratedAt: null }, { taskId: '2003', rating: 5, comment: 'Great finish on the frames', ratedAt: null }], count: 3, average: 4.67 })],
 	['GET', /^\/people\/(\d+)$/, (m) => ({ person: personRow(S.people.find((p) => p.ROWID === m[1]) || S.people[0]) })],
-	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
+	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles', 'do_not_contact']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
 	['GET', /^\/people$/, () => list(S.people.map(personRow))],
 	['POST', /^\/people$/, (_, __, b) => { const p = { ROWID: id(), first_name: b.first_name, last_name: b.last_name || '', email: b.email || '', phone: b.phone || '', person_kind: b.person_kind || 'staff', job_title: '', roles: b.roles || [], is_active: true, hourly_rate: 0 }; S.people.push(p); return { person: personRow(p) }; }],
 	// compliance

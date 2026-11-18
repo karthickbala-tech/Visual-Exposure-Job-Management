@@ -228,6 +228,7 @@ export interface Person {
 	roles?: string;
 	is_active?: boolean;
 	hourly_rate?: string | number;
+	do_not_contact?: boolean;
 }
 
 export interface ComplianceType {

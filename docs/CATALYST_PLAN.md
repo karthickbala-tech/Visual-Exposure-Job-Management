@@ -122,7 +122,7 @@ Conventions
 
 | # | Table | Columns |
 |---|---|---|
-| 1 | `person` | user_id big (Catalyst user, nullable for people who never log in), first_name, last_name, email unique, phone, company_id fk:company, kind (staff, subcontractor), job_title, roles json (mirror of Catalyst roles), tags json (optional labels, for example trades_person), hourly_rate dec (restricted), is_active, is_internal, profile json (dob, address, emergency contact: encrypted fields **(verify)**), crm_worker_id, mdm_enabled bool, is_deleted |
+| 1 | `person` | user_id big (Catalyst user, nullable for people who never log in), first_name, last_name, email unique, phone, company_id fk:company, kind (staff, subcontractor), job_title, roles json (mirror of Catalyst roles), tags json (optional labels, for example trades_person), hourly_rate dec (restricted), is_active, is_internal, profile json (dob, address, emergency contact: encrypted fields **(verify)**), crm_worker_id, mdm_enabled bool, is_deleted, do_not_contact text ("true" or empty; added 18 Nov 2026: no compliance reminder emails to this person) |
 | 2 | `company` | name, kind (subcontractor, supplier, client, internal), contact json (owner, phone, email), state, is_active, do_not_contact json, notes, is_deleted |
 | 3 | `site` | name, address json (street, suburb, state, post_code, country), lat, lng, contact json, crm_site_id, crm_account_id, crm_contact_id, is_active, is_deleted |
 | 4 | `device` | person_id fk:person, serial unique, model, os, last_lat, last_lng, last_address, last_seen_at |

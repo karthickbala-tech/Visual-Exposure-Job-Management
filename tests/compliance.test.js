@@ -246,28 +246,29 @@ test('compliance types: administrators add and edit them; names are unique; a us
 	await rejects(compliance.updateType(w.ctx, '105747000009999999', { name: 'Nope' }), 404);
 });
 
-test('person do-not-contact: off until the column exists; when on, the person gets no reminder but the managers do', async () => {
+test('person do-not-contact: the person gets no reminder but the managers do; when switched off it is not accepted', async () => {
 	const people = require('../lib/services/people');
-	const { FEATURES } = require('../lib/services/people');
-	assert.equal(FEATURES.personDoNotContact, false, 'stays off until the person column is approved and added');
+	const { FEATURES } = people;
+	assert.equal(FEATURES.personDoNotContact, true, 'on since the person column was added (18 Nov 2026)');
 
 	const { w, type, sent, ctx } = jobSetup();
-	const off = await people.updatePerson(w.ctx, ME, { do_not_contact: true });
-	assert.equal(off.person.do_not_contact, undefined, 'not accepted or shown while off');
-	assert.equal(w.db.people[0].do_not_contact, undefined, 'nothing written to a column that does not exist');
+	const on = await people.updatePerson(w.ctx, ME, { do_not_contact: true });
+	assert.equal(on.person.do_not_contact, true);
+	assert.equal(w.db.people[0].do_not_contact, 'true');
+	await compliance.createItem(w.ctx, { type_id: type.ROWID, person_id: ME, expiry_date: '2026-12-02' });
+	const r = await runComplianceDue(ctx);
+	assert.equal(r.sent, 1);
+	assert.ok(!sent[0].to.includes('worker@x.com'), 'the person is left out');
+	assert.ok(sent[0].to.includes('pm@x.com'), 'the managers still hear about it');
+	assert.equal((await people.updatePerson(w.ctx, ME, { do_not_contact: false })).person.do_not_contact, false);
+	assert.equal(w.db.people[0].do_not_contact, '');
 
-	FEATURES.personDoNotContact = true;
+	FEATURES.personDoNotContact = false;
 	try {
-		const on = await people.updatePerson(w.ctx, ME, { do_not_contact: true });
-		assert.equal(on.person.do_not_contact, true);
-		assert.equal(w.db.people[0].do_not_contact, 'true');
-		await compliance.createItem(w.ctx, { type_id: type.ROWID, person_id: ME, expiry_date: '2026-12-02' });
-		const r = await runComplianceDue(ctx);
-		assert.equal(r.sent, 1);
-		assert.ok(!sent[0].to.includes('worker@x.com'), 'the person is left out');
-		assert.ok(sent[0].to.includes('pm@x.com'), 'the managers still hear about it');
-		assert.equal((await people.updatePerson(w.ctx, ME, { do_not_contact: false })).person.do_not_contact, false);
+		const off = await people.updatePerson(w.ctx, ME, { do_not_contact: true });
+		assert.equal(off.person.do_not_contact, undefined, 'not accepted or shown while off');
+		assert.equal(w.db.people[0].do_not_contact, '', 'nothing written');
 	} finally {
-		FEATURES.personDoNotContact = false;
+		FEATURES.personDoNotContact = true;
 	}
 });
