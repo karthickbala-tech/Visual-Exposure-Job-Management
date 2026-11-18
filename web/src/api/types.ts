@@ -376,6 +376,7 @@ export interface SiteItem {
 	notes?: string;
 	accessNotes?: string;
 	businessHours?: string;
+	siteCode?: string;
 	tenantBusiness?: string;
 	tenantContact?: string;
 	tenantPhone?: string;

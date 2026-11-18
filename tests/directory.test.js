@@ -52,7 +52,8 @@ test('companies and sites keep the DS address and contact fields; updating one f
 	assert.equal(cu.item.suburb, 'Yarraville');
 	assert.equal(cu.item.street, '5 Main St', 'other fields are kept');
 
-	const s = await dir.createSite(w.ctx, { name: 'Harbour Pylon', contact_name: 'Pat', phone: '0400', country: 'Australia', notes: 'Loading dock round the back', access_notes: 'Key at security', business_hours: 'Mon-Fri 7-4', tenant_business: 'Dock Cafe', tenant_contact: 'Lee', tenant_email: 'lee@cafe.test', owner_name: 'Port Authority', owner_phone: '0390' });
+	const s = await dir.createSite(w.ctx, { name: 'Harbour Pylon', contact_name: 'Pat', phone: '0400', country: 'Australia', notes: 'Loading dock round the back', access_notes: 'Key at security', business_hours: 'Mon-Fri 7-4', tenant_business: 'Dock Cafe', tenant_contact: 'Lee', tenant_email: 'lee@cafe.test', owner_name: 'Port Authority', owner_phone: '0390', site_code: 'VIC-DOCK-01' });
+	assert.equal(s.item.siteCode, 'VIC-DOCK-01');
 	assert.equal(s.item.notes, 'Loading dock round the back');
 	assert.equal(s.item.accessNotes, 'Key at security');
 	assert.equal(s.item.tenantBusiness, 'Dock Cafe');
@@ -62,6 +63,7 @@ test('companies and sites keep the DS address and contact fields; updating one f
 	assert.equal(su.item.accessNotes, 'Ask at reception');
 	assert.equal(su.item.tenantBusiness, 'Dock Cafe', 'contact fields not sent are kept');
 	assert.equal(su.item.contactName, 'Pat');
+	assert.equal(su.item.siteCode, 'VIC-DOCK-01', 'the site code is kept too');
 	assert.equal(su.item.notes, 'Loading dock round the back');
 	await rejects(dir.createSite(w.ctx, { name: 'Bad', tenant_email: 'not-an-email' }), 400);
 });

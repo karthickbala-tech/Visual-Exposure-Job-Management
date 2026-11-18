@@ -44,6 +44,7 @@ const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
 ];
 const SITE_COLUMNS: GridColumn<SiteItem>[] = [
 	{ key: 'name', label: 'Name', width: 240, cell: (s) => <strong>{s.name}</strong> },
+	{ key: 'code', label: 'Site Code', width: 130, cell: (s) => s.siteCode || '-' },
 	{ key: 'address', label: 'Address', width: 360, cell: (s) => s.address || '-' },
 	{ key: 'state', label: 'State', width: 200, cell: (s) => stateName(s.state) || '-' },
 	{ key: 'status', label: 'Status', width: 130, cell: (s) => <Chip status={s.isActive ? 'Active' : 'Inactive'} /> },
@@ -251,7 +252,8 @@ function Companies({ canWrite, canRates, grid }: { canWrite: boolean; canRates: 
 }
 
 /** The other fields of the Creator Sites form, in its order: label, length and input kind. */
-const SITE_FIELDS: ['country' | 'business_hours' | 'notes' | 'access_notes' | 'tenant_business' | 'tenant_contact' | 'tenant_phone' | 'tenant_email' | 'owner_name' | 'owner_phone' | 'owner_email', string, number, 'text' | 'email' | 'area'][] = [
+const SITE_FIELDS: ['site_code' | 'country' | 'business_hours' | 'notes' | 'access_notes' | 'tenant_business' | 'tenant_contact' | 'tenant_phone' | 'tenant_email' | 'owner_name' | 'owner_phone' | 'owner_email', string, number, 'text' | 'email' | 'area'][] = [
+	['site_code', 'Site Code', 50, 'text'],
 	['country', 'Country', 50, 'text'],
 	['business_hours', 'Business Hours', 200, 'text'],
 	['notes', 'Location Notes', 2000, 'area'],
@@ -269,13 +271,13 @@ function Sites({ canWrite, grid }: { canWrite: boolean; grid: GridLayout }) {
 	const list = useSites();
 	const write = useRegisterWrite(['sites']);
 	const { notify } = useToast();
-	const empty = { name: '', street: '', suburb: '', state: '', post_code: '', country: '', business_hours: '', notes: '', access_notes: '', tenant_business: '', tenant_contact: '', tenant_phone: '', tenant_email: '', owner_name: '', owner_phone: '', owner_email: '' };
+	const empty = { name: '', street: '', suburb: '', state: '', post_code: '', site_code: '', country: '', business_hours: '', notes: '', access_notes: '', tenant_business: '', tenant_contact: '', tenant_phone: '', tenant_email: '', owner_name: '', owner_phone: '', owner_email: '' };
 	const [open, setOpen] = useState(false);
 	const [form, setForm] = useState(empty);
 	const [editing, setEditing] = useState<SiteItem | null>(null);
 	const close = () => { setOpen(false); setEditing(null); setForm(empty); };
 	const startEdit = (x: SiteItem) => {
-		setForm({ name: x.name, street: x.street ?? '', suburb: x.suburb ?? '', state: x.state ?? '', post_code: x.postCode ?? '', country: x.country ?? '', business_hours: x.businessHours ?? '', notes: x.notes ?? '', access_notes: x.accessNotes ?? '', tenant_business: x.tenantBusiness ?? '', tenant_contact: x.tenantContact ?? '', tenant_phone: x.tenantPhone ?? '', tenant_email: x.tenantEmail ?? '', owner_name: x.ownerName ?? '', owner_phone: x.ownerPhone ?? '', owner_email: x.ownerEmail ?? '' });
+		setForm({ name: x.name, street: x.street ?? '', suburb: x.suburb ?? '', state: x.state ?? '', post_code: x.postCode ?? '', site_code: x.siteCode ?? '', country: x.country ?? '', business_hours: x.businessHours ?? '', notes: x.notes ?? '', access_notes: x.accessNotes ?? '', tenant_business: x.tenantBusiness ?? '', tenant_contact: x.tenantContact ?? '', tenant_phone: x.tenantPhone ?? '', tenant_email: x.tenantEmail ?? '', owner_name: x.ownerName ?? '', owner_phone: x.ownerPhone ?? '', owner_email: x.ownerEmail ?? '' });
 		setEditing(x);
 		setOpen(true);
 	};
