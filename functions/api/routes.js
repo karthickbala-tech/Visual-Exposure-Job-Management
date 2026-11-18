@@ -33,6 +33,7 @@ const weeklyReports = require('./lib/services/weeklyReports');
 const appSettings = require('./lib/services/appSettings');
 const maintenance = require('./lib/services/maintenance');
 const { createZoho } = require('./lib/integrations/zoho');
+const { runOnce } = require('./lib/idempotency');
 
 const router = createRouter();
 
@@ -52,6 +53,16 @@ const zoho = () => {
 };
 
 const withCtx = (fn) => (args) => fn(makeContext(args.actor, args.log), args);
+
+/**
+ * A create action: the same person sending the same create again within two minutes gets the first answer back
+ * instead of a second record (lib/idempotency.js). The handler gets the parsed body as `body`; answers 201.
+ */
+const once = (fn) =>
+	withCtx(async (ctx, args) => {
+		const body = await readJson(args.req);
+		return created(await runOnce(ctx, String(args.url || '').split('?')[0], body, () => fn(ctx, { ...args, body })));
+	});
 
 /** Liveness check. Public, reveals nothing about the project. */
 router.add('GET', '/health', async () => ok({ ok: true }), { public: true });
@@ -76,7 +87,7 @@ router.add('GET', '/me', async ({ actor }) => {
 
 // Jobs
 router.add('GET', '/jobs', withCtx(async (ctx, { url }) => ok(await jobs.listJobs(ctx, parseQuery(url)))));
-router.add('POST', '/jobs', withCtx(async (ctx, { req }) => created(await jobs.createJob(ctx, await readJson(req)))));
+router.add('POST', '/jobs', once(async (ctx, { body }) => await jobs.createJob(ctx, body)));
 router.add('GET', '/jobs/:id', withCtx(async (ctx, { params }) => ok(await jobs.getJob(ctx, params.id))));
 router.add('PATCH', '/jobs/:id', withCtx(async (ctx, { req, params }) => ok(await jobs.updateJob(ctx, params.id, await readJson(req)))));
 router.add('POST', '/jobs/delete', withCtx(async (ctx, { req }) => ok(await jobs.deleteJobs(ctx, await readJson(req)))));
@@ -88,16 +99,16 @@ router.add('POST', '/admin/notifications/:id/retry', withCtx(async (ctx, { param
 router.add('GET', '/hours/weekly', withCtx(async (ctx, { url }) => ok(await hours.weeklyHours(ctx, parseQuery(url)))));
 router.add('GET', '/hours/pay-period', withCtx(async (ctx, { url }) => ok(await hours.payPeriodHours(ctx, parseQuery(url)))));
 router.add('GET', '/hours/not-filled', withCtx(async (ctx, { url }) => ok(await hours.hoursNotFilled(ctx, parseQuery(url)))));
-router.add('POST', '/tasks/:id/hours', withCtx(async (ctx, { req, params }) => created(await hours.addTimeEntry(ctx, params.id, await readJson(req)))));
-router.add('POST', '/tasks/:id/ratings', withCtx(async (ctx, { req, params }) => created(await hours.rateEmployee(ctx, params.id, await readJson(req)))));
+router.add('POST', '/tasks/:id/hours', once(async (ctx, { params, body }) => await hours.addTimeEntry(ctx, params.id, body)));
+router.add('POST', '/tasks/:id/ratings', once(async (ctx, { params, body }) => await hours.rateEmployee(ctx, params.id, body)));
 router.add('GET', '/people/:id/ratings', withCtx(async (ctx, { params }) => ok(await hours.listRatings(ctx, params.id))));
-router.add('POST', '/tasks/workshop', withCtx(async (ctx, { req }) => created(await tasks.createWorkshopTask(ctx, await readJson(req)))));
+router.add('POST', '/tasks/workshop', once(async (ctx, { body }) => await tasks.createWorkshopTask(ctx, body)));
 router.add('GET', '/admin/settings', withCtx(async (ctx) => ok(await appSettings.getSettings(ctx))));
 router.add('PUT', '/admin/settings', withCtx(async (ctx, { req }) => ok(await appSettings.updateSettings(ctx, await readJson(req)))));
 router.add('POST', '/admin/maintenance/run', withCtx(async (ctx) => ok(await maintenance.generateMaintenanceTasks(ctx))));
 router.add('POST', '/jobs/:id/close', withCtx(async (ctx, { params }) => ok(await jobs.closeJob(ctx, params.id))));
-router.add('POST', '/tasks/:id/subtasks', withCtx(async (ctx, { params }) => created(await tasks.createSubtask(ctx, params.id))));
-router.add('POST', '/jobs/:id/tasks', withCtx(async (ctx, { req, params }) => created(await tasks.createTask(ctx, params.id, await readJson(req)))));
+router.add('POST', '/tasks/:id/subtasks', withCtx(async (ctx, { params }) => created(await tasks.createSubtask(ctx, params.id)))); // not `once`: it takes no fields, so two on purpose would look like a repeat
+router.add('POST', '/jobs/:id/tasks', once(async (ctx, { params, body }) => await tasks.createTask(ctx, params.id, body)));
 
 // Tasks
 router.add('POST', '/tasks', withCtx(async () => tasks.rejectDirectCreate()));
@@ -131,7 +142,7 @@ router.add('POST', '/checklists/:id/complete', withCtx(async (ctx, { req, params
 
 // Issues
 router.add('GET', '/issues', withCtx(async (ctx, { url }) => ok(await issues.listIssues(ctx, parseQuery(url)))));
-router.add('POST', '/issues', withCtx(async (ctx, { req }) => created(await issues.createIssue(ctx, await readJson(req)))));
+router.add('POST', '/issues', once(async (ctx, { body }) => await issues.createIssue(ctx, body)));
 router.add('GET', '/issues/board', withCtx(async (ctx) => ok(await issues.issueBoard(ctx))));
 router.add('GET', '/issues/:id/history', withCtx(async (ctx, { params }) => ok(await issues.issueHistory(ctx, params.id))));
 router.add('POST', '/issues/:id/crm-deal', withCtx(async (ctx, { params }) => ok(await issues.createDealFromIssue({ ...ctx, zoho: zoho() }, params.id))));
@@ -157,45 +168,45 @@ router.add('GET', '/files/:id/download-url', withCtx(async (ctx, { params }) => 
 // People and compliance
 router.add('GET', '/roles', withCtx(async (ctx) => ok(await people.listRoles(ctx))));
 router.add('GET', '/people', withCtx(async (ctx, { url }) => ok(await people.listPeople(ctx, parseQuery(url)))));
-router.add('POST', '/people', withCtx(async (ctx, { req }) => created(await people.createPerson(ctx, await readJson(req)))));
+router.add('POST', '/people', once(async (ctx, { body }) => await people.createPerson(ctx, body)));
 router.add('GET', '/people/:id/profile', withCtx(async (ctx, { params }) => ok(await people.getProfile(ctx, params.id))));
 router.add('PATCH', '/people/:id/profile', withCtx(async (ctx, { req, params }) => ok(await people.updateProfile(ctx, params.id, await readJson(req)))));
 router.add('GET', '/people/:id', withCtx(async (ctx, { params }) => ok(await people.getPerson(ctx, params.id))));
 router.add('PATCH', '/people/:id', withCtx(async (ctx, { req, params }) => ok(await people.updatePerson(ctx, params.id, await readJson(req)))));
 router.add('GET', '/compliance/types', withCtx(async (ctx) => ok(await compliance.listTypes(ctx))));
-router.add('POST', '/compliance/types', withCtx(async (ctx, { req }) => created(await compliance.createType(ctx, await readJson(req)))));
+router.add('POST', '/compliance/types', once(async (ctx, { body }) => await compliance.createType(ctx, body)));
 router.add('PATCH', '/compliance/types/:id', withCtx(async (ctx, { req, params }) => ok(await compliance.updateType(ctx, params.id, await readJson(req)))));
 router.add('GET', '/compliance', withCtx(async (ctx, { url }) => ok(await compliance.listItems(ctx, parseQuery(url)))));
 router.add('GET', '/compliance/:id/portal', withCtx(async (ctx, { params }) => ok(await compliance.getPortal(ctx, params.id))));
 router.add('POST', '/compliance/:id/portal/reveal', withCtx(async (ctx, { params }) => ok(await compliance.revealPortalPassword(ctx, params.id))));
 router.add('PATCH', '/compliance/:id/portal', withCtx(async (ctx, { req, params }) => ok(await compliance.setPortal(ctx, params.id, await readJson(req)))));
-router.add('POST', '/compliance', withCtx(async (ctx, { req }) => created(await compliance.createItem(ctx, await readJson(req)))));
+router.add('POST', '/compliance', once(async (ctx, { body }) => await compliance.createItem(ctx, body)));
 router.add('PATCH', '/compliance/:id', withCtx(async (ctx, { req, params }) => ok(await compliance.updateItem(ctx, params.id, await readJson(req)))));
 // Companies, sites, signs
 router.add('GET', '/companies', withCtx(async (ctx, { url }) => ok(await directory.listCompanies(ctx, parseQuery(url)))));
-router.add('POST', '/companies', withCtx(async (ctx, { req }) => created(await directory.createCompany(ctx, await readJson(req)))));
+router.add('POST', '/companies', once(async (ctx, { body }) => await directory.createCompany(ctx, body)));
 router.add('PATCH', '/companies/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateCompany(ctx, params.id, await readJson(req)))));
 router.add('GET', '/sites', withCtx(async (ctx, { url }) => ok(await directory.listSites(ctx, parseQuery(url)))));
-router.add('POST', '/sites', withCtx(async (ctx, { req }) => created(await directory.createSite(ctx, await readJson(req)))));
+router.add('POST', '/sites', once(async (ctx, { body }) => await directory.createSite(ctx, body)));
 router.add('PATCH', '/sites/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSite(ctx, params.id, await readJson(req)))));
 router.add('GET', '/jobs/:id/signs', withCtx(async (ctx, { params }) => ok(await directory.listSigns(ctx, params.id))));
 router.add('GET', '/jobs/:id/sign-groups', withCtx(async (ctx, { params }) => ok(await quotes.listSignGroups(ctx, params.id))));
 router.add('POST', '/jobs/:id/sync-quotes', withCtx(async (ctx, { params }) => ok(await quotes.syncJobQuotes({ ...ctx, zoho: zoho() }, params.id))));
-router.add('POST', '/signs', withCtx(async (ctx, { req }) => created(await directory.createSign(ctx, await readJson(req)))));
+router.add('POST', '/signs', once(async (ctx, { body }) => await directory.createSign(ctx, body)));
 router.add('PATCH', '/signs/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSign(ctx, params.id, await readJson(req)))));
 
 // Equipment, chemicals, workshop locations, devices
 router.add('GET', '/equipment', withCtx(async (ctx, { url }) => ok(await registers.listEquipment(ctx, parseQuery(url)))));
-router.add('POST', '/equipment', withCtx(async (ctx, { req }) => created(await registers.createEquipment(ctx, await readJson(req)))));
+router.add('POST', '/equipment', once(async (ctx, { body }) => await registers.createEquipment(ctx, body)));
 router.add('PATCH', '/equipment/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateEquipment(ctx, params.id, await readJson(req)))));
 router.add('GET', '/equipment/:id/history', withCtx(async (ctx, { params }) => ok(await registers.equipmentHistory(ctx, params.id))));
 router.add('POST', '/equipment/:id/checked', withCtx(async (ctx, { params }) => ok(await registers.markChecked(ctx, params.id))));
 router.add('POST', '/equipment/off-hire', withCtx(async (ctx, { req }) => ok(await registers.offHireForFinishedInstall(ctx, (await readJson(req)).equipment_ids))));
 router.add('GET', '/chemicals', withCtx(async (ctx, { url }) => ok(await registers.listChemicals(ctx, parseQuery(url)))));
-router.add('POST', '/chemicals', withCtx(async (ctx, { req }) => created(await registers.createChemical(ctx, await readJson(req)))));
+router.add('POST', '/chemicals', once(async (ctx, { body }) => await registers.createChemical(ctx, body)));
 router.add('PATCH', '/chemicals/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateChemical(ctx, params.id, await readJson(req)))));
 router.add('GET', '/locations', withCtx(async (ctx) => ok(await registers.listLocations(ctx))));
-router.add('POST', '/locations', withCtx(async (ctx, { req }) => created(await registers.createLocation(ctx, await readJson(req)))));
+router.add('POST', '/locations', once(async (ctx, { body }) => await registers.createLocation(ctx, body)));
 router.add('PATCH', '/locations/:id', withCtx(async (ctx, { req, params }) => ok(await registers.updateLocation(ctx, params.id, await readJson(req)))));
 router.add('GET', '/devices', withCtx(async (ctx, { url }) => ok(await registers.listDevices(ctx, parseQuery(url)))));
 
