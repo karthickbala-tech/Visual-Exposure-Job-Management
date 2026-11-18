@@ -58,6 +58,13 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 - Still open (owner decisions, not changed): heading scale; brand green #22c55e vs #68b04d; collapsed sidebar look; Home content. Real-data checks of checklists, map, timeline, variance still need the deployed site.
 - Tests 352 pass; build passes; oxlint 0 errors. The Catalyst MCP is connected (account karthickbalai); see the memory note before using it (List_All_Functions returns secrets).
 
+**18 Nov, last: backend items I could finish alone** (`71430fc` to `ccc932f`, pushed, not deployed).
+- Stratus CORS checked in Development with a preflight from the app address: allowed (PUT, GET, HEAD, content-type); other origins get 403. Project CORS domain list is empty, which is fine (the app and api share one domain). Check AU the same way (GO_LIVE.md step 5).
+- `tests/scheduled.test.js`: the five live crons run through the job registry as the system (admin, no person), as Catalyst runs them; each cron's job name is known and handled.
+- CRM site contact, off until the client sends field names: fill `SITE_CONTACT_FIELDS` (and `CRM_SITE_MODULE` if not "Sites") in `lib/domain/crmSite.js`. Then `POST /sites/:id/crm-refresh` fills only mapped, non-empty fields. No button in the web app yet.
+- Person do-not-contact, off: `FEATURES.personDoNotContact` in `lib/services/people.js`. To switch on: add a text column `person.do_not_contact` (Development and AU, owner approval), set the switch to true, add the tick to the person form. When on, the person gets no compliance reminder (managers still do).
+- Pre-deploy dry run: `npm run sync`, 362 tests pass, all three functions load, web `tsc` and build pass, oxlint 0 errors (10 old warnings). `deploy:env:check` not run (it reads `.env`); run it yourself before deploying.
+
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
 Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last two commits, `acf7309` and `37cbab7`, which were never pushed) with web. Built the 11 small ones, one commit each, all pushed to `feat/backend-foundation` (`1572468` to `b13cd44`). **Not deployed.**
