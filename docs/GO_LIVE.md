@@ -64,7 +64,7 @@ All run the `jobs` function, with the parameter `job`.
 | `weekly_issues_report` | `weekly-issues-report` | `0 7 * * 4` Thursday 07:00 | yes, Thu 12 Nov (status 200) |
 | `drain_outbox_5min` (old name kept) | `crm-sync` | `0 * * * *` hourly | yes, every hour (status 200). Pulls won CRM deals, then drains the outbox |
 
-- Emails from these jobs are skipped and logged until `MAIL_FROM` is set, so a 200 means the job ran, not that mail went out.
+- Email is live in Development: `SMTP_USER`/`SMTP_PASS` (a Gmail app password) are set on all three functions, and `lib/mail.js` prefers SMTP over Catalyst Mail, so these jobs really send. A Catalyst Mail sender is also verified (single address; its domain is not verified). For production, decide between the Gmail SMTP and a sender on the client's own verified domain.
 - `profit-digest` and `mdm-sync` have no cron and no handler on purpose: the profit email is inactive in Creator (FSD question 8) and MDM needs credentials.
 - Production: create the same five in the AU project (rename `drain_outbox_5min` to `crm_sync_hourly` there).
 
