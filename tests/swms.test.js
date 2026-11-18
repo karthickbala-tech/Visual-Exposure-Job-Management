@@ -74,6 +74,9 @@ test('managers edit the statement; PPE only grows; crew cannot edit', async () =
 	const r = await swms.updateSwms(pm, id, { ppe: ['gloves'] });
 	assert.deepEqual(r.swms.ppe, ['hardhat', 'boots', 'gloves']);
 	assert.equal(r.swms.tasks.length, 1);
+	const a = await swms.updateSwms(pm, id, { work_activity: 'Install two pylon signs' });
+	assert.equal(a.swms.workActivity, 'Install two pylon signs');
+	assert.equal(a.swms.siteAddress, '1 Test St', 'other fields kept');
 	await rejects(swms.updateSwms(lead, id, { site_address: 'nope' }), 403);
 	await rejects(swms.updateSwms(pm, id, { ppe: 'x' }), 400);
 });

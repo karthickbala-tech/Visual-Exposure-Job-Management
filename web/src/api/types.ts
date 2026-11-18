@@ -175,6 +175,7 @@ export interface SwmsView {
 	number?: string;
 	pcbu: Record<string, string>;
 	siteAddress: string;
+	workActivity?: string;
 	ppe: string[];
 	hazards?: string[];
 	tasks: { task: string; responsible?: string }[];

@@ -13,12 +13,13 @@ const pdfApp = (calls) => ({ smartbrowz: () => ({ convertToPdf: async (html, opt
 
 test('the SWMS document escapes everything and shows sign-offs, declarations and PPE', () => {
 	const html = P.swmsHtml(
-		{ status: 'PM Signed', pcbu: { name: '<b>VE</b>' }, siteAddress: '1 Main St', ppe: ['Hard hat'], tasks: [{ task: 'Fit <sign>', responsible: 'Sam' }], declarations: [{ name: 'Sam', at: '2026-11-02' }], signoff: { pm: { name: 'Rachel', at: '2026-11-02' } } },
+		{ status: 'PM Signed', pcbu: { name: '<b>VE</b>' }, siteAddress: '1 Main St', workActivity: 'Install <two> pylons', ppe: ['Hard hat'], tasks: [{ task: 'Fit <sign>', responsible: 'Sam' }], declarations: [{ name: 'Sam', at: '2026-11-02' }], signoff: { pm: { name: 'Rachel', at: '2026-11-02' } } },
 		{ jobName: 'Pylon & Co', taskName: 'Fit', workManager: 'Rachel' },
 	);
 	assert.match(html, /Pylon &amp; Co/);
 	assert.ok(!html.includes('<b>VE</b>') && !html.includes('<sign>'), 'no raw markup from data');
 	assert.match(html, /Hard hat/);
+	assert.match(html, /Install &lt;two&gt; pylons/, 'work activity printed, escaped');
 	assert.match(html, /Rachel \(2026-11-02\)/);
 	assert.match(html, /Not signed/, 'team leader has not signed');
 });

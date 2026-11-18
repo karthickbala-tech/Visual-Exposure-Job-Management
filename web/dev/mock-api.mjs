@@ -121,7 +121,7 @@ const complianceDash = () => {
 };
 
 const swmsList = () => S.swms.map((s) => { const t = taskById(s.taskId); const job = jobById(s.jobId); return { id: s.id, status: s.status, jobId: s.jobId, jobName: job ? job.name : null, siteAddress: s.siteAddress, onSite: t ? t.scheduled_date : null, progress: { pm: !!s.signoff.pm, tl: !!s.signoff.tl, crewSigned: s.declarations.length, crewTotal: t ? t.assignees.length : 0 }, task: t ? { id: t.ROWID, name: t.name, stage: t.stage } : null }; });
-const swmsView = (s) => ({ id: s.id, jobId: s.jobId, status: s.status, pcbu: s.pcbu, siteAddress: s.siteAddress, ppe: s.ppe, hazards: s.hazards || [], tasks: s.tasks, declarations: s.declarations, signoff: s.signoff });
+const swmsView = (s) => ({ id: s.id, jobId: s.jobId, status: s.status, pcbu: s.pcbu, siteAddress: s.siteAddress, workActivity: s.workActivity || '', ppe: s.ppe, hazards: s.hazards || [], tasks: s.tasks, declarations: s.declarations, signoff: s.signoff });
 
 const checklistView = (c) => {
 	const answered = Object.keys(c.answers).length;
@@ -304,7 +304,7 @@ const routes = [
 	['GET', /^\/swms$/, (_, q) => { let l = swmsList(); const v = q.get('view'); if (v === 'open') l = l.filter((s) => ['Created', 'PM Signed'].includes(s.status)); if (v === 'completed') l = l.filter((s) => ['TL Signed', 'Not Required'].includes(s.status)); return list(l); }],
 
 	['GET', /^\/swms\/(\d+)$/, (m) => { const s = S.swms.find((x) => x.id === m[1]) || S.swms[0]; return { swms: swmsView(s), taskId: s.taskId }; }],
-	['PATCH', /^\/swms\/(\d+)$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); if (b.site_address !== undefined) s.siteAddress = b.site_address; if (b.hazards) s.hazards = b.hazards; if (b.ppe) s.ppe = [...new Set([...s.ppe, ...b.ppe])]; if (b.swms_tasks) s.tasks = b.swms_tasks; return { swms: swmsView(s) }; }],
+	['PATCH', /^\/swms\/(\d+)$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); if (b.site_address !== undefined) s.siteAddress = b.site_address; if (b.work_activity !== undefined) s.workActivity = b.work_activity; if (b.hazards) s.hazards = b.hazards; if (b.ppe) s.ppe = [...new Set([...s.ppe, ...b.ppe])]; if (b.swms_tasks) s.tasks = b.swms_tasks; return { swms: swmsView(s) }; }],
 	['GET', /^\/swms\/options$/, () => SWMS_OPTIONS],
 	['POST', /^\/swms\/(\d+)\/sign$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); const who = (b.typed_name || S.nameOf(ME)); if (b.as === 'pm') { s.signoff.pm = { name: who, at: day(0) }; s.status = 'PM Signed'; } else { s.signoff.tl = { name: who, at: day(0) }; s.status = 'TL Signed'; } return { swms: swmsView(s) }; }],
 	['POST', /^\/swms\/(\d+)\/declare$/, (m, _, b) => { const s = S.swms.find((x) => x.id === m[1]); s.declarations.push({ personId: ME, name: b.typed_name || S.nameOf(ME), at: day(0) }); return { swms: swmsView(s) }; }],

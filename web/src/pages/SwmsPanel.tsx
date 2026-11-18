@@ -76,10 +76,11 @@ function SignDialog({ as, summary, onCancel, onSign, busy }: { as: 'pm' | 'tl' |
 function EditForm({ s, busy, onSave, onCancel }: { s: SwmsView; busy: boolean; onSave: (body: Record<string, unknown>) => void; onCancel: () => void }) {
 	const opts = useSwmsOptions();
 	const [address, setAddress] = useState(s.siteAddress);
+	const [activity, setActivity] = useState(s.workActivity ?? '');
 	const [hazards, setHazards] = useState<string[]>(s.hazards ?? []);
 	const [ppe, setPpe] = useState<string[]>(s.ppe);
 	const [steps, setSteps] = useState(s.tasks.map((t) => t.task).join('\n'));
-	const [seen] = useState<Record<string, unknown>>(() => ({ site_address: s.siteAddress, hazards: s.hazards ?? [], ppe: s.ppe, swms_tasks: s.tasks }));
+	const [seen] = useState<Record<string, unknown>>(() => ({ site_address: s.siteAddress, work_activity: s.workActivity ?? '', hazards: s.hazards ?? [], ppe: s.ppe, swms_tasks: s.tasks }));
 	const locked = new Set(s.ppe); // PPE already saved only ever grows
 	const toggleHazard = (key: string, on: boolean) => {
 		setHazards(on ? [...hazards, key] : hazards.filter((h) => h !== key));
@@ -93,7 +94,7 @@ function EditForm({ s, busy, onSave, onCancel }: { s: SwmsView; busy: boolean; o
 			onSubmit={(e) => {
 				e.preventDefault();
 				// Only what changed is sent, with the values first shown, so a save never overwrites someone else's change unseen.
-				const changes = editDiff(seen, { site_address: address, hazards, ppe, swms_tasks: steps.split('\n').map((l) => l.trim()).filter(Boolean).map((task) => ({ task })) });
+				const changes = editDiff(seen, { site_address: address, work_activity: activity.trim(), hazards, ppe, swms_tasks: steps.split('\n').map((l) => l.trim()).filter(Boolean).map((task) => ({ task })) });
 				if (changes) onSave(changes);
 				else onCancel();
 			}}
@@ -101,6 +102,10 @@ function EditForm({ s, busy, onSave, onCancel }: { s: SwmsView; busy: boolean; o
 			<label>
 				<span className="toolbar__label">Site address</span>
 				<input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={2000} />
+			</label>
+			<label>
+				<span className="toolbar__label">Work activity</span>
+				<textarea rows={3} value={activity} onChange={(e) => setActivity(e.target.value)} maxLength={9000} placeholder="What the work is, for example: install two illuminated pylon signs" />
 			</label>
 			<fieldset className="check-grid">
 				<legend className="toolbar__label">High-risk work on this job</legend>
@@ -173,6 +178,8 @@ export function SwmsPanel({ swmsId, roles, myPersonId, assignees }: { swmsId: st
 				<dd>{s.number || '-'}</dd>
 				<dt>Site address</dt>
 				<dd>{s.siteAddress || '-'}</dd>
+				<dt>Work activity</dt>
+				<dd style={{ whiteSpace: 'pre-wrap' }}>{s.workActivity || '-'}</dd>
 				<dt>High-risk work</dt>
 				<dd>{(s.hazards ?? []).length ? (s.hazards ?? []).map(hazardLabel).join('; ') : 'None ticked'}</dd>
 				<dt>PPE</dt>
