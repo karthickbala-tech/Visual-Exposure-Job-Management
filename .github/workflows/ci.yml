@@ -1,0 +1,44 @@
+# Checks every push and pull request: backend tests and the web app build and lint.
+# It does not deploy: deploys to Catalyst are done by hand when the owner says (see progress.md).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/api/package-lock.json
+      # The root has no node_modules; the tests use the api function's packages (zod and others).
+      - run: npm ci --prefix functions/api
+      - run: node --test "tests/**/*.test.js"
+        env:
+          NODE_PATH: functions/api/node_modules
+
+  web:
+    name: Web build and lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx oxlint src
