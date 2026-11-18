@@ -46,7 +46,10 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 **18 Nov: Phase 5 checked, Phase 6 started** (`abb207a`, pushed, not deployed).
 - Phase 5 (integrations) is blocked on the client except one guess: task WorkDrive folders need the CRM Deal fields that hold the Design / Fab / Install parent folders (FSD 5.15) and FSD question 6 (subtask folders). CRM Deal / Assets / Sites pushes need the field names. SWMS PDF is already served by `GET /swms/:id/pdf`.
 - Phase 6, optimistic concurrency (FSD section 10): task details, task manage and job forms send only changed fields plus `expected` (the values first shown); `PATCH /tasks/:id` and `/jobs/:id` answer 409 `changed_elsewhere` when another save changed one of those fields. Compared by field, not MODIFIEDTIME, so booked-hours or stage updates never block an edit. Fab spec edits now merge (only sent keys change). Helpers: `lib/domain/concurrency.js`, `web/src/lib/editDiff.ts`. Tests 345 pass; build passes; oxlint no errors.
-- Next in Phase 6: the same check on issues and SWMS edits if wanted; CI (GitHub Actions running the backend tests and the web build); idempotency keys on create actions (FSD section 10).
+- Same check on issues and SWMS (`455e7d7`): issue dialog sends `expected`; SWMS form sends only changed fields; stored JSON lists compared whole.
+- Create actions run once (`2e31bc0`, `lib/idempotency.js`, `once()` in `functions/api/routes.js`): the same person, address and fields within 2 minutes gets the first answer, a copy still running gets 409 `in_progress`, a failed create leaves no mark. Claim = a cache put that fails if the key exists, so no cache get on the normal path. Not on subtasks (no fields). Needs `npm run sync` before deploy (done locally).
+- CI (`d9f001c`, `.github/workflows/ci.yml`): backend tests and web build and lint on every push and PR; no deploy step on purpose. `gh` is not signed in on this machine; run status read from the public GitHub API.
+- Tests 350 pass. Phase 6 left: confirm in the Catalyst console which crons exist (GO_LIVE.md section 4 lists only drain_outbox as created; the weekly reports, maintenance and compliance handlers exist in `lib/jobs/registry.js`), Creator migration script (needs the client's data export).
 
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
