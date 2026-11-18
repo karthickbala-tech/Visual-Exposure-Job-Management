@@ -189,6 +189,7 @@ router.add('PATCH', '/companies/:id', withCtx(async (ctx, { req, params }) => ok
 router.add('GET', '/sites', withCtx(async (ctx, { url }) => ok(await directory.listSites(ctx, parseQuery(url)))));
 router.add('POST', '/sites', once(async (ctx, { body }) => await directory.createSite(ctx, body)));
 router.add('PATCH', '/sites/:id', withCtx(async (ctx, { req, params }) => ok(await directory.updateSite(ctx, params.id, await readJson(req)))));
+router.add('POST', '/sites/:id/crm-refresh', withCtx(async (ctx, { params }) => ok(await directory.refreshSiteFromCrm({ ...ctx, zoho: zoho() }, params.id))));
 router.add('GET', '/jobs/:id/signs', withCtx(async (ctx, { params }) => ok(await directory.listSigns(ctx, params.id))));
 router.add('GET', '/jobs/:id/sign-groups', withCtx(async (ctx, { params }) => ok(await quotes.listSignGroups(ctx, params.id))));
 router.add('POST', '/jobs/:id/sync-quotes', withCtx(async (ctx, { params }) => ok(await quotes.syncJobQuotes({ ...ctx, zoho: zoho() }, params.id))));

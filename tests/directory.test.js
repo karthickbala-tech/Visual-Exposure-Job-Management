@@ -97,3 +97,33 @@ test('company rates are for managers only: seen, saved and kept on a partial upd
 	const fm = w.as(['fab_manager']);
 	assert.ok('rates' in (await dir.listCompanies(fm)).items[0], 'a fab manager sees rates');
 });
+
+test('site contact from the CRM: does nothing until the fields are mapped; then fills only mapped, non-empty fields', async () => {
+	const crmSite = require('../lib/domain/crmSite');
+	assert.deepEqual(crmSite.SITE_CONTACT_FIELDS, {}, 'nothing is read from the CRM until the client sends the field names');
+	const map = { contact_name: 'Site_Contact', phone: 'Site_Phone', business_hours: 'Hours', bogus: 'X' };
+	assert.deepEqual(crmSite.contactFromCrmSite({ Site_Contact: { name: ' Jo ', id: '9' }, Site_Phone: 400111222, Hours: '', X: 'y' }, map), { contact_name: 'Jo', phone: '400111222' });
+
+	const w = makeWorld();
+	const reads = [];
+	const zoho = { crm: { getRecord: async (module, id) => (reads.push([module, id]), { Site_Contact: 'Jo Smith', Site_Phone: '0400 111 222', Hours: '' }) } };
+	const site = (await dir.createSite(w.ctx, { name: 'Westfield', contact_name: 'Old', business_hours: '9-5' })).item;
+
+	const off = await dir.refreshSiteFromCrm({ ...w.ctx, zoho }, site.id);
+	assert.equal(off.updated, false);
+	assert.match(off.reason, /not set up/);
+	assert.equal(reads.length, 0, 'no CRM call while unmapped');
+
+	await rejects(dir.refreshSiteFromCrm({ ...w.ctx, zoho }, site.id, map), 409, 'no_crm_site');
+	w.db.sites[0].crm_site_id = '5550001';
+	await rejects(dir.refreshSiteFromCrm({ ...w.ctx, zoho: null }, site.id, map), 503);
+	await rejects(dir.refreshSiteFromCrm({ ...w.as(['viewer']), zoho }, site.id, map), 403);
+
+	const out = await dir.refreshSiteFromCrm({ ...w.ctx, zoho }, site.id, map);
+	assert.deepEqual(reads.at(-1), ['Sites', '5550001']);
+	assert.deepEqual([out.updated, out.fields], [true, ['contact_name', 'phone']]);
+	assert.equal(out.item.contactName, 'Jo Smith');
+	assert.equal(out.item.phone, '0400 111 222');
+	assert.equal(out.item.businessHours, '9-5', 'an empty CRM field keeps what was typed');
+	assert.equal((await dir.refreshSiteFromCrm({ ...w.ctx, zoho }, site.id, map)).updated, false, 'nothing new, no write');
+});
