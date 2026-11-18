@@ -43,6 +43,11 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 - Tests 340 pass; oxlint 10 accepted warnings. Mock now runs as project_manager (MOCK_ROLES) to show a role dashboard.
 - **Left for the client review (optional, not FSD):** bulk task actions, job activity feed, job On Hold / Cancel by hand, hours-not-filled list, compliance "Not filled in" rows and clickable tiles, task delete from the app.
 
+**18 Nov: Phase 5 checked, Phase 6 started** (`abb207a`, pushed, not deployed).
+- Phase 5 (integrations) is blocked on the client except one guess: task WorkDrive folders need the CRM Deal fields that hold the Design / Fab / Install parent folders (FSD 5.15) and FSD question 6 (subtask folders). CRM Deal / Assets / Sites pushes need the field names. SWMS PDF is already served by `GET /swms/:id/pdf`.
+- Phase 6, optimistic concurrency (FSD section 10): task details, task manage and job forms send only changed fields plus `expected` (the values first shown); `PATCH /tasks/:id` and `/jobs/:id` answer 409 `changed_elsewhere` when another save changed one of those fields. Compared by field, not MODIFIEDTIME, so booked-hours or stage updates never block an edit. Fab spec edits now merge (only sent keys change). Helpers: `lib/domain/concurrency.js`, `web/src/lib/editDiff.ts`. Tests 345 pass; build passes; oxlint no errors.
+- Next in Phase 6: the same check on issues and SWMS edits if wanted; CI (GitHub Actions running the backend tests and the web build); idempotency keys on create actions (FSD section 10).
+
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
 Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last two commits, `acf7309` and `37cbab7`, which were never pushed) with web. Built the 11 small ones, one commit each, all pushed to `feat/backend-foundation` (`1572468` to `b13cd44`). **Not deployed.**
