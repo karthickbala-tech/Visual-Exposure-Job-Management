@@ -42,6 +42,8 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 					style={bare}
 					onSubmit={(e) => {
 						e.preventDefault();
+						// TSK-6: the same check the server makes, so the person hears it before saving.
+						if (dates.scheduled_date && dates.required_finish && dates.scheduled_date > dates.required_finish) return notify('The scheduled date cannot be after the required finish date.', 'error');
 						const body: Record<string, unknown> = {};
 						if (dates.scheduled_date) body.scheduled_date = dates.scheduled_date;
 						if (dates.required_finish) body.required_finish = dates.required_finish;
@@ -58,8 +60,8 @@ export function ManagePanel({ taskId, scheduled, finish, quoted, assignees, canS
 						});
 					}}
 				>
-					<label><span className="toolbar__label">Scheduled</span><input type="date" value={dates.scheduled_date} onChange={(e) => setDates({ ...dates, scheduled_date: e.target.value })} /></label>
-					<label><span className="toolbar__label">Required finish</span><input type="date" value={dates.required_finish} onChange={(e) => setDates({ ...dates, required_finish: e.target.value })} /></label>
+					<label><span className="toolbar__label">Scheduled</span><input type="date" value={dates.scheduled_date} max={dates.required_finish || undefined} onChange={(e) => setDates({ ...dates, scheduled_date: e.target.value })} /></label>
+					<label><span className="toolbar__label">Required finish</span><input type="date" value={dates.required_finish} min={dates.scheduled_date || undefined} onChange={(e) => setDates({ ...dates, required_finish: e.target.value })} /></label>
 					<label><span className="toolbar__label">Quoted hours</span><input type="number" min={0} step={0.25} inputMode="decimal" value={dates.quoted_hours} onChange={(e) => setDates({ ...dates, quoted_hours: e.target.value })} /></label>
 					<label><span className="toolbar__label">Cost Type</span><select value={cost} onChange={(e) => setCost(e.target.value)}><option value="">Not set</option><option>Fab</option><option>Parent</option></select></label>
 					<button className="btn" disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save'}</button>
@@ -159,6 +161,45 @@ export function HoursPanel({ taskId, assignees, isManager }: { taskId: string; a
 				<button className="btn" disabled={add.isPending || !f.hours}>{add.isPending ? 'Saving…' : 'Book hours'}</button>
 			</form>
 			<p className="muted" style={{ marginTop: 8 }}>More than 14 hours in a day gives a warning; more than 16 is refused.</p>
+		</Card>
+	);
+}
+
+/**
+ * The task's notes (TSK-6): the crew on the task and managers can change them, also once the task is finished; the
+ * server allows a field worker no other field. Without `canEdit` the notes are only shown.
+ */
+export function NotesPanel({ taskId, notes, canEdit }: { taskId: string; notes?: string | null; canEdit: boolean }) {
+	const update = useUpdateTask(taskId);
+	const { notify } = useToast();
+	const [text, setText] = useState(notes ?? '');
+	const [seen, setSeen] = useState<Record<string, unknown>>(() => ({ notes: notes ?? '' }));
+	if (!canEdit) return notes ? <Card title="Notes"><p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{notes}</p></Card> : null;
+	return (
+		<Card title="Notes">
+			<form
+				className="stack"
+				onSubmit={(e) => {
+					e.preventDefault();
+					const changes = editDiff(seen, { notes: text.trim() });
+					if (!changes) return notify('Nothing to save');
+					update.mutate(changes, {
+						onSuccess: () => {
+							setSeen((s) => afterSave(s, changes));
+							notify('Notes saved');
+						},
+						onError: (er) => notify(errText(er), 'error'),
+					});
+				}}
+			>
+				<label>
+					<span className="toolbar__label">Notes for this task</span>
+					<textarea rows={3} value={text} maxLength={9000} onChange={(e) => setText(e.target.value)} style={{ width: '100%' }} />
+				</label>
+				<div>
+					<button className="btn" disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save notes'}</button>
+				</div>
+			</form>
 		</Card>
 	);
 }

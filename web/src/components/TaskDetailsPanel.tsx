@@ -78,7 +78,7 @@ export function TaskDetailsPanel({ taskId, type, name, kind, description, propos
 						<input type={x.type === 'number' ? 'number' : 'text'} min={x.type === 'number' ? 0 : undefined} maxLength={200} value={vals[x.key] ?? ''} onChange={(e) => setVals({ ...vals, [x.key]: e.target.value })} />
 					</label>
 				))}
-				<label style={{ flex: '1 1 100%' }}><span className="toolbar__label">Notes</span><textarea rows={2} value={f.description} maxLength={9000} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
+				<label style={{ flex: '1 1 100%' }}><span className="toolbar__label">Description</span><textarea rows={2} value={f.description} maxLength={9000} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
 				{type === 'install' && (
 					<fieldset style={{ flex: '1 1 100%', border: 0, padding: 0, margin: 0 }}>
 						<legend className="toolbar__label">Hired equipment</legend>

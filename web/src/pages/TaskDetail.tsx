@@ -8,7 +8,7 @@ import { useToast } from '../components/toast';
 import { BackLink, Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
 import { SwmsPanel } from './SwmsPanel';
-import { HoursPanel, ManagePanel, RatingPanel, StageActions } from './TaskManage';
+import { HoursPanel, ManagePanel, NotesPanel, RatingPanel, StageActions } from './TaskManage';
 import { TaskDetailsPanel } from '../components/TaskDetailsPanel';
 import { TaskHistory } from '../components/TaskHistory';
 import { NextStepCard } from '../components/CrewCards';
@@ -90,6 +90,8 @@ export function TaskDetail() {
 			{me.data?.permissions.assignPeople && !DONE.includes(task.stage) && (
 				<TaskDetailsPanel key={task.ROWID + (task.kind ?? '')} taskId={task.ROWID} type={task.task_type} name={task.name} kind={task.kind} description={task.description} proposedHours={task.proposed_hours} spec={task.spec} started={['In Progress', 'Manager Review'].includes(task.stage)} />
 			)}
+
+			<NotesPanel key={task.ROWID} taskId={task.ROWID} notes={task.notes} canEdit={iAmAssigned || !!me.data?.permissions.assignPeople} />
 
 			<TaskHistory taskId={task.ROWID} />
 
