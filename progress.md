@@ -51,6 +51,13 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 - CI (`d9f001c`, `.github/workflows/ci.yml`): backend tests and web build and lint on every push and PR; no deploy step on purpose. `gh` is not signed in on this machine; run status read from the public GitHub API.
 - Tests 350 pass. Phase 6 left: crons checked 18 Nov via the Catalyst MCP (account karthickbalai, org 60093485853): all five exist, are enabled and ran with status 200 (GO_LIVE.md section 4), Creator migration script (needs the client's data export).
 
+**18 Nov, later: small backend items and layout checks** (`1a53fbe` to `910031b`, pushed, not deployed).
+- Site Code on sites (contacts JSON, no column). SWMS Work Activity: **new column `swms.work_activity` (text) added in Development via the MCP**; add it in AU too. Equipment history now records automatic off-hire, the daily maintenance run and finished maintenance tasks (with a reason, "Automatic" when no person). Workshop location delete (admins, refused while equipment/chemicals are there). Hours pay split columns Single / x1.5 / x2 / No times (from the stored split; plain hours = No times), in the totals row and CSV.
+- Not built on purpose: rating role (owner decision: not stored); site contact from the CRM site (needs CRM field names); person do-not-contact (needs a person column; ask first).
+- Layout scan (scratch Playwright on installed Chrome, mock only): 22 pages x 7 sizes x light/dark = 308 checks, now 0 flagged. Fixed: job page measured 825 px too wide (sr-only label escaping .table-wrap; .table-wrap is now position: relative). Sidebar overflow from the earlier audit is gone. Duplicate CSS rules merged (issue board padding, card-with-grid flex).
+- Still open (owner decisions, not changed): heading scale; brand green #22c55e vs #68b04d; collapsed sidebar look; Home content. Real-data checks of checklists, map, timeline, variance still need the deployed site.
+- Tests 352 pass; build passes; oxlint 0 errors. The Catalyst MCP is connected (account karthickbalai); see the memory note before using it (List_All_Functions returns secrets).
+
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
 Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last two commits, `acf7309` and `37cbab7`, which were never pushed) with web. Built the 11 small ones, one commit each, all pushed to `feat/backend-foundation` (`1572468` to `b13cd44`). **Not deployed.**
