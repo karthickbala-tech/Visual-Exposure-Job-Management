@@ -72,13 +72,20 @@ function workerColumns(stateFor: (id: string) => { label: string; act: number },
 }
 const WORKER_WIDTHS = gridWidths(workerColumns(() => ({ label: '', act: 0 }), true, true));
 
-const COMPANY_COLUMNS: GridColumn<CompanyItem>[] = [
-	{ key: 'name', label: 'Company', width: 260, cell: (c) => <strong>{c.name}</strong> },
-	{ key: 'kind', label: 'Type', width: 150, cell: (c) => <Chip status={c.kind} /> },
-	{ key: 'state', label: 'State', width: 110, cell: (c) => c.state || '-' },
-	{ key: 'contact', label: 'Contact', width: 220, cell: (c) => c.contactName || c.email || c.phone || '-' },
-];
-const COMPANY_WIDTHS = gridWidths(COMPANY_COLUMNS);
+/** Company rows (CMP-1). Documents: how many the company has, and a button to list them (from the records already loaded). */
+function companyColumns(docCount: (id: string) => number, openDocs: (c: CompanyItem) => void): GridColumn<CompanyItem>[] {
+	return [
+		{ key: 'name', label: 'Company', width: 260, cell: (c) => <strong>{c.name}</strong> },
+		{ key: 'kind', label: 'Type', width: 150, cell: (c) => <Chip status={c.kind} /> },
+		{ key: 'state', label: 'State', width: 110, cell: (c) => c.state || '-' },
+		{ key: 'contact', label: 'Contact', width: 220, cell: (c) => c.contactName || c.email || c.phone || '-' },
+		{ key: 'docs', label: 'Documents', width: 140, cell: (c) => {
+			const n = docCount(c.id);
+			return n ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => openDocs(c)} aria-label={`Show the ${n === 1 ? 'document' : `${n} documents`} of ${c.name}`}>{n} {n === 1 ? 'document' : 'documents'}</button> : <span className="muted">None</span>;
+		} },
+	];
+}
+const COMPANY_WIDTHS = gridWidths(companyColumns(() => 0, () => {}));
 
 /** Columns of the tickets and inductions list, or of the company documents list. */
 function recordColumns(docs: boolean): GridColumn<ComplianceItem>[] {
@@ -172,6 +179,12 @@ export function People() {
 	/** Active people on the VE workers and Subcontractors tabs. */
 	const tabCount = (k: 've' | 'sub') => activeAll.filter((p) => ((p as { person_kind?: string }).person_kind === 'subcontractor') === (k === 'sub')).length;
 	const goStatus = (s: string) => { setTab('tickets'); setApplied({ ...applied, status: s }); };
+	const docsOf = useMemo(() => {
+		const m = new Map<string, number>();
+		for (const i of all) if (i.kind === 'company_document' && i.companyId) m.set(i.companyId, (m.get(i.companyId) ?? 0) + 1);
+		return m;
+	}, [all]);
+	const openDocs = (c: CompanyItem) => { const f = { ...applied, status: '', text: c.name }; setTab('docs'); setApplied(f); setDraft(f); };
 
 	const onRecords = tab === 'tickets' || tab === 'docs';
 	const onWorkers = tab === 've' || tab === 'sub';
@@ -282,7 +295,7 @@ export function People() {
 						{subs.length > 0 && <TableFooter shown={subs.length} total={people.filter((p) => (p as { person_kind?: string }).person_kind === 'subcontractor').length} />}
 						{companies.isSuccess && companies.data.items.length > 0 && (
 							<>
-								<ResizableGrid layout={companiesGrid} label="Companies" columns={COMPANY_COLUMNS} rows={companyRows} rowKey={(c) => c.id} empty="Nothing matches." />
+								<ResizableGrid layout={companiesGrid} label="Companies" columns={companyColumns((id) => docsOf.get(id) ?? 0, openDocs)} rows={companyRows} rowKey={(c) => c.id} empty="Nothing matches." />
 								<TableFooter shown={companyRows.length} total={companies.data.items.filter((c) => c.kind !== 'internal').length} />
 							</>
 						)}
