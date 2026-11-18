@@ -54,11 +54,19 @@ Never put these in the repository. The development ids hard-coded as fallbacks i
 
 All run the `jobs` function, with the parameter `job`.
 
-| Job (`job` parameter) | Schedule | State |
-|---|---|---|
-| `compliance-due` | daily 07:00 Melbourne | created in Dev 3 Nov 2026 as cron `compliance_due_daily` (expression `0 7 * * *`, Australia/Melbourne); **first run not yet confirmed** |
-| `drain-outbox` | every 5 minutes | created in Dev 3 Nov 2026 as cron `drain_outbox_5min` (expression `*/5 * * * *`); **first run not yet confirmed**. The API echoes `cron_detail` hour/minute 0 for both, so check `success_count` in the console after the first interval |
-| `weekly-hours-report`, `weekly-issues-report`, `maintenance-tasks`, `profit-digest`, `mdm-sync` | per FSD | **not built** |
+**Development, checked 18 Nov 2026 through the Catalyst MCP** (cron settings and the `jobs` function's access log only: run times and status, no log text or data). All five crons are enabled, run the `jobs` function in pool `ve_jobs_pool` (256 MB), time zone Australia/Melbourne, no retries. The crons' success/failure counters always show 0 in Catalyst; the access log is the real record.
+
+| Cron | `job` parameter | Schedule | Seen running |
+|---|---|---|---|
+| `compliance_due_daily` | `compliance-due` | `0 7 * * *` daily 07:00 | yes, daily (status 200) |
+| `maintenance_daily` | `maintenance-tasks` | `30 7 * * *` daily 07:30 | yes, daily (status 200) |
+| `weekly_hours_report` | `weekly-hours-report` | `0 7 * * 3` Wednesday 07:00 | yes, Wed 11 Nov (status 200) |
+| `weekly_issues_report` | `weekly-issues-report` | `0 7 * * 4` Thursday 07:00 | yes, Thu 12 Nov (status 200) |
+| `drain_outbox_5min` (old name kept) | `crm-sync` | `0 * * * *` hourly | yes, every hour (status 200). Pulls won CRM deals, then drains the outbox |
+
+- Emails from these jobs are skipped and logged until `MAIL_FROM` is set, so a 200 means the job ran, not that mail went out.
+- `profit-digest` and `mdm-sync` have no cron and no handler on purpose: the profit email is inactive in Creator (FSD question 8) and MDM needs credentials.
+- Production: create the same five in the AU project (rename `drain_outbox_5min` to `crm_sync_hourly` there).
 
 ## 5. Connections (needs the rotated OAuth client)
 

@@ -49,7 +49,7 @@ Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed 
 - Same check on issues and SWMS (`455e7d7`): issue dialog sends `expected`; SWMS form sends only changed fields; stored JSON lists compared whole.
 - Create actions run once (`2e31bc0`, `lib/idempotency.js`, `once()` in `functions/api/routes.js`): the same person, address and fields within 2 minutes gets the first answer, a copy still running gets 409 `in_progress`, a failed create leaves no mark. Claim = a cache put that fails if the key exists, so no cache get on the normal path. Not on subtasks (no fields). Needs `npm run sync` before deploy (done locally).
 - CI (`d9f001c`, `.github/workflows/ci.yml`): backend tests and web build and lint on every push and PR; no deploy step on purpose. `gh` is not signed in on this machine; run status read from the public GitHub API.
-- Tests 350 pass. Phase 6 left: confirm in the Catalyst console which crons exist (GO_LIVE.md section 4 lists only drain_outbox as created; the weekly reports, maintenance and compliance handlers exist in `lib/jobs/registry.js`), Creator migration script (needs the client's data export).
+- Tests 350 pass. Phase 6 left: crons checked 18 Nov via the Catalyst MCP (account karthickbalai, org 60093485853): all five exist, are enabled and ran with status 200 (GO_LIVE.md section 4), Creator migration script (needs the client's data export).
 
 ## 0. 17 Nov 2026 (Kalyani's session): react-app ports, batch 1
 
