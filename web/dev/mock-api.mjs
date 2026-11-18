@@ -60,7 +60,7 @@ const days = week();
 const cell = (fab = 0, install = 0, workshop = 0, design = 0, unbilled = 0) => ({ fab, install, workshop, design, other: 0, unbilled, final: fab + install + workshop + design });
 const sum = (cells) => cells.reduce((a, c) => ({ fab: a.fab + c.fab, install: a.install + c.install, workshop: a.workshop + c.workshop, design: a.design + c.design, other: 0, unbilled: a.unbilled + c.unbilled, final: a.final + c.final }), cell());
 /** Sample pay split per person: each day's hours as a weekday shift (8 h single, 2 h x1.5, the rest x2); one person booked plain hours. */
-const payOf = (cells, plain) => { const p = { single: 0, x1_5: 0, x2: 0, noTimes: 0 }; for (const c of cells) { const h = c.total; if (plain) p.noTimes += h; else { p.single += Math.min(h, 8); p.x1_5 += Math.min(Math.max(h - 8, 0), 2); p.x2 += Math.max(h - 10, 0); } } return p; };
+const payOf = (cells, plain) => { const p = { single: 0, x1_5: 0, x2: 0, noTimes: 0 }; for (const c of cells) { const h = c.fab + c.install + c.workshop + c.design + c.other; if (plain) p.noTimes += h; else { p.single += Math.min(h, 8); p.x1_5 += Math.min(Math.max(h - 8, 0), 2); p.x2 += Math.max(h - 10, 0); } } return p; };
 const sumPay = (list) => list.reduce((t, p) => ({ single: t.single + p.single, x1_5: t.x1_5 + p.x1_5, x2: t.x2 + p.x2, noTimes: t.noTimes + p.noTimes }), { single: 0, x1_5: 0, x2: 0, noTimes: 0 });
 const hoursRows = () => {
 	const rows = [
