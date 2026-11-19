@@ -110,7 +110,17 @@ Also in this batch: JOB-4 (a task created outside a job is refused with the fami
 
 ## Still to build (in order)
 
-1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`).
+1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`), the CRM site field names (site contact refresh is built but off).
+
+Nothing else is left to build without that input (checked in code on 18 Nov 2026: the TSK-6, CHK-8 and CMP-1 items listed as partly built in batch 8 were finished in batches 9 and 10, with their screens).
+
+## Added 18 Nov 2026
+
+- **Person do-not-contact (CMP-3):** new column `person.do_not_contact` (Development; add in AU). The person gets no compliance reminder; managers still do. Tick on the worker form. Switch `FEATURES.personDoNotContact` in `lib/services/people.js`.
+- **Site contact from the CRM site:** `POST /sites/:id/crm-refresh` (sites edit permission) fills only mapped, non-empty contact fields. Off until `SITE_CONTACT_FIELDS` in `lib/domain/crmSite.js` has the CRM field names. No button yet.
+- **Crons tested:** `tests/scheduled.test.js` runs the five live crons through the job registry as the system.
+- **Screens (TSK-6, CMP-1):** a Notes card on the task page for the crew and managers (also on finished tasks), the date-order check on the manage form, and a document count per company that opens its documents.
+- Deployed to Development on 18 Nov 2026 (`23cffe7`). 362 tests.
 
 ## Also done outside the 64 requirements
 

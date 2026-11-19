@@ -1,6 +1,21 @@
 # Visual Exposure - Session handover
 
-Branch `feat/backend-foundation`. Last pushed code commit `f2845fd`. **Deployed to Catalyst Development on 11 Nov 2026**: api, jobs, events (with the `.env` variables) and the web client. There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
+Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 18 Nov 2026** (`23cffe7`): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). Work committed after that is not deployed (see 0b). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
+
+## 0b. 18 and 19 Nov 2026 (Kalyani's session): merge to main, deploy, layout and accessibility
+
+**18 Nov**
+- Checked the 63 branch commits against Karthick's `CLAUDE.md` (pasted in chat; not yet in the repo), then fast-forwarded `main` to the branch. The two old local commits on `main` from 6 Nov (react-app only: jobFields, ui-kit) were not merged; web already has both. They are kept on the local branch `local-main-6nov`; local `main` now follows `origin/main`.
+- Brand green: tried `#68b04d` (as `CLAUDE.md` says), the owner preferred and kept `#22c55e`. `CLAUDE.md` section 6 should say `#22c55e`.
+- TSK-6 screens (`f742ad8`): Notes card on the task page (crew on the task and managers, also when finished; the server allows field roles notes only). `notes` and `description` are separate task columns (checked in the live table); the box that saves `description` is now labelled Description. Manage form refuses a scheduled date after the required finish before saving.
+- CMP-1 (`23cffe7`): People > Subcontractors shows each company's document count; the button opens Company documents filtered to it (no new request).
+- Deployed to Development. The Catalyst CLI is now logged in as karthickbalai (was kalyanimhala54); the folder has no `.catalystrc`, so deploy with `catalyst deploy --org 60093485853 -p 105747000000013075`. API health OK; live bundle matched the local build.
+
+**19 Nov (pushed, not deployed)**
+- Person page crashed on the mock (no profile route); card now treats a missing field list as empty, mock serves the profile (`f205922`).
+- Layout (`6a18486`): overflow scan 25 routes x 7 sizes x 2 themes = 350, none flagged; a new clipping scan found the job form kept 3 columns on phones (now 3/2/1 by width), the job page pair cards had a 420px minimum (now capped at the screen), Equipment Status cut "Out of service" (column 150px).
+- Accessibility (`eda5a23`): own script (axe could not be downloaded), 23 pages, both themes. Names, labels, alt text complete; focus visible. Light-theme text colours darkened to 4.5:1: `--muted` `#556378`, `--brand-strong` `#166534`, `--link` `#2563eb`, `--info` `#0369a1`, `--danger` `#b91c1c`; bell badge `#dc2626`; sidebar role in light green; Completed - Closed `#2f6fca`. Left on purpose: white on the green buttons (owner decision) and faded other-month calendar days.
+- Tests 362 pass; web tsc and build pass.
 
 ## 0a. 17 Nov 2026 (Kalyani's session, later): FSD audit and Phase 1 task rules
 
@@ -134,6 +149,14 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 - Process: commit and push every change; deploy only when the owner says; never read `.env`; the owner's own edits are committed only when they ask.
 
 ## 7. Exact next step
+
+**Current (19 Nov 2026):**
+1. **You**: say "deploy" to put the 19 Nov fixes on Development; rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret), then `npm run deploy:env` with a complete `.env`.
+2. **Decisions**: white text on the green buttons (2.3:1; darker buttons or keep), collapsed sidebar look, Home content; ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
+3. **Client**: MDM credentials, `MAIL_FROM`, checklist and SWMS wording, CRM site field names, Creator export; then the review on Development.
+4. Then the AU move (`docs/GO_LIVE.md`), with the columns `swms.work_activity` and `person.do_not_contact`.
+
+**Older list (17 Nov, mostly done: Inter is in use, the layout checks ran):**
 1. **You, decide**: (a) Inter or Raleway: `CLAUDE.md` says Inter, but the code still uses Raleway. Confirm Inter, then I switch `--font` and the package. (b) Heading scale: collapse the 17/20/24/26/28px headings to one ramp? (c) Tooling: Context7 failed to connect; you said install the missing skills and Motion, but nothing is installed yet. Confirm which. (d) Commit the uncommitted type-token step now?
 2. **Me, next**: fix the `.side-nav` horizontal overflow, merge the duplicate `.issue-board` and `.grid-wrap` rules, then run the zoom (75–150%) and tablet checks with screenshots.
 3. **You, live site (from before)**: start an install or fab pre-job checklist as a team leader and as a member (the right questions each?), finish an install post-job one with the management review set to Yes (does an issue appear?), and open the Devices page. Send anything that looks wrong.
