@@ -8,7 +8,7 @@ const FILL: Record<string, { bg: string; ink: string }> = {
 	'On Hold': { bg: '#f7d56a', ink: '#1b1b1e' },
 	Completed: { bg: '#5fc15a', ink: '#10300d' },
 	'Approved & Completed': { bg: '#5fc15a', ink: '#10300d' },
-	'Completed - Closed': { bg: '#3a7bd5', ink: '#ffffff' },
+	'Completed - Closed': { bg: '#2f6fca', ink: '#ffffff' }, // white text 4.9:1 (was #3a7bd5, 4.2:1)
 	'Complete - Not Used': { bg: '#5fc15a', ink: '#10300d' },
 	Cancelled: { bg: '#d9d9db', ink: '#1b1b1e' },
 	'Awaiting Scheduling': { bg: '#c6c6c7', ink: '#1b1b1e' },

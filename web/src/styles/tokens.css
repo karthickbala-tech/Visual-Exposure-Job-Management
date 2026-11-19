@@ -30,11 +30,11 @@
 
 	/* Brand identity */
 	--brand: #22c55e;
-	--brand-strong: #15803d;
+	--brand-strong: #166534; /* text green: 6:1 on the page (was #15803d, 4.3:1) */
 	--brand-soft: #ecfdf5;
 	--on-brand: #ffffff;
 	--brand-hover: #16a34a;
-	--link: #3b82f6;
+	--link: #2563eb; /* 5:1 on white (was #3b82f6, 3.7:1) */
 
 	/* Surfaces and neutral palette (slate with crisp canvas contrast) */
 	--bg: #eaeff5;
@@ -44,7 +44,7 @@
 	--surface-hover: #f8fafc;
 	--ink: #0f172a;
 	--ink-2: #334155;
-	--muted: #64748b;
+	--muted: #556378; /* secondary text: 4.9:1 or more on every light surface (was #64748b) */
 	--line: #cbd5e1;
 	--line-2: #e2e8f0;
 	--line-3: #94a3b8;
@@ -60,10 +60,10 @@
 	--side-border: rgba(255, 255, 255, 0.08);
 
 	/* Status indicators */
-	--danger: #ef4444;
+	--danger: #b91c1c; /* red text and badges: 6:1 (was #ef4444, 3.4:1); same as --err-ink */
 	--warn-ink: #92400e;
 	--warn: #f59e0b;
-	--info: #0284c7;
+	--info: #0369a1; /* 5.9:1 on white (was #0284c7, 4.1:1) */
 
 	--chip-gray-bg: #f1f5f9; --chip-gray-ink: #475569;
 	--chip-blue-bg: #eff6ff; --chip-blue-ink: #1d4ed8;

@@ -896,7 +896,7 @@ html, body, #root {
 	height: 16px;
 	padding: 0 4px;
 	border-radius: var(--radius-pill);
-	background: var(--danger);
+	background: #dc2626; /* white number 4.8:1, both themes */
 	color: #fff;
 	font-size: 10px;
 	font-weight: var(--fw-bold);
@@ -2973,7 +2973,7 @@ body.col-resizing, body.col-resizing * {
 
 .jpill--open { color: var(--warn-ink); border-color: color-mix(in srgb, var(--warn) 30%, var(--line)); }
 .jpill--prog { color: var(--info); border-color: color-mix(in srgb, var(--info) 30%, var(--line)); }
-.jpill--done { color: var(--brand); border-color: color-mix(in srgb, var(--brand) 30%, var(--line)); }
+.jpill--done { color: var(--brand-strong); border-color: color-mix(in srgb, var(--brand) 30%, var(--line)); }
 .jpill--late {
 	border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
 	background: color-mix(in srgb, var(--danger) 8%, var(--surface));
@@ -4878,6 +4878,7 @@ body.col-resizing, body.col-resizing * {
 /* Sidebar: the job-header colour (--side) with white text, in both themes */
 .sidebar, .sidebar .side-link, .sidebar .side-link svg, .sidebar .side-group-head, .sidebar .side-group-head svg,
 .sidebar .side-label, .sidebar .user-trigger, .sidebar .user-trigger .who, .sidebar .user-trigger .chev, .sidebar .rail-head { color: #fff; }
+.sidebar .user-trigger .who span { color: var(--brand); } /* role under the name: light green on the dark sidebar (7:1) */
 
 /* Job details: each table sits in its own inset panel, with padding around it, so it reads apart from the card */
 :is(.jsec, .card--loc, .card--sign, .card--crm) :is(.table-wrap, .grid-wrap) {
