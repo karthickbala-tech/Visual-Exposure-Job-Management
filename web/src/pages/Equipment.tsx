@@ -41,7 +41,7 @@ const EQ_COLUMNS: GridColumn<EquipmentItem>[] = [
 		</>
 	) },
 	{ key: 'location', label: 'Location', width: 170, cell: (e) => e.locationName ?? '-' },
-	{ key: 'status', label: 'Status', width: 130, cell: (e) => <Chip status={e.status} /> },
+	{ key: 'status', label: 'Status', width: 150, cell: (e) => <Chip status={e.status} /> },
 	{ key: 'last', label: 'Last checked', width: 140, cell: (e) => e.lastChecked ?? '-' },
 	{ key: 'every', label: 'Every', width: 110, right: true, cell: (e) => (e.frequencyDays ? `${e.frequencyDays} days` : '-') },
 	{ key: 'next', label: 'Next check', width: 220, cell: (e) => (

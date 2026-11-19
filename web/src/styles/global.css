@@ -1824,10 +1824,10 @@ input[type='file']::file-selector-button:hover {
 	margin: 0;
 }
 
-/* Job form 3 columns */
+/* Job form: 3 columns on a wide screen, 2 on a tablet, 1 on a phone (each column at least 260px) */
 .job-form {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 	gap: 18px;
 	padding: 16px;
 	background: var(--surface);
@@ -2834,7 +2834,7 @@ body.col-resizing, body.col-resizing * {
 
 .jd-pair {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); /* never wider than the screen (phone) */
 	gap: 20px;
 	margin-bottom: 4px;
 }
