@@ -152,7 +152,7 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 
 **Current (19 Nov 2026):**
 1. **You**: say "deploy" to put the 19 Nov fixes on Development; rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret), then `npm run deploy:env` with a complete `.env`.
-2. **Decisions**: white text on the green buttons (2.3:1; darker buttons or keep), collapsed sidebar look, Home content; ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
+2. **Decided 19 Nov (owner): leave as they are**: white text on the green buttons (2.3:1, accepted), the collapsed sidebar look, the Home content. Still ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
 3. **Client**: MDM credentials, `MAIL_FROM`, checklist and SWMS wording, CRM site field names, Creator export; then the review on Development.
 4. Then the AU move (`docs/GO_LIVE.md`), with the columns `swms.work_activity` and `person.do_not_contact`.
 
