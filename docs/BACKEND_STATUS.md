@@ -110,7 +110,7 @@ Also in this batch: JOB-4 (a task created outside a job is refused with the fami
 
 ## Still to build (in order)
 
-1. **Needs input from outside:** MDM device sync (ManageEngine credentials), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`), the CRM site field names (site contact refresh is built but off).
+1. **Needs input from outside:** MDM device sync with the client's account (built 19 Nov 2026 and tested against a fake MDM; to be shown on our own trial first, see GO_LIVE.md), real checklist and SWMS wording (and "Team Briefed"), the data-migration script (Creator export), email sender (`MAIL_FROM`), the CRM site field names (site contact refresh is built but off).
 
 Nothing else is left to build without that input (checked in code on 18 Nov 2026: the TSK-6, CHK-8 and CMP-1 items listed as partly built in batch 8 were finished in batches 9 and 10, with their screens).
 

@@ -58,7 +58,7 @@ test('dispatch survives a malformed payload and an unknown type', async () => {
 
 test('unknown job names are ignored, not thrown', async () => {
 	assert.deepEqual(await jobs.run('nope', {}, { log: silentLog }), { ran: false, reason: 'unknown_job' });
-	assert.deepEqual(await jobs.run('mdm-sync', {}, { log: silentLog }), { ran: false, reason: 'no_handler' });
+	assert.deepEqual(await jobs.run('profit-digest', {}, { log: silentLog }), { ran: false, reason: 'no_handler' });
 });
 
 test('values over the 10,000 character column limit are rejected before saving', async () => {

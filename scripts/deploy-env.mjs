@@ -21,10 +21,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+/** ManageEngine MDM (lib/integrations/mdm.js): its own refresh token; the others fall back to the ZOHO_ ones. */
+const MDM_KEYS = ['MDM_DC', 'MDM_CLIENT_ID', 'MDM_CLIENT_SECRET', 'MDM_REFRESH_TOKEN'];
+
 /** Which variables each function receives. Keys not listed for a function are never sent to it. */
 export const PLAN = {
-	api: ['APP_URL', 'STRATUS_BUCKET', 'CRM_WEBHOOK_SECRET', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID'],
-	jobs: ['APP_URL', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID'],
+	api: ['APP_URL', 'STRATUS_BUCKET', 'CRM_WEBHOOK_SECRET', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
+	jobs: ['APP_URL', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
 	events: ['APP_URL', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT'],
 };
 /** Without these the app misbehaves, so the deploy refuses to run (it would otherwise delete them from Catalyst). */

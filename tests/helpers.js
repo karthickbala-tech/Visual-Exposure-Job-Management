@@ -85,7 +85,11 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.locations = db.locations.filter((r) => String(r.ROWID) !== String(id));
 			},
 		},
-		devices: { list: async () => db.devices.map(clone) },
+		devices: {
+			list: async () => db.devices.map(clone),
+			insertMany: async (rows) => rows.forEach((row) => db.devices.push({ ROWID: nextId(), ...row })),
+			updateMany: async (rows) => rows.forEach((row) => patch(db.devices, row)),
+		},
 		jobs: {
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
 			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
@@ -157,6 +161,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		people: {
 			findByIds: async (ids) => byIds(db.people, ids).map(clone),
 			findByEmail: async (email) => clone(db.people.find((p) => p.email === email)),
+			findByEmails: async (emails) => db.people.filter((p) => p.email && emails.map((e) => String(e).toLowerCase()).includes(String(p.email).toLowerCase())).map(clone),
 			list: async ({ active } = {}) => db.people.filter((p) => active === undefined || (p.is_active !== false) === active).map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };

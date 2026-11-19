@@ -65,7 +65,9 @@ All run the `jobs` function, with the parameter `job`.
 | `drain_outbox_5min` (old name kept) | `crm-sync` | `0 * * * *` hourly | yes, every hour (status 200). Pulls won CRM deals, then drains the outbox |
 
 - Email is live in Development: `SMTP_USER`/`SMTP_PASS` (a Gmail app password) are set on all three functions, and `lib/mail.js` prefers SMTP over Catalyst Mail, so these jobs really send. A Catalyst Mail sender is also verified (single address; its domain is not verified). For production, decide between the Gmail SMTP and a sender on the client's own verified domain.
-- `profit-digest` and `mdm-sync` have no cron and no handler on purpose: the profit email is inactive in Creator (FSD question 8) and MDM needs credentials.
+- `profit-digest` has no cron and no handler on purpose: the profit email is inactive in Creator (FSD question 8).
+- `mdm-sync` (added 19 Nov 2026) pulls devices and last locations from ManageEngine MDM; it is skipped while `MDM_REFRESH_TOKEN` is not set. Cron to add once MDM is connected: `mdm_sync` (job pool `ve_jobs_pool`, function `jobs`, parameter `job=mdm-sync`), daily, or hourly for a demo. Admins can also run it from Admin > Integrations or the Devices page.
+- **MDM set-up (POC on our own trial at mdm.manageengine.in, client account later):** in the API console of the MDM account (accounts.zoho.in for the trial), Self Client > Generate Code with scope `MDMOnDemand.MDMInventory.READ`; put it in `.env` as `MDM_CODE` (and `MDM_DC=in`; `MDM_CLIENT_ID`/`MDM_CLIENT_SECRET` only if it is another OAuth client than the CRM one) and run `node scripts/zoho-token.mjs --mdm`; then `npm run deploy:env`. In the app, tick **In MDM** on each person whose phone is enrolled; their MDM user email must be the person's email. A device is only stored for such a person (the device table needs a person).
 - Production: create the same five in the AU project (rename `drain_outbox_5min` to `crm_sync_hourly` there).
 
 ## 5. Connections (needs the rotated OAuth client)
