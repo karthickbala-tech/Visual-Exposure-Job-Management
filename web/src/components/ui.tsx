@@ -132,6 +132,19 @@ export function fmtDate(value: string | null | undefined): string {
 	return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 
+/**
+ * A date and time for people (19 Nov 2026, 7:00 pm) in the viewer's time zone. Server times without a zone are UTC
+ * (Catalyst 'YYYY-MM-DD HH:mm:ss', see lib/time.js). Anything that is not a date and time is shown as it is.
+ */
+export function fmtDateTime(value: string | null | undefined): string {
+	if (!value) return '-';
+	const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(Z|[+-]\d{2}:?\d{2})?/.exec(value);
+	if (!m) return value;
+	const d = m[7] ? new Date(value.replace(' ', 'T')) : new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0)));
+	if (Number.isNaN(d.getTime())) return value;
+	return d.toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
 /** "Showing N of N" directly under a table, outside its scroll area, so the count always sits at the table's bottom edge. */
 export function TableFooter({ shown, total, children }: { shown: number; total?: number; children?: ReactNode }) {
 	return <p className="grid-foot">Showing {shown} of {total ?? shown}{children}</p>;

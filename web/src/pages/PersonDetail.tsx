@@ -38,6 +38,7 @@ function EditWorker({ p, isAdmin, onClose }: { p: PersonFull; isAdmin: boolean; 
 		hourly_rate: p.hourly_rate !== undefined && p.hourly_rate !== null ? String(p.hourly_rate) : '',
 		is_active: p.is_active !== false,
 		do_not_contact: p.do_not_contact === true,
+		mdm_enabled: p.mdm_enabled === true,
 	});
 	const emailBad = !!f.email && !EMAIL.test(f.email);
 	const rate = f.hourly_rate === '' ? undefined : Number(f.hourly_rate);
@@ -57,6 +58,7 @@ function EditWorker({ p, isAdmin, onClose }: { p: PersonFull; isAdmin: boolean; 
 						phone: f.phone.trim(),
 						...(f.email.trim() ? { email: f.email.trim() } : {}),
 						do_not_contact: f.do_not_contact,
+						mdm_enabled: f.mdm_enabled,
 						...(isAdmin ? { hourly_rate: rate, is_active: f.is_active } : {}),
 					},
 					{ onSuccess: () => { notify('Worker saved'); onClose(); }, onError: (er) => notify(errText(er), 'error') },
@@ -79,6 +81,7 @@ function EditWorker({ p, isAdmin, onClose }: { p: PersonFull; isAdmin: boolean; 
 				</>
 			)}
 			<label className="check" style={{ flex: '0 1 auto' }}><input type="checkbox" checked={f.do_not_contact} onChange={(e) => setF({ ...f, do_not_contact: e.target.checked })} /> Do not contact (no compliance reminder emails to this person; managers still get them)</label>
+			<label className="check" style={{ flex: '0 1 auto' }}><input type="checkbox" checked={f.mdm_enabled} onChange={(e) => setF({ ...f, mdm_enabled: e.target.checked })} /> In MDM (their company phone or tablet is tracked in ManageEngine MDM and shown on Devices)</label>
 			<button className="btn" disabled={update.isPending || !f.first_name.trim() || emailBad || rateBad}>{update.isPending ? 'Saving…' : 'Save'}</button>
 			<button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
 			{emailBad && <p role="alert">Enter a valid email address.</p>}
@@ -300,6 +303,7 @@ export function PersonDetail() {
 						<div className="fact"><dt>Phone</dt><dd>{p.phone ? <a href={`tel:${p.phone.replace(/\s+/g, '')}`}>{p.phone}</a> : '-'}</dd></div>
 						<div className="fact"><dt>Job title</dt><dd>{p.job_title || '-'}</dd></div>
 						{p.do_not_contact && <div className="fact"><dt>Contact</dt><dd>Do not contact (no reminder emails)</dd></div>}
+						<div className="fact"><dt>In MDM</dt><dd>{p.mdm_enabled ? 'Yes (device tracked)' : 'No'}</dd></div>
 						<div className="fact"><dt>Roles</dt><dd style={{ textTransform: 'capitalize' }}>{parseRoles(p.roles).map((r) => r.replace(/_/g, ' ')).join(', ') || '-'}</dd></div>
 						{isAdmin && <div className="fact"><dt>Hourly rate</dt><dd>{p.hourly_rate ? `$${Number(p.hourly_rate).toFixed(2)}` : '-'}</dd></div>}
 					</dl>

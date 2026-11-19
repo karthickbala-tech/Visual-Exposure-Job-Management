@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { useDevices, useMe, usePeople } from '../api/queries';
+import { useDevices, useMe, usePeople, useSyncMdm } from '../api/queries';
 import type { DeviceItem } from '../api/types';
 import { DeviceMap } from '../components/DeviceMap';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDateTime } from '../components/ui';
+import { useToast } from '../components/toast';
+import { mdmSyncText } from '../lib/mdmSync';
 import { ToolbarMenu } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
@@ -12,7 +14,7 @@ const COLUMNS: GridColumn<DeviceItem>[] = [
 	{ key: 'device', label: 'Device', width: 220, cell: (d) => [d.model, d.os].filter(Boolean).join(' / ') || '-' },
 	{ key: 'seen', label: 'Last seen', width: 240, cell: (d) => (
 		<>
-			{d.lastSeenAt ?? 'Never'}
+			{d.lastSeenAt ? fmtDateTime(d.lastSeenAt) : 'Never'}
 			{d.stale && <span className="chip chip-amber" style={{ marginLeft: 8 }}>Not seen for 24 h</span>}
 		</>
 	) },
@@ -33,7 +35,7 @@ interface WorkerRow { id: string; name: string; device: DeviceItem | null }
 const WORKER_COLUMNS: GridColumn<WorkerRow>[] = [
 	{ key: 'person', label: 'Worker', width: 220, cell: (w) => <strong>{w.name}</strong> },
 	{ key: 'device', label: 'Device', width: 240, cell: (w) => (w.device ? [w.device.model, w.device.os].filter(Boolean).join(' / ') || 'Device' : <span className="chip chip-amber">No device</span>) },
-	{ key: 'seen', label: 'Last seen', width: 220, cell: (w) => (w.device ? w.device.lastSeenAt ?? 'Never' : '-') },
+	{ key: 'seen', label: 'Last seen', width: 220, cell: (w) => (w.device ? (w.device.lastSeenAt ? fmtDateTime(w.device.lastSeenAt) : 'Never') : '-') },
 ];
 const WORKER_WIDTHS = gridWidths(WORKER_COLUMNS);
 type WorkerFilter = 'all' | 'with' | 'without';
@@ -43,6 +45,10 @@ export function Devices() {
 	const me = useMe();
 	const allowed = (me.data?.roles ?? []).some((r) => ['admin', 'project_manager', 'fab_manager', 'install_coordinator'].includes(r));
 	const list = useDevices(allowed);
+	// Administrators can pull from ManageEngine MDM now instead of waiting for the scheduled sync.
+	const isAdmin = (me.data?.roles ?? []).includes('admin');
+	const sync = useSyncMdm();
+	const { notify } = useToast();
 	const grid = useGridLayout('ve.grid.devices', WIDTHS);
 	const workerGrid = useGridLayout('ve.grid.device-workers', WORKER_WIDTHS);
 	const [view, setView] = useState<'list' | 'map' | 'workers'>('list');
@@ -71,6 +77,11 @@ export function Devices() {
 							</button>
 						))}
 					</div>
+					{isAdmin && (
+						<button type="button" className="btn btn-ghost" disabled={sync.isPending} onClick={() => sync.mutate(undefined, { onSuccess: (r) => notify(mdmSyncText(r), r.ran ? 'ok' : 'error'), onError: (e) => notify(e instanceof Error ? e.message : 'The device sync failed', 'error') })}>
+							{sync.isPending ? 'Syncing…' : 'Sync from MDM'}
+						</button>
+					)}
 					{view === 'list' && (
 						<ToolbarMenu label="View" ariaLabel="View options" align="right">
 							<p className="filter-pop__title">Row height</p>
@@ -106,7 +117,7 @@ export function Devices() {
 					{!allowed && me.isSuccess && <p className="table-empty">You do not have access to devices.</p>}
 					{allowed && list.isPending && <p role="status" className="table-empty">Loading…</p>}
 					{allowed && list.isError && <p role="alert">Could not load devices.</p>}
-					{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No devices yet. They appear once the device sync is switched on.</p>}
+					{list.isSuccess && list.data.items.length === 0 && <p className="table-empty">No devices yet. They come from ManageEngine MDM: the devices of people with "In MDM" ticked appear after the next sync{isAdmin ? ' (or press Sync from MDM)' : ''}.</p>}
 					{list.isSuccess && list.data.items.length > 0 && (
 						<ResizableGrid layout={grid} label="Devices" columns={COLUMNS} rows={list.data.items} rowKey={(d) => d.id} />
 					)}

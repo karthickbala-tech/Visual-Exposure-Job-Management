@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { mdmSyncText } from '../lib/mdmSync';
 import { RotateCw } from 'lucide-react';
-import { useAuthz, useCheckIntegrations, usePullWonDeals, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
+import { useAuthz, useCheckIntegrations, usePullWonDeals, useSyncMdm, useMe, useOutbox, useRetryOutbox, useSaveAuthz } from '../api/queries';
 import type { Matrix, Scope, Verb } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
@@ -209,6 +210,7 @@ function Outbox() {
 function Integrations() {
 	const check = useCheckIntegrations();
 	const pull = usePullWonDeals();
+	const syncMdm = useSyncMdm();
 	const row = (name: string, c?: { configured: boolean; ok: boolean; message: string }) => (
 		<tr key={name}>
 			<td data-label="Service" className="cell-primary">
@@ -227,9 +229,18 @@ function Integrations() {
 				<button className="btn btn-ghost" disabled={pull.isPending} onClick={() => pull.mutate()}>
 					{pull.isPending ? 'Pulling…' : 'Pull won deals from CRM now'}
 				</button>
+				<button className="btn btn-ghost" disabled={syncMdm.isPending} onClick={() => syncMdm.mutate()}>
+					{syncMdm.isPending ? 'Syncing…' : 'Sync devices from MDM now'}
+				</button>
 				{check.isError && <p role="alert">{check.error.message}</p>}
 				{pull.isError && <p role="alert">{pull.error.message}</p>}
+				{syncMdm.isError && <p role="alert">{syncMdm.error.message}</p>}
 			</div>
+			{syncMdm.data && (
+				<p role="status" style={{ padding: '0 16px' }}>
+					{mdmSyncText(syncMdm.data)}
+				</p>
+			)}
 			{pull.data && (
 				<p role="status" style={{ padding: '0 16px' }}>
 					{pull.data.ran
@@ -238,7 +249,7 @@ function Integrations() {
 				</p>
 			)}
 			<p className="muted" style={{ padding: '0 16px' }}>
-				Makes one small read at Zoho CRM and one at WorkDrive. The credentials are set on the functions in the Catalyst console and are never shown here.
+				Makes one small read at Zoho CRM, one at WorkDrive and one at ManageEngine MDM. The credentials are set on the functions in the Catalyst console and are never shown here.
 			</p>
 			<div className="table-wrap">
 				<table className="table">
@@ -254,6 +265,7 @@ function Integrations() {
 						{row('Zoho CRM', check.data?.crm)}
 						{row('Zoho WorkDrive', check.data?.workdrive)}
 						{row('WorkDrive job folder', check.data?.workdriveFolder)}
+						{row('ManageEngine MDM', check.data?.mdm)}
 					</tbody>
 				</table>
 			</div>

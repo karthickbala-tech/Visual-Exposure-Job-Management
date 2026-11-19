@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { JobTabCounts, SignGroup, IntegrationStatus, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, FabVariance, ChemicalItem, DeviceItem, EquipmentChange, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
+import type { JobTabCounts, SignGroup, IntegrationStatus, MdmSyncResult, CompanyItem, SiteItem, SignItem, Matrix, OutboxItem, CalendarItem, FabVariance, ChemicalItem, DeviceItem, EquipmentChange, EquipmentItem, WorkshopLocation, ChecklistListItem, ChecklistView, ComplianceItem, ComplianceType, DashboardData, FileItem, Issue, Job, Person, SwmsView, JobDetailResponse, TaskDetailResponse } from './types';
 
 export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
@@ -316,6 +316,15 @@ export const useSyncQuotes = (jobId: string) => {
 };
 
 /** Ask the CRM for newly won deals and make jobs for them (the same thing the hourly job does). */
+/** Admins: pull devices and their last locations from ManageEngine MDM now (the scheduled job does the same). */
+export const useSyncMdm = () => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => api<MdmSyncResult>('/admin/mdm/sync', json('POST')),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['devices'] }),
+	});
+};
+
 export const usePullWonDeals = () => {
 	const qc = useQueryClient();
 	return useMutation({

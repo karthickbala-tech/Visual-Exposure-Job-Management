@@ -322,7 +322,7 @@ const routes = [
 	['GET', /^\/people\/(\d+)\/profile$/, (m) => ({ personId: m[1], fields: [['address', 'Address Line 1', 'text'], ['date_of_birth', 'Date of Birth', 'date'], ['personal_email', 'Personal Email Address', 'email']].map(([key, label, kind]) => ({ key, label, kind, value: (profiles[m[1]] || {})[key] ?? '', editable: isAdmin })) })],
 	['PATCH', /^\/people\/(\d+)\/profile$/, (m, _, b) => { profiles[m[1]] = { ...(profiles[m[1]] || {}), ...b }; return { personId: m[1], saved: Object.keys(b) }; }],
 	['GET', /^\/people\/(\d+)$/, (m) => ({ person: personRow(S.people.find((p) => p.ROWID === m[1]) || S.people[0]) })],
-	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles', 'do_not_contact']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
+	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles', 'do_not_contact', 'mdm_enabled']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
 	['GET', /^\/people$/, () => list(S.people.map(personRow))],
 	['POST', /^\/people$/, (_, __, b) => { const p = { ROWID: id(), first_name: b.first_name, last_name: b.last_name || '', email: b.email || '', phone: b.phone || '', person_kind: b.person_kind || 'staff', job_title: '', roles: b.roles || [], is_active: true, hourly_rate: 0 }; S.people.push(p); return { person: personRow(p) }; }],
 	// compliance
@@ -374,8 +374,16 @@ const routes = [
 	['GET', /^\/admin\/authz$/, () => ({ matrix: matrix(), customised: false, version: 1 })],
 	['GET', /^\/admin\/outbox$/, (_, q) => list(S.outbox.filter((o) => !q.get('status') || o.status === q.get('status')))],
 	['POST', /^\/admin\/outbox\/(\d+)\/retry$/, (m) => { const o = S.outbox.find((x) => x.id === m[1]); if (o) { o.status = 'Pending'; o.lastError = ''; } return { ok: true }; }],
-	['GET', /^\/admin\/integrations$/, () => ({ crm: { configured: true, ok: true, message: 'Connected.' }, workdrive: { configured: true, ok: true, message: 'Connected.' }, workdriveFolder: { configured: true, ok: true, message: 'Folder found: Visual Exposure Jobs' }, workdriveFolderSet: true })],
+	['GET', /^\/admin\/integrations$/, () => ({ crm: { configured: true, ok: true, message: 'Connected.' }, workdrive: { configured: true, ok: true, message: 'Connected.' }, workdriveFolder: { configured: true, ok: true, message: 'Folder found: Visual Exposure Jobs' }, workdriveFolderSet: true , mdm: { configured: true, ok: true, message: 'Connected.' } })],
 	['POST', /^\/admin\/crm\/pull-won-deals$/, () => ({ checked: 4, created: 0, skipped: 4 })],
+	// Device sync from MDM (lib/services/mdmSync.js): the first run adds a test phone for the signed-in admin, later runs change nothing.
+	['POST', /^\/admin\/mdm\/sync$/, () => {
+		const me = S.people.find((x) => x.ROWID === ME);
+		const name = `${me.first_name} ${me.last_name ?? ''}`.trim();
+		const had = S.devices.some((d) => d.id === 'mdm-1');
+		if (!had) S.devices.unshift({ id: 'mdm-1', personName: name, model: 'samsung SM-A546E', os: 'Android 14', lat: 13.0827, lng: 80.2707, address: '', lastSeenAt: new Date().toISOString().slice(0, 19).replace('T', ' '), stale: false, mapUrl: 'https://www.openstreetmap.org/?mlat=13.0827&mlon=80.2707#map=15/13.0827/80.2707' });
+		return { ran: true, fromMdm: 2, added: had ? 0 : 1, updated: 0, unchanged: had ? 1 : 0, located: 1, notInApp: 1, notInMdm: 0, noUser: 0, noSerial: 0, duplicate: 0, skippedUsers: ['spare.tablet@example.test'] };
+	}],
 ];
 
 function personRow(p) { return { ...p, roles: JSON.stringify(p.roles) }; }

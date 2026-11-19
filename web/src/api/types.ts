@@ -229,6 +229,8 @@ export interface Person {
 	is_active?: boolean;
 	hourly_rate?: string | number;
 	do_not_contact?: boolean;
+	/** "In MDM": the device sync takes this person's devices from ManageEngine MDM. */
+	mdm_enabled?: boolean;
 }
 
 export interface ComplianceType {
@@ -415,6 +417,25 @@ export interface IntegrationStatus {
 	workdrive: IntegrationCheck;
 	workdriveFolder: IntegrationCheck;
 	workdriveFolderSet: boolean;
+	/** ManageEngine MDM (device sync); absent from an older server. */
+	mdm?: IntegrationCheck;
+}
+
+/** POST /admin/mdm/sync: what one device sync did. */
+export interface MdmSyncResult {
+	ran: boolean;
+	reason?: string;
+	fromMdm?: number;
+	added?: number;
+	updated?: number;
+	unchanged?: number;
+	located?: number;
+	notInApp?: number;
+	notInMdm?: number;
+	noUser?: number;
+	noSerial?: number;
+	duplicate?: number;
+	skippedUsers?: string[];
 }
 
 export interface QuoteLine {

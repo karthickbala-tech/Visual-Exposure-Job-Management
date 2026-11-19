@@ -101,7 +101,7 @@ export const useRetryNotification = () => {
 };
 export const useRunReport = () => useMutation({ mutationFn: (which: 'weekly-hours' | 'weekly-issues') => api<Record<string, unknown>>(`/admin/reports/${which}`, send('POST')) });
 export const useRoles = () => useGet<{ items: { key: string; label: string }[] }>(['roles'], '/roles', true, 600_000);
-export interface PersonPatch { first_name?: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string[]; hourly_rate?: number; is_active?: boolean; do_not_contact?: boolean }
+export interface PersonPatch { first_name?: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string[]; hourly_rate?: number; is_active?: boolean; do_not_contact?: boolean; mdm_enabled?: boolean }
 export const useUpdatePerson = () => {
 	const qc = useQueryClient();
 	return useMutation({
@@ -166,7 +166,7 @@ export const useCrmDeal = () => useMutation({ mutationFn: (id: string) => api<{ 
 export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
 
 // ---- people ----
-export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number; do_not_contact?: boolean }
+export interface PersonFull { ROWID: string; first_name: string; last_name?: string; email?: string; phone?: string; person_kind?: string; job_title?: string; roles?: string; is_active?: boolean; hourly_rate?: string | number; do_not_contact?: boolean; mdm_enabled?: boolean }
 export const usePerson = (id: string | undefined) => useGet<{ person: PersonFull }>(['person', id ?? ''], `/people/${id}`, !!id, 60_000);
 /** The training portal login of a ticket or induction (managers only). The password is only sent by an explicit, logged reveal. */
 interface Portal { itemId: string; login: string; hasPassword: boolean }
