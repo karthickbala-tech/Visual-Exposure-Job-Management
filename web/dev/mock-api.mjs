@@ -137,6 +137,7 @@ const templates = Object.keys(N.TEMPLATE_INFO).map((name) => ({ name, label: N.T
 let settings = { workshop_job_id: '1001', pay_period: { start_date: days[0], length_days: 14 }, issue_routing: { Install: { manager_id: '502' } }, expiry_reminder_days: [30, 7, 0], pcbu_defaults: { Name: 'Visual Exposure Pty Ltd', Address: '532 Somerville Road, Sunshine West VIC 3020', Phone: '03 9311 5722' }, hours_report_recipients: ['501', '502'], hours_cutoff_date: null };
 
 const equipmentHistory = [];
+const profiles = {}; // personal details saved through PATCH /people/:id/profile
 const CHEM_KEYS = { name: 'name', location_id: 'locationId', sds_url: 'sdsUrl', review_date: 'reviewDate', stock: 'stock', unit: 'unit', hazard_class: 'hazardClass', supplier: 'supplier' };
 const chemPatch = (c, b) => { for (const [k, v] of Object.entries(CHEM_KEYS)) if (b[k] !== undefined) c[v] = b[k]; c.locationName = c.locationId ? (S.locations.find((l) => l.id === c.locationId) || {}).name || null : null; c.sdsMissing = !c.sdsUrl; return c; };
 const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
@@ -317,6 +318,9 @@ const routes = [
 	// people
 	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
 	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2007', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2008', rating: 4, comment: '', ratedAt: null }, { taskId: '2003', rating: 5, comment: 'Great finish on the frames', ratedAt: null }], count: 3, average: 4.67 })],
+	// Personal details by role (lib/services/people.js getProfile): a few of the real fields, all editable for the admin here.
+	['GET', /^\/people\/(\d+)\/profile$/, (m) => ({ personId: m[1], fields: [['address', 'Address Line 1', 'text'], ['date_of_birth', 'Date of Birth', 'date'], ['personal_email', 'Personal Email Address', 'email']].map(([key, label, kind]) => ({ key, label, kind, value: (profiles[m[1]] || {})[key] ?? '', editable: isAdmin })) })],
+	['PATCH', /^\/people\/(\d+)\/profile$/, (m, _, b) => { profiles[m[1]] = { ...(profiles[m[1]] || {}), ...b }; return { personId: m[1], saved: Object.keys(b) }; }],
 	['GET', /^\/people\/(\d+)$/, (m) => ({ person: personRow(S.people.find((p) => p.ROWID === m[1]) || S.people[0]) })],
 	['PATCH', /^\/people\/(\d+)$/, (m, _, b) => { const p = S.people.find((x) => x.ROWID === m[1]); for (const k of ['first_name', 'last_name', 'email', 'phone', 'person_kind', 'job_title', 'hourly_rate', 'is_active', 'roles', 'do_not_contact']) if (b[k] !== undefined) p[k] = b[k]; return { person: personRow(p) }; }],
 	['GET', /^\/people$/, () => list(S.people.map(personRow))],

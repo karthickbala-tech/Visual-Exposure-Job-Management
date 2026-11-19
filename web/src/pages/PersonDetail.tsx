@@ -223,7 +223,8 @@ function ProfileCard({ id }: { id: string }) {
 	const { notify } = useToast();
 	const [draft, setDraft] = useState<Record<string, string> | null>(null);
 	if (!q.data) return null;
-	const fields = q.data.fields;
+	const fields = q.data.fields ?? [];
+	if (!fields.length) return null;
 	const canChange = fields.some((f) => f.editable);
 	const submit = () => {
 		const body: Record<string, string> = {};
