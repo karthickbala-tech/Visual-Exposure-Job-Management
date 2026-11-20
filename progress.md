@@ -1,6 +1,6 @@
 # Visual Exposure - Session handover
 
-Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 18 Nov 2026** (`23cffe7`): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). Work committed after that is not deployed (see 0b). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
+Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 19 Nov 2026** (`a4cbab2`, branch = main = Development): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
 ## 0b. 18 and 19 Nov 2026 (Kalyani's session): merge to main, deploy, layout and accessibility
 
@@ -11,11 +11,13 @@ Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitH
 - CMP-1 (`23cffe7`): People > Subcontractors shows each company's document count; the button opens Company documents filtered to it (no new request).
 - Deployed to Development. The Catalyst CLI is now logged in as karthickbalai (was kalyanimhala54); the folder has no `.catalystrc`, so deploy with `catalyst deploy --org 60093485853 -p 105747000000013075`. API health OK; live bundle matched the local build.
 
-**19 Nov (pushed, not deployed)**
+**19 Nov (merged to main and deployed to Development, `a4cbab2`)**
 - Person page crashed on the mock (no profile route); card now treats a missing field list as empty, mock serves the profile (`f205922`).
 - Layout (`6a18486`): overflow scan 25 routes x 7 sizes x 2 themes = 350, none flagged; a new clipping scan found the job form kept 3 columns on phones (now 3/2/1 by width), the job page pair cards had a 420px minimum (now capped at the screen), Equipment Status cut "Out of service" (column 150px).
 - Accessibility (`eda5a23`): own script (axe could not be downloaded), 23 pages, both themes. Names, labels, alt text complete; focus visible. Light-theme text colours darkened to 4.5:1: `--muted` `#556378`, `--brand-strong` `#166534`, `--link` `#2563eb`, `--info` `#0369a1`, `--danger` `#b91c1c`; bell badge `#dc2626`; sidebar role in light green; Completed - Closed `#2f6fca`. Left on purpose: white on the green buttons (owner decision) and faded other-month calendar days.
-- Tests 362 pass; web tsc and build pass.
+- ManageEngine MDM device sync, EQP-4 (`f43dccd`, `a4cbab2`): read-only MDM client (`lib/integrations/mdm.js`, scope `MDMOnDemand.MDMInventory.READ`), sync plan and service (`lib/domain/mdmSync.js`, `lib/services/mdmSync.js`: matches MDM users to people by email, only people with "In MDM" ticked), `mdm-sync` job, `POST /admin/mdm/sync`. Screens: MDM row and "Sync devices from MDM now" in Admin > Integrations, "Sync from MDM" on Devices, "In MDM" tick on the worker form. Off until `MDM_REFRESH_TOKEN` is set (`node scripts/zoho-token.mjs --mdm`, then `npm run deploy:env`); set-up steps in `docs/GO_LIVE.md`. The location response shape is checked against the docs only, until the first real sync.
+- Tests 373 pass; web tsc and build pass.
+- 20 Nov: checked the remaining-work list against `docs/FSD.md` and the code (see sections 4 and 7). No backend item is open on our side; the FSD items not built wait for the client.
 
 ## 0a. 17 Nov 2026 (Kalyani's session, later): FSD audit and Phase 1 task rules
 
@@ -120,11 +122,14 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 - **Dev servers**: the mock API (port 3100) and Vite (port 5173) were already running from an earlier session. A second Vite on 5174 was started by mistake and is still running; stopping it was blocked by the permission classifier. Stop it manually (find the PID on port 5174) or leave it.
 
 ## 4. Remaining bugs and gaps
-- **Font mismatch**: `CLAUDE.md` (re-read this session) says the font is **Inter** (`@fontsource/inter`, owner decision 11 Nov 2026, "do not switch back to Raleway"). But `tokens.css` still sets `--font: 'Raleway'`, and `package.json` still lists `@fontsource/raleway`. Not changed yet. Needs a decision and a focused change.
-- **Not yet tried with real data**: the new checklists on the live site (leader vs member, management review issue), the Devices map with real device locations (none may have reported), timeline and variance. Tablet width and dark mode were not checked for the new screens.
+- **Font**: done. The app uses Inter (`--font: 'Inter'`, `@fontsource/inter`), as `CLAUDE.md` says.
+- **Not yet tried with real data**: the new checklists on the live site (leader vs member, management review issue, the INS-4 SWMS gate), the Devices map with real device locations (needs the MDM trial), timeline and variance.
 - **Assumptions**: variance is booked minus quoted hours and relies on `booked_hours` being kept current; Parent/Fab labour cost (sum of task labour cost by Cost Type) shows zero until managers set a Cost Type; existing SWMS stay unnumbered.
-- **Checklist gaps**: the install post-job issue subject is the question text, not the Creator "Management Review - <task>"; fab post-job does not raise an issue (no script supplied); hours and times are not template questions; Minor Task (install) and Workshop (fab) variants are not selectable (a template is chosen by task type, phase and role only); the pre-job SWMS gate (leader cannot finish until the PM signed the SWMS) is not confirmed in the app.
-- **Not built**: rating role stored with a rating (managers already rate crew on completed tasks, 1 to 5), site contact from the CRM site, Site Code, SWMS work activity field, pay split on the Hours table, CRM push of signs and sites, WorkDrive folder rename, Job Overview pivot charts (no definitions in the extract), equipment details in `item_data`, ticket type extras in `compliance_type.meta`. Job Owner fields stay hidden (owner decision).
+- **Checked against the FSD (20 Nov)**:
+  - Built (an earlier list here said otherwise): Site Code, SWMS work activity, the Hours pay split columns (HRS-2, 18 Nov), the pre-job SWMS gate (INS-4, `lib/services/checklists.js`, 409 `swms_required`; not yet tried live).
+  - Not an FSD requirement: Job Overview pivot charts (FSD section 12 drops the hidden pivot reports); Minor Task / Workshop checklist variants (Workshop skipping pre-job is FSD question 5, [CONFIRM]); fab post-job raising an issue (CHK-5 says "can"; no client rule supplied); the install issue subject wording.
+  - In the FSD but blocked on the client: CRM push of signs (Assets) and sites, WorkDrive folder rename and per-task folders (FSD 5.15; need the CRM field names and FSD question 6), site contact from the CRM site.
+  - Owner decisions: rating role not stored; Job Owner fields hidden.
 - **Accepted lint warnings**: "fast refresh" notes (several, including `GridKit.tsx`, `Login.tsx`) and `set-state-in-effect` in `Admin.tsx` and `AdminMore.tsx`; fixing them means restructuring shared components or admin screens for no user benefit. The exact count changed this session; no errors.
 - **Older items**: real job service may not return `parent_id` for grouped task tables; "My open" differs from Creator; Issues summary tiles take two rows; SWMS "My open" is empty for the test login; "Group by job" not browser-tested; the dev mock shows the old task stage after a transition and resets on restart.
 - **Security note**: ZCQL and the MCP read the encrypted columns decrypted, so anyone with Data Store access can read portal passwords.
@@ -150,11 +155,13 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 
 ## 7. Exact next step
 
-**Current (19 Nov 2026):**
-1. **You**: say "deploy" to put the 19 Nov fixes on Development; rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret), then `npm run deploy:env` with a complete `.env`.
-2. **Decided 19 Nov (owner): leave as they are**: white text on the green buttons (2.3:1, accepted), the collapsed sidebar look, the Home content. Still ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
-3. **Client**: MDM credentials, `MAIL_FROM`, checklist and SWMS wording, CRM site field names, Creator export; then the review on Development.
-4. Then the AU move (`docs/GO_LIVE.md`), with the columns `swms.work_activity` and `person.do_not_contact`.
+**Current (20 Nov 2026).** No backend or frontend build work is open on our side.
+1. **You, set-up**: MDM trial with a test phone and the read-only token (`docs/GO_LIVE.md`); rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret); recreate `.env` (none in the folder now) and run `npm run deploy:env` with every variable; SMTP sender (Karthick's address or a POC Gmail; real reminders start once set).
+2. **You, on Development**: pre-job checklists as leader and member (including the SWMS gate), post-job with management review Yes (issue appears?), Devices map after the MDM sync, timeline and variance.
+3. **Decided 19 Nov (owner): leave as they are**: white text on the green buttons, the collapsed sidebar look, the Home content. Ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
+4. **Client**: CRM field names (unblocks the CRM push and WorkDrive folders), checklist and SWMS wording, the open FSD questions (section 14); then the review on Development. The Creator data migration is client-side.
+5. Then the AU move (`docs/GO_LIVE.md`), with the columns `swms.work_activity` and `person.do_not_contact`.
+6. Optional frontend tidy-ups: 14 off-scale headings (owner has not decided the scale), zoom and tablet checks.
 
 **Older list (17 Nov, mostly done: Inter is in use, the layout checks ran):**
 1. **You, decide**: (a) Inter or Raleway: `CLAUDE.md` says Inter, but the code still uses Raleway. Confirm Inter, then I switch `--font` and the package. (b) Heading scale: collapse the 17/20/24/26/28px headings to one ramp? (c) Tooling: Context7 failed to connect; you said install the missing skills and Motion, but nothing is installed yet. Confirm which. (d) Commit the uncommitted type-token step now?
