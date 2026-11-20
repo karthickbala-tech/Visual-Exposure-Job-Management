@@ -156,10 +156,10 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 ## 7. Exact next step
 
 **Current (20 Nov 2026).** No backend or frontend build work is open on our side.
-1. **You, set-up**: MDM trial with a test phone and the read-only token (`docs/GO_LIVE.md`); rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret); recreate `.env` (none in the folder now) and run `npm run deploy:env` with every variable; SMTP sender (Karthick's address or a POC Gmail; real reminders start once set).
+1. **You, set-up**: MDM trial with a test phone and the read-only token (`docs/GO_LIVE.md`); rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret); recreate `.env` (none in the folder now) and run `npm run deploy:env` with every variable. Email is already live in Development (Gmail SMTP on all three functions, `docs/GO_LIVE.md`; the backend sender is done): check that the people on Development have test or team addresses, and put the new Gmail app password in `.env`. SMTP stays for the POC; production moves to Catalyst Mail on the client's verified domain.
 2. **You, on Development**: pre-job checklists as leader and member (including the SWMS gate), post-job with management review Yes (issue appears?), Devices map after the MDM sync, timeline and variance.
 3. **Decided 19 Nov (owner): leave as they are**: white text on the green buttons, the collapsed sidebar look, the Home content. Ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
-4. **Client**: CRM field names (unblocks the CRM push and WorkDrive folders), checklist and SWMS wording, the open FSD questions (section 14); then the review on Development. The Creator data migration is client-side.
+4. **Client**: CRM field names (unblocks the CRM push and WorkDrive folders), the open FSD questions (section 14); then the review on Development. Checklist and SWMS wording (owner, 20 Nov): the sample wording stays for the POC demo; when the client sends their questions, hazards and briefing points, we load them (data only) and build "Team Briefed". The Creator data migration is client-side.
 5. Then the AU move (`docs/GO_LIVE.md`), with the columns `swms.work_activity` and `person.do_not_contact`.
 6. Optional frontend tidy-ups: 14 off-scale headings (owner has not decided the scale), zoom and tablet checks.
 
