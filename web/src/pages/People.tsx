@@ -163,8 +163,8 @@ export function People() {
 	const stateFor = (id: string) => stateOf(byPerson.get(id) ?? []);
 	const needle = applied.text.trim().toLowerCase();
 	const visible = people.filter((p) => (!applied.activeOnly || p.is_active !== false) && (!needle || `${p.first_name} ${p.last_name ?? ''} ${p.email ?? ''}`.toLowerCase().includes(needle)));
-	const ve = visible.filter((p) => (p as { person_kind?: string }).person_kind !== 'subcontractor');
-	const subs = visible.filter((p) => (p as { person_kind?: string }).person_kind === 'subcontractor');
+	const ve = visible.filter((p) => p.person_kind !== 'subcontractor');
+	const subs = visible.filter((p) => p.person_kind === 'subcontractor');
 	const inTab = all.filter((i) => (tab === 'docs' ? i.kind === 'company_document' : i.kind !== 'company_document'));
 	const records = all.filter((i) => (tab === 'docs' ? i.kind === 'company_document' : i.kind !== 'company_document') && (!applied.status || (applied.status === 'Today' ? i.daysLeft === 0 : i.status === applied.status)) && (!needle || `${i.personName ?? i.companyName ?? ''} ${i.typeName ?? ''}`.toLowerCase().includes(needle)));
 	const companyRows = (companies.data?.items ?? []).filter((c) => c.kind !== 'internal' && (!applied.activeOnly || c.isActive));
@@ -173,7 +173,7 @@ export function People() {
 	const today0 = all.filter((i) => i.daysLeft === 0 && i.status !== 'Expired').length;
 	const activeAll = people.filter((p) => p.is_active !== false);
 	/** Active people on the VE workers and Subcontractors tabs. */
-	const tabCount = (k: 've' | 'sub') => activeAll.filter((p) => ((p as { person_kind?: string }).person_kind === 'subcontractor') === (k === 'sub')).length;
+	const tabCount = (k: 've' | 'sub') => activeAll.filter((p) => (p.person_kind === 'subcontractor') === (k === 'sub')).length;
 	const goStatus = (s: string) => { setTab('tickets'); setApplied({ ...applied, status: s }); };
 	const docsOf = useMemo(() => {
 		const m = new Map<string, number>();
@@ -288,7 +288,7 @@ export function People() {
 				{q.isSuccess && tab === 'sub' && (
 					<>
 						{subs.length ? workerTable(subs, false, subsGrid, 'Subcontractors') : <p className="table-empty">No subcontractors match.</p>}
-						{subs.length > 0 && <TableFooter shown={subs.length} total={people.filter((p) => (p as { person_kind?: string }).person_kind === 'subcontractor').length} />}
+						{subs.length > 0 && <TableFooter shown={subs.length} total={people.filter((p) => p.person_kind === 'subcontractor').length} />}
 						{companies.isSuccess && companies.data.items.length > 0 && (
 							<>
 								<ResizableGrid layout={companiesGrid} label="Companies" columns={companyColumns((id) => docsOf.get(id) ?? 0, openDocs)} rows={companyRows} rowKey={(c) => c.id} empty="Nothing matches." />

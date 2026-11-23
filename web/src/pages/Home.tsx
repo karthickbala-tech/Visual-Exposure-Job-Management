@@ -61,7 +61,7 @@ export function Home() {
 			{me.isSuccess && <RoleTiles roles={me.data.roles} />}
 			{/* FSD 5.12: the role's own calendars, tables and buttons. */}
 			{/* Today is worked out here (Melbourne, as the server does), so these requests start with the dashboard's, not after it. */}
-			{me.isSuccess && <RoleDashboard roles={me.data.roles} today={q.data?.today ?? todayIso()} myId={me.data.person ? String((me.data.person as { ROWID?: string }).ROWID ?? '') : ''} />}
+			{me.isSuccess && <RoleDashboard roles={me.data.roles} today={q.data?.today ?? todayIso()} myId={me.data.person ? String(me.data.person.ROWID) : ''} />}
 
 			{q.isPending && <p role="status" className="table-empty">Loading your dashboard…</p>}
 			{q.isError && <p role="alert" className="form-error">Could not load the dashboard.</p>}

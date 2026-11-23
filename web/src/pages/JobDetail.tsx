@@ -133,8 +133,8 @@ export function JobDetail() {
 	const design = byType('design');
 	const fab = byType('fabrication');
 	const install = byType('install');
-	const workdrive = (job as { workdrive_url?: string }).workdrive_url;
-	const serverPath = (job as { server_path?: string }).server_path;
+	const workdrive = job.workdrive_url;
+	const serverPath = job.server_path;
 
 	/** Moves a task to one of the stages it can go to; the same moves the row buttons used to make. */
 	const moveTo = (t: Task, to: string) => move.mutate({ taskId: t.ROWID, to }, { onSuccess: () => notify(`Moved to ${to}`), onError: (e) => notify(e instanceof Error ? e.message : 'Could not move the task', 'error') });
@@ -268,8 +268,8 @@ export function JobDetail() {
 				meta={(
 					<dl className="jsec__meta">
 						<div><dt>% of Fab Completed</dt><dd className="num">{num(progress.fab)}</dd></div>
-						<div><dt>Required Fab Finish Date</dt><dd>{fmtDate((job as { required_fab_finish?: string }).required_fab_finish)}</dd></div>
-						<div><dt>Agreed Fab Finish Date</dt><dd>{fmtDate((job as { agreed_fab_finish?: string }).agreed_fab_finish)}</dd></div>
+						<div><dt>Required Fab Finish Date</dt><dd>{fmtDate(job.required_fab_finish)}</dd></div>
+						<div><dt>Agreed Fab Finish Date</dt><dd>{fmtDate(job.agreed_fab_finish)}</dd></div>
 						{seesMoney && <CostMeta job={job} trade="fab" />}
 					</dl>
 				)}>

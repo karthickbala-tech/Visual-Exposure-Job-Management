@@ -192,7 +192,7 @@ export function Issues() {
 	const [draft, setDraft] = useState<Draft>(emptyDraft);
 	const grid = useGridLayout('ve.grid.issues', LIST_WIDTHS);
 	const isManager = !!me.data?.permissions.editJob; // the server decides for real
-	const myId = me.data?.person ? String((me.data.person as { ROWID?: string }).ROWID ?? '') : '';
+	const myId = me.data?.person ? String(me.data.person.ROWID) : '';
 
 	const nameOf = useMemo(() => {
 		const m = new Map((people.data?.items ?? []).map((p) => [p.ROWID, `${p.first_name} ${p.last_name ?? ''}`.trim()]));

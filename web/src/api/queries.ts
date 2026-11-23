@@ -6,7 +6,8 @@ export interface Me {
 	user: { id: string; email: string; firstName: string; lastName: string };
 	roles: string[];
 	permissions: { createJob: boolean; editJob: boolean; deleteJob: boolean; createTask: boolean; assignPeople: boolean };
-	person: Record<string, unknown> | null;
+	/** The caller's person row (null for an account with no person record). */
+	person: ({ ROWID: string } & Record<string, unknown>) | null;
 }
 
 /** Signed-in user. A 401 means "not signed in" and is handled by the auth gate, so no retries. */

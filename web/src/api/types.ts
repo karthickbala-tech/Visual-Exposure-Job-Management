@@ -231,6 +231,8 @@ export interface Person {
 	do_not_contact?: boolean;
 	/** "In MDM": the device sync takes this person's devices from ManageEngine MDM. */
 	mdm_enabled?: boolean;
+	/** VE staff or a subcontractor's worker (People has a tab for each). */
+	person_kind?: 'staff' | 'subcontractor';
 }
 
 export interface ComplianceType {

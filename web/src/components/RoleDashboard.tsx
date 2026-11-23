@@ -125,7 +125,7 @@ function JobsTable({ title, view, showFab }: { title: string; view: 'my_open' | 
 									<td data-label="Stage"><Chip status={j.stage} /></td>
 									{showFab && <td data-label="% Fab" className="num">{Number(j.percent_fab ?? 0)}</td>}
 									<td data-label="% Job" className="num">{Number(j.percent_job ?? 0)}</td>
-									<td data-label="Expected finish">{fmtDate((j as { expected_finish?: string }).expected_finish)}</td>
+									<td data-label="Expected finish">{fmtDate(j.expected_finish)}</td>
 								</tr>
 							))}
 						</tbody>
