@@ -145,6 +145,8 @@ const chemPatch = (c, b) => { for (const [k, v] of Object.entries(CHEM_KEYS)) if
 const { ROLE_LABELS } = createRequire(import.meta.url)('../../lib/config.js');
 const AUTHZ = createRequire(import.meta.url)('../../lib/authz.js');
 let authz = { matrix: structuredClone(AUTHZ.DEFAULT_MATRIX), customised: false, version: 0 };
+// Company-wide dashboard, as the server decides it (lib/services/dashboard.js): jobs and tasks both seen in full. Viewers and second ICs get it too.
+const seesAll = roles.some((r) => r === 'admin' || ['jobs', 'tasks'].every((k) => AUTHZ.DEFAULT_MATRIX[r]?.[k]?.scope === 'all'));
 
 const SWMS_OPTIONS = {
 	hazards: [['falls', 'Risk of a fall of more than 2 metres'], ['confined_space', 'Confined space'], ['electrical', 'On or near energised electrical installations'], ['roads_rail', 'On or near a road, railway or other traffic corridor in use'], ['mobile_plant', 'Movement of powered mobile plant in the area'], ['hot_works', 'Hot works (welding, cutting, grinding)'], ['lifting', 'Crane or lifting operations'], ['dust', 'Dust, fumes or airborne particles'], ['asbestos', 'Likely to disturb asbestos']].map(([key, label]) => ({ key, label })),
@@ -181,7 +183,7 @@ const signPatch = (s, body) => { for (const [k, v] of Object.entries(SIGN_KEYS))
 
 const routes = [
 	// who am I
-	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: { createJob: isManager, editJob: isManager, deleteJob: isAdmin, createTask: isManager, assignPeople: isManager }, person: { ROWID: ME } }; }],
+	['GET', /^\/me$/, () => { const p = S.people.find((x) => x.ROWID === ME); return { user: { id: '1', email: p.email, firstName: p.first_name, lastName: p.last_name }, roles, permissions: AUTHZ.permissionsFor(roles, { ...AUTHZ.DEFAULT_MATRIX, ...authz.matrix }) /* as the server: a second IC may edit jobs */, person: { ROWID: ME } }; }],
 	// jobs
 	['GET', /^\/jobs$/, (_, q) => {
 		const visible = S.jobs.filter((j) => isManager || S.tasks.some((t) => t.job_id === j.ROWID && mine(t)));
@@ -280,7 +282,7 @@ const routes = [
 		return { items, jobs: [...by.values()], capped: false };
 	}],
 	// dashboards and calendar
-	['GET', /^\/dashboard$/, () => (isManager ? { scope: 'all', today: TODAY, myTasks: S.tasks.filter((t) => isOpen(t) && t.scheduled_date).slice(0, 5).map(taskView), jobsByStage: Object.fromEntries(['Preparation', 'In Progress', 'On Hold', 'Completed'].map((s) => [s, S.jobs.filter((j) => j.stage === s).length])), overdueTasks: S.tasks.filter(isLate).length, openIssues: S.issues.filter((i) => ['Open', 'In Progress'].includes(i.issue_status)).length, swmsAwaiting: S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status)).length } : { scope: 'mine', today: TODAY, myTasks: myTasks().map(taskView) })],
+	['GET', /^\/dashboard$/, () => (seesAll ? { scope: 'all', today: TODAY, myTasks: S.tasks.filter((t) => isOpen(t) && t.scheduled_date).slice(0, 5).map(taskView), jobsByStage: Object.fromEntries(['Preparation', 'In Progress', 'On Hold', 'Completed'].map((s) => [s, S.jobs.filter((j) => j.stage === s).length])), overdueTasks: S.tasks.filter(isLate).length, openIssues: S.issues.filter((i) => ['Open', 'In Progress'].includes(i.issue_status)).length, swmsAwaiting: S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status)).length } : { scope: 'mine', today: TODAY, myTasks: myTasks().map(taskView) })],
 	['GET', /^\/dashboard\/todo$/, () => {
 		const items = [];
 		const swmsOpen = S.swms.filter((s) => ['Created', 'PM Signed'].includes(s.status));
