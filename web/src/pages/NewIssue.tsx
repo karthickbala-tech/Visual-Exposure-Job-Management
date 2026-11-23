@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateIssue, useSites, useTask } from '../api/queries';
 import { Field, FormPage, FormSection } from '../components/FormKit';
 import { useToast } from '../components/toast';
+import { DEPARTMENTS } from '../lib/departments';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
-const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
 const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
 /** Review choices by department, as in Creator: Install and Workshop ask for one. */
 const reviewFor = (d: string) => (d === 'Install' ? ['Management Review', 'WHS Reported'] : d === 'Workshop' ? ['Management Review', 'OH&S Reported'] : []);

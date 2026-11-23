@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useCompanies, useComplianceItems, useComplianceTypes, useCreateCompliance, useMe, usePeople } from '../api/queries';
 import type { ComplianceItem } from '../api/types';
@@ -37,14 +37,17 @@ export function Compliance() {
 	const grid = useGridLayout('ve.grid.compliance', WIDTHS);
 	const [activeOnly, setActiveOnly] = useState(true);
 	const dash = useComplianceDashboard(activeOnly, canAdd);
-	const items = useComplianceItems(status || undefined);
+	// One request for every record; the status chips filter here (the server applied the same filter to the same rows), so
+	// switching chips costs nothing, and People shares this query.
+	const items = useComplianceItems();
+	const shown = useMemo(() => (items.data ? (status ? items.data.items.filter((i) => i.status === status) : items.data.items) : []), [items.data, status]);
 	const types = useComplianceTypes();
 	const people = usePeople(canAdd);
-	const companies = useCompanies();
 	const create = useCreateCompliance();
 	const { notify } = useToast();
 	const [open, setOpen] = useState(false);
 	const [forCompany, setForCompany] = useState(false); // a company document belongs to a company; tickets and inductions to a person
+	const companies = useCompanies(canAdd && open && forCompany); // only the add form's company picker needs them
 	const [form, setForm] = useState(EMPTY);
 	const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 	const type = types.data?.items.find((t) => t.id === form.type_id);
@@ -195,11 +198,11 @@ export function Compliance() {
 
 				{items.isPending && <p role="status" className="table-empty">Loading…</p>}
 				{items.isError && <p role="alert">Could not load compliance records.</p>}
-				{items.isSuccess && items.data.items.length === 0 && <p className="table-empty">No records to show.</p>}
-				{items.isSuccess && items.data.items.length > 0 && (
-					<ResizableGrid layout={grid} label="Compliance records" columns={COLUMNS} rows={items.data.items} rowKey={(i) => i.id} />
+				{items.isSuccess && shown.length === 0 && <p className="table-empty">No records to show.</p>}
+				{items.isSuccess && shown.length > 0 && (
+					<ResizableGrid layout={grid} label="Compliance records" columns={COLUMNS} rows={shown} rowKey={(i) => i.id} />
 				)}
-				{items.isSuccess && <GridStatusBar text={`Showing ${items.data.items.length} of ${items.data.items.length}`} />}
+				{items.isSuccess && <GridStatusBar text={`Showing ${shown.length} of ${items.data.items.length}`} />}
 			</Card>
 		</>
 	);

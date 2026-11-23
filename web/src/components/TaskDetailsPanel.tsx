@@ -25,7 +25,7 @@ interface Props {
  */
 export function TaskDetailsPanel({ taskId, type, name, kind, description, proposedHours, spec, started }: Props) {
 	const update = useUpdateTask(taskId);
-	const equipment = useEquipment();
+	const equipment = useEquipment(type === 'install'); // only install tasks list hired equipment
 	const { notify } = useToast();
 	const saved = parseSpec(spec);
 	const fields = type === 'fabrication' && kind ? SPEC_FIELDS[kind] ?? [] : [];

@@ -18,7 +18,7 @@ export interface HourCell { fab: number; install: number; workshop: number; desi
 export interface PaySplit { single: number; x1_5: number; x2: number; noTimes: number }
 export interface HoursRow { personId: string; name: string; days: Record<string, HourCell>; totals: HourCell; pay?: PaySplit; labourCost?: number }
 export interface HoursReport { rows: HoursRow[]; totals: HourCell; pay?: PaySplit; truncated: boolean; weekStart?: string; days?: string[]; period?: { start: string; end: string }; which?: string }
-export const useWeeklyHours = (week?: string, range?: { from: string; to: string }) => useGet<HoursReport>(['hours-week', week ?? '', range?.from ?? '', range?.to ?? ''], '/hours/weekly' + qs({ week, from: range?.from, to: range?.to }));
+export const useWeeklyHours = (week?: string, range?: { from: string; to: string }, enabled = true) => useGet<HoursReport>(['hours-week', week ?? '', range?.from ?? '', range?.to ?? ''], '/hours/weekly' + qs({ week, from: range?.from, to: range?.to }), enabled);
 /** The tasks the person could book a past shift on: crew get their own, managers everyone's open ones (one request, cached). */
 export const useBookableTasks = (enabled: boolean) => useGet<{ items: { ROWID: string; name: string; task_type: string; job_name?: string; stage: string }[] }>(['bookable-tasks'], '/tasks?detail=true&limit=120', enabled, 60_000);
 export const usePayPeriodHours = (which: 'this' | 'last', enabled: boolean) => useGet<HoursReport>(['hours-period', which], '/hours/pay-period' + qs({ which }), enabled);
@@ -160,8 +160,6 @@ export const useCreateWorkshopTask = () => {
 };
 
 export interface IssueChange { field: string; from: string; to: string }
-export interface DeptCounts { Open: number; 'In Progress': number; Resolved: number; Closed: number; openTotal: number }
-export const useIssueBoard = (enabled: boolean) => useGet<{ departments: string[]; counts: Record<string, DeptCounts>; truncated: boolean }>(['issue-board'], '/issues/board', enabled, 30_000);
 export const useCrmDeal = () => useMutation({ mutationFn: (id: string) => api<{ created: boolean; dealId: string }>(`/issues/${id}/crm-deal`, send('POST')) });
 export const useIssueHistory =(id: string, enabled: boolean) => useGet<{ items: { at: string | null; changes: IssueChange[] }[] }>(['issue-history', id], `/issues/${id}/history`, enabled);
 

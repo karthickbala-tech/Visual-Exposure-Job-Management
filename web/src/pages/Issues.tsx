@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileDown, Plus, X } from 'lucide-react';
-import { pdfUrl, useCrmDeal, useIssueBoard, useIssueHistory } from '../api/more';
+import { pdfUrl, useCrmDeal, useIssueHistory } from '../api/more';
 import { useIssues, useMe, usePeople, useUpdateIssue } from '../api/queries';
 import type { IssuePatch } from '../api/queries';
 import type { Issue } from '../api/types';
@@ -14,9 +14,9 @@ import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayou
 import type { GridColumn } from '../components/GridKit';
 import { FilesPanel } from './FilesPanel';
 import { todayIso } from '../lib/dates';
+import { DEPARTMENTS } from '../lib/departments';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
-const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
 const COLUMNS = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed'];
 const DEAL_DEPARTMENTS = ['Management', 'Civic Billboards']; // ISS-4
 const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
@@ -192,7 +192,6 @@ export function Issues() {
 	const [draft, setDraft] = useState<Draft>(emptyDraft);
 	const grid = useGridLayout('ve.grid.issues', LIST_WIDTHS);
 	const isManager = !!me.data?.permissions.editJob; // the server decides for real
-	const board = useIssueBoard(isManager);
 	const myId = me.data?.person ? String((me.data.person as { ROWID?: string }).ROWID ?? '') : '';
 
 	const nameOf = useMemo(() => {
@@ -268,8 +267,8 @@ export function Issues() {
 					{ key: 'assigned', label: 'Assigned to me', count: counts.assigned },
 				]} />
 				<div className="filter-bar__end"><LayoutToggle value={layout} onChange={setLayout} /></div>
-				{isManager && board.isSuccess && (
-									<FilterChips label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} chips={board.data.departments.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
+				{isManager && (
+									<FilterChips label="Open issues by department" heading="Department" value={dept} onChange={(d) => setDept(dept === d ? '' : d)} chips={DEPARTMENTS.map((d) => ({ key: d, label: d, count: deptCounts[d] ?? 0 }))} />
 				)}
 				</FilterBar>
 

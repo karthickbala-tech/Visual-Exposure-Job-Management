@@ -43,6 +43,9 @@ const queryClient = new QueryClient({
 			refetchOnWindowFocus: false,
 			refetchOnReconnect: false,
 			retry: (count, error) => count < 1 && !(error instanceof ApiError && error.status < 500),
+			// Data read in the last 30 seconds is reused when a page opens again, instead of asking the server every time.
+			// Saves still refresh what they change straight away (each mutation invalidates its queries).
+			staleTime: 30_000,
 		},
 	},
 });

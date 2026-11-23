@@ -14,7 +14,8 @@ export const useHealth = () =>
 
 /** Signed-in user. A 401 means "not signed in" and is handled by the auth gate, so no retries. */
 export const useMe = () =>
-	useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: 5 * 60_000 });
+	// Fetched once per visit (REQUEST_BUDGET: "useMe is fetched once"); a reload or an invalidation reads it again.
+	useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: Infinity });
 
 /** The jobs list: one request serves the rows, the people names, the hours and the numbers on the tabs. */
 export const useJobs = (stage?: string, view?: string, who: { pm_id?: string; fab_manager_id?: string } = {}) =>
@@ -261,7 +262,7 @@ export const useCreateCompliance = () => {
 // Equipment, chemicals, workshop locations, devices
 const useList = <T,>(key: string, path: string, enabled = true) =>
 	useQuery({ queryKey: [key], queryFn: () => api<{ items: T[] }>(path), enabled, staleTime: 30_000 });
-export const useEquipment = () => useList<EquipmentItem>('equipment', '/equipment?limit=300');
+export const useEquipment = (enabled = true) => useList<EquipmentItem>('equipment', '/equipment?limit=300', enabled);
 export const useChemicals = () => useList<ChemicalItem>('chemicals', '/chemicals?limit=300');
 export const useLocations = () => useList<WorkshopLocation>('locations', '/locations');
 export const useDevices = (enabled: boolean) => useList<DeviceItem>('devices', '/devices?limit=300', enabled);
@@ -299,7 +300,7 @@ export const useRetryOutbox = () => {
 };
 
 // Companies, sites, signs
-export const useCompanies = () => useList<CompanyItem>('companies', '/companies?limit=300');
+export const useCompanies = (enabled = true) => useList<CompanyItem>('companies', '/companies?limit=300', enabled);
 export const useSites = () => useList<SiteItem>('sites', '/sites?limit=300');
 export const useSigns = (jobId: string) =>
 	useQuery({ queryKey: ['signs', jobId], queryFn: () => api<{ items: SignItem[] }>('/jobs/' + jobId + '/signs'), enabled: !!jobId, staleTime: 30_000 });

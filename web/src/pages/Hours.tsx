@@ -183,7 +183,7 @@ export function Hours() {
 	const [week, setWeek] = useState<string | undefined>(undefined);
 	const grid = useGridLayout('ve.grid.hours', WIDTHS);
 	const eight = useMemo(() => ({ from: shift(todayIso(), -7), to: todayIso() }), []);
-	const weekly = useWeeklyHours(view === 'eight' ? undefined : week, view === 'eight' ? eight : undefined);
+	const weekly = useWeeklyHours(view === 'eight' ? undefined : week, view === 'eight' ? eight : undefined, view === 'week' || view === 'eight'); // not in the pay-period views
 	const period = usePayPeriodHours(view === 'last' ? 'last' : 'this', view === 'this' || view === 'last');
 	const missing = useHoursNotFilled();
 	const active = view === 'week' || view === 'eight' ? weekly : period;
