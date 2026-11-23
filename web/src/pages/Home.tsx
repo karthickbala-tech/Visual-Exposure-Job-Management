@@ -9,6 +9,7 @@ import { ToDoList } from '../components/ToDoList';
 import { RoleDashboard } from '../components/RoleDashboard';
 import { todayIso } from '../lib/dates';
 import { roleLabel } from '../lib/roles';
+import { OFFICE, ROUTE_ROLES } from '../navConfig';
 
 /** Where a tile goes when it is tapped. */
 const TILE_LINK = (key: string): string | undefined => {
@@ -42,7 +43,7 @@ const SHORTCUTS = [
 	{ to: '/jobs', label: 'Jobs', icon: Briefcase },
 	{ to: '/tasks', label: 'Task board', icon: Columns3 },
 	{ to: '/calendar', label: 'Calendar', icon: CalendarIcon },
-	{ to: '/hours', label: 'Hours', icon: Clock },
+	{ to: '/hours', label: 'Hours', icon: Clock, roles: ROUTE_ROLES.hours },
 	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
 	{ to: '/issues', label: 'Issues', icon: AlertTriangle },
 ];
@@ -54,6 +55,8 @@ export function Home() {
 	const me = useMe();
 	const q = useDashboard();
 	const first = me.data?.user.firstName;
+	// Links only to pages the person's role can open: a viewer gets the company figures but cannot open SWMS or Hours.
+	const may = (roles?: string[]) => !roles || !!me.data?.roles.some((r) => roles.includes(r));
 
 	return (
 		<>
@@ -72,12 +75,13 @@ export function Home() {
 					<section className="kpis" aria-label="Needs attention">
 						<Kpi label="Overdue tasks" value={q.data.overdueTasks ?? 0} to="/tasks" tone={q.data.overdueTasks ? 'danger' : 'ok'} note={q.data.overdueTasks ? 'past their required finish' : 'nothing overdue'} />
 						<Kpi label="Open issues" value={q.data.openIssues ?? 0} to="/issues" tone={q.data.openIssues ? 'danger' : 'ok'} note={q.data.openIssues ? 'waiting for someone' : 'all clear'} />
-						<Kpi label="SWMS awaiting signature" value={q.data.swmsAwaiting ?? 0} to="/swms" tone={q.data.swmsAwaiting ? 'danger' : 'ok'} note="before crews go on site" />
+						<Kpi label="SWMS awaiting signature" value={q.data.swmsAwaiting ?? 0} to={may(ROUTE_ROLES.swms) ? '/swms' : undefined} tone={q.data.swmsAwaiting ? 'danger' : 'ok'} note="before crews go on site" />
 					</section>
 
 					<div className="dash-grid">
 						<div className="dash-col">
-							<ToDoList />
+							{/* The to-do list is work to act on (review, schedule, sign); a read-only viewer cannot do any of it. */}
+							{may(OFFICE) && <ToDoList />}
 
 							<Card title="My upcoming work" action={<Link className="view-all" to="/tasks">View all tasks</Link>} flush>
 								{q.data.myTasks.length === 0 ? (
@@ -128,7 +132,7 @@ export function Home() {
 
 							<Card title="Go to" label="Shortcuts">
 								<div className="quick-actions-grid">
-									{SHORTCUTS.map(({ to, label, icon: Icon }) => (
+									{SHORTCUTS.filter((x) => may(x.roles)).map(({ to, label, icon: Icon }) => (
 										<Link key={to} className="quick-action-btn" to={to}>
 											<Icon size={16} aria-hidden="true" />
 											<span>{label}</span>

@@ -12,6 +12,7 @@ import { Card, PageHeader, fmtDate } from '../components/ui';
 import { addYears, validityYears } from '../lib/validity';
 import { todayIso } from '../lib/dates';
 import { roleLabel } from '../lib/roles';
+import { NoAccess } from '../components/Guard';
 
 const parseRoles = (v: unknown): string[] => {
 	try {
@@ -281,6 +282,8 @@ export function PersonDetail() {
 
 	if (q.isPending) return <p role="status">Loading…</p>;
 	if (q.error instanceof ApiError && q.error.status === 404) return <h1 className="page-title">Person not found</h1>;
+	// Crew have no people access (the server says 403): show the No access page, not "Could not load".
+	if (q.error instanceof ApiError && q.error.status === 403) return <NoAccess what="other people's details" />;
 	if (q.isError) return <p role="alert">Could not load this person.</p>;
 	const p = q.data.person;
 	const name = `${p.first_name} ${p.last_name ?? ''}`.trim();

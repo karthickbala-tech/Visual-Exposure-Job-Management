@@ -3,11 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 
 /** Roles that may open each screen. Only for showing menus and a friendly "No access" page: the server enforces access regardless. */
 export const MANAGERS = ['admin', 'project_manager', 'fab_manager', 'install_coordinator'];
-const OFFICE = [...MANAGERS, 'second_ic'];
+export const OFFICE = [...MANAGERS, 'second_ic'];
 export const ROUTE_ROLES: Record<string, string[] | undefined> = {
 	design: [...OFFICE, 'viewer'],
 	fabrication: [...OFFICE, 'fab_worker', 'workshop', 'viewer'],
 	installation: [...OFFICE, 'installer', 'viewer'],
+	// Fab variance lists fabrication tasks; crew see only their own, so an installer's page was always empty.
+	variance: [...OFFICE, 'fab_worker', 'workshop', 'viewer'],
 	hours: [...OFFICE, 'installer', 'fab_worker', 'workshop'],
 	swms: [...OFFICE, 'installer'],
 	checklists: MANAGERS,
@@ -45,7 +47,7 @@ export const NAV: NavEntry[] = [
 			{ to: '/jobs', label: 'Jobs', icon: Briefcase },
 			{ to: '/tasks', label: 'Task board', icon: KanbanSquare },
 			{ to: '/calendar', label: 'Calendar', icon: CalendarDays },
-				{ to: '/variance', label: 'Fab variance', icon: BarChart3 },
+			{ to: '/variance', label: 'Fab variance', icon: BarChart3, roles: ROUTE_ROLES.variance },
 		],
 	},
 	{

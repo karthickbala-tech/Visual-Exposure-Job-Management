@@ -5,6 +5,7 @@ import { useMe } from '../api/queries';
 import { Field, FormPage, FormSection } from '../components/FormKit';
 import { useToast } from '../components/toast';
 import { roleLabel } from '../lib/roles';
+import { NoAccess } from '../components/Guard';
 
 const EMPTY = { first_name: '', last_name: '', person_kind: 'staff', role: '', job_title: '', email: '', phone: '' };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +20,7 @@ export function NewPerson() {
 	const { notify } = useToast();
 	const [f, setF] = useState(EMPTY);
 	const set = (k: keyof typeof EMPTY, v: string) => setF((s) => ({ ...s, [k]: v }));
-	if (me.isSuccess && !canAdd) return <p className="table-empty">You do not have access to add people.</p>;
+	if (me.isSuccess && !canAdd) return <NoAccess what="adding people" />;
 
 	const emailBad = !!f.email && !EMAIL.test(f.email);
 	const needRole = f.person_kind === 'staff' && !f.role;

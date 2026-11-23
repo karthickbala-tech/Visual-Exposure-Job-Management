@@ -63,8 +63,8 @@ function AppRoutes() {
 							<Route path="issues" element={<Issues />} />
 							<Route path="issues/new" element={<NewIssue />} />
 							<Route path="calendar" element={<Calendar />} />
-							<Route path="variance" element={<Variance />} />
-							<Route path="variance/:jobId" element={<Variance />} />
+							<Route path="variance" element={<Guard roles={ROUTE_ROLES.variance}><Variance /></Guard>} />
+							<Route path="variance/:jobId" element={<Guard roles={ROUTE_ROLES.variance}><Variance /></Guard>} />
 							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
 							<Route path="people/new" element={<Guard roles={ROUTE_ROLES.people}><NewPerson /></Guard>} />
 							<Route path="people/:id" element={<PersonDetail />} />
