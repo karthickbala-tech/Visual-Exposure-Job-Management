@@ -2,6 +2,13 @@
 
 Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 23 Nov 2026** (`935310b`, branch = main = Development): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
+## 0d. 23 Nov 2026 (Kalyani's session, later): Admin fixes (on the branch, not yet deployed)
+
+Reported: layout issues, and the Admin > Permissions role list showed module names. Fixed, one commit each, backend tests 386 pass, web tsc/oxlint/build pass, checked by screenshots of every Admin tab at desktop and phone width:
+- **Role names** (`34cf960`): the role list comes from the fixed role list, not the matrix keys (the local mock sent the matrix area -> role, so the list showed "jobs", "tasks"; the mock now uses the real `lib/authz.js` defaults and saves). Companies and hours areas were missing from the table. One set of names, `lib/config.js` `ROLE_LABELS` and `web/src/lib/roles.ts`, replaces eight "_ to space" copies ("Second IC", "Administrator").
+- **Layout** (`aae5e0e`): no empty strip under closed cards (Admin > Emails), Admin tabs in one sideways-scrolling row on a phone, Settings manager boxes aligned to the top, spacing for card notes, long CSV headings wrap.
+- **Plain words** (`6b69f8a`): Email log and Outbox show "New issue", "Nobody to send it to", "Update the CRM deal" and readable dates instead of codes (`web/src/lib/systemLabels.ts`).
+
 ## 0c. 23 Nov 2026 (Kalyani's session): code review and fixes (merged to main and deployed to Development, `935310b`)
 
 A read-only review (backend, web code, CSS) found the code clean but not ready for a year of real data. Fixed, one commit each, tests for each backend change (386 pass), web tsc/oxlint/build pass:
