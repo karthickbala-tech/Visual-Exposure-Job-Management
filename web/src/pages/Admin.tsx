@@ -5,11 +5,12 @@ import { useAuthz, useCheckIntegrations, usePullWonDeals, useSyncMdm, useMe, use
 import type { Matrix, Scope, Verb } from '../api/types';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDateTime } from '../components/ui';
 import { EmailsTab, NotificationsTab, RolesTab, SettingsTab } from './AdminMore';
 import { DataTab } from './AdminData';
 import { AREA_LABEL, ROLE_KEYS, roleLabel } from '../lib/roles';
 import { ComplianceTypesTab } from './AdminTypes';
+import { entityLabel, outboxWorkLabel } from '../lib/systemLabels';
 
 const VERBS: Verb[] = ['view', 'create', 'edit', 'delete'];
 const SCOPES: Scope[] = ['all', 'assigned', 'own'];
@@ -182,8 +183,8 @@ function Outbox() {
 							{list.data.items.map((o) => (
 								<tr key={o.id}>
 									<td data-label="Work" className="cell-primary">
-										<strong>{o.jobType}</strong>
-										<div className="muted">{[o.entityType, o.entityId].filter(Boolean).join(' ')}</div>
+										<strong>{outboxWorkLabel(o.jobType)}</strong>
+										<div className="muted">{entityLabel(o.entityType, o.entityId)}</div>
 									</td>
 									<td data-label="Status">
 										<Chip status={o.status} />
@@ -191,7 +192,7 @@ function Outbox() {
 									<td data-label="Attempts" className="num">
 										{o.attempts}
 									</td>
-									<td data-label="Next try">{o.nextRunAt ?? '-'}</td>
+									<td data-label="Next try">{fmtDateTime(o.nextRunAt)}</td>
 									<td data-label="Last error">{o.lastError || '-'}</td>
 									<td data-label="Action">
 										{o.status === 'Failed' && (

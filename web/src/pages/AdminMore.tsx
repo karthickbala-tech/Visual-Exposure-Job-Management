@@ -5,8 +5,9 @@ import { previewTemplate, useMailTemplates, useNotifications, useRetryNotificati
 import type { AppSettings, MailTemplate } from '../api/more';
 import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
-import { Card } from '../components/ui';
+import { Card, fmtDateTime } from '../components/ui';
 import { DEPARTMENTS } from '../lib/departments';
+import { emailEventLabel, emailReasonLabel, emailStatusLabel } from '../lib/systemLabels';
 
 const fullName = (p: { first_name: string; last_name?: string }) => `${p.first_name} ${p.last_name ?? ''}`.trim();
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
@@ -207,10 +208,10 @@ export function NotificationsTab() {
 						<tbody>
 							{q.data.items.map((n) => (
 								<tr key={n.id}>
-									<td data-label="When">{n.at?.replace('T', ' ').slice(0, 16) ?? '-'}</td>
-									<td data-label="Email" className="cell-primary"><strong>{n.subject}</strong><br /><small>{n.event}</small></td>
+									<td data-label="When">{fmtDateTime(n.at)}</td>
+									<td data-label="Email" className="cell-primary"><strong>{n.subject}</strong><br /><small className="muted">{emailEventLabel(n.event)}</small></td>
 									<td data-label="To">{n.recipients.length}</td>
-									<td data-label="Outcome"><span className={'chip chip-' + (n.status === 'sent' ? 'green' : n.status === 'failed' ? 'red' : 'gray')}>{n.status}</span>{n.reason ? <small> {n.reason}</small> : null}</td>
+									<td data-label="Outcome"><span className={'chip chip-' + (n.status === 'sent' ? 'green' : n.status === 'failed' ? 'red' : 'gray')}>{emailStatusLabel(n.status)}</span>{n.reason ? <div><small className="muted">{emailReasonLabel(n.reason)}</small></div> : null}</td>
 									<td data-label="Actions">{n.status === 'failed' && <button className="btn btn-ghost btn-sm" disabled={retry.isPending} onClick={() => retry.mutate(n.id, { onSuccess: (r) => notify(r.sent ? 'Sent again' : 'Still not sent', r.sent ? 'ok' : 'error') })}><RotateCw size={14} aria-hidden="true" /> Retry</button>}</td>
 								</tr>
 							))}

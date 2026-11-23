@@ -371,7 +371,7 @@ const routes = [
 	['GET', /^\/admin\/mail-templates$/, () => ({ items: templates })],
 	['PUT', /^\/admin\/mail-templates\/(\w+)$/, (m, _, b) => { const t = templates.find((x) => x.name === m[1]); t.override = Object.values(b).some(Boolean) ? b : null; return { template: t }; }],
 	['GET', /^\/admin\/mail-templates\/(\w+)\/preview$/, (m) => { const t = templates.find((x) => x.name === m[1]); const info = N.TEMPLATE_INFO[m[1]]; const msg = N.applyOverrides(N.render(m[1], info.sample), t && t.override, m[1], info.sample); return { subject: msg.subject, html: msg.html }; }],
-	['GET', /^\/admin\/notifications$/, (_, q) => list(S.notifications.filter((n) => !q.get('status') || n.status === q.get('status')))],
+	['GET', /^\/admin\/notifications$/, (_, q) => list(S.notifications.filter((n) => !q.get('status') || n.status === q.get('status')).sort((x, y) => String(y.at).localeCompare(String(x.at))))  /* newest first, as the server (lib/services/notifications.js) */],
 	['POST', /^\/admin\/notifications\/\d+\/retry$/, () => ({ sent: true, reason: null })],
 	['POST', /^\/admin\/reports\/weekly-(hours|issues)$/, () => ({ ran: true, sent: true })],
 	['GET', /^\/admin\/authz$/, () => authz],
