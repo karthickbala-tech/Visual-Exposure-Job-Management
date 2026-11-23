@@ -55,3 +55,12 @@ test("a person's finished post-job checklists are read in full (hours not filled
 	const repos = createRepos({ select: async (_t, { limit, offset }) => rows.slice(offset, offset + limit) });
 	assert.equal((await repos.checklists.listDonePostForPerson('7')).length, 450);
 });
+
+test("a job's tasks are read in full, oldest first (progress and stage of the workshop job)", async () => {
+	const { createRepos } = require('../lib/repos');
+	const rows = Array.from({ length: 640 }, (_, i) => ({ ROWID: String(i) }));
+	const seen = [];
+	const repos = createRepos({ select: async (_t, { limit, offset, orderBy }) => (seen.push(orderBy), rows.slice(offset, offset + limit)) });
+	assert.equal((await repos.tasks.listByJob('9')).length, 640);
+	assert.ok(seen.every((o) => o === 'ROWID ASC'));
+});
