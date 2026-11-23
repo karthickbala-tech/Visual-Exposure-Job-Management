@@ -1485,6 +1485,14 @@ a.kpi:hover {
 	gap: 8px;
 }
 
+/* Buttons side by side in a table cell (Equipment > Action): one line, centred on each other. */
+.cell-actions {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 8px;
+}
+
 /* ---------- Forms & Inputs ---------- */
 .filters, .toolbar {
 	display: flex;

@@ -244,14 +244,15 @@ function EquipmentTab({ canWrite, list, items, shown, grid, toolbar }: { canWrit
 	const checked = (id: string) => write.mutate({ method: 'POST', path: `/equipment/${id}/checked` }, { onSuccess: () => notify('Marked as checked today') });
 	const columns: GridColumn<EquipmentItem>[] = canWrite
 		? [...EQ_COLUMNS, { key: 'action', label: 'Action', width: EQ_ACTION_WIDTH, cell: (e) => (
-			<>
+			// One row, same button size: "Checked today" was a full-size button and Edit a small one, so Edit sat lower.
+			<div className="cell-actions">
 				{e.status === 'In service' && (
-					<button className="btn btn-ghost" onClick={() => checked(e.id)} disabled={write.isPending}>
+					<button className="btn btn-ghost btn-sm" onClick={() => checked(e.id)} disabled={write.isPending}>
 						<Check size={15} aria-hidden="true" /> Checked today
 					</button>
 				)}
 				<button className="btn btn-ghost btn-sm" onClick={() => startEdit(e)} aria-label={`Edit ${e.name}`}>Edit</button>
-			</>
+			</div>
 		) }]
 		: EQ_COLUMNS;
 
