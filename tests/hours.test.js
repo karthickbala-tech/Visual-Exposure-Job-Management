@@ -242,3 +242,12 @@ test('booking a past shift by start and end time: split into single, time and a 
 	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03', start_time: '08:00', end_time: '10:00', unbilled_hours: 3 }), 400);
 	await rejects(hours.addTimeEntry(crew, t, { work_date: '2026-11-03' }), 400); // neither hours nor times
 });
+
+test('weekly hours add up every entry, not just the first 300 (30 staff fill a fortnight with about 600)', async () => {
+	const { w, jobId } = await setup();
+	const fabTask = await mk(w, jobId, { task_type: 'fabrication', name: 'Cut', kind: 'CNC' });
+	for (let i = 0; i < 420; i++) w.db.time.push(entry(fabTask, i % 2 ? ME : OTHER, '2026-11-03', 1));
+	const r = await hours.weeklyHours(w.ctx, { week: '2026-11-04' });
+	assert.equal(r.totals.total, 420, 'all 420 one-hour entries counted');
+	assert.equal(r.truncated, false);
+});

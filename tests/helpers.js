@@ -331,7 +331,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				return rows.length;
 			},
 			listByTask: async (taskId) => db.time.filter((e) => String(e.task_id) === String(taskId)).map(clone),
-			listBetween: async ({ from, to, personId }) => db.time.filter((e) => e.work_date >= from && e.work_date <= to && (!personId || String(e.person_id) === String(personId))).map(clone),
+			listBetween: async ({ from, to, personId, limit, offset }) => pageOf(db.time.filter((e) => e.work_date >= from && e.work_date <= to && (!personId || String(e.person_id) === String(personId))), { limit, offset }).map(clone),
 			approveForTask: async (taskId) => {
 				const rows = db.time.filter((e) => String(e.task_id) === String(taskId) && e.approved !== 'true');
 				rows.forEach((e) => (e.approved = 'true'));
