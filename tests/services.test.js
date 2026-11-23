@@ -246,7 +246,7 @@ test('the real context swallows a failed event publish and logs a warning', asyn
 		app: { jobScheduling: () => { throw new Error('queue down'); } },
 	};
 	const ctx = makeContext(actor, log);
-	await ctx.publish('job.created', { jobId: '1' }); // must not throw
+	await ctx.publish('job.closed', { jobId: '1' }); // must not throw
 	assert.equal(warnings.length, 1);
 	assert.equal(warnings[0][0], 'event publish failed');
 	assert.match(warnings[0][1].error, /queue down/);

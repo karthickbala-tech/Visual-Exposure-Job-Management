@@ -19,16 +19,25 @@ function fakeApp(captured) {
 
 test('publishEvent submits an immediate job to the jobs function', async () => {
 	const sent = [];
-	await publishEvent(fakeApp(sent), 'task.created', { taskId: '123' });
+	await publishEvent(fakeApp(sent), 'task.stage_changed', { taskId: '123' });
 	assert.equal(sent.length, 1);
 	const req = sent[0];
 	assert.equal(req.target_type, 'Function');
 	assert.equal(req.target_name, 'jobs');
 	assert.equal(req.params.job, 'dispatch-event');
-	assert.equal(req.params.type, 'task.created');
+	assert.equal(req.params.type, 'task.stage_changed');
 	assert.deepEqual(JSON.parse(req.params.payload), { taskId: '123' });
 	assert.match(req.job_name, /^[A-Za-z0-9_]{1,20}$/);
 	assert.ok(req.job_config.number_of_retries >= 1, 'retries enabled');
+});
+
+test('an event nothing handles is not sent (no background job wasted); file.deleted is a known event', async () => {
+	const sent = [];
+	for (const type of ['task.created', 'checklist.step_completed', 'file.deleted']) {
+		assert.deepEqual(await publishEvent(fakeApp(sent), type, { id: '1' }), { submitted: false, reason: 'no_handler' });
+	}
+	assert.equal(sent.length, 0);
+	for (const type of Object.keys(events.handlers)) assert.ok(events.EVENT_TYPES.includes(type), `${type} is a known event`);
 });
 
 test('publishEvent rejects unknown types and oversized payloads', async () => {
