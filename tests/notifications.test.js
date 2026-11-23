@@ -139,3 +139,22 @@ test('an approval flagged for management review or OH&S emails the department ma
 	const ev = w.published.filter((e) => e.type === 'task.stage_changed').pop();
 	assert.deepEqual([ev.payload.ohs, ev.payload.managementReview, ev.payload.comment], ['Yes', false, 'Near miss']);
 });
+
+test('a checklist with several flagged answers raises each issue but sends one email naming them all', async () => {
+	const { w, ctx, sent } = setup();
+	w.db.people.push({ ROWID: '105747000000900005', email: 'pm@x.com', roles: ['project_manager'] });
+	const { job } = await jobs.createJob(w.ctx, { name: 'Pylon' });
+	const task = (await tasks.createTask(w.ctx, String(job.ROWID), { task_type: 'install', name: 'Fit', kind: 'VE Install' })).task;
+	w.published.length = 0;
+
+	const raised = await issues.raiseFromChecklist(w.ctx, task, ['PPE missing', 'Area not safe', 'Damaged sign']);
+	assert.equal(raised.length, 3, 'three issues raised');
+	const evs = w.published.filter((p) => p.type === 'issue.changed');
+	assert.equal(evs.length, 1, 'one event for the checklist, not one per answer');
+	assert.equal(evs[0].payload.alsoIssueIds.length, 2);
+
+	await dispatch('issue.changed', evs[0].payload, ctx);
+	assert.equal(sent.length, 1, 'one email');
+	assert.match(sent[0].subject, /and 2 more/);
+	for (const s of ['PPE missing', 'Area not safe', 'Damaged sign']) assert.match(sent[0].html, new RegExp(s));
+});
