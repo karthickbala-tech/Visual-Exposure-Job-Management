@@ -336,3 +336,21 @@ test('expiring follows each item\'s own reminder window (its type, else the Admi
 	const todo = await dashboard.getTodo(w.ctx);
 	assert.equal(todo.items.find((i) => i.id === 'soon').title, '2 compliance items expire soon');
 });
+
+test('boards and role tiles keep older open tasks when more than 300 finished ones are newer', async () => {
+	const w = makeWorld();
+	const { job } = await jobs.createJob(w.ctx, { name: 'Busy' });
+	const jobId = String(job.ROWID);
+	// 4 open fab tasks first (oldest), then 320 finished ones (newest)
+	for (let i = 0; i < 324; i++) w.db.tasks.push({ ROWID: `ft${String(i).padStart(4, '0')}`, job_id: jobId, task_type: 'fabrication', kind: 'CNC', name: `F${i}`, stage: i < 4 ? 'Awaiting Scheduling' : 'Completed' });
+
+	const board = await tasks.taskBoard(w.ctx, { type: 'fabrication' });
+	assert.equal(board.columns.find((c) => c.stage === 'Awaiting Scheduling').count, 4, 'the old open tasks are still on the board');
+	assert.equal(board.columns.find((c) => c.stage === 'Completed').count, 300, 'finished: the newest 300');
+	assert.equal(board.truncated, false);
+
+	const tiles = await reports.roleDashboard(w.as(['fab_manager']), 'fab_manager');
+	const tile = (key) => tiles.tiles.find((t) => t.key === key).value;
+	assert.equal(tile('fab_open'), 4);
+	assert.equal(tile('fab_awaiting'), 4);
+});

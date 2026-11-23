@@ -191,3 +191,11 @@ test('update rules: finishing needs the work completed; other statuses need a ne
 	assert.deepEqual(overdue.items.map((i) => i.subject), ['Rules']);
 	assert.equal((await issues.listIssues(w.ctx, { view: 'assigned' })).count, 0);
 });
+
+test('the issue board counts every issue, not the newest 300', async () => {
+	const w = makeWorld();
+	for (let i = 0; i < 350; i++) w.db.issues.push({ ROWID: `is${i}`, subject: `S${i}`, department: 'Management', issue_status: 'Completed' });
+	const board = await issues.issueBoard(w.ctx);
+	assert.equal(board.counts.Management.Completed, 350);
+	assert.equal(board.truncated, false);
+});
