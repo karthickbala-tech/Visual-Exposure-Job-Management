@@ -2743,6 +2743,12 @@ body.col-resizing, body.col-resizing * {
 	color: #d97706;
 	border: 1px solid rgba(217, 119, 6, 0.25);
 }
+/* The cream badge above sat on a dark card in dark mode; the same amber, dimmed. */
+:root[data-theme='dark'] .jsec--fab .jsec__badge {
+	background: rgba(245, 158, 11, 0.14);
+	color: #fbbf24;
+	border-color: rgba(251, 191, 36, 0.3);
+}
 
 .jsec--install {
 	--tone-ink: #065f46;
@@ -4491,7 +4497,7 @@ body.col-resizing, body.col-resizing * {
   }
 .issue-card__top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .text-danger { color: var(--danger); }
-.slide-over:focus-visible, .issue-card:focus-visible { outline: 2px solid var(--green, #68b04d); outline-offset: 2px; }
+.slide-over:focus-visible, .issue-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; } /* was var(--green, #68b04d): --green is not defined, so the old green showed */
 @media (max-width: 760px) {
   .list-toolbar { padding: 10px 16px; }
   .list-toolbar .segmented { max-width: 100%; overflow-x: auto; }
