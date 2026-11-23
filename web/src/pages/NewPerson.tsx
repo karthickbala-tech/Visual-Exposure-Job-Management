@@ -24,6 +24,8 @@ export function NewPerson() {
 	const emailBad = !!f.email && !EMAIL.test(f.email);
 	const needRole = f.person_kind === 'staff' && !f.role;
 	const problem = emailBad ? 'Enter a valid email address.' : needRole ? 'Choose a primary role for Visual Exposure staff.' : '';
+	// The role reminder waits until a name is typed: shown on an empty form it read as an error before anything was done.
+	const shown = emailBad || f.first_name.trim() ? problem : '';
 
 	return (
 		<FormPage
@@ -41,7 +43,7 @@ export function NewPerson() {
 			onReset={() => setF(EMPTY)}
 			busy={create.isPending}
 			canSubmit={!!f.first_name.trim() && !problem}
-			error={problem || null}
+			error={shown || null}
 		>
 			<FormSection title="Person">
 				<Field label="First name" required htmlFor="p-first"><input id="p-first" value={f.first_name} required maxLength={100} autoFocus autoComplete="off" onChange={(e) => set('first_name', e.target.value)} /></Field>

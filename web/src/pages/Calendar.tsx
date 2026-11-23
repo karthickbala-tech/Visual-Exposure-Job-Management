@@ -19,6 +19,7 @@ const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TYPE_NAME = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;
 
 type View = 'month' | 'week' | 'day' | 'timeline';
+const VIEW_LABEL: Record<View, string> = { month: 'Month', week: 'Week', day: 'Day', timeline: 'Timeline' };
 type Only = 'all' | keyof typeof TYPE_NAME;
 const TIMELINE_DAYS = 28;
 
@@ -94,7 +95,7 @@ export function Calendar() {
 					<div className="segmented" role="group" aria-label="Calendar view">
 						{(['month', 'week', 'day', 'timeline'] as const).map((v) => (
 							<button key={v} type="button" className={view === v ? 'on' : ''} aria-pressed={view === v} onClick={() => setView(v)}>
-								{v}
+								{VIEW_LABEL[v]}
 							</button>
 						))}
 					</div>
