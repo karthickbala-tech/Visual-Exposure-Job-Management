@@ -32,3 +32,26 @@ test('fetchAll stops at the ceiling and says so', async () => {
 	assert.equal(r.rows.length, 600);
 	assert.equal(r.truncated, true);
 });
+
+test("a person's task links and a page's crew are read in full, page by page", async () => {
+	const { createRepos } = require('../lib/repos');
+	const links = Array.from({ length: 650 }, (_, i) => ({ ROWID: String(i), person_id: '7', task_id: String(i) }));
+	const asked = [];
+	const db = {
+		select: async (_t, { limit, offset, orderBy }) => {
+			asked.push(orderBy);
+			return links.slice(offset, offset + limit);
+		},
+	};
+	const repos = createRepos(db);
+	assert.equal((await repos.assignees.listForPerson('7')).length, 650, 'all 650, not the first 300');
+	assert.equal((await repos.assignees.listForTasks(links.map((l) => l.task_id))).length, 650);
+	assert.ok(asked.every((o) => o === 'ROWID ASC'), 'a unique order, so paging never skips or repeats a row');
+});
+
+test("a person's finished post-job checklists are read in full (hours not filled)", async () => {
+	const { createRepos } = require('../lib/repos');
+	const rows = Array.from({ length: 450 }, (_, i) => ({ ROWID: String(i) }));
+	const repos = createRepos({ select: async (_t, { limit, offset }) => rows.slice(offset, offset + limit) });
+	assert.equal((await repos.checklists.listDonePostForPerson('7')).length, 450);
+});

@@ -251,3 +251,14 @@ test('weekly hours add up every entry, not just the first 300 (30 staff fill a f
 	assert.equal(r.totals.total, 420, 'all 420 one-hour entries counted');
 	assert.equal(r.truncated, false);
 });
+
+test('hours not filled counts fabrication work among a crew member\'s many tasks (over 300 assignments)', async () => {
+	const { w, jobId } = await setup();
+	for (let i = 0; i < 330; i++) {
+		const id = `t${i}`;
+		w.db.tasks.push({ ROWID: id, job_id: jobId, task_type: i < 320 ? 'install' : 'fabrication', kind: 'CNC', stage: 'Scheduled', scheduled_date: '2026-10-20' });
+		w.db.links.push({ ROWID: `l${i}`, task_id: id, person_id: ME });
+	}
+	const r = await hours.hoursNotFilled(w.as(['fab_worker'], ME), {});
+	assert.equal(r.total, 10, 'the 10 fabrication tasks after 320 install ones are all counted');
+});
