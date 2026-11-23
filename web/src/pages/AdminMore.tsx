@@ -77,7 +77,7 @@ export function SettingsTab() {
 				{DEPARTMENTS.map((d) => {
 					const also = route(d).inform_also ?? [];
 					return (
-						<div key={d} className="inline-form" style={{ background: 'transparent', border: 0, padding: '12px 0 0' }}>
+						<div key={d} className="inline-form inline-form--top" style={{ background: 'transparent', border: 0, padding: '12px 0 0' }}>
 							<label><span className="toolbar__label">{d}: manager</span>
 								<select value={route(d).manager_id ?? ''} onChange={(e) => setRoute(d, { manager_id: e.target.value || null })}>
 									<option value="">All project managers</option>
@@ -105,7 +105,7 @@ export function SettingsTab() {
 			</Card>
 
 			<Card title="Reminders and reports">
-				<div className="inline-form" style={{ background: 'transparent', border: 0, padding: 0 }}>
+				<div className="inline-form inline-form--top" style={{ background: 'transparent', border: 0, padding: 0 }}>
 					<label><span className="toolbar__label">Reminder days before expiry</span><input value={days} onChange={(e) => setDays(e.target.value)} placeholder="30, 7, 0" /></label>
 					<fieldset style={{ flex: '2 1 280px', border: 0, padding: 0, margin: 0 }}>
 						<legend className="toolbar__label">Weekly hours report goes to</legend>

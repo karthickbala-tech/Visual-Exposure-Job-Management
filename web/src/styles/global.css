@@ -1285,6 +1285,32 @@ a.kpi:hover {
 	gap: 16px;
 }
 
+.stack--tight {
+	gap: 10px;
+}
+
+/* A long code line (the CSV heading on Admin > Data) wraps inside the card on a phone instead of running off its edge. */
+.card-body code {
+	overflow-wrap: anywhere;
+}
+
+/* A form row whose right side is a tall list (Admin > Settings): the fields line up with the top of the list, not its bottom. */
+.inline-form.inline-form--top {
+	align-items: flex-start;
+}
+
+/* Admin tabs: one row that scrolls sideways on a phone, instead of four rows of buttons above every tab. */
+@media (max-width: 640px) {
+	.inline-form.admin-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.admin-tabs .btn {
+		flex: none;
+	}
+}
+
 .grid-2 {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));

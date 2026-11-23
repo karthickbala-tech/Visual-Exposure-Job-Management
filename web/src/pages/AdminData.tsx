@@ -144,11 +144,13 @@ export function DataTab() {
 	return (
 		<>
 			<Card title="Download lists">
-				<p className="muted">Each list opens as a CSV file for a spreadsheet.</p>
-				<div className="actions">
-					{EXPORTS.map((x) => (
-						<a key={x.key} className="btn btn-ghost" href={pdfUrl(`/admin/export/${x.key}`)} download><Download size={14} aria-hidden="true" /> {x.label}</a>
-					))}
+				<div className="stack stack--tight">
+					<p className="muted">Each list opens as a CSV file for a spreadsheet.</p>
+					<div className="actions">
+						{EXPORTS.map((x) => (
+							<a key={x.key} className="btn btn-ghost" href={pdfUrl(`/admin/export/${x.key}`)} download><Download size={14} aria-hidden="true" /> {x.label}</a>
+						))}
+					</div>
 				</div>
 			</Card>
 			<Card title="Bring data in">
@@ -156,11 +158,13 @@ export function DataTab() {
 				<ImportBox kind="companies" />
 			</Card>
 			<Card title="Settings backup">
+				<div className="stack stack--tight">
 				<p className="muted">Save the current settings as a file, or put a saved file back.</p>
 				<div className="actions">
 					<button className="btn btn-ghost" onClick={backup} disabled={!settings.isSuccess}><Download size={14} aria-hidden="true" /> Download settings</button>
 					<input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void restore(f); e.target.value = ''; }} />
 					<button className="btn btn-ghost" onClick={() => fileRef.current?.click()} disabled={save.isPending}><Upload size={14} aria-hidden="true" /> Restore from a file</button>
+				</div>
 				</div>
 			</Card>
 		</>

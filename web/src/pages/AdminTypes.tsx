@@ -50,7 +50,7 @@ export function ComplianceTypesTab() {
 			flush
 			action={!open ? <button className="btn btn-ghost btn-sm" onClick={() => { setForm(EMPTY); setOpen('new'); }}><Plus size={14} aria-hidden="true" /> Add type</button> : undefined}
 		>
-			<p className="lead" style={{ padding: '0 20px' }}>
+			<p className="lead card-note">
 				The tickets, inductions and company documents the app tracks. Reminder days are how many days before expiry the reminders go out; leave them blank to use the
 				Admin setting.
 			</p>

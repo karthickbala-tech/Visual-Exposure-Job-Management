@@ -36,7 +36,7 @@ export function Admin() {
 	return (
 		<>
 			<PageHeader eyebrow="System" title="Admin" subtitle="Permissions, settings, emails and the queue of work for other systems." />
-			<div className="inline-form" role="tablist" aria-label="Admin">
+			<div className="inline-form admin-tabs" role="tablist" aria-label="Admin">
 				{(['permissions', 'settings', 'roles', 'types', 'emails', 'log', 'outbox', 'integrations', 'data'] as const).map((t) => (
 					<button key={t} role="tab" aria-selected={tab === t} className={'btn' + (tab === t ? '' : ' btn-ghost')} onClick={() => setTab(t)}>
 						{TAB_LABEL[t]}

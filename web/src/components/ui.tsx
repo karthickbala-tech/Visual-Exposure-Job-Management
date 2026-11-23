@@ -40,7 +40,7 @@ export function PageHeader({ eyebrow, title, subtitle, children }: { eyebrow?: s
 }
 
 /** A bordered panel with an optional small uppercase title and a right-hand action. */
-export function Card({ title, action, children, flush = false, label, tone }: { title?: string; action?: ReactNode; children: ReactNode; flush?: boolean; label?: string; tone?: 'loc' | 'sign' | 'crm' }) {
+export function Card({ title, action, children, flush = false, label, tone }: { title?: string; action?: ReactNode; children?: ReactNode; flush?: boolean; label?: string; tone?: 'loc' | 'sign' | 'crm' }) {
 	return (
 		<section className={'card' + (tone ? ' card--' + tone : '')} aria-label={title ?? label}>
 			{(title || action) && (
@@ -49,7 +49,8 @@ export function Card({ title, action, children, flush = false, label, tone }: { 
 					{action}
 				</div>
 			)}
-			<div className={flush ? '' : 'card-body'}>{children}</div>
+			{/* No body when there is nothing in it (a closed Admin > Emails card), so the card is not left with an empty padded strip. */}
+			{children === undefined || children === null || children === false ? null : <div className={flush ? '' : 'card-body'}>{children}</div>}
 		</section>
 	);
 }
