@@ -8,11 +8,11 @@ import { Chip } from './Chip';
 import { useToast } from './toast';
 import { useConfirm } from './Messages';
 import { fmtDate } from './ui';
+import { todayIso } from '../lib/dates';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
 const PHASE = { pre: 'pre-job checklist', post: 'post-job checklist' } as const;
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 /** Book hours on a task without leaving the home page. Over 14 hours asks to confirm; 16 or more is refused (the server checks too). */
 function BookHours({ taskId }: { taskId: string }) {

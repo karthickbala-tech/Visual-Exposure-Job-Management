@@ -11,6 +11,7 @@ import { ListToolbar, ListToolbarButtons } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn, GridLayout } from '../components/GridKit';
+import { todayIso } from '../lib/dates';
 
 const roleLabel = (r: string) => r.replace(/_/g, ' ');
 const parseRoles = (v: unknown): string[] => {
@@ -22,7 +23,6 @@ const parseRoles = (v: unknown): string[] => {
 	}
 };
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 type Tab = 've' | 'sub' | 'tickets' | 'docs';
 const TABS: { key: Tab; label: string }[] = [

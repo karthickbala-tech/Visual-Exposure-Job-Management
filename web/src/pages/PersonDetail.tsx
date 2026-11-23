@@ -10,6 +10,7 @@ import { Dialog } from '../components/Dialog';
 import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 import { addYears, validityYears } from '../lib/validity';
+import { todayIso } from '../lib/dates';
 
 const parseRoles = (v: unknown): string[] => {
 	try {
@@ -21,7 +22,6 @@ const parseRoles = (v: unknown): string[] => {
 };
 const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const todayIso = () => new Date().toISOString().slice(0, 10);
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 
 /** Edit one worker. The hourly rate and the Active tick are for administrators; the server checks that too. */

@@ -5,6 +5,7 @@ import { useCalendar } from '../api/queries';
 import type { CalendarItem } from '../api/types';
 import { Chip } from '../components/Chip';
 import { Card, PageHeader } from '../components/ui';
+import { todayIso as today } from '../lib/dates';
 
 const DAY = 86400000;
 const MAX_PER_CELL = 3;
@@ -13,7 +14,6 @@ const utc = (s: string) => new Date(s + 'T00:00:00Z');
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * DAY);
 /** Monday of the week containing `d`. Only whole days matter, so UTC date maths is exact. */
 const monday = (d: Date) => addDays(d, -((d.getUTCDay() + 6) % 7));
-const today = () => iso(new Date());
 const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('en-AU', { ...o, timeZone: 'UTC' });
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TYPE_NAME = { design: 'Design', fabrication: 'Fabrication', install: 'Install' } as const;

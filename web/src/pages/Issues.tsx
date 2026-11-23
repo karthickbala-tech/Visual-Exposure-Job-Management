@@ -13,13 +13,13 @@ import { Card, EmptyState, FilterBar, FilterChips, LayoutToggle, PageHeader, fmt
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 import { FilesPanel } from './FilesPanel';
+import { todayIso } from '../lib/dates';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
 const DEPARTMENTS = ['Install', 'Civic Billboards', 'Workshop', 'Management', 'VT/Digital Screens'];
 const COLUMNS = ['To Be discussed', 'To Be Quoted', 'Quoted', 'Quote Sent', 'In Progress', 'On Hold', 'Completed'];
 const DEAL_DEPARTMENTS = ['Management', 'Civic Billboards']; // ISS-4
 const DIRECTIONS = ['Inbound', 'Outbound', 'Middle Panel'];
-const todayIso = () => new Date().toISOString().slice(0, 10);
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 
 type Who = Issue & { reported_by_id?: string };

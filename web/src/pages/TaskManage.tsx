@@ -10,9 +10,9 @@ import { Card } from '../components/ui';
 import { Dialog } from '../components/Dialog';
 import { afterSave, editDiff } from '../lib/editDiff';
 import { CLOSE_CONFIRM, clearsNote, isDirectClose, isReset, reasonFor } from '../lib/stageActions';
+import { todayIso as today } from '../lib/dates';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
-const today = () => new Date().toISOString().slice(0, 10);
 const ROLES = ['lead', 'member', 'other'];
 const bare = { background: 'transparent', border: 0, padding: 0 } as const;
 

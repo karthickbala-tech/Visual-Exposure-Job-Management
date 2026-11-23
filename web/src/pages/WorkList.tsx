@@ -11,6 +11,7 @@ import { ResizableGrid, RowHeightPicker, useGridLayout } from '../components/Gri
 import type { GridColumn } from '../components/GridKit';
 import type { ActiveChip } from '../components/ListToolbar';
 import { Card, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate, TableFooter } from '../components/ui';
+import { todayIso as today } from '../lib/dates';
 
 /** The search, type and grouping values the panel edits before they are applied. */
 interface Draft { text: string; type: string; byJob: boolean; bySign: boolean }
@@ -22,7 +23,6 @@ const COPY: Record<Kind, { eyebrow: string; title: string; subtitle: string }> =
 	install: { eyebrow: 'Work', title: 'Installation', subtitle: 'Crews, dates and SWMS for every install.' },
 };
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
-const today = () => new Date().toISOString().slice(0, 10);
 
 interface ViewDef {
 	key: string;

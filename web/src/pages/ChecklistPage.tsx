@@ -11,8 +11,8 @@ import { useToast } from '../components/toast';
 import { BackLink, Card, PageHeader } from '../components/ui';
 import { useConfirm } from '../components/Messages';
 import { splitPayHours } from '../lib/payRules';
+import { todayIso as today } from '../lib/dates';
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * A photo question (CHK-8): the photo is uploaded to this checklist and its file id saved as the answer, which the server checks

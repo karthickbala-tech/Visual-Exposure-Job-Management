@@ -5,9 +5,9 @@ import { SPEC_FIELDS, TASK_KINDS } from '../lib/taskKinds';
 import type { TaskType } from '../lib/taskKinds';
 import { useToast } from './toast';
 import { Dialog } from './Dialog';
+import { todayIso } from '../lib/dates';
 
 const TYPE_LABEL: Record<TaskType, string> = { design: 'Design', fabrication: 'Fabrication', install: 'Install' };
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Add a task to a job with what the old wizard asked for (TSK-6, JOB-4): type, kind, name, dates, quoted and proposed hours,

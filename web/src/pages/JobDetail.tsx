@@ -22,9 +22,9 @@ import { QuotesPanel } from './QuotesPanel';
 import type { TaskType } from '../lib/taskKinds';
 import { TASK_NAMES } from '../lib/names';
 import { CLOSE_CONFIRM, isDirectClose, moveLabel, reasonFor } from '../lib/stageActions';
+import { todayIso as today } from '../lib/dates';
 
 const DONE = ['Completed', 'Approved & Completed', 'Cancelled', 'Complete - Not Used'];
-const today = () => new Date().toISOString().slice(0, 10);
 const hrs = (v: unknown) => (num(v as string | number) ? num(v as string | number).toFixed(2) : '');
 /** The kinds of install task that get a small tag beside the name; a plain install task needs none. */
 const KIND_TAG: Record<string, string> = { 'VE Subtask': 'Subtask', 'Minor Task': 'Minor Task', 'Print Only': 'Print Only', 'External Install': 'External' };

@@ -6,6 +6,7 @@ import { pdfUrl, useSaveSettings, useSettings } from '../api/more';
 import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
 import { Card } from '../components/ui';
+import { todayIso } from '../lib/dates';
 
 const EXPORTS = [
 	{ key: 'jobs', label: 'Jobs' },
@@ -125,7 +126,7 @@ export function DataTab() {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `settings-${new Date().toISOString().slice(0, 10)}.json`;
+		a.download = `settings-${todayIso()}.json`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};

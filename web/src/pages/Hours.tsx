@@ -12,6 +12,7 @@ import { ListToolbarButtons } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, useGridLayout } from '../components/GridKit';
 import type { GridColumn, GridLayout } from '../components/GridKit';
 import { splitPayHours } from '../lib/payRules';
+import { todayIso } from '../lib/dates';
 
 const COLS: { key: keyof HourCell; label: string }[] = [
 	{ key: 'fab', label: 'Fab' },
@@ -89,7 +90,6 @@ function Table({ report, perDay, grid }: { report: HoursReport; perDay: boolean;
 const sumWorked = (c: HourCell) => c.fab + c.install + c.workshop + c.design + c.other;
 /** Final = hours worked minus unbilled hours. The server sends it; older responses without it are worked out the same way. */
 const finalOf = (c: HourCell) => c.final ?? Math.max(0, Math.round((sumWorked(c) - c.unbilled) * 100) / 100);
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 /** CSV with one line per person: the days (when shown), the types, the total and the final hours. Cells that start like a formula are neutralised. */
 function downloadCsv(report: HoursReport, name: string) {
