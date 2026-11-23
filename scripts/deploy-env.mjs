@@ -26,9 +26,9 @@ const MDM_KEYS = ['MDM_DC', 'MDM_CLIENT_ID', 'MDM_CLIENT_SECRET', 'MDM_REFRESH_T
 
 /** Which variables each function receives. Keys not listed for a function are never sent to it. */
 export const PLAN = {
-	api: ['APP_URL', 'STRATUS_BUCKET', 'CRM_WEBHOOK_SECRET', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
-	jobs: ['APP_URL', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
-	events: ['APP_URL', 'MAIL_FROM', 'SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT'],
+	api: ['APP_URL', 'STRATUS_BUCKET', 'CRM_WEBHOOK_SECRET', 'MAIL_FROM', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
+	jobs: ['APP_URL', 'MAIL_FROM', 'ZOHO_DC', 'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN', 'WORKDRIVE_PARENT_FOLDER_ID', ...MDM_KEYS],
+	events: ['APP_URL', 'MAIL_FROM'],
 };
 /** Without these the app misbehaves, so the deploy refuses to run (it would otherwise delete them from Catalyst). */
 export const REQUIRED = { api: ['APP_URL', 'STRATUS_BUCKET'], jobs: ['APP_URL'], events: ['APP_URL'] };

@@ -11,7 +11,7 @@ test('with no sender configured nothing is sent and the reason is given', async 
 	assert.deepEqual(out, { sent: false, reason: 'no_sender' });
 });
 
-test('Catalyst Mail is used when only MAIL_FROM is set; no recipients is not an error', async () => {
+test('Catalyst Mail is used with MAIL_FROM as the sender; no recipients is not an error', async () => {
 	const sent = [];
 	const mailer = createMailer(catalystApp(sent), { env: { MAIL_FROM: 'noreply@example.test' } });
 	assert.deepEqual(await mailer.send({ to: [], subject: 's', html: 'h' }), { sent: false, reason: 'no_recipients' });
@@ -19,30 +19,21 @@ test('Catalyst Mail is used when only MAIL_FROM is set; no recipients is not an 
 	assert.equal(sent[0].from_email, 'noreply@example.test');
 });
 
-test('SMTP is used when SMTP_USER and SMTP_PASS are set, with a text twin, and Catalyst Mail is left alone', async () => {
-	const smtp = [];
-	const config = [];
-	const catalyst = [];
-	const mailer = createMailer(catalystApp(catalyst), {
-		env: { SMTP_USER: 'me@gmail.test', SMTP_PASS: 'app-pass', MAIL_FROM: 'ignored@example.test' },
-		smtpFactory: (c) => (config.push(c), { sendMail: async (m) => smtp.push(m) }),
+test('SMTP settings are ignored: mail always goes through Catalyst Mail from MAIL_FROM', async () => {
+	const sent = [];
+	const mailer = createMailer(catalystApp(sent), {
+		env: { SMTP_USER: 'me@gmail.test', SMTP_PASS: 'app-pass', MAIL_FROM: 'noreply@example.test' },
 	});
-	const out = await mailer.send({ to: ['a@x.test', 'b@x.test'], subject: 'Weekly', html: '<h2>Title</h2><p>One &amp; two</p>' });
-	assert.deepEqual(out, { sent: true, count: 2 });
-	assert.equal(catalyst.length, 0);
-	assert.equal(smtp[0].from, '"Visual Exposure" <me@gmail.test>');
-	assert.equal(smtp[0].to, 'a@x.test, b@x.test');
-	assert.equal(smtp[0].text, 'Title\nOne & two');
-	assert.deepEqual([config[0].host, config[0].port, config[0].secure], ['smtp.gmail.com', 465, true]);
-	assert.equal(config[0].auth.pass, 'app-pass');
+	assert.deepEqual(await mailer.send({ to: ['a@x.test'], subject: 's', html: 'h' }), { sent: true, count: 1 });
+	assert.equal(sent[0].from_email, 'noreply@example.test');
 });
 
-test('a failing SMTP send raises, so the notification log records "failed" with the reason', async () => {
-	const mailer = createMailer(catalystApp([]), {
-		env: { SMTP_USER: 'other@gmail.test', SMTP_PASS: 'x' },
-		smtpFactory: () => ({ sendMail: async () => { throw new Error('Invalid login'); } }),
-	});
-	await assert.rejects(mailer.send({ to: ['a@x.test'], subject: 's', html: 'h' }), /Invalid login/);
+test('SMTP settings alone send nothing, because there is no Catalyst Mail sender', async () => {
+	const sent = [];
+	const out = await createMailer(catalystApp(sent), { env: { SMTP_USER: 'me@gmail.test', SMTP_PASS: 'app-pass' } })
+		.send({ to: ['a@x.test'], subject: 's', html: 'h' });
+	assert.deepEqual(out, { sent: false, reason: 'no_sender' });
+	assert.equal(sent.length, 0);
 });
 
 test('html to text keeps paragraphs and decodes the usual entities', () => {
