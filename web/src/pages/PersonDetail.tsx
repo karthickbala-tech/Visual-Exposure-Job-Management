@@ -11,6 +11,7 @@ import { useToast } from '../components/toast';
 import { Card, PageHeader, fmtDate } from '../components/ui';
 import { addYears, validityYears } from '../lib/validity';
 import { todayIso } from '../lib/dates';
+import { roleLabel } from '../lib/roles';
 
 const parseRoles = (v: unknown): string[] => {
 	try {
@@ -304,7 +305,7 @@ export function PersonDetail() {
 						<div className="fact"><dt>Job title</dt><dd>{p.job_title || '-'}</dd></div>
 						{p.do_not_contact && <div className="fact"><dt>Contact</dt><dd>Do not contact (no reminder emails)</dd></div>}
 						<div className="fact"><dt>In MDM</dt><dd>{p.mdm_enabled ? 'Yes (device tracked)' : 'No'}</dd></div>
-						<div className="fact"><dt>Roles</dt><dd style={{ textTransform: 'capitalize' }}>{parseRoles(p.roles).map((r) => r.replace(/_/g, ' ')).join(', ') || '-'}</dd></div>
+						<div className="fact"><dt>Roles</dt><dd>{parseRoles(p.roles).map(roleLabel).join(', ') || '-'}</dd></div>
 						{isAdmin && <div className="fact"><dt>Hourly rate</dt><dd>{p.hourly_rate ? `$${Number(p.hourly_rate).toFixed(2)}` : '-'}</dd></div>}
 					</dl>
 				)}

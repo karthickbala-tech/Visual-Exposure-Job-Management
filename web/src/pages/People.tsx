@@ -13,8 +13,8 @@ import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayou
 import type { GridColumn, GridLayout } from '../components/GridKit';
 import { todayIso } from '../lib/dates';
 import { addYears, validityYears } from '../lib/validity';
+import { roleLabel } from '../lib/roles';
 
-const roleLabel = (r: string) => r.replace(/_/g, ' ');
 const parseRoles = (v: unknown): string[] => {
 	try {
 		const list = typeof v === 'string' ? JSON.parse(v) : v;
@@ -54,7 +54,7 @@ function workerColumns(stateFor: (id: string) => { label: string; act: number },
 				{p.is_active === false && <small className="sub">Inactive</small>}
 			</>
 		) },
-		...(withRole ? [{ key: 'role', label: 'Primary role', width: 160, cell: (p: Person) => <span style={{ textTransform: 'capitalize' }}>{parseRoles(p.roles).map(roleLabel)[0] || '-'}</span> }] : []),
+		...(withRole ? [{ key: 'role', label: 'Primary role', width: 160, cell: (p: Person) => <span>{parseRoles(p.roles).map(roleLabel)[0] || '-'}</span> }] : []),
 		{ key: 'phone', label: 'Phone', width: 150, cell: (p) => (p.phone ? <a href={`tel:${p.phone.replace(/\s+/g, '')}`}>{p.phone}</a> : '-') },
 		{ key: 'compliance', label: 'Compliance', width: 130, cell: (p) => {
 			const st = stateFor(p.ROWID);

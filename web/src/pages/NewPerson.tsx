@@ -4,10 +4,10 @@ import { useCreatePerson, useRoles } from '../api/more';
 import { useMe } from '../api/queries';
 import { Field, FormPage, FormSection } from '../components/FormKit';
 import { useToast } from '../components/toast';
+import { roleLabel } from '../lib/roles';
 
 const EMPTY = { first_name: '', last_name: '', person_kind: 'staff', role: '', job_title: '', email: '', phone: '' };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const roleLabel = (r: string) => r.replace(/_/g, ' ');
 
 /** Add a worker or subcontractor contact on its own page. */
 export function NewPerson() {

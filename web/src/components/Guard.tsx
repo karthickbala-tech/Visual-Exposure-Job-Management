@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useMe } from '../api/queries';
 import { PageHeader } from './ui';
+import { roleLabel } from '../lib/roles';
 
-const label = (r: string) => r.replace(/_/g, ' ');
 
 /** A page the person's roles cannot open shows a clear "No access" message instead of a blank or broken screen. */
 export function Guard({ roles, children }: { roles: string[] | undefined; children: ReactNode }) {
@@ -17,7 +17,7 @@ export function Guard({ roles, children }: { roles: string[] | undefined; childr
 				<Lock size={20} aria-hidden="true" />
 				<div>
 					<p>Your role does not have access to this page.</p>
-					<p className="muted">Roles that can open it: {roles.map(label).join(', ')}.</p>
+					<p className="muted">Roles that can open it: {roles.map(roleLabel).join(', ')}.</p>
 					<Link className="btn" to="/">
 						Back to dashboard
 					</Link>

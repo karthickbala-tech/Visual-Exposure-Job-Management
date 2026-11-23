@@ -140,8 +140,11 @@ const equipmentHistory = [];
 const profiles = {}; // personal details saved through PATCH /people/:id/profile
 const CHEM_KEYS = { name: 'name', location_id: 'locationId', sds_url: 'sdsUrl', review_date: 'reviewDate', stock: 'stock', unit: 'unit', hazard_class: 'hazardClass', supplier: 'supplier' };
 const chemPatch = (c, b) => { for (const [k, v] of Object.entries(CHEM_KEYS)) if (b[k] !== undefined) c[v] = b[k]; c.locationName = c.locationId ? (S.locations.find((l) => l.id === c.locationId) || {}).name || null : null; c.sdsMissing = !c.sdsUrl; return c; };
-const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
-const matrix = () => Object.fromEntries(RESOURCES.map((r) => [r, Object.fromEntries(S.ROLE_KEYS.map((role) => [role, role === 'admin' ? { verbs: ['view', 'create', 'edit', 'delete'], scope: 'all' } : ['project_manager', 'fab_manager', 'install_coordinator'].includes(role) ? { verbs: ['view', 'create', 'edit'], scope: 'all' } : role === 'viewer' ? { verbs: ['view'], scope: 'all' } : { verbs: ['view'], scope: 'assigned' }]))]));
+// The permission matrix is role -> area -> grant, the same built-in defaults as the server (lib/authz.js).
+// It was area -> role here before, so the Admin > Permissions role list showed area names ("jobs", "tasks").
+const { ROLE_LABELS } = createRequire(import.meta.url)('../../lib/config.js');
+const AUTHZ = createRequire(import.meta.url)('../../lib/authz.js');
+let authz = { matrix: structuredClone(AUTHZ.DEFAULT_MATRIX), customised: false, version: 0 };
 
 const SWMS_OPTIONS = {
 	hazards: [['falls', 'Risk of a fall of more than 2 metres'], ['confined_space', 'Confined space'], ['electrical', 'On or near energised electrical installations'], ['roads_rail', 'On or near a road, railway or other traffic corridor in use'], ['mobile_plant', 'Movement of powered mobile plant in the area'], ['hot_works', 'Hot works (welding, cutting, grinding)'], ['lifting', 'Crane or lifting operations'], ['dust', 'Dust, fumes or airborne particles'], ['asbestos', 'Likely to disturb asbestos']].map(([key, label]) => ({ key, label })),
@@ -316,7 +319,7 @@ const routes = [
 	['GET', /^\/hours\/(weekly|pay-period)$/, () => hoursReport()],
 	['GET', /^\/hours\/not-filled$/, () => ({ personId: ME, workshop: 1, other: 2, total: 3 })],
 	// people
-	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: key.replace(/_/g, ' ') })) })],
+	['GET', /^\/roles$/, () => ({ items: S.ROLE_KEYS.map((key) => ({ key, label: ROLE_LABELS[key] })) })],
 	['GET', /^\/people\/(\d+)\/ratings$/, () => ({ items: [{ taskId: '2007', rating: 5, comment: 'Careful and on time', ratedAt: null }, { taskId: '2008', rating: 4, comment: '', ratedAt: null }, { taskId: '2003', rating: 5, comment: 'Great finish on the frames', ratedAt: null }], count: 3, average: 4.67 })],
 	// Personal details by role (lib/services/people.js getProfile): a few of the real fields, all editable for the admin here.
 	['GET', /^\/people\/(\d+)\/profile$/, (m) => ({ personId: m[1], fields: [['address', 'Address Line 1', 'text'], ['date_of_birth', 'Date of Birth', 'date'], ['personal_email', 'Personal Email Address', 'email']].map(([key, label, kind]) => ({ key, label, kind, value: (profiles[m[1]] || {})[key] ?? '', editable: isAdmin })) })],
@@ -371,7 +374,8 @@ const routes = [
 	['GET', /^\/admin\/notifications$/, (_, q) => list(S.notifications.filter((n) => !q.get('status') || n.status === q.get('status')))],
 	['POST', /^\/admin\/notifications\/\d+\/retry$/, () => ({ sent: true, reason: null })],
 	['POST', /^\/admin\/reports\/weekly-(hours|issues)$/, () => ({ ran: true, sent: true })],
-	['GET', /^\/admin\/authz$/, () => ({ matrix: matrix(), customised: false, version: 1 })],
+	['GET', /^\/admin\/authz$/, () => authz],
+	['PUT', /^\/admin\/authz$/, (_, __, b) => { authz = { matrix: { ...structuredClone(AUTHZ.DEFAULT_MATRIX), ...b.matrix }, customised: true, version: authz.version + 1 }; return { version: authz.version, matrix: authz.matrix }; }],
 	['GET', /^\/admin\/outbox$/, (_, q) => list(S.outbox.filter((o) => !q.get('status') || o.status === q.get('status')))],
 	['POST', /^\/admin\/outbox\/(\d+)\/retry$/, (m) => { const o = S.outbox.find((x) => x.id === m[1]); if (o) { o.status = 'Pending'; o.lastError = ''; } return { ok: true }; }],
 	['GET', /^\/admin\/integrations$/, () => ({ crm: { configured: true, ok: true, message: 'Connected.' }, workdrive: { configured: true, ok: true, message: 'Connected.' }, workdriveFolder: { configured: true, ok: true, message: 'Folder found: Visual Exposure Jobs' }, workdriveFolderSet: true , mdm: { configured: true, ok: true, message: 'Connected.' } })],

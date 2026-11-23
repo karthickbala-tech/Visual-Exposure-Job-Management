@@ -8,6 +8,7 @@ import { CrewTasks } from '../components/CrewCards';
 import { ToDoList } from '../components/ToDoList';
 import { RoleDashboard } from '../components/RoleDashboard';
 import { todayIso } from '../lib/dates';
+import { roleLabel } from '../lib/roles';
 
 /** Where a tile goes when it is tapped. */
 const TILE_LINK = (key: string): string | undefined => {
@@ -26,7 +27,7 @@ function RoleTiles({ roles }: { roles: string[] }) {
 	const q = useRoleDashboard(role);
 	if (!role || !q.isSuccess || q.data.tiles.length === 0) return null;
 	return (
-		<section className="kpis" aria-label={`${role.replace(/_/g, ' ')} figures`}>
+		<section className="kpis" aria-label={`${roleLabel(role)} figures`}>
 			{q.data.tiles.map((t) => (
 				<Kpi key={t.key} to={TILE_LINK(t.key)} label={t.label} value={t.value} tone={/overdue|not filled/i.test(t.label) ? (t.value ? 'danger' : 'ok') : undefined} />
 			))}

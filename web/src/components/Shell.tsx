@@ -12,8 +12,8 @@ import { usePrefs } from './prefs';
 import { flatNav, isGroup, visibleNav } from '../navConfig';
 import type { NavEntry, NavGroup, NavItem } from '../navConfig';
 import { NotificationBell } from './NotificationBell';
+import { roleLabel } from '../lib/roles';
 
-const roleLabel = (r: string) => r.replace(/_/g, ' ');
 const initialsOf = (name: string) =>
 	name
 		.split(/\s+/)

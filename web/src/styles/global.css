@@ -585,7 +585,6 @@ html, body, #root {
 	font-size: var(--fs-2xs);
 	font-weight: var(--fw-medium);
 	color: var(--brand-strong);
-	text-transform: capitalize;
 }
 
 .user-trigger .chev {
@@ -1567,6 +1566,12 @@ input[type='file']::file-selector-button:hover {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
 	border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+}
+
+/* A short note inside a flush card (between its toolbar and its table): the same side padding as .inline-form. */
+.card-note {
+	margin: 0;
+	padding: 12px 18px;
 }
 
 .lead {
@@ -4317,7 +4322,6 @@ body.col-resizing, body.col-resizing * {
 	border-radius: var(--radius-pill);
 	font-size: var(--fs-xs);
 	font-weight: var(--fw-semibold);
-	text-transform: capitalize;
 	cursor: pointer;
 	background: var(--surface);
 	transition: all 0.12s ease;

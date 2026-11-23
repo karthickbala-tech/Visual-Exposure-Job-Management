@@ -8,12 +8,16 @@ import { useToast } from '../components/toast';
 import { Card, PageHeader } from '../components/ui';
 import { EmailsTab, NotificationsTab, RolesTab, SettingsTab } from './AdminMore';
 import { DataTab } from './AdminData';
+import { AREA_LABEL, ROLE_KEYS, roleLabel } from '../lib/roles';
 import { ComplianceTypesTab } from './AdminTypes';
 
 const VERBS: Verb[] = ['view', 'create', 'edit', 'delete'];
 const SCOPES: Scope[] = ['all', 'assigned', 'own'];
 const SCOPE_LABEL: Record<Scope, string> = { all: 'All records', assigned: 'Assigned to them', own: 'Their own' };
-const RESOURCES = ['jobs', 'tasks', 'sites', 'signs', 'people', 'issues', 'swms', 'compliance', 'equipment', 'devices'];
+// Every area the server checks (lib/domain/matrix.js). Companies and hours were missing, so their grants could not be seen or changed.
+const RESOURCES = Object.keys(AREA_LABEL);
+// Roles come from the fixed list, never from the matrix keys: a matrix in the wrong shape then shows empty boxes, not area names as roles.
+const ROLES = ROLE_KEYS.filter((r) => r !== 'admin');
 
 const TAB_LABEL = { permissions: 'Permissions', settings: 'Settings', roles: 'Roles', types: 'Compliance types', emails: 'Emails', log: 'Email log', outbox: 'Outbox', integrations: 'Integrations', data: 'Data' } as const;
 
@@ -54,14 +58,13 @@ function Permissions() {
 	useEffect(() => {
 		if (authz.data) {
 			setMatrix(structuredClone(authz.data.matrix));
-			setRole((r) => r || Object.keys(authz.data.matrix).find((k) => k !== 'admin') || '');
+			setRole((r) => r || ROLES[0]);
 		}
 	}, [authz.data]);
 
 	if (authz.isPending) return <p role="status" className="table-empty">Loading…</p>;
 	if (authz.isError || !matrix) return <p role="alert">Could not load permissions.</p>;
 
-	const roles = Object.keys(matrix).filter((r) => r !== 'admin');
 	const grants = matrix[role] ?? {};
 	const toggle = (res: string, verb: Verb) => {
 		const g = grants[res] ?? { verbs: [], scope: 'all' as Scope };
@@ -79,9 +82,9 @@ function Permissions() {
 				<label style={{ flex: '0 1 240px' }}>
 					<span className="toolbar__label">Role</span>
 					<select value={role} onChange={(e) => setRole(e.target.value)} style={{ width: '100%' }}>
-						{roles.map((r) => (
+						{ROLES.map((r) => (
 							<option key={r} value={r}>
-								{r.replace(/_/g, ' ')}
+								{roleLabel(r)}
 							</option>
 						))}
 					</select>
@@ -91,12 +94,12 @@ function Permissions() {
 				</button>
 				{save.isError && <p role="alert">{save.error.message}</p>}
 			</div>
-			<p className="muted" style={{ padding: '0 16px' }}>
+			<p className="muted card-note">
 				The administrator role always has full access and cannot be changed. {authz.data?.customised ? `Customised (version ${authz.data.version}).` : 'Using the built-in defaults.'}
 			</p>
 			<div className="table-wrap">
 				<table className="table">
-					<caption className="sr-only">Permissions for {role}</caption>
+					<caption className="sr-only">Permissions for {roleLabel(role)}</caption>
 					<thead>
 						<tr>
 							<th scope="col">Area</th>
@@ -114,15 +117,15 @@ function Permissions() {
 							return (
 								<tr key={res}>
 									<td data-label="Area" className="cell-primary">
-										<strong>{res}</strong>
+										<strong>{AREA_LABEL[res]}</strong>
 									</td>
 									{VERBS.map((v) => (
 										<td key={v} data-label={v}>
-											<input type="checkbox" aria-label={`${role} can ${v} ${res}`} checked={!!g?.verbs.includes(v)} onChange={() => toggle(res, v)} />
+											<input type="checkbox" aria-label={`${roleLabel(role)} can ${v} ${AREA_LABEL[res]}`} checked={!!g?.verbs.includes(v)} onChange={() => toggle(res, v)} />
 										</td>
 									))}
 									<td data-label="Which records">
-										<select aria-label={`Records for ${res}`} value={g?.scope ?? 'all'} disabled={!g} onChange={(e) => setScope(res, e.target.value as Scope)}>
+										<select aria-label={`Records for ${AREA_LABEL[res]}`} value={g?.scope ?? 'all'} disabled={!g} onChange={(e) => setScope(res, e.target.value as Scope)}>
 											{SCOPES.map((s) => (
 												<option key={s} value={s}>
 													{SCOPE_LABEL[s]}
@@ -237,18 +240,18 @@ function Integrations() {
 				{syncMdm.isError && <p role="alert">{syncMdm.error.message}</p>}
 			</div>
 			{syncMdm.data && (
-				<p role="status" style={{ padding: '0 16px' }}>
+				<p role="status" className="card-note">
 					{mdmSyncText(syncMdm.data)}
 				</p>
 			)}
 			{pull.data && (
-				<p role="status" style={{ padding: '0 16px' }}>
+				<p role="status" className="card-note">
 					{pull.data.ran
 						? `Looked at ${pull.data.changedDeals} changed deal(s): ${pull.data.wonDeals} won, ${pull.data.created} new job(s) created, ${pull.data.alreadyHadJob} already had a job${pull.data.failed ? `, ${pull.data.failed} could not be created` : ''}.`
 						: pull.data.reason}
 				</p>
 			)}
-			<p className="muted" style={{ padding: '0 16px' }}>
+			<p className="muted card-note">
 				Makes one small read at Zoho CRM, one at WorkDrive and one at ManageEngine MDM. The credentials are set on the functions in the Catalyst console and are never shown here.
 			</p>
 			<div className="table-wrap">
@@ -270,7 +273,7 @@ function Integrations() {
 				</table>
 			</div>
 			{check.data && !check.data.workdriveFolderSet && (
-				<p className="muted" style={{ padding: '8px 16px' }}>
+				<p className="muted card-note">
 					Job folders are not created yet: set <code>WORKDRIVE_PARENT_FOLDER_ID</code> (the WorkDrive folder that job folders go in) on the api and jobs functions.
 				</p>
 			)}
