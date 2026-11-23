@@ -61,9 +61,13 @@ export const useTransitionTask = (jobId: string) => {
 			const { taskId, ...body } = v;
 			return api('/tasks/' + taskId + '/transition', json('POST', body));
 		},
-		onSuccess: () => {
+		// The task page reads ['task', id]; without it the page kept the old stage after a move. Only queries on screen refetch.
+		onSuccess: (_r, v) => {
+			qc.invalidateQueries({ queryKey: ['task', v.taskId] });
 			qc.invalidateQueries({ queryKey: ['job', jobId] });
 			qc.invalidateQueries({ queryKey: ['jobs'] });
+			qc.invalidateQueries({ queryKey: ['board'] });
+			qc.invalidateQueries({ queryKey: ['dash-tasks'] });
 		},
 	});
 };
