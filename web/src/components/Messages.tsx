@@ -120,4 +120,3 @@ export function MessageProvider({ children }: { children: ReactNode }) {
 export const useConfirm = () => useContext(MessageContext).confirm;
 
 /** Shows a message the person must acknowledge. Resolves when they press the button. */
-export const useMessage = () => useContext(MessageContext).message;

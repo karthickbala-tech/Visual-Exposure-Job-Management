@@ -47,11 +47,6 @@ export const useAddTime = (taskId: string) => {
 	});
 };
 
-// ---- task board ----
-export interface BoardItem { ROWID: string; name: string; job_id: string; kind: string | null; scheduled_date: string | null; required_finish: string | null; overdue: boolean }
-export interface BoardColumn { stage: string; items: BoardItem[]; count: number; overdueCount: number }
-export const useTaskBoard = (type: string) => useGet<{ type: string; columns: BoardColumn[]; truncated: boolean }>(['board', type], '/tasks/board' + qs({ type }));
-
 // ---- SWMS and checklist reports ----
 export interface SwmsListItem { id: string; status: string; jobId: string; jobName: string | null; siteAddress: string; onSite: string | null; progress: { pm: boolean; tl: boolean; crewSigned: number; crewTotal: number }; task: { id: string; name: string; stage: string } | null }
 /** The high-risk categories and PPE the SWMS form offers, and which PPE each category ticks. Never changes during a session. */

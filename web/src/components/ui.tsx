@@ -164,7 +164,3 @@ export function EmptyState({ icon: Icon = Inbox, title = 'No items found', descr
 	);
 }
 
-/** A small coloured dot for live or status indicators. Pass `pulse` for a soft halo. */
-export function StatusDot({ tone = 'ok', pulse = false }: { tone?: 'ok' | 'danger' | 'warn' | 'info' | 'muted'; pulse?: boolean }) {
-	return <span className={`status-dot status-dot--${tone}` + (pulse ? ' status-dot--pulse' : '')} aria-hidden="true" />;
-}

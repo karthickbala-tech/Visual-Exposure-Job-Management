@@ -9,9 +9,6 @@ export interface Me {
 	person: Record<string, unknown> | null;
 }
 
-export const useHealth = () =>
-	useQuery({ queryKey: ['health'], queryFn: () => api<{ ok: boolean }>('/health'), retry: false });
-
 /** Signed-in user. A 401 means "not signed in" and is handled by the auth gate, so no retries. */
 export const useMe = () =>
 	// Fetched once per visit (REQUEST_BUDGET: "useMe is fetched once"); a reload or an invalidation reads it again.
@@ -38,14 +35,6 @@ export const useJob = (id: string | undefined) =>
 
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
 
-export const useCreateJob = () => {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (input: { name: string; description?: string }) => api<Job>('/jobs', json('POST', input)),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
-	});
-};
-
 export const useCreateTask = (jobId: string) => {
 	const qc = useQueryClient();
 	return useMutation({
@@ -67,7 +56,6 @@ export const useTransitionTask = (jobId: string) => {
 			qc.invalidateQueries({ queryKey: ['task', v.taskId] });
 			qc.invalidateQueries({ queryKey: ['job', jobId] });
 			qc.invalidateQueries({ queryKey: ['jobs'] });
-			qc.invalidateQueries({ queryKey: ['board'] });
 			qc.invalidateQueries({ queryKey: ['dash-tasks'] });
 		},
 	});
@@ -161,8 +149,6 @@ export const useUpdateIssue = () => {
 		},
 	});
 };
-export const useMoveIssue = useUpdateIssue;
-
 export const useSwms = (id: string | undefined) =>
 	useQuery({ queryKey: ['swms', id], queryFn: () => api<{ swms: SwmsView }>('/swms/' + id), enabled: !!id });
 
