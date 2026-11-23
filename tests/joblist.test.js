@@ -149,3 +149,18 @@ test('the job page lists fabrication tasks in the FAB-2 order: parent then its s
 	const fab = (await jobs.getJob(w.ctx, job.ROWID)).tasks.filter((t) => t.task_type === 'fabrication').map((t) => t.ROWID);
 	assert.deepEqual(fab, [busy, sub, sooner, later], 'In Progress before Scheduled; the subtask right after its parent; then by date');
 });
+
+test('the jobs list sees every job, not only the newest 300 (tabs, counts, search and paging)', async () => {
+	const w = makeWorld();
+	const me = String(w.ctx.actor.person.ROWID);
+	for (let i = 0; i < 340; i++) {
+		w.db.jobs.push({ ROWID: String(900000 + i), name: i === 0 ? 'Oldest Pylon' : `Job ${i}`, stage: i < 5 ? 'In Progress' : 'Completed', pm_id: i === 0 ? me : null, CREATEDTIME: `2026-01-01 00:00:${String(i).padStart(3, '0')}` });
+	}
+	const all = await jobs.listJobs(w.ctx, { limit: 50 });
+	assert.equal(all.total, 340, 'all 340 jobs counted');
+	assert.equal(all.counts.all, 340);
+	assert.equal(all.counts.my_open, 1, 'the oldest job is still "my open"');
+	assert.equal(all.truncated, false);
+	assert.deepEqual((await jobs.listJobs(w.ctx, { search: 'oldest' })).items.map((j) => j.name), ['Oldest Pylon'], 'search finds a job older than the newest 300');
+	assert.equal((await jobs.listJobs(w.ctx, { view: 'my_open' })).items.length, 1);
+});

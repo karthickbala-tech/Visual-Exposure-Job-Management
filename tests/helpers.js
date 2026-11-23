@@ -20,6 +20,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 		if (i >= 0) rows[i] = { ...rows[i], ...row };
 	};
 	const byIds = (rows, ids) => (ids ? rows.filter((r) => ids.map(String).includes(String(r.ROWID))) : rows);
+	// Like the real database: when a limit is given, return at most that many rows from `offset` (ZCQL caps a SELECT at 300).
+	const pageOf = (rows, { limit, offset } = {}) => (limit === undefined ? rows : rows.slice(offset || 0, (offset || 0) + Math.min(limit, 300)));
 
 	const repos = {
 		signGroups: {
@@ -94,8 +96,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 			findById: async (id) => clone(db.jobs.find((j) => String(j.ROWID) === String(id))),
 			findByDealId: async (dealId) => clone(db.jobs.find((j) => j.crm_deal_id === dealId)),
 			countByStage: async () => db.jobs.reduce((m, j) => ({ ...m, [j.stage]: (m[j.stage] || 0) + 1 }), {}),
-			list: async ({ stage, stages, excludeStages, pmId, fabManagerId, mineId, search, ids } = {}) =>
-				byIds(db.jobs, ids)
+			list: async ({ stage, stages, excludeStages, pmId, fabManagerId, mineId, search, ids, limit, offset } = {}) =>
+				pageOf(byIds(db.jobs, ids)
 					.filter(
 						(j) =>
 							(!stage || j.stage === stage) &&
@@ -105,7 +107,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 							(!fabManagerId || String(j.fab_manager_id) === String(fabManagerId)) &&
 							(!mineId || String(j.pm_id) === String(mineId) || String(j.fab_manager_id) === String(mineId)) &&
 							(!search || String(j.name).toLowerCase().includes(String(search).toLowerCase()))
-					)
+					), { limit, offset })
 					.map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
@@ -120,8 +122,8 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 				db.tasks.filter((t) => t.required_finish && t.required_finish < today && !terminal.includes(t.stage)).length,
 			findBySwms: async (swmsId) => clone(db.tasks.find((t) => String(t.swms_id) === String(swmsId))),
 			listByJob: async (jobId) => db.tasks.filter((t) => String(t.job_id) === String(jobId)).map(clone),
-			list: async ({ jobId, jobIds, type, stage, ids, excludeStages, from, to, kind, swmsIds, requiredBefore } = {}) =>
-				byIds(db.tasks, ids)
+			list: async ({ jobId, jobIds, type, stage, ids, excludeStages, from, to, kind, swmsIds, requiredBefore, limit, offset } = {}) =>
+				pageOf(byIds(db.tasks, ids)
 					.filter(
 						(t) =>
 							(!kind || t.kind === kind) &&
@@ -135,7 +137,7 @@ function makeWorld({ roles = ['admin'], person = { ROWID: '105747000000900001', 
 							(!from || (t.scheduled_date && t.scheduled_date >= from)) &&
 							(!to || (t.scheduled_date && t.scheduled_date <= to))
 					)
-					.sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')))
+					.sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || ''))), { limit, offset })
 					.map(clone),
 			insert: async (row) => {
 				const r = { ROWID: nextId(), ...row };
