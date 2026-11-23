@@ -1,5 +1,5 @@
 import { useTaskHistory } from '../api/more';
-import { Card } from './ui';
+import { Card, fmtDateTime } from './ui';
 
 /** Who moved this task between stages, when, and why (the reason shows for rejects, reopens and holds). */
 export function TaskHistory({ taskId }: { taskId: string }) {
@@ -13,7 +13,7 @@ export function TaskHistory({ taskId }: { taskId: string }) {
 				<ul className="plain-list">
 					{q.data.items.map((h, i) => (
 						<li key={i}>
-							<small>{h.at?.replace('T', ' ').slice(0, 16) ?? ''}</small> <strong>{h.from ?? 'New'}</strong> to <strong>{h.to ?? '-'}</strong>
+							<small>{h.at ? fmtDateTime(h.at) : ''}</small> <strong>{h.from ?? 'New'}</strong> to <strong>{h.to ?? '-'}</strong>
 							{h.by && <> by {h.by}</>}
 							{h.comment && <small className="sub"> “{h.comment}”</small>}
 						</li>

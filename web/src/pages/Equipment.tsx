@@ -7,7 +7,7 @@ import { Chip } from '../components/Chip';
 import { Dialog } from '../components/Dialog';
 import { useConfirm } from '../components/Messages';
 import { useToast } from '../components/toast';
-import { Card, PageHeader } from '../components/ui';
+import { Card, PageHeader, fmtDate } from '../components/ui';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
@@ -42,11 +42,11 @@ const EQ_COLUMNS: GridColumn<EquipmentItem>[] = [
 	) },
 	{ key: 'location', label: 'Location', width: 170, cell: (e) => e.locationName ?? '-' },
 	{ key: 'status', label: 'Status', width: 150, cell: (e) => <Chip status={e.status} /> },
-	{ key: 'last', label: 'Last checked', width: 140, cell: (e) => e.lastChecked ?? '-' },
+	{ key: 'last', label: 'Last checked', width: 140, cell: (e) => fmtDate(e.lastChecked) },
 	{ key: 'every', label: 'Every', width: 110, right: true, cell: (e) => (e.frequencyDays ? `${e.frequencyDays} days` : '-') },
 	{ key: 'next', label: 'Next check', width: 220, cell: (e) => (
 		<>
-			{e.nextDue ?? '-'}
+			{fmtDate(e.nextDue)}
 			{e.overdue && <span className="chip chip-red" style={{ marginLeft: 8 }}>{e.daysOverdue} days overdue</span>}
 		</>
 	) },

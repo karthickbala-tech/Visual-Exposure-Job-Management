@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { ListToolbar, ListToolbarButtons, PanelSection } from '../components/ListToolbar';
 import type { ActiveChip } from '../components/ListToolbar';
-import { Card, EmptyState, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate } from '../components/ui';
+import { Card, EmptyState, FilterBar, FilterChips, LayoutToggle, PageHeader, fmtDate, fmtDateTime } from '../components/ui';
 import { GridStatusBar, ResizableGrid, RowHeightPicker, gridWidths, useGridLayout } from '../components/GridKit';
 import type { GridColumn } from '../components/GridKit';
 import { FilesPanel } from './FilesPanel';
@@ -67,7 +67,7 @@ function History({ id }: { id: string }) {
 		<ul className="plain-list">
 			{q.data.items.map((e, i) => (
 				<li key={i}>
-					<small>{e.at?.replace('T', ' ').slice(0, 16) ?? ''}</small>{' '}
+					<small>{e.at ? fmtDateTime(e.at) : ''}</small>{' '}
 					{e.changes.map((c) => `${c.field.replace(/_id$/, '').replace(/_/g, ' ')}: ${c.from ? c.from : c.to ? '-' : 'edited'}${c.to ? ' to ' + c.to : ''}`).join('; ')}
 				</li>
 			))}
