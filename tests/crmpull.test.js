@@ -33,7 +33,7 @@ test('only Closed Won deals become jobs, with the owner as project manager; a re
 test('the time of the last run is remembered, and the first run only looks back one day', async () => {
 	const w = makeWorld();
 	const seen = [];
-	await pullWonDeals(withZoho(w, [], seen));
+	await pullWonDeals(withZoho(w, [deal({ Stage: 'Negotiation/Review' })], seen));
 	const firstSince = seen.find((s) => s[0] === 'since')[1];
 	const CLOCK = Date.parse('2026-11-02T10:00:00Z'); // the fixed test clock
 	assert.equal(Date.parse(firstSince), CLOCK - 24 * 3600 * 1000, 'one day before now');
@@ -44,6 +44,20 @@ test('the time of the last run is remembered, and the first run only looks back 
 	await pullWonDeals(withZoho(w, [], seen2));
 	assert.equal(seen2.find((s) => s[0] === 'since')[1], saved, 'the next run asks only about newer changes');
 	assert.equal(w.db.settings.filter((s) => s.setting_key === KEY).length, 1, 'one setting row, updated');
+});
+
+test('a quiet run (no changed deals) writes nothing, and the next run asks from the same time', async () => {
+	const w = makeWorld();
+	await pullWonDeals(withZoho(w, [deal({ Stage: 'Negotiation/Review' })]));
+	const before = w.db.settings.find((s) => s.setting_key === KEY).setting_value;
+	let updates = 0;
+	const ctx = withZoho(w, []);
+	const repos = { ...ctx.repos, settings: { ...ctx.repos.settings, update: async (r) => (updates++, ctx.repos.settings.update(r)), insert: async (r) => (updates++, ctx.repos.settings.insert(r)) } };
+	const quiet = await pullWonDeals({ ...ctx, repos });
+	assert.equal(quiet.saved, false);
+	assert.equal(updates, 0, 'no Data Store write when nothing changed in the CRM');
+	assert.equal(w.db.settings.find((s) => s.setting_key === KEY).setting_value, before);
+	assert.equal(quiet.since, JSON.parse(before).since, 'it asked from the saved time');
 });
 
 test('a bad deal is skipped and logged; the others still arrive; an invalid owner email does not matter', async () => {
