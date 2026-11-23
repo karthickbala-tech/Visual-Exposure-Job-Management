@@ -1,8 +1,8 @@
 # Visual Exposure - Session handover
 
-Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 19 Nov 2026** (`a4cbab2`, branch = main = Development): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules. **The 23 Nov review fixes (0c) are pushed, not deployed.**
+Branch `feat/backend-foundation`, merged into `main` (fast-forward, both on GitHub). **Last deployed to Catalyst Development on 23 Nov 2026** (`935310b`, branch = main = Development): api, jobs, events and the web client, with a plain `catalyst deploy` (the variables already in Catalyst were left as they were). There is no Production or AU project yet (owner decision 3 Nov: finish on this Development project, review with the client, then move to AU). The account is the **free plan**: see `docs/REQUEST_BUDGET.md`. Usage seen on 11 Nov: Cache get 541/1000 (tightest), Data Store fetch 4272/10000, update 298/1000, insert 162/5000, Mail 0/100. Detail of the Creator comparison is in `docs/DS_COMPARISON.md`; `docs/DS_CHECKLIST_RULES.md` has the checklist role rules.
 
-## 0c. 23 Nov 2026 (Kalyani's session): code review and fixes (pushed to the branch, not deployed, main not updated)
+## 0c. 23 Nov 2026 (Kalyani's session): code review and fixes (merged to main and deployed to Development, `935310b`)
 
 A read-only review (backend, web code, CSS) found the code clean but not ready for a year of real data. Fixed, one commit each, tests for each backend change (386 pass), web tsc/oxlint/build pass:
 - **A, bugs**: the task page now refreshes after a stage move (`c686784`); "today" is the Melbourne date on every screen, not UTC (`65df560`, `web/src/lib/dates.ts`).
@@ -164,7 +164,7 @@ Compared every open item of `docs/REACT_APP_EXTRACTION.md` (and the demo's last 
 
 ## 7. Exact next step
 
-**Current (23 Nov 2026).** The review fixes (section 0c) are on the branch: say "update main" and "deploy" to put them on Development. Decide item 8 (checklist answer saving) before production on the free plan. Otherwise no build work is open on our side.
+**Current (23 Nov 2026).** The review fixes (section 0c) are deployed to Development (app 200, API health ok, protected routes 401, live bundle = local build). Decide item 8 (checklist answer saving) before production on the free plan. Otherwise no build work is open on our side.
 1. **You, set-up**: MDM trial with a test phone and the read-only token (`docs/GO_LIVE.md`); rotate the exposed keys (Zoho OAuth secret and refresh token, Gmail app password, CRM webhook secret); recreate `.env` (none in the folder now) and run `npm run deploy:env` with every variable. Email is already live in Development (Gmail SMTP on all three functions, `docs/GO_LIVE.md`; the backend sender is done): check that the people on Development have test or team addresses, and put the new Gmail app password in `.env`. SMTP stays for the POC; production moves to Catalyst Mail on the client's verified domain.
 2. **You, on Development**: pre-job checklists as leader and member (including the SWMS gate), post-job with management review Yes (issue appears?), Devices map after the MDM sync, timeline and variance.
 3. **Decided 19 Nov (owner): leave as they are**: white text on the green buttons, the collapsed sidebar look, the Home content. Ask Karthick to set `#22c55e` in `CLAUDE.md` and push it.
