@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Bell, CalendarClock, CheckCircle2, FileWarning } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useDashboard } from '../api/queries';
+import { useDashboard, useMe } from '../api/queries';
+import { ROUTE_ROLES } from '../navConfig';
 
 interface Item {
 	key: string;
@@ -20,6 +21,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  */
 export function NotificationBell() {
 	const q = useDashboard();
+	const me = useMe();
+	// A second IC or viewer sees the company figures but cannot open SWMS, so no link to it.
+	const opensSwms = !!me.data?.roles.some((r) => ROUTE_ROLES.swms?.includes(r));
 	const [open, setOpen] = useState(false);
 	const box = useRef<HTMLDivElement>(null);
 	const trigger = useRef<HTMLButtonElement>(null);
@@ -49,7 +53,7 @@ export function NotificationBell() {
 		if (d.scope === 'all') {
 			if (d.overdueTasks) items.push({ key: 'overdue', icon: CalendarClock, text: `${plural(d.overdueTasks, 'task is', 'tasks are')} past the required finish`, to: '/tasks' });
 			if (d.openIssues) items.push({ key: 'issues', icon: AlertTriangle, text: `${plural(d.openIssues, 'open issue', 'open issues')} waiting for someone`, to: '/issues' });
-			if (d.swmsAwaiting) items.push({ key: 'swms', icon: FileWarning, text: `${plural(d.swmsAwaiting, 'SWMS', 'SWMS')} waiting for a signature`, to: '/swms' });
+			if (d.swmsAwaiting && opensSwms) items.push({ key: 'swms', icon: FileWarning, text: `${plural(d.swmsAwaiting, 'SWMS', 'SWMS')} waiting for a signature`, to: '/swms' });
 		}
 		const due = d.myTasks.filter((t) => !DONE.includes(t.stage) && t.scheduled_date && t.scheduled_date.slice(0, 10) <= d.today);
 		if (due.length) items.push({ key: 'mine', icon: CalendarClock, text: `${plural(due.length, 'of your tasks is', 'of your tasks are')} scheduled for today or earlier`, to: '/' });

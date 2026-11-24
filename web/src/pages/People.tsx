@@ -14,6 +14,7 @@ import type { GridColumn, GridLayout } from '../components/GridKit';
 import { todayIso } from '../lib/dates';
 import { addYears, validityYears } from '../lib/validity';
 import { roleLabel } from '../lib/roles';
+import { ROUTE_ROLES } from '../navConfig';
 
 const parseRoles = (v: unknown): string[] => {
 	try {
@@ -46,7 +47,7 @@ function stateOf(items: ComplianceItem[]) {
 }
 
 /** Columns of a worker list. The compliance column needs the person's records, so the caller passes stateFor. */
-function workerColumns(stateFor: (id: string) => { label: string; act: number }, withRole: boolean, showRate: boolean): GridColumn<Person>[] {
+function workerColumns(stateFor: (id: string) => { label: string; act: number }, withRole: boolean, showRate: boolean, showTickets = true): GridColumn<Person>[] {
 	return [
 		{ key: 'name', label: 'Name', width: 240, cell: (p) => (
 			<>
@@ -56,11 +57,13 @@ function workerColumns(stateFor: (id: string) => { label: string; act: number },
 		) },
 		...(withRole ? [{ key: 'role', label: 'Primary role', width: 160, cell: (p: Person) => <span>{parseRoles(p.roles).map(roleLabel)[0] || '-'}</span> }] : []),
 		{ key: 'phone', label: 'Phone', width: 150, cell: (p) => (p.phone ? <a href={`tel:${p.phone.replace(/\s+/g, '')}`}>{p.phone}</a> : '-') },
-		{ key: 'compliance', label: 'Compliance', width: 130, cell: (p) => {
-			const st = stateFor(p.ROWID);
-			return st.label === 'No records' ? <span className="muted">No records</span> : <Chip status={st.label} />;
-		} },
-		{ key: 'action', label: 'To action', width: 110, right: true, cell: (p) => stateFor(p.ROWID).act || '-' },
+		...(showTickets ? [
+			{ key: 'compliance', label: 'Compliance', width: 130, cell: (p: Person) => {
+				const st = stateFor(p.ROWID);
+				return st.label === 'No records' ? <span className="muted">No records</span> : <Chip status={st.label} />;
+			} },
+			{ key: 'action', label: 'To action', width: 110, right: true, cell: (p: Person) => stateFor(p.ROWID).act || '-' },
+		] : []),
 		...(showRate ? [{ key: 'rate', label: 'Hourly rate', width: 130, right: true, cell: (p: Person) => (p.hourly_rate ? `$${Number(p.hourly_rate).toFixed(2)}` : '-') }] : []),
 	];
 }
@@ -139,7 +142,10 @@ export function People() {
 	const navigate = useNavigate();
 	const me = useMe();
 	const q = usePeople(true);
-	const items = useComplianceItems();
+	// A second IC may list people but not their tickets (the server refuses compliance): the page works without them.
+	const seesTickets = !!me.data?.roles.some((r) => ROUTE_ROLES.compliance?.includes(r));
+	const items = useComplianceItems(undefined, seesTickets);
+	const tabs = seesTickets ? TABS : TABS.filter((t) => t.key === 've' || t.key === 'sub');
 	const companies = useCompanies();
 	const canAdd = me.data?.permissions.createJob ?? false; // managers; the server decides for real
 	const showRate = me.data?.roles.includes('admin') ?? false;
@@ -231,7 +237,7 @@ export function People() {
 	);
 
 	const workerTable = (list: Person[], withRole: boolean, layout: GridLayout, label: string) => (
-		<ResizableGrid layout={layout} label={label} columns={workerColumns(stateFor, withRole, showRate)} rows={list} rowKey={(p) => p.ROWID} />
+		<ResizableGrid layout={layout} label={label} columns={workerColumns(stateFor, withRole, showRate, seesTickets)} rows={list} rowKey={(p) => p.ROWID} />
 	);
 
 	const barText = tab === 've' && q.isSuccess ? `Showing ${ve.length} of ${people.length}`
@@ -264,25 +270,25 @@ export function People() {
 			</PageHeader>
 
 			<Card flush>
-				<FilterBar>
+				{seesTickets && <FilterBar>
 					<FilterChips label="Expiry" heading="Tickets and inductions" value={tab === 'tickets' ? applied.status : ''} onChange={(k) => (tab === 'tickets' && applied.status === k ? setApplied({ ...applied, status: '' }) : goStatus(k))} chips={[
 						{ key: 'Expired', label: 'Expired', count: expired, danger: true },
 						{ key: 'Today', label: 'Expires today', count: today0, danger: true },
 						{ key: 'Expiring', label: 'Expiring soon', count: expiring },
 					]} />
-				</FilterBar>
+				</FilterBar>}
 				{form === 'record' && canAdd && <AddRecord onClose={() => setForm(null)} />}
 				<div className="list-toolbar">
 					<div className="segmented" role="group" aria-label="People views">
-						{TABS.map((t) => (
+						{tabs.map((t) => (
 							<button key={t.key} className={tab === t.key ? 'on' : ''} aria-pressed={tab === t.key} onClick={() => { setTab(t.key); setApplied({ ...applied, status: '' }); }}>{t.label}{t.key === 've' || t.key === 'sub' ? <span className="tab-count num">{tabCount(t.key)}</span> : null}</button>
 						))}
 					</div>
 				</div>
 				{toolbar}
 
-				{(q.isPending || items.isPending) && <p role="status" className="table-empty">Loading…</p>}
-				{(q.isError || items.isError) && <p role="alert">Could not load people.</p>}
+				{(q.isPending || (seesTickets && items.isPending)) && <p role="status" className="table-empty">Loading…</p>}
+				{(q.isError || (seesTickets && items.isError)) && <p role="alert">Could not load people.</p>}
 
 				{q.isSuccess && tab === 've' && (ve.length ? workerTable(ve, true, workersGrid, 'Workers') : <p className="table-empty">No workers match.</p>)}
 				{q.isSuccess && tab === 'sub' && (

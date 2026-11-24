@@ -10,8 +10,10 @@ export const ROUTE_ROLES: Record<string, string[] | undefined> = {
 	installation: [...OFFICE, 'installer', 'viewer'],
 	// Fab variance lists fabrication tasks; crew see only their own, so an installer's page was always empty.
 	variance: [...OFFICE, 'fab_worker', 'workshop', 'viewer'],
-	hours: [...OFFICE, 'installer', 'fab_worker', 'workshop'],
-	swms: [...OFFICE, 'installer'],
+	// These three follow the server's permission matrix (lib/authz.js): the menu offered pages the server then refused.
+	hours: [...OFFICE, 'installer', 'fab_worker', 'workshop', 'designer', 'contractor'],
+	swms: [...MANAGERS, 'installer', 'contractor'],
+	compliance: [...MANAGERS, 'installer', 'fab_worker', 'workshop', 'designer', 'contractor'],
 	checklists: MANAGERS,
 	equipment: [...OFFICE, 'workshop', 'fab_worker'],
 	directory: [...OFFICE, 'viewer'],
@@ -67,7 +69,7 @@ export const NAV: NavEntry[] = [
 		icon: Contact,
 		items: [
 			{ to: '/people', label: 'People', icon: Users, roles: ROUTE_ROLES.people },
-			{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
+			{ to: '/compliance', label: 'Compliance', icon: ShieldCheck, roles: ROUTE_ROLES.compliance },
 			{ to: '/directory', label: 'Companies and sites', icon: Building2, roles: ROUTE_ROLES.directory },
 		],
 	},

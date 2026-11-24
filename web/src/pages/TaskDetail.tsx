@@ -7,6 +7,7 @@ import { Chip } from '../components/Chip';
 import { useToast } from '../components/toast';
 import { BackLink, Card, PageHeader, fmtDate } from '../components/ui';
 import { FilesPanel } from './FilesPanel';
+import { ROUTE_ROLES } from '../navConfig';
 import { SwmsPanel } from './SwmsPanel';
 import { HoursPanel, ManagePanel, NotesPanel, RatingPanel, StageActions } from './TaskManage';
 import { TaskDetailsPanel } from '../components/TaskDetailsPanel';
@@ -95,7 +96,8 @@ export function TaskDetail() {
 
 			<TaskHistory taskId={task.ROWID} />
 
-			{task.swms_id && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
+			{/* Roles the server refuses SWMS (second IC, fab manager, viewer) do not get a panel that cannot load. */}
+			{task.swms_id && me.data?.roles.some((r) => ROUTE_ROLES.swms?.includes(r)) && <SwmsPanel swmsId={String(task.swms_id)} roles={me.data?.roles ?? []} myPersonId={myId} assignees={assignees} />}
 
 			<Card title="Checklists">
 				{checklistPhases(task).length === 0 ? (

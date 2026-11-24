@@ -68,7 +68,7 @@ function AppRoutes() {
 							<Route path="people" element={<Guard roles={ROUTE_ROLES.people}><People /></Guard>} />
 							<Route path="people/new" element={<Guard roles={ROUTE_ROLES.people}><NewPerson /></Guard>} />
 							<Route path="people/:id" element={<PersonDetail />} />
-							<Route path="compliance" element={<Compliance />} />
+							<Route path="compliance" element={<Guard roles={ROUTE_ROLES.compliance}><Compliance /></Guard>} />
 							<Route path="equipment" element={<Guard roles={ROUTE_ROLES.equipment}><Equipment /></Guard>} />
 							<Route path="devices" element={<Guard roles={ROUTE_ROLES.devices}><Devices /></Guard>} />
 							<Route path="settings" element={<Settings />} />

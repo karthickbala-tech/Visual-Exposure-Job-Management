@@ -13,6 +13,7 @@ import { addYears, validityYears } from '../lib/validity';
 import { todayIso } from '../lib/dates';
 import { roleLabel } from '../lib/roles';
 import { NoAccess } from '../components/Guard';
+import { ROUTE_ROLES } from '../navConfig';
 
 const parseRoles = (v: unknown): string[] => {
 	try {
@@ -272,8 +273,10 @@ export function PersonDetail() {
 	const { id } = useParams();
 	const q = usePerson(id);
 	const ratings = useRatings(id);
-	const comp = usePersonCompliance(id);
 	const me = useMe();
+	// A second IC may open a person but not their tickets (the server refuses compliance): leave the card out.
+	const seesTickets = !!me.data?.roles.some((r) => ROUTE_ROLES.compliance?.includes(r));
+	const comp = usePersonCompliance(id, seesTickets);
 	const canEdit = !!me.data?.permissions.createJob; // managers; the server decides for real
 	const isAdmin = !!me.data?.roles.includes('admin');
 	const [editing, setEditing] = useState(false);
@@ -336,7 +339,7 @@ export function PersonDetail() {
 					)}
 				</Card>
 
-				<Card title="Tickets and inductions" flush action={canEdit && !adding ? <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)}><Plus size={14} aria-hidden="true" /> Add</button> : undefined}>
+				{seesTickets && <Card title="Tickets and inductions" flush action={canEdit && !adding ? <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)}><Plus size={14} aria-hidden="true" /> Add</button> : undefined}>
 					{adding && canEdit && <AddRecord personId={p.ROWID} held={held} onClose={() => setAdding(false)} />}
 					{comp.isPending && <p role="status" className="table-empty">Loading…</p>}
 					{comp.isError && <p role="alert">Could not load tickets.</p>}
@@ -364,7 +367,7 @@ export function PersonDetail() {
 						const r = comp.data.items.find((c) => c.id === editRow);
 						return r ? <EditRecord key={r.id} r={r as RecordRow} onClose={() => setEditRow(null)} /> : null;
 					})()}
-				</Card>
+				</Card>}
 			</div>
 		</>
 	);

@@ -214,8 +214,9 @@ export const usePeople = (enabled: boolean) =>
 export const useComplianceTypes = () =>
 	useQuery({ queryKey: ['compliance-types'], queryFn: () => api<{ items: ComplianceType[] }>('/compliance/types'), staleTime: 5 * 60_000 });
 
-export const useComplianceItems = (status?: string) =>
+export const useComplianceItems = (status?: string, enabled = true) =>
 	useQuery({
+		enabled,
 		queryKey: ['compliance', status ?? 'all'],
 		queryFn: () => api<{ items: ComplianceItem[] }>('/compliance' + (status ? '?status=' + encodeURIComponent(status) : '')),
 		staleTime: 30_000,

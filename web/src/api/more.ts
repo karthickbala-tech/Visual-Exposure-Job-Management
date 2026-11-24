@@ -184,7 +184,7 @@ export const useSaveProfile = (id: string | undefined) => {
 	});
 };
 export const useRatings = (id: string | undefined) => useGet<{ items: { taskId: string; rating: number; comment: string; ratedAt: string | null }[]; count: number; average: number | null }>(['ratings', id ?? ''], `/people/${id}/ratings`, !!id, 60_000);
-export const usePersonCompliance = (id: string | undefined) => useGet<{ items: { id: string; typeId?: string | null; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id, 60_000);
+export const usePersonCompliance = (id: string | undefined, enabled = true) => useGet<{ items: { id: string; typeId?: string | null; typeName: string | null; referenceNo: string; issueDate?: string | null; expiryDate: string | null; daysLeft: number | null; status: string }[] }>(['person-compliance', id ?? ''], `/compliance?person_id=${id}`, !!id && enabled, 60_000);
 export const useCreatePerson = () => {
 	const qc = useQueryClient();
 	return useMutation({

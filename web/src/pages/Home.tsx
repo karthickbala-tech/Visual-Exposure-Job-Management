@@ -44,7 +44,7 @@ const SHORTCUTS = [
 	{ to: '/tasks', label: 'Task board', icon: Columns3 },
 	{ to: '/calendar', label: 'Calendar', icon: CalendarIcon },
 	{ to: '/hours', label: 'Hours', icon: Clock, roles: ROUTE_ROLES.hours },
-	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck },
+	{ to: '/compliance', label: 'Compliance', icon: ShieldCheck, roles: ROUTE_ROLES.compliance },
 	{ to: '/issues', label: 'Issues', icon: AlertTriangle },
 ];
 
