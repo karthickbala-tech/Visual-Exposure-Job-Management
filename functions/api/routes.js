@@ -119,6 +119,7 @@ router.add('GET', '/admin/settings', withCtx(async (ctx) => ok(await appSettings
 router.add('PUT', '/admin/settings', withCtx(async (ctx, { req }) => ok(await appSettings.updateSettings(ctx, await readJson(req)))));
 router.add('POST', '/admin/maintenance/run', withCtx(async (ctx) => ok(await maintenance.generateMaintenanceTasks(ctx))));
 router.add('POST', '/jobs/:id/close', withCtx(async (ctx, { params }) => ok(await jobs.closeJob(ctx, params.id))));
+router.add('POST', '/jobs/:id/stage', withCtx(async (ctx, { req, params }) => ok(await jobs.changeJobStage(ctx, params.id, await readJson(req)))));
 router.add('POST', '/tasks/:id/subtasks', withCtx(async (ctx, { params }) => created(await tasks.createSubtask(ctx, params.id)))); // not `once`: it takes no fields, so two on purpose would look like a repeat
 router.add('POST', '/jobs/:id/tasks', once(async (ctx, { params, body }) => await tasks.createTask(ctx, params.id, body)));
 
