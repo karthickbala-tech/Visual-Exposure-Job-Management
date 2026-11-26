@@ -122,6 +122,17 @@ export const useCloseJob = (jobId: string) => {
 		},
 	});
 };
+/** Put a job on hold, resume it, cancel it, or (administrator) reopen it. */
+export const useJobStage = (jobId: string) => {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (action: 'hold' | 'resume' | 'cancel' | 'reopen') => api(`/jobs/${jobId}/stage`, send('POST', { action })),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['job', jobId] });
+			qc.invalidateQueries({ queryKey: ['jobs'] });
+		},
+	});
+};
 /** Delete (soft) one or more jobs: one request for any number of them. The server refuses jobs with booked hours or unfinished tasks. */
 export const useDeleteJobs = () => {
 	const qc = useQueryClient();

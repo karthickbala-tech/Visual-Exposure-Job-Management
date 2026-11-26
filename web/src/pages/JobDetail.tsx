@@ -16,7 +16,8 @@ import { useToast } from '../components/toast';
 import { useConfirm } from '../components/Messages';
 import { Notice } from '../components/Notice';
 import { Card, Ring, fmtDate } from '../components/ui';
-import { useCloseJob } from '../api/more';
+import { useCloseJob, useJobStage } from '../api/more';
+import type { JobStageMove } from '../api/types';
 import { SignsPanel } from './SignsPanel';
 import { QuotesPanel } from './QuotesPanel';
 import type { TaskType } from '../lib/taskKinds';
@@ -87,6 +88,13 @@ const HeadStat = ({ tone, icon, label, value }: { tone: 'design' | 'fab' | 'inst
 );
 
 /** The job page: header card with the task counts, locations and signs, then Design, Fabrication and Installation tasks in tinted section cards. */
+const STAGE_MOVE_TEXT: Record<JobStageMove['action'], { label: string; title: string; message: string; done: string }> = {
+	hold: { label: 'Put on hold', title: 'Put this job on hold', message: 'The job stays On Hold until someone resumes it, whatever happens to its tasks. The CRM deal is updated.', done: 'Job put on hold' },
+	resume: { label: 'Resume', title: 'Resume this job', message: 'The stage is worked out again from the tasks (Preparation, In Progress or Completed). The CRM deal is updated.', done: 'Job resumed' },
+	cancel: { label: 'Cancel job', title: 'Cancel this job', message: 'The job becomes Cancelled and the CRM deal is updated. An administrator can reopen it.', done: 'Job cancelled' },
+	reopen: { label: 'Reopen', title: 'Reopen this job', message: 'The stage is worked out again from the tasks, and the closure email can be sent again when the job is next closed.', done: 'Job reopened' },
+};
+
 export function JobDetail() {
 	const { id } = useParams();
 	const q = useJob(id);
@@ -94,6 +102,7 @@ export function JobDetail() {
 	const navigate = useNavigate();
 	const move = useTransitionTask(id ?? '');
 	const close = useCloseJob(id ?? '');
+	const stageMove = useJobStage(id ?? '');
 	const { notify } = useToast();
 	const confirm = useConfirm();
 	// The jobs list links here with ?add=design|fab|install to open the matching add-task form (Creator's row actions).
@@ -122,6 +131,17 @@ export function JobDetail() {
 	const canAdd = !!me.data?.permissions.createTask;
 	const seesMoney = !!me.data?.roles.includes('admin');
 	const canClose = canEdit && job.stage === 'Completed';
+	const stageMoves = q.data.stageMoves ?? [];
+	/** Hold, resume, cancel and reopen, as on Creator's Jobs form. A refused move says why instead of failing silently. */
+	const runMove = async (m: JobStageMove) => {
+		if (!m.allowed) {
+			notify(m.reason ?? 'Not possible now', 'error');
+			return;
+		}
+		const ask = STAGE_MOVE_TEXT[m.action];
+		if (!(await confirm({ title: ask.title, message: ask.message, confirmLabel: ask.label }))) return;
+		stageMove.mutate(m.action, { onSuccess: () => notify(ask.done), onError: (e) => notify(e instanceof Error ? e.message : 'Could not change the stage', 'error') });
+	};
 	const inReview = tasks.filter((t) => t.stage === 'Manager Review');
 	const byType = (t: TaskType) => tasks.filter((x) => x.task_type === t);
 	const late = (t: Task) => !DONE.includes(t.stage) && !!t.required_finish && t.required_finish.slice(0, 10) < today();
@@ -191,7 +211,14 @@ export function JobDetail() {
 							</div>
 						</div>
 						<ul className="jh__facts">
-							<li className="jh__fact"><span className="jh__fact-label">Stage</span> <StageCell stage={job.stage} pill /></li>
+							<li className="jh__fact">
+								<span className="jh__fact-label">Stage</span> <StageCell stage={job.stage} pill />
+								{stageMoves.map((m) => (
+									<button key={m.action} type="button" className={'btn btn-ghost btn-sm' + (m.allowed ? '' : ' is-blocked')} disabled={stageMove.isPending} title={m.reason ?? undefined} onClick={() => runMove(m)}>
+										{STAGE_MOVE_TEXT[m.action].label}
+									</button>
+								))}
+							</li>
 							<li className="jh__fact"><FolderOpen size={15} aria-hidden="true" /> <span className="jh__fact-label">Location of files on VE Server</span> <span>{serverPath || '-'}</span></li>
 						</ul>
 						<div className="jh__stats">

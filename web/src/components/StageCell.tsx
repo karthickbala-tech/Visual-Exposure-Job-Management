@@ -5,12 +5,12 @@
 const FILL: Record<string, { bg: string; ink: string }> = {
 	Preparation: { bg: '#f0b31b', ink: '#1b1b1e' },
 	'In Progress': { bg: '#8fb1f0', ink: '#1b1b1e' },
-	'On Hold': { bg: '#f7d56a', ink: '#1b1b1e' },
+	'On Hold': { bg: '#f4a6c8', ink: '#1b1b1e' }, // FSD: On Hold pink
 	Completed: { bg: '#5fc15a', ink: '#10300d' },
 	'Approved & Completed': { bg: '#5fc15a', ink: '#10300d' },
-	'Completed - Closed': { bg: '#2f6fca', ink: '#ffffff' }, // white text 4.9:1 (was #3a7bd5, 4.2:1)
+	'Completed - Closed': { bg: '#1e3a8a', ink: '#ffffff' }, // FSD: dark blue; white text 10:1
 	'Complete - Not Used': { bg: '#5fc15a', ink: '#10300d' },
-	Cancelled: { bg: '#d9d9db', ink: '#1b1b1e' },
+	Cancelled: { bg: '#ee7b73', ink: '#1b1b1e' }, // FSD: Cancelled red
 	'Awaiting Scheduling': { bg: '#c6c6c7', ink: '#1b1b1e' },
 	'To be Assigned': { bg: '#c6c6c7', ink: '#1b1b1e' },
 	Scheduled: { bg: '#8fb1f0', ink: '#1b1b1e' },
@@ -20,15 +20,15 @@ const FILL: Record<string, { bg: string; ink: string }> = {
 };
 
 /** The soft chip colour (from the theme's chip tokens) each stage uses when shown as a pill. */
-const TONE: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red' | 'done'> = {
+const TONE: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red' | 'done' | 'pink' | 'navy'> = {
 	Preparation: 'amber',
 	'In Progress': 'blue',
-	'On Hold': 'amber',
+	'On Hold': 'pink',
 	Completed: 'done',
 	'Approved & Completed': 'done',
-	'Completed - Closed': 'blue',
+	'Completed - Closed': 'navy',
 	'Complete - Not Used': 'done',
-	Cancelled: 'gray',
+	Cancelled: 'red',
 	'Awaiting Scheduling': 'gray',
 	'To be Assigned': 'gray',
 	Scheduled: 'blue',

@@ -1357,6 +1357,18 @@ a.kpi:hover {
 	border-color: color-mix(in srgb, var(--chip-blue-ink) 22%, transparent);
 }
 
+.chip-pink {
+	background: var(--chip-pink-bg);
+	color: var(--chip-pink-ink);
+	border-color: color-mix(in srgb, var(--chip-pink-ink) 24%, transparent);
+}
+
+.chip-navy {
+	background: var(--chip-navy-bg);
+	color: var(--chip-navy-ink);
+	border-color: transparent;
+}
+
 .chip-amber {
 	background: var(--chip-amber-bg);
 	color: var(--chip-amber-ink);
@@ -4592,6 +4604,10 @@ body.col-resizing, body.col-resizing * {
 .stage-pill--green { --chip-bg: var(--chip-green-bg); --chip-ink: var(--chip-green-ink); }
 .stage-pill--done { --chip-bg: #5fc15a; --chip-ink: #10300d; }
 .stage-pill--red { --chip-bg: var(--chip-red-bg); --chip-ink: var(--chip-red-ink); }
+.stage-pill--pink { --chip-bg: var(--chip-pink-bg); --chip-ink: var(--chip-pink-ink); }
+.stage-pill--navy { --chip-bg: var(--chip-navy-bg); --chip-ink: var(--chip-navy-ink); }
+/* A job stage move that is refused for now (Cancel with open tasks): still focusable, the click says why. */
+.btn.is-blocked { opacity: 0.6; }
 .page .board-inline { padding: 8px 12px; }
 .page .cal-legend, .page .agenda-day { padding-left: 12px; padding-right: 12px; }
 .lt-menu { position: relative; }

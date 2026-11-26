@@ -71,6 +71,8 @@
 	--chip-purple-bg: #f5f3ff; --chip-purple-ink: #6d28d9;
 	--chip-green-bg: #ecfdf5; --chip-green-ink: #047857;
 	--chip-red-bg: #fef2f2; --chip-red-ink: #b91c1c;
+	--chip-pink-bg: #fdf2f8; --chip-pink-ink: #be185d;
+	--chip-navy-bg: #1e3a8a; --chip-navy-ink: #ffffff;
 	--err-bg: #fef2f2; --err-ink: #b91c1c;
 
 	/* Shape, radius & elevation */
@@ -162,6 +164,8 @@
 	--chip-purple-bg: #2e1065; --chip-purple-ink: #d8b4fe;
 	--chip-green-bg: #064e3b; --chip-green-ink: #6ee7b7;
 	--chip-red-bg: #450a0a; --chip-red-ink: #fca5a5;
+	--chip-pink-bg: #500724; --chip-pink-ink: #f9a8d4;
+	--chip-navy-bg: #1e3a8a; --chip-navy-ink: #dbeafe;
 	--err-bg: #450a0a; --err-ink: #fca5a5;
 
 	--jt-design-bg: #172554; --jt-design-ink: #93c5fd;

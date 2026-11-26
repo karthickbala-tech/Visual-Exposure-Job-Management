@@ -88,8 +88,11 @@ export interface Progress {
 }
 
 export interface JobLocation { id: string; name: string; street?: string; city?: string; address: string; mapUrl?: string; crmSiteId?: string; addedTime?: string | null }
+/** A stage change a person may make on the job by hand (hold, resume, cancel, reopen). A refused one carries the reason. */
+export interface JobStageMove { action: 'hold' | 'resume' | 'cancel' | 'reopen'; to: string; allowed: boolean; reason: string | null }
 export interface JobDetailResponse {
 	job: Job;
+	stageMoves?: JobStageMove[];
 	tasks: Task[];
 	progress: Progress;
 	locations?: JobLocation[];

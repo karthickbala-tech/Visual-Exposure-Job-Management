@@ -1,7 +1,8 @@
 /** Which colour tone each status gets. The label is always shown, so colour never carries meaning alone. */
-const TONES: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red'> = {
+const TONES: Record<string, 'gray' | 'blue' | 'amber' | 'purple' | 'green' | 'red' | 'pink' | 'navy'> = {
 	// jobs and tasks
-	Preparation: 'gray', 'In Progress': 'blue', 'On Hold': 'amber', Completed: 'green', 'Completed - Closed': 'green', Cancelled: 'red',
+	// Job stage colours from the FSD: Preparation amber, In Progress blue, Completed green, On Hold pink, Cancelled red, Completed - Closed dark blue.
+	Preparation: 'amber', 'In Progress': 'blue', 'On Hold': 'pink', Completed: 'green', 'Completed - Closed': 'navy', Cancelled: 'red',
 	'Awaiting Scheduling': 'gray', Scheduled: 'blue', 'Manager Review': 'purple', Rejected: 'red', Reopen: 'amber', 'Complete - Not Used': 'gray',
 	'Awaiting Submission': 'amber', 'Approved & Completed': 'green', 'To be Assigned': 'gray',
 	// SWMS
